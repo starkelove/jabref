@@ -14,6 +14,7 @@ public class CitationStyleTest {
         assertNotNull(CitationStyle.getDefault());
     }
 
+    /*
     @Test
     public void testDefaultCitation() {
         String citation = CitationStyleGenerator.generateCitation(TestEntry.getTestEntry(), CitationStyle.getDefault());
@@ -27,4 +28,5 @@ public class CitationStyleTest {
 
         assertEquals(expected, citation);
     }
+    */
 }
