@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MnemonicAwareAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.actions</a> &gt; <span class="el_source">MnemonicAwareAction.java</span></div><h1>MnemonicAwareAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.actions;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.Icon;
+
+import org.jabref.gui.icon.IconTheme;
+
+/**
+ * This class extends {@link AbstractAction} with the ability to set
+ * the mnemonic key based on a '&amp;' character inserted in front of
+ * the desired mnemonic letter. This is done by setting the action's
+ * name using putValue(NAME, actionname).
+ * This facilitates localized mnemonics.
+ */
+public abstract class MnemonicAwareAction extends AbstractAction {
+
+<span class="nc" id="L18">    public MnemonicAwareAction() { }</span>
+
+<span class="nc" id="L20">    public MnemonicAwareAction(Icon icon) {</span>
+<span class="nc bnc" id="L21" title="All 2 branches missed.">        if (icon instanceof IconTheme.FontBasedIcon) {</span>
+<span class="nc" id="L22">            putValue(Action.SMALL_ICON, ((IconTheme.FontBasedIcon) icon).createSmallIcon());</span>
+<span class="nc" id="L23">            putValue(Action.LARGE_ICON_KEY, icon);</span>
+        } else {
+<span class="nc" id="L25">            putValue(Action.SMALL_ICON, icon);</span>
+        }
+<span class="nc" id="L27">    }</span>
+
+    @Override
+    public void putValue(String key, Object value) {
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        if (key.equals(Action.NAME)) {</span>
+<span class="nc" id="L32">            String name = value.toString();</span>
+<span class="nc" id="L33">            int i = name.indexOf('&amp;');</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">            if (i &gt;= 0) {</span>
+<span class="nc" id="L35">                char mnemonic = Character.toUpperCase(name.charAt(i + 1));</span>
+<span class="nc" id="L36">                putValue(Action.MNEMONIC_KEY, (int) mnemonic);</span>
+<span class="nc" id="L37">                value = name.substring(0, i) + name.substring(i + 1);</span>
+<span class="nc" id="L38">            } else {</span>
+<span class="nc" id="L39">                value = name;</span>
+            }
+        }
+<span class="nc" id="L42">        super.putValue(key, value);</span>
+<span class="nc" id="L43">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

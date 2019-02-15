@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SentenceAnalyzer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.search.rules</a> &gt; <span class="el_source">SentenceAnalyzer.java</span></div><h1>SentenceAnalyzer.java</h1><pre class="source lang-java linenums">package org.jabref.model.search.rules;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class SentenceAnalyzer {
+
+    public static final char ESCAPE_CHAR = '\\';
+    public static final char QUOTE_CHAR = '&quot;';
+
+    private final String query;
+
+<span class="fc" id="L13">    public SentenceAnalyzer(String query) {</span>
+<span class="fc" id="L14">        this.query = query;</span>
+<span class="fc" id="L15">    }</span>
+
+    public List&lt;String&gt; getWords() {
+<span class="fc" id="L18">        List&lt;String&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L20">        StringBuilder stringBuilder = new StringBuilder();</span>
+<span class="fc" id="L21">        boolean escaped = false;</span>
+<span class="fc" id="L22">        boolean quoted = false;</span>
+<span class="fc bfc" id="L23" title="All 2 branches covered.">        for (char c : query.toCharArray()) {</span>
+            // Check if we are entering an escape sequence:
+<span class="fc bfc" id="L25" title="All 4 branches covered.">            if (!escaped &amp;&amp; c == ESCAPE_CHAR) {</span>
+<span class="fc" id="L26">                escaped = true;</span>
+            } else {
+                // See if we have reached the end of a word:
+<span class="fc bfc" id="L29" title="All 6 branches covered.">                if (!escaped &amp;&amp; !quoted &amp;&amp; Character.isWhitespace(c)) {</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">                    if (stringBuilder.length() &gt; 0) {</span>
+<span class="fc" id="L31">                        result.add(stringBuilder.toString());</span>
+<span class="fc" id="L32">                        stringBuilder = new StringBuilder();</span>
+                    }
+<span class="fc bfc" id="L34" title="All 2 branches covered.">                } else if (c == QUOTE_CHAR) {</span>
+                    // Whether it is a start or end quote, store the current
+                    // word if any:
+<span class="fc bfc" id="L37" title="All 2 branches covered.">                    if (stringBuilder.length() &gt; 0) {</span>
+<span class="fc" id="L38">                        result.add(stringBuilder.toString());</span>
+<span class="fc" id="L39">                        stringBuilder = new StringBuilder();</span>
+                    }
+<span class="fc bfc" id="L41" title="All 2 branches covered.">                    quoted = !quoted;</span>
+                } else {
+                    // All other possibilities exhausted, we add the char to
+                    // the current word:
+<span class="fc" id="L45">                    stringBuilder.append(c);</span>
+                }
+<span class="fc" id="L47">                escaped = false;</span>
+            }
+        }
+        // Finished with the loop. If we have a current word, add it:
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (stringBuilder.length() &gt; 0) {</span>
+<span class="fc" id="L52">            result.add(stringBuilder.toString());</span>
+        }
+
+<span class="fc" id="L55">        return result;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

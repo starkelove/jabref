@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EntryAddChangeViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.collab</a> &gt; <span class="el_source">EntryAddChangeViewModel.java</span></div><h1>EntryAddChangeViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.collab;
+
+import javax.swing.JComponent;
+
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.FXDialogService;
+import org.jabref.gui.PreviewPanel;
+import org.jabref.gui.customjfx.CustomJFXPanel;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableInsertEntry;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.IdGenerator;
+
+class EntryAddChangeViewModel extends ChangeViewModel {
+
+    private final BibEntry diskEntry;
+    private final JFXPanel container;
+
+
+    public EntryAddChangeViewModel(BibEntry diskEntry) {
+<span class="nc" id="L28">        super(Localization.lang(&quot;Added entry&quot;));</span>
+<span class="nc" id="L29">        this.diskEntry = diskEntry;</span>
+
+<span class="nc" id="L31">        PreviewPanel previewPanel = new PreviewPanel(null, null, Globals.getKeyPrefs(), Globals.prefs.getPreviewPreferences(), new FXDialogService(), ExternalFileTypes.getInstance());</span>
+<span class="nc" id="L32">        previewPanel.setEntry(diskEntry);</span>
+<span class="nc" id="L33">        container = CustomJFXPanel.wrap(new Scene(previewPanel));</span>
+<span class="nc" id="L34">    }</span>
+
+    @Override
+    public boolean makeChange(BasePanel panel, BibDatabase secondary, NamedCompound undoEdit) {
+<span class="nc" id="L38">        diskEntry.setId(IdGenerator.next());</span>
+<span class="nc" id="L39">        panel.getDatabase().insertEntry(diskEntry);</span>
+<span class="nc" id="L40">        secondary.insertEntry(diskEntry);</span>
+<span class="nc" id="L41">        undoEdit.addEdit(new UndoableInsertEntry(panel.getDatabase(), diskEntry));</span>
+<span class="nc" id="L42">        return true;</span>
+    }
+
+    @Override
+    public JComponent description() {
+<span class="nc" id="L47">        return container;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

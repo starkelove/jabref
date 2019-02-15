@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StandardExternalFileType.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.externalfiletype</a> &gt; <span class="el_source">StandardExternalFileType.java</span></div><h1>StandardExternalFileType.java</h1><pre class="source lang-java linenums">package org.jabref.gui.externalfiletype;
+
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.icon.JabRefIcon;
+import org.jabref.logic.l10n.Localization;
+
+<span class="fc" id="L7">public enum StandardExternalFileType implements ExternalFileType {</span>
+
+<span class="fc" id="L9">    PDF(&quot;PDF&quot;, &quot;pdf&quot;, &quot;application/pdf&quot;, &quot;evince&quot;, &quot;pdfSmall&quot;, IconTheme.JabRefIcons.PDF_FILE),</span>
+<span class="fc" id="L10">    PostScript(&quot;PostScript&quot;, &quot;ps&quot;, &quot;application/postscript&quot;, &quot;evince&quot;, &quot;psSmall&quot;, IconTheme.JabRefIcons.FILE),</span>
+<span class="fc" id="L11">    Word(&quot;Word&quot;, &quot;doc&quot;, &quot;application/msword&quot;, &quot;oowriter&quot;, &quot;openoffice&quot;, IconTheme.JabRefIcons.FILE_WORD),</span>
+<span class="fc" id="L12">    Word_NEW(&quot;Word 2007+&quot;, &quot;docx&quot;, &quot;application/vnd.openxmlformats-officedocument.wordprocessingml.document&quot;, &quot;oowriter&quot;, &quot;openoffice&quot;, IconTheme.JabRefIcons.FILE_WORD),</span>
+<span class="fc" id="L13">    OpenDocument_TEXT(Localization.lang(&quot;OpenDocument text&quot;), &quot;odt&quot;, &quot;application/vnd.oasis.opendocument.text&quot;, &quot;oowriter&quot;, &quot;openoffice&quot;, IconTheme.JabRefIcons.FILE_OPENOFFICE),</span>
+<span class="fc" id="L14">    Excel(&quot;Excel&quot;, &quot;xls&quot;, &quot;application/excel&quot;, &quot;oocalc&quot;, &quot;openoffice&quot;, IconTheme.JabRefIcons.FILE_EXCEL),</span>
+<span class="fc" id="L15">    Excel_NEW(&quot;Excel 2007+&quot;, &quot;xlsx&quot;, &quot;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet&quot;, &quot;oocalc&quot;, &quot;openoffice&quot;, IconTheme.JabRefIcons.FILE_EXCEL),</span>
+<span class="fc" id="L16">    OpenDocumentSpreadsheet(Localization.lang(&quot;OpenDocument spreadsheet&quot;), &quot;ods&quot;, &quot;application/vnd.oasis.opendocument.spreadsheet&quot;, &quot;oocalc&quot;, &quot;openoffice&quot;, IconTheme.JabRefIcons.FILE_OPENOFFICE),</span>
+<span class="fc" id="L17">    PowerPoint(&quot;PowerPoint&quot;, &quot;ppt&quot;, &quot;application/vnd.ms-powerpoint&quot;, &quot;ooimpress&quot;, &quot;openoffice&quot;, IconTheme.JabRefIcons.FILE_POWERPOINT),</span>
+<span class="fc" id="L18">    PowerPoint_NEW(&quot;PowerPoint 2007+&quot;, &quot;pptx&quot;, &quot;application/vnd.openxmlformats-officedocument.presentationml.presentation&quot;, &quot;ooimpress&quot;, &quot;openoffice&quot;, IconTheme.JabRefIcons.FILE_POWERPOINT),</span>
+<span class="fc" id="L19">    OpenDocumentPresentation(Localization.lang(&quot;OpenDocument presentation&quot;), &quot;odp&quot;, &quot;application/vnd.oasis.opendocument.presentation&quot;, &quot;ooimpress&quot;, &quot;openoffice&quot;, IconTheme.JabRefIcons.FILE_OPENOFFICE),</span>
+<span class="fc" id="L20">    RTF(&quot;Rich Text Format&quot;, &quot;rtf&quot;, &quot;application/rtf&quot;, &quot;oowriter&quot;, &quot;openoffice&quot;, IconTheme.JabRefIcons.FILE_TEXT),</span>
+<span class="fc" id="L21">    PNG(Localization.lang(&quot;%0 image&quot;, &quot;PNG&quot;), &quot;png&quot;, &quot;image/png&quot;, &quot;gimp&quot;, &quot;picture&quot;, IconTheme.JabRefIcons.PICTURE),</span>
+<span class="fc" id="L22">    GIF(Localization.lang(&quot;%0 image&quot;, &quot;GIF&quot;), &quot;gif&quot;, &quot;image/gif&quot;, &quot;gimp&quot;, &quot;picture&quot;, IconTheme.JabRefIcons.PICTURE),</span>
+<span class="fc" id="L23">    JPG(Localization.lang(&quot;%0 image&quot;, &quot;JPG&quot;), &quot;jpg&quot;, &quot;image/jpeg&quot;, &quot;gimp&quot;, &quot;picture&quot;, IconTheme.JabRefIcons.PICTURE),</span>
+<span class="fc" id="L24">    Djvu(&quot;Djvu&quot;, &quot;djvu&quot;, &quot;image/vnd.djvu&quot;, &quot;evince&quot;, &quot;psSmall&quot;, IconTheme.JabRefIcons.FILE),</span>
+<span class="fc" id="L25">    TXT(&quot;Text&quot;, &quot;txt&quot;, &quot;text/plain&quot;, &quot;emacs&quot;, &quot;emacs&quot;, IconTheme.JabRefIcons.FILE_TEXT),</span>
+<span class="fc" id="L26">    TEX(&quot;LaTeX&quot;, &quot;tex&quot;, &quot;application/x-latex&quot;, &quot;emacs&quot;, &quot;emacs&quot;, IconTheme.JabRefIcons.FILE_TEXT),</span>
+<span class="fc" id="L27">    CHM(&quot;CHM&quot;, &quot;chm&quot;, &quot;application/mshelp&quot;, &quot;gnochm&quot;, &quot;www&quot;, IconTheme.JabRefIcons.WWW),</span>
+<span class="fc" id="L28">    TIFF(Localization.lang(&quot;%0 image&quot;, &quot;TIFF&quot;), &quot;tiff&quot;, &quot;image/tiff&quot;, &quot;gimp&quot;, &quot;picture&quot;, IconTheme.JabRefIcons.PICTURE),</span>
+<span class="fc" id="L29">    URL(&quot;URL&quot;, &quot;html&quot;, &quot;text/html&quot;, &quot;firefox&quot;, &quot;www&quot;, IconTheme.JabRefIcons.WWW),</span>
+<span class="fc" id="L30">    MHT(&quot;MHT&quot;, &quot;mht&quot;, &quot;multipart/related&quot;, &quot;firefox&quot;, &quot;www&quot;, IconTheme.JabRefIcons.WWW),</span>
+<span class="fc" id="L31">    ePUB(&quot;ePUB&quot;, &quot;epub&quot;, &quot;application/epub+zip&quot;, &quot;firefox&quot;, &quot;www&quot;, IconTheme.JabRefIcons.WWW);</span>
+
+    private final String name;
+    private final String extension;
+    private final String mimeType;
+    private final String openWith;
+    private final String iconName;
+    private final JabRefIcon icon;
+
+    StandardExternalFileType(String name, String extension, String mimeType,
+<span class="fc" id="L41">                             String openWith, String iconName, JabRefIcon icon) {</span>
+<span class="fc" id="L42">        this.name = name;</span>
+<span class="fc" id="L43">        this.extension = extension;</span>
+<span class="fc" id="L44">        this.mimeType = mimeType;</span>
+<span class="fc" id="L45">        this.openWith = openWith;</span>
+<span class="fc" id="L46">        this.iconName = iconName;</span>
+<span class="fc" id="L47">        this.icon = icon;</span>
+<span class="fc" id="L48">    }</span>
+
+    @Override
+    public String getName() {
+<span class="nc" id="L52">        return name;</span>
+    }
+
+    @Override
+    public String getExtension() {
+<span class="fc" id="L57">        return extension;</span>
+    }
+
+    @Override
+    public String getMimeType() {
+<span class="nc" id="L62">        return mimeType;</span>
+    }
+
+    @Override
+    public String getOpenWithApplication() {
+        // On all OSes there is a generic application available to handle file opening, so use this one
+<span class="nc" id="L68">        return &quot;&quot;;</span>
+    }
+
+    @Override
+    public JabRefIcon getIcon() {
+<span class="nc" id="L73">        return icon;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

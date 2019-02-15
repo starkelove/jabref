@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SpecialFieldMenuItemFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.specialfields</a> &gt; <span class="el_source">SpecialFieldMenuItemFactory.java</span></div><h1>SpecialFieldMenuItemFactory.java</h1><pre class="source lang-java linenums">package org.jabref.gui.specialfields;
+
+import java.util.function.Function;
+
+import javax.swing.undo.UndoManager;
+
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.actions.ActionFactory;
+import org.jabref.gui.actions.OldCommandWrapper;
+import org.jabref.gui.actions.OldCommandWrapperForActiveDatabase;
+import org.jabref.model.entry.specialfields.SpecialField;
+import org.jabref.model.entry.specialfields.SpecialFieldValue;
+
+import de.saxsys.mvvmfx.utils.commands.Command;
+
+<span class="nc" id="L19">public class SpecialFieldMenuItemFactory {</span>
+    public static MenuItem getSpecialFieldSingleItem(SpecialField field, ActionFactory factory, BasePanel panel) {
+<span class="nc" id="L21">        SpecialFieldValueViewModel specialField = new SpecialFieldValueViewModel(field.getValues().get(0));</span>
+<span class="nc" id="L22">        return factory.createMenuItem(specialField.getAction(), new OldCommandWrapper(specialField.getCommand(), panel));</span>
+    }
+
+    public static MenuItem getSpecialFieldSingleItemForActiveDatabase(SpecialField field, ActionFactory factory) {
+<span class="nc" id="L26">        SpecialFieldValueViewModel specialField = new SpecialFieldValueViewModel(field.getValues().get(0));</span>
+<span class="nc" id="L27">        return factory.createMenuItem(specialField.getAction(), new OldCommandWrapperForActiveDatabase(specialField.getCommand()));</span>
+    }
+
+    public static Menu createSpecialFieldMenu(SpecialField field, ActionFactory factory, BasePanel panel) {
+<span class="nc" id="L31">        return createSpecialFieldMenu(field, factory, panel.getUndoManager(), specialField -&gt; new OldCommandWrapper(specialField.getCommand(), panel));</span>
+    }
+
+    public static Menu createSpecialFieldMenuForActiveDatabase(SpecialField field, ActionFactory factory, UndoManager undoManager) {
+<span class="nc" id="L35">        return createSpecialFieldMenu(field, factory, undoManager, specialField -&gt; new OldCommandWrapperForActiveDatabase(specialField.getCommand()));</span>
+    }
+
+    public static Menu createSpecialFieldMenu(SpecialField field, ActionFactory factory, UndoManager undoManager, Function&lt;SpecialFieldValueViewModel, Command&gt; commandFactory) {
+<span class="nc" id="L39">        SpecialFieldViewModel viewModel = new SpecialFieldViewModel(field, undoManager);</span>
+<span class="nc" id="L40">        Menu menu = factory.createMenu(viewModel.getAction());</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        for (SpecialFieldValue val : field.getValues()) {</span>
+<span class="nc" id="L42">            SpecialFieldValueViewModel specialField = new SpecialFieldValueViewModel(val);</span>
+<span class="nc" id="L43">            menu.getItems().add(factory.createMenuItem(specialField.getAction(), commandFactory.apply(specialField)));</span>
+<span class="nc" id="L44">        }</span>
+<span class="nc" id="L45">        return menu;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

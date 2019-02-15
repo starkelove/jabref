@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.importer.fileformat.BibtexImporterTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:22" hostname="n184-p67.eduroam.kth.se" time="0.012">
+  <properties/>
+  <testcase name="testImportEntries()" classname="org.jabref.logic.importer.fileformat.BibtexImporterTest" time="0.004"/>
+  <testcase name="testIsRecognizedFormat()" classname="org.jabref.logic.importer.fileformat.BibtexImporterTest" time="0.001"/>
+  <testcase name="testsGetExtensions()" classname="org.jabref.logic.importer.fileformat.BibtexImporterTest" time="0.0"/>
+  <testcase name="testGetDescription()" classname="org.jabref.logic.importer.fileformat.BibtexImporterTest" time="0.0"/>
+  <testcase name="testRecognizesDatabaseID()" classname="org.jabref.logic.importer.fileformat.BibtexImporterTest" time="0.004"/>
+  <testcase name="testGetFormatName()" classname="org.jabref.logic.importer.fileformat.BibtexImporterTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

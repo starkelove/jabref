@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CurrentThreadTaskExecutor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">CurrentThreadTaskExecutor.java</span></div><h1>CurrentThreadTaskExecutor.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+
+import javafx.concurrent.Task;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Implementation of {@link TaskExecutor} that runs every task on the current thread, i.e. in a sequential order. This
+ * class is not designed to be used in production but should make code involving asynchronous operations deterministic
+ * and testable.
+ */
+<span class="fc" id="L19">public class CurrentThreadTaskExecutor implements TaskExecutor {</span>
+
+<span class="fc" id="L21">    private static final Logger LOGGER = LoggerFactory.getLogger(CurrentThreadTaskExecutor.class);</span>
+
+    /**
+     * Executes the task on the current thread. The code is essentially taken from {@link
+     * javafx.concurrent.Task.TaskCallable#call()}, but adapted to run sequentially.
+     */
+    @Override
+    public &lt;V&gt; Future&lt;V&gt; execute(BackgroundTask&lt;V&gt; task) {
+<span class="fc" id="L29">        Runnable onRunning = task.getOnRunning();</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        if (onRunning != null) {</span>
+<span class="fc" id="L31">            onRunning.run();</span>
+        }
+        try {
+<span class="fc" id="L34">            final V result = task.call();</span>
+<span class="fc" id="L35">            Consumer&lt;V&gt; onSuccess = task.getOnSuccess();</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">            if (onSuccess != null) {</span>
+<span class="fc" id="L37">                onSuccess.accept(result);</span>
+            }
+<span class="fc" id="L39">            return CompletableFuture.completedFuture(result);</span>
+<span class="nc" id="L40">        } catch (Exception exception) {</span>
+<span class="nc" id="L41">            Consumer&lt;Exception&gt; onException = task.getOnException();</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">            if (onException != null) {</span>
+<span class="nc" id="L43">                onException.accept(exception);</span>
+            } else {
+<span class="nc" id="L45">                LOGGER.error(&quot;Unhandled exception&quot;, exception);</span>
+            }
+<span class="nc" id="L47">            return new FailedFuture&lt;&gt;(exception);</span>
+        }
+    }
+
+    @Override
+    public &lt;V&gt; Future&lt;V&gt; execute(Task&lt;V&gt; task) {
+<span class="nc" id="L53">        return task;</span>
+    }
+
+    @Override
+    public void shutdown() {
+        // Nothing to do here
+<span class="nc" id="L59">    }</span>
+
+<span class="fc" id="L61">    private class FailedFuture&lt;T&gt; implements Future&lt;T&gt; {</span>
+        private final Throwable exception;
+
+<span class="nc" id="L64">        FailedFuture(Throwable exception) {</span>
+<span class="nc" id="L65">            this.exception = exception;</span>
+<span class="nc" id="L66">        }</span>
+
+        @Override
+        public T get() throws ExecutionException {
+<span class="nc" id="L70">            throw new ExecutionException(exception);</span>
+        }
+
+        @Override
+        public T get(long timeout, TimeUnit unit) throws ExecutionException {
+<span class="nc" id="L75">            return get();</span>
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+<span class="nc" id="L80">            return false;</span>
+        }
+
+        @Override
+        public boolean isCancelled() {
+<span class="nc" id="L85">            return false;</span>
+        }
+
+        @Override
+        public boolean isDone() {
+<span class="nc" id="L90">            return true;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

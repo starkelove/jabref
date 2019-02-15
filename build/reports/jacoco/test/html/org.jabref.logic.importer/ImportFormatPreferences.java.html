@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ImportFormatPreferences.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer</a> &gt; <span class="el_source">ImportFormatPreferences.java</span></div><h1>ImportFormatPreferences.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer;
+
+import java.nio.charset.Charset;
+import java.util.Set;
+
+import org.jabref.logic.bibtex.FieldContentParserPreferences;
+import org.jabref.logic.bibtexkeypattern.BibtexKeyPatternPreferences;
+import org.jabref.logic.importer.fileformat.CustomImporter;
+import org.jabref.logic.xmp.XmpPreferences;
+
+public class ImportFormatPreferences {
+
+    private final Set&lt;CustomImporter&gt; customImportList;
+    private final Charset encoding;
+    private final Character keywordSeparator;
+    private final BibtexKeyPatternPreferences bibtexKeyPatternPreferences;
+    private final FieldContentParserPreferences fieldContentParserPreferences;
+    private final XmpPreferences xmpPreferences;
+    private final boolean keywordSyncEnabled;
+
+    public ImportFormatPreferences(Set&lt;CustomImporter&gt; customImportList, Charset encoding, Character keywordSeparator,
+            BibtexKeyPatternPreferences bibtexKeyPatternPreferences,
+<span class="nc" id="L23">                                   FieldContentParserPreferences fieldContentParserPreferences, XmpPreferences xmpPreferences, boolean keywordSyncEnabled) {</span>
+<span class="nc" id="L24">        this.customImportList = customImportList;</span>
+<span class="nc" id="L25">        this.encoding = encoding;</span>
+<span class="nc" id="L26">        this.keywordSeparator = keywordSeparator;</span>
+<span class="nc" id="L27">        this.bibtexKeyPatternPreferences = bibtexKeyPatternPreferences;</span>
+<span class="nc" id="L28">        this.fieldContentParserPreferences = fieldContentParserPreferences;</span>
+<span class="nc" id="L29">        this.xmpPreferences = xmpPreferences;</span>
+<span class="nc" id="L30">        this.keywordSyncEnabled = keywordSyncEnabled;</span>
+<span class="nc" id="L31">    }</span>
+
+    /**
+     * @deprecated importer should not know about the other custom importers
+     */
+    @Deprecated
+    public Set&lt;CustomImporter&gt; getCustomImportList() {
+<span class="nc" id="L38">        return customImportList;</span>
+    }
+
+    public Charset getEncoding() {
+<span class="nc" id="L42">        return encoding;</span>
+    }
+
+    public Character getKeywordSeparator() {
+<span class="nc" id="L46">        return keywordSeparator;</span>
+    }
+
+    public BibtexKeyPatternPreferences getBibtexKeyPatternPreferences() {
+<span class="nc" id="L50">        return bibtexKeyPatternPreferences;</span>
+    }
+
+    public FieldContentParserPreferences getFieldContentParserPreferences() {
+<span class="nc" id="L54">        return fieldContentParserPreferences;</span>
+    }
+
+    public ImportFormatPreferences withEncoding(Charset newEncoding) {
+<span class="nc" id="L58">        return new ImportFormatPreferences(customImportList, newEncoding, keywordSeparator, bibtexKeyPatternPreferences,</span>
+                                           fieldContentParserPreferences, xmpPreferences, keywordSyncEnabled);
+    }
+
+    /**
+     * @deprecated importer should not keyword synchronization; this is a post-import action
+     */
+    @Deprecated
+    public boolean isKeywordSyncEnabled() {
+<span class="nc" id="L67">        return keywordSyncEnabled;</span>
+    }
+
+    public XmpPreferences getXmpPreferences() {
+<span class="nc" id="L71">        return xmpPreferences;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

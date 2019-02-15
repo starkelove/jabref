@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Windows.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.desktop.os</a> &gt; <span class="el_source">Windows.java</span></div><h1>Windows.java</h1><pre class="source lang-java linenums">package org.jabref.gui.desktop.os;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
+
+import org.jabref.gui.externalfiletype.ExternalFileType;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.preferences.JabRefPreferences;
+
+import static org.jabref.preferences.JabRefPreferences.ADOBE_ACROBAT_COMMAND;
+import static org.jabref.preferences.JabRefPreferences.SUMATRA_PDF_COMMAND;
+import static org.jabref.preferences.JabRefPreferences.USE_PDF_READER;
+
+<span class="nc" id="L18">public class Windows implements NativeDesktop {</span>
+<span class="nc" id="L19">    private static String DEFAULT_EXECUTABLE_EXTENSION = &quot;.exe&quot;;</span>
+
+    @Override
+    public void openFile(String filePath, String fileType) throws IOException {
+<span class="nc" id="L23">        Optional&lt;ExternalFileType&gt; type = ExternalFileTypes.getInstance().getExternalFileTypeByExt(fileType);</span>
+
+<span class="nc bnc" id="L25" title="All 4 branches missed.">        if (type.isPresent() &amp;&amp; !type.get().getOpenWithApplication().isEmpty()) {</span>
+<span class="nc" id="L26">            openFileWithApplication(filePath, type.get().getOpenWithApplication());</span>
+        } else {
+            // quote String so explorer handles URL query strings correctly
+<span class="nc" id="L29">            String quotePath = &quot;\&quot;&quot; + filePath + &quot;\&quot;&quot;;</span>
+<span class="nc" id="L30">            new ProcessBuilder(&quot;explorer.exe&quot;, quotePath).start();</span>
+        }
+<span class="nc" id="L32">    }</span>
+
+    @Override
+    public String detectProgramPath(String programName, String directoryName) {
+<span class="nc" id="L36">        String progFiles = System.getenv(&quot;ProgramFiles(x86)&quot;);</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        if (progFiles == null) {</span>
+<span class="nc" id="L38">            progFiles = System.getenv(&quot;ProgramFiles&quot;);</span>
+        }
+<span class="nc bnc" id="L40" title="All 4 branches missed.">        if ((directoryName != null) &amp;&amp; !directoryName.isEmpty()) {</span>
+<span class="nc" id="L41">            return Paths.get(progFiles, directoryName, programName + DEFAULT_EXECUTABLE_EXTENSION).toString();</span>
+        }
+<span class="nc" id="L43">        return Paths.get(progFiles, programName + DEFAULT_EXECUTABLE_EXTENSION).toString();</span>
+    }
+
+    @Override
+    public Path getApplicationDirectory() {
+<span class="nc" id="L48">        String programDir = System.getenv(&quot;ProgramFiles&quot;);</span>
+
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        if (programDir != null) {</span>
+<span class="nc" id="L51">            return Paths.get(programDir);</span>
+        }
+<span class="nc" id="L53">        return getUserDirectory();</span>
+    }
+
+    @Override
+    public void openFileWithApplication(String filePath, String application) throws IOException {
+<span class="nc" id="L58">        new ProcessBuilder(Paths.get(application).toString(), Paths.get(filePath).toString()).start();</span>
+<span class="nc" id="L59">    }</span>
+
+    @Override
+    public void openFolderAndSelectFile(Path filePath) throws IOException {
+<span class="nc" id="L63">        new ProcessBuilder(&quot;explorer.exe&quot;, &quot;/select,&quot;, filePath.toString()).start();</span>
+<span class="nc" id="L64">    }</span>
+
+    @Override
+    public void openConsole(String absolutePath) throws IOException {
+<span class="nc" id="L68">        ProcessBuilder process = new ProcessBuilder(&quot;cmd.exe&quot;, &quot;/c&quot;, &quot;start&quot;);</span>
+<span class="nc" id="L69">        process.directory(new File(absolutePath));</span>
+<span class="nc" id="L70">        process.start();</span>
+<span class="nc" id="L71">    }</span>
+
+    @Override
+    public void openPdfWithParameters(String filePath, List&lt;String&gt; parameters) throws IOException {
+<span class="nc" id="L75">        String pdfReaderPath = JabRefPreferences.getInstance().get(USE_PDF_READER);</span>
+<span class="nc bnc" id="L76" title="All 4 branches missed.">        if (pdfReaderPath.equals(SUMATRA_PDF_COMMAND) || pdfReaderPath.equals(ADOBE_ACROBAT_COMMAND)) {</span>
+<span class="nc" id="L77">            String[] command = new String[parameters.size() + 2];</span>
+<span class="nc" id="L78">            command[0] = &quot;\&quot;&quot; + Paths.get(pdfReaderPath).toString() + &quot;\&quot;&quot;;</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            for (int i = 1; i &lt; command.length - 1; i++) {</span>
+<span class="nc" id="L80">                command[i] = &quot;\&quot;&quot; + parameters.get(i - 1) + &quot;\&quot;&quot;;</span>
+            }
+<span class="nc" id="L82">            command[command.length - 1] = &quot;\&quot;&quot; + filePath + &quot;\&quot;&quot;;</span>
+<span class="nc" id="L83">            new ProcessBuilder(command).start();</span>
+<span class="nc" id="L84">        } else {</span>
+<span class="nc" id="L85">            openFile(filePath, &quot;PDF&quot;);</span>
+        }
+<span class="nc" id="L87">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

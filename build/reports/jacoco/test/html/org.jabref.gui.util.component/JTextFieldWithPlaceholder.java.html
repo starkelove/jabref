@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JTextFieldWithPlaceholder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util.component</a> &gt; <span class="el_source">JTextFieldWithPlaceholder.java</span></div><h1>JTextFieldWithPlaceholder.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util.component;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+
+import javax.swing.JTextField;
+import javax.swing.UIManager;
+
+/**
+ * A text field which displays a predefined text (e.g. &quot;Search&quot;) if the text field is empty.
+ * This is similar to a html5 input element with a defined placeholder attribute.
+ * Implementation based on https://gmigdos.wordpress.com/2010/03/30/java-a-custom-jtextfield-for-searching/
+ */
+public class JTextFieldWithPlaceholder extends JTextField implements KeyListener {
+
+    private final String textWhenNotFocused;
+
+    /**
+     * Additionally to {@link JTextFieldWithPlaceholder#JTextFieldWithPlaceholder(String)}
+     * this also sets the initial text of the text field component.
+     *
+     * @param content as the text of the textfield
+     * @param placeholder as the placeholder of the textfield
+     */
+    public JTextFieldWithPlaceholder(String content, String placeholder) {
+<span class="nc" id="L31">        this(placeholder);</span>
+<span class="nc" id="L32">        setText(content);</span>
+<span class="nc" id="L33">    }</span>
+
+    /**
+     * This will create a {@link JTextField} with a placeholder text. The placeholder
+     * will always be displayed if the text of the {@link JTextField} is empty.
+     *
+     * @param placeholder as the placeholder of the textfield
+     */
+    public JTextFieldWithPlaceholder(String placeholder) {
+<span class="nc" id="L42">        super();</span>
+<span class="nc" id="L43">        this.setEditable(true);</span>
+<span class="nc" id="L44">        this.setText(&quot;&quot;);</span>
+<span class="nc" id="L45">        this.textWhenNotFocused = placeholder;</span>
+<span class="nc" id="L46">    }</span>
+
+    @Override
+    protected void paintComponent(Graphics graphics) {
+<span class="nc" id="L50">        super.paintComponent(graphics);</span>
+
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (this.getText().isEmpty()) {</span>
+<span class="nc" id="L53">            int height = this.getHeight();</span>
+<span class="nc" id="L54">            Font prev = graphics.getFont();</span>
+<span class="nc" id="L55">            Color prevColor = graphics.getColor();</span>
+<span class="nc" id="L56">            graphics.setColor(UIManager.getColor(&quot;textInactiveText&quot;));</span>
+<span class="nc" id="L57">            int textHeight = graphics.getFontMetrics().getHeight();</span>
+<span class="nc" id="L58">            int textBottom = (((height - textHeight) / 2) + textHeight) - 4;</span>
+<span class="nc" id="L59">            int x = this.getInsets().left;</span>
+<span class="nc" id="L60">            Graphics2D g2d = (Graphics2D) graphics;</span>
+<span class="nc" id="L61">            RenderingHints hints = g2d.getRenderingHints();</span>
+<span class="nc" id="L62">            g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);</span>
+<span class="nc" id="L63">            g2d.drawString(textWhenNotFocused, x, textBottom);</span>
+<span class="nc" id="L64">            g2d.setRenderingHints(hints);</span>
+<span class="nc" id="L65">            graphics.setFont(prev);</span>
+<span class="nc" id="L66">            graphics.setColor(prevColor);</span>
+        }
+<span class="nc" id="L68">    }</span>
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (this.getText().isEmpty()) {</span>
+<span class="nc" id="L73">            this.repaint();</span>
+        }
+<span class="nc" id="L75">    }</span>
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (this.getText().isEmpty()) {</span>
+<span class="nc" id="L80">            this.repaint();</span>
+        }
+<span class="nc" id="L82">    }</span>
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (this.getText().isEmpty()) {</span>
+<span class="nc" id="L87">            this.repaint();</span>
+        }
+<span class="nc" id="L89">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

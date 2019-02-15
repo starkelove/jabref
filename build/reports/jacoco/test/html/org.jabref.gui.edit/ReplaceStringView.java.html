@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReplaceStringView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.edit</a> &gt; <span class="el_source">ReplaceStringView.java</span></div><h1>ReplaceStringView.java</h1><pre class="source lang-java linenums">package org.jabref.gui.edit;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.TextField;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.util.BaseDialog;
+import org.jabref.gui.util.ControlHelper;
+import org.jabref.gui.util.IconValidationDecorator;
+import org.jabref.logic.l10n.Localization;
+
+import com.airhacks.afterburner.views.ViewLoader;
+import de.saxsys.mvvmfx.utils.validation.visualization.ControlsFxVisualizer;
+
+public class ReplaceStringView extends BaseDialog&lt;Void&gt;
+{
+
+    @FXML private RadioButton allReplace;
+    @FXML private CheckBox selectFieldOnly;
+    @FXML private ButtonType replaceButton;
+    @FXML private TextField limitFieldInput;
+    @FXML private TextField findField;
+    @FXML private TextField replaceField;
+
+    private ReplaceStringViewModel viewModel;
+
+<span class="nc" id="L30">    private final ControlsFxVisualizer visualizer = new ControlsFxVisualizer();</span>
+
+<span class="nc" id="L32">    public ReplaceStringView(BasePanel basePanel)  {</span>
+<span class="nc" id="L33">        this.setTitle(Localization.lang(&quot;Replace String&quot;));</span>
+
+<span class="nc" id="L35">        viewModel = new ReplaceStringViewModel(basePanel);</span>
+
+<span class="nc" id="L37">        ViewLoader.view(this)</span>
+<span class="nc" id="L38">                  .load()</span>
+<span class="nc" id="L39">                  .setAsDialogPane(this);</span>
+
+<span class="nc" id="L41">        ControlHelper.setAction(replaceButton, getDialogPane(), event -&gt; buttonReplace());</span>
+<span class="nc" id="L42">    }</span>
+
+    @FXML
+    public void initialize() {
+<span class="nc" id="L46">        visualizer.setDecoration(new IconValidationDecorator());</span>
+
+<span class="nc" id="L48">        viewModel.findStringProperty().bind(findField.textProperty());</span>
+<span class="nc" id="L49">        viewModel.replaceStringProperty().bind(replaceField.textProperty());</span>
+<span class="nc" id="L50">        viewModel.fieldStringProperty().bind(limitFieldInput.textProperty());</span>
+<span class="nc" id="L51">        viewModel.selectOnlyProperty().bind(selectFieldOnly.selectedProperty());</span>
+<span class="nc" id="L52">        viewModel.allFieldReplaceProperty().bind(allReplace.selectedProperty());</span>
+<span class="nc" id="L53">    }</span>
+
+    @FXML
+    private void buttonReplace() {
+<span class="nc" id="L57">        String findString = findField.getText();</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (&quot;&quot;.equals(findString))</span>
+        {
+<span class="nc" id="L60">            this.close();</span>
+<span class="nc" id="L61">            return;</span>
+        }
+<span class="nc" id="L63">        viewModel.replace();</span>
+<span class="nc" id="L64">        this.close();</span>
+<span class="nc" id="L65">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

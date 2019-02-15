@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KeyBindingRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.keyboard</a> &gt; <span class="el_source">KeyBindingRepository.java</span></div><h1>KeyBindingRepository.java</h1><pre class="source lang-java linenums">package org.jabref.gui.keyboard;
+
+import java.awt.AWTError;
+import java.awt.HeadlessException;
+import java.awt.Toolkit;
+import java.awt.event.InputEvent;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+import javax.swing.KeyStroke;
+
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
+
+import org.jabref.logic.util.OS;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class KeyBindingRepository {
+
+<span class="fc" id="L30">    private static final Logger LOGGER = LoggerFactory.getLogger(KeyBindingRepository.class);</span>
+    /**
+     * sorted by localization
+     */
+    private final SortedMap&lt;KeyBinding, String&gt; bindings;
+<span class="fc" id="L35">    private int shortcutMask = -1;</span>
+
+    public KeyBindingRepository() {
+<span class="fc" id="L38">        this(Collections.emptyList(), Collections.emptyList());</span>
+<span class="fc" id="L39">    }</span>
+
+<span class="fc" id="L41">    public KeyBindingRepository(List&lt;String&gt; bindNames, List&lt;String&gt; bindings) {</span>
+<span class="fc" id="L42">        this.bindings = new TreeMap&lt;&gt;(Comparator.comparing(KeyBinding::getLocalization));</span>
+
+<span class="pc bpc" id="L44" title="5 of 6 branches missed.">        if ((bindNames.isEmpty()) || (bindings.isEmpty()) || (bindNames.size() != bindings.size())) {</span>
+            // Use default key bindings
+<span class="fc bfc" id="L46" title="All 2 branches covered.">            for (KeyBinding keyBinding : KeyBinding.values()) {</span>
+<span class="fc" id="L47">                put(keyBinding, keyBinding.getDefaultKeyBinding());</span>
+            }
+        } else {
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            for (int i = 0; i &lt; bindNames.size(); i++) {</span>
+<span class="nc" id="L51">                put(bindNames.get(i), bindings.get(i));</span>
+            }
+        }
+<span class="fc" id="L54">    }</span>
+
+    /**
+     * Check if the given keyCombination equals the given keyEvent
+     *
+     * @param combination as KeyCombination
+     * @param keyEvent    as KeEvent
+     * @return true if matching, else false
+     */
+    public static boolean checkKeyCombinationEquality(KeyCombination combination, KeyEvent keyEvent) {
+<span class="fc" id="L64">        KeyCode code = keyEvent.getCode();</span>
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        if (code == KeyCode.UNDEFINED) {</span>
+<span class="nc" id="L66">            return false;</span>
+        }
+
+<span class="fc" id="L69">        return combination.match(keyEvent);</span>
+    }
+
+    public Optional&lt;String&gt; get(KeyBinding key) {
+<span class="fc" id="L73">        return Optional.ofNullable(bindings.get(key));</span>
+    }
+
+    public String get(String key) {
+<span class="fc" id="L77">        Optional&lt;KeyBinding&gt; keyBinding = getKeyBinding(key);</span>
+<span class="fc" id="L78">        Optional&lt;String&gt; result = keyBinding.flatMap(k -&gt; Optional.ofNullable(bindings.get(k)));</span>
+
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        if (result.isPresent()) {</span>
+<span class="fc" id="L81">            return result.get();</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        } else if (keyBinding.isPresent()) {</span>
+<span class="nc" id="L83">            return keyBinding.get().getDefaultKeyBinding();</span>
+        } else {
+<span class="nc" id="L85">            return &quot;Not associated&quot;;</span>
+        }
+    }
+
+    /**
+     * Returns the HashMap containing all key bindings.
+     */
+    public SortedMap&lt;KeyBinding, String&gt; getKeyBindings() {
+<span class="fc" id="L93">        return new TreeMap&lt;&gt;(bindings);</span>
+    }
+
+    public void put(KeyBinding key, String value) {
+<span class="fc" id="L97">        bindings.put(key, value);</span>
+<span class="fc" id="L98">    }</span>
+
+    public void put(String key, String value) {
+<span class="nc" id="L101">        getKeyBinding(key).ifPresent(binding -&gt; put(binding, value));</span>
+<span class="nc" id="L102">    }</span>
+
+    private Optional&lt;KeyBinding&gt; getKeyBinding(String key) {
+<span class="fc" id="L105">        return Arrays.stream(KeyBinding.values()).filter(b -&gt; b.getConstant().equals(key)).findFirst();</span>
+    }
+
+    public void resetToDefault(String key) {
+<span class="nc" id="L109">        getKeyBinding(key).ifPresent(b -&gt; bindings.put(b, b.getDefaultKeyBinding()));</span>
+<span class="nc" id="L110">    }</span>
+
+    public void resetToDefault() {
+<span class="nc" id="L113">        bindings.forEach((b, s) -&gt; bindings.put(b, b.getDefaultKeyBinding()));</span>
+<span class="nc" id="L114">    }</span>
+
+    public int size() {
+<span class="nc" id="L117">        return this.bindings.size();</span>
+    }
+
+    public Optional&lt;KeyBinding&gt; mapToKeyBinding(KeyEvent keyEvent) {
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        for (KeyBinding binding : KeyBinding.values()) {</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            if (checkKeyCombinationEquality(binding, keyEvent)) {</span>
+<span class="nc" id="L123">                return Optional.of(binding);</span>
+            }
+        }
+<span class="nc" id="L126">        return Optional.empty();</span>
+    }
+
+    public Optional&lt;KeyBinding&gt; mapToKeyBinding(java.awt.event.KeyEvent keyEvent) {
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        Optional&lt;KeyCode&gt; keyCode = Arrays.stream(KeyCode.values()).filter(k -&gt; k.impl_getCode() == keyEvent.getKeyCode()).findFirst();</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        if (keyCode.isPresent()) {</span>
+<span class="nc" id="L132">            KeyEvent event = new KeyEvent(keyEvent.getSource(), null, KeyEvent.KEY_PRESSED, &quot;&quot;, &quot;&quot;, keyCode.get(), keyEvent.isShiftDown(), keyEvent.isControlDown(), keyEvent.isAltDown(), keyEvent.isMetaDown());</span>
+<span class="nc" id="L133">            return mapToKeyBinding(event);</span>
+
+        }
+
+<span class="nc" id="L137">        return Optional.empty();</span>
+
+    }
+
+    /**
+     * Returns the KeyStroke for this binding, as defined by the defaults, or in the Preferences.
+     */
+    public KeyStroke getKey(KeyBinding bindName) {
+<span class="nc" id="L145">        String s = get(bindName.getConstant());</span>
+<span class="nc" id="L146">        s = s.replace(&quot;+&quot;, &quot; &quot;); //swing needs the keys without pluses but whitespace between the modifiers</span>
+
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        if (OS.OS_X) {</span>
+<span class="nc" id="L149">            return getKeyForMac(KeyStroke.getKeyStroke(s));</span>
+        } else {
+<span class="nc" id="L151">            return KeyStroke.getKeyStroke(s);</span>
+        }
+    }
+
+    public KeyCombination getKeyCombination(KeyBinding bindName) {
+<span class="fc" id="L156">        String binding = get(bindName.getConstant());</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (OS.OS_X) {</span>
+<span class="fc" id="L158">            binding = binding.replace(&quot;ctrl&quot;, &quot;meta&quot;);</span>
+        }
+
+<span class="fc" id="L161">        return KeyCombination.valueOf(binding);</span>
+    }
+
+    /**
+     * Check if the given KeyBinding equals the given keyEvent
+     *
+     * @param binding as KeyBinding
+     * @param keyEvent as KeEvent
+     * @return true if matching, else false
+     */
+    public boolean checkKeyCombinationEquality(KeyBinding binding, KeyEvent keyEvent) {
+<span class="fc" id="L172">        KeyCombination keyCombination = getKeyCombination(binding);</span>
+<span class="fc" id="L173">        return checkKeyCombinationEquality(keyCombination, keyEvent);</span>
+    }
+
+    /**
+     * Returns the KeyStroke for this binding, as defined by the defaults, or in the Preferences, but adapted for Mac
+     * users, with the Command key preferred instead of Control.
+     * TODO: Move to OS.java? Or replace with portable Java key codes, i.e. KeyEvent
+     */
+    private KeyStroke getKeyForMac(KeyStroke ks) {
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if (ks == null) {</span>
+<span class="nc" id="L183">            return null;</span>
+        }
+<span class="nc" id="L185">        int keyCode = ks.getKeyCode();</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        if ((ks.getModifiers() &amp; InputEvent.CTRL_MASK) == 0) {</span>
+<span class="nc" id="L187">            return ks;</span>
+        } else {
+<span class="nc" id="L189">            int modifiers = 0;</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">            if ((ks.getModifiers() &amp; InputEvent.SHIFT_MASK) != 0) {</span>
+<span class="nc" id="L191">                modifiers = modifiers | InputEvent.SHIFT_MASK;</span>
+            }
+<span class="nc bnc" id="L193" title="All 2 branches missed.">            if ((ks.getModifiers() &amp; InputEvent.ALT_MASK) != 0) {</span>
+<span class="nc" id="L194">                modifiers = modifiers | InputEvent.ALT_MASK;</span>
+            }
+
+<span class="nc bnc" id="L197" title="All 2 branches missed.">            if (shortcutMask == -1) {</span>
+                try {
+<span class="nc" id="L199">                    shortcutMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();</span>
+<span class="nc" id="L200">                } catch (AWTError | HeadlessException e) {</span>
+<span class="nc" id="L201">                    LOGGER.warn(&quot;Problem geting shortcut mask&quot;, e);</span>
+<span class="nc" id="L202">                }</span>
+            }
+
+<span class="nc" id="L205">            return KeyStroke.getKeyStroke(keyCode, shortcutMask + modifiers);</span>
+        }
+    }
+
+    public List&lt;String&gt; getBindNames() {
+<span class="nc" id="L210">        return bindings.keySet().stream().map(KeyBinding::getConstant).collect(Collectors.toList());</span>
+    }
+
+    public List&lt;String&gt; getBindings() {
+<span class="nc" id="L214">        return new ArrayList&lt;&gt;(bindings.values());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

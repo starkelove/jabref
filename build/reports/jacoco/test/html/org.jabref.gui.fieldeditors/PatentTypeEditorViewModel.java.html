@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PatentTypeEditorViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.fieldeditors</a> &gt; <span class="el_source">PatentTypeEditorViewModel.java</span></div><h1>PatentTypeEditorViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.fieldeditors;
+
+import org.jabref.gui.autocompleter.AutoCompleteSuggestionProvider;
+import org.jabref.logic.integrity.FieldCheckers;
+import org.jabref.logic.l10n.Localization;
+
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+
+public class PatentTypeEditorViewModel extends MapBasedEditorViewModel&lt;String&gt; {
+
+<span class="nc" id="L12">    private BiMap&lt;String, String&gt; itemMap = HashBiMap.create(12);</span>
+
+    public PatentTypeEditorViewModel(String fieldName, AutoCompleteSuggestionProvider&lt;?&gt; suggestionProvider, FieldCheckers fieldCheckers) {
+<span class="nc" id="L15">        super(fieldName, suggestionProvider, fieldCheckers);</span>
+
+<span class="nc" id="L17">        itemMap.put(&quot;patent&quot;, Localization.lang(&quot;Patent&quot;));</span>
+<span class="nc" id="L18">        itemMap.put(&quot;patentde&quot;, Localization.lang(&quot;German patent&quot;));</span>
+<span class="nc" id="L19">        itemMap.put(&quot;patenteu&quot;, Localization.lang(&quot;European patent&quot;));</span>
+<span class="nc" id="L20">        itemMap.put(&quot;patentfr&quot;, Localization.lang(&quot;French patent&quot;));</span>
+<span class="nc" id="L21">        itemMap.put(&quot;patentuk&quot;, Localization.lang(&quot;British patent&quot;));</span>
+<span class="nc" id="L22">        itemMap.put(&quot;patentus&quot;, Localization.lang(&quot;U.S. patent&quot;));</span>
+<span class="nc" id="L23">        itemMap.put(&quot;patreq&quot;, Localization.lang(&quot;Patent request&quot;));</span>
+<span class="nc" id="L24">        itemMap.put(&quot;patreqde&quot;, Localization.lang(&quot;German patent request&quot;));</span>
+<span class="nc" id="L25">        itemMap.put(&quot;patreqeu&quot;, Localization.lang(&quot;European patent request&quot;));</span>
+<span class="nc" id="L26">        itemMap.put(&quot;patreqfr&quot;, Localization.lang(&quot;French patent request&quot;));</span>
+<span class="nc" id="L27">        itemMap.put(&quot;patrequk&quot;, Localization.lang(&quot;British patent request&quot;));</span>
+<span class="nc" id="L28">        itemMap.put(&quot;patrequs&quot;, Localization.lang(&quot;U.S. patent request&quot;));</span>
+<span class="nc" id="L29">    }</span>
+
+    @Override
+    protected BiMap&lt;String, String&gt; getItemMap() {
+<span class="nc" id="L33">        return itemMap;</span>
+    }
+
+    @Override
+    public String convertToDisplayText(String object) {
+<span class="nc" id="L38">        return object;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RepecNepImporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fileformat</a> &gt; <span class="el_source">RepecNepImporter.java</span></div><h1>RepecNepImporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fileformat;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.Importer;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.Date;
+import org.jabref.model.entry.FieldName;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Imports a New Economics Papers-Message from the REPEC-NEP Service.
+ * &lt;p&gt;
+ * &lt;p&gt;&lt;a href=&quot;http://www.repec.org&quot;&gt;RePEc (Research Papers in Economics)&lt;/a&gt;
+ * is a collaborative effort of over 100 volunteers in 49 countries
+ * to enhance the dissemination of research in economics. The heart of
+ * the project is a decentralized database of working papers, journal
+ * articles and software components. All RePEc material is freely available.&lt;/p&gt;
+ * At the time of writing RePEc holds over 300.000 items.&lt;/p&gt;
+ * &lt;p&gt;
+ * &lt;p&gt;&lt;a href=&quot;http://nep.repec.org&quot;&gt;NEP (New Economic Papers)&lt;/a&gt; is an announcement
+ * service which filters information on new additions to RePEc into edited
+ * reports. The goal is to provide subscribers with up-to-date information
+ * to the research literature.&lt;/p&gt;
+ * &lt;p&gt;
+ * &lt;p&gt;This importer is capable of importing NEP messages into JabRef.&lt;/p&gt;
+ * &lt;p&gt;
+ * &lt;p&gt;There is no officially defined message format for NEP. NEP messages are assumed to have
+ * (and almost always have) the form given by the following semi-formal grammar:
+ * &lt;pre&gt;
+ * NEPMessage:
+ *       MessageSection NEPMessage
+ *       MessageSection
+ *
+ * MessageSection:
+ *       OverviewMessageSection
+ *       OtherMessageSection
+ *
+ * # we skip the overview
+ * OverviewMessageSection:
+ *       'In this issue we have: ' SectionSeparator OtherStuff
+ *
+ * OtherMessageSection:
+ *       SectionSeparator  OtherMessageSectionContent
+ *
+ * # we skip other stuff and read only full working paper references
+ * OtherMessageSectionContent:
+ *       WorkingPaper EmptyLine OtherMessageSectionContent
+ *       OtherStuff EmptyLine OtherMessageSectionContent
+ *       ''
+ *
+ * OtherStuff:
+ *       NonEmptyLine OtherStuff
+ *       NonEmptyLine
+ *
+ * NonEmptyLine:
+ *       a non-empty String that does not start with a number followed by a '.'
+ *
+ * # working papers are recognized by a number followed by a '.'
+ * # in a non-overview section
+ * WorkingPaper:
+ *       Number'.' WhiteSpace TitleString EmptyLine Authors EmptyLine Abstract AdditionalFields
+ *       Number'.' WhiteSpace TitleString AdditionalFields Abstract AdditionalFields
+ *
+ * TitleString:
+ *       a String that may span several lines and should be joined
+ *
+ * # there must be at least one author
+ * Authors:
+ *       Author '\n' Authors
+ *       Author '\n'
+ *
+ * # optionally, an institution is given for an author
+ * Author:
+ *       AuthorName
+ *       AuthorName '(' Institution ')'
+ *
+ * # there are no rules about the name, it may be firstname lastname or lastname, firstname or anything else
+ * AuthorName:
+ *       a non-empty String without '(' or ')' characters, not spanning more that one line
+ *
+ * Institution:
+ *       a non-empty String that may span several lines
+ *
+ * Abstract:
+ *       a (possibly empty) String that may span several lines
+ *
+ * AdditionalFields:
+ *       AdditionalField '\n' AdditionalFields
+ *       EmptyLine AdditionalFields
+ *       ''
+ *
+ * AdditionalField:
+ *       'Keywords:' KeywordList
+ *       'URL:' non-empty String
+ *       'Date:' DateString
+ *       'JEL:' JelClassificationList
+ *       'By': Authors
+ *
+ * KeywordList:
+ *        Keyword ',' KeywordList
+ *        Keyword ';' KeywordList
+ *        Keyword
+ *
+ * Keyword:
+ *        non-empty String that does not contain ',' (may contain whitespace)
+ *
+ * # if no date is given, the current year as given by the system clock is assumed
+ * DateString:
+ *        'yyyy-MM-dd'
+ *        'yyyy-MM'
+ *        'yyyy'
+ *
+ * JelClassificationList:
+ *        JelClassification JelClassificationList
+ *        JelClassification
+ *
+ * # the JEL Classifications are set into a new BIBTEX-field 'jel'
+ * # they will appear if you add it as a field to one of the BIBTex Entry sections
+ * JelClassification:
+ *        one of the allowed classes, see http://ideas.repec.org/j/
+ *
+ * SectionSeparator:
+ *       '\n-----------------------------'
+ * &lt;/pre&gt;
+ * &lt;/p&gt;
+ */
+public class RepecNepImporter extends Importer {
+
+<span class="fc" id="L141">    private static final Logger LOGGER = LoggerFactory.getLogger(RepecNepImporter.class);</span>
+
+<span class="fc" id="L143">    private static final Collection&lt;String&gt; RECOGNIZED_FIELDS = Arrays.asList(&quot;Keywords&quot;, &quot;JEL&quot;, &quot;Date&quot;, &quot;URL&quot;, &quot;By&quot;);</span>
+    private final ImportFormatPreferences importFormatPreferences;
+    private int line;
+<span class="fc" id="L146">    private String lastLine = &quot;&quot;;</span>
+<span class="fc" id="L147">    private String preLine = &quot;&quot;;</span>
+    private boolean inOverviewSection;
+
+
+<span class="fc" id="L151">    public RepecNepImporter(ImportFormatPreferences importFormatPreferences) {</span>
+<span class="fc" id="L152">        this.importFormatPreferences = importFormatPreferences;</span>
+<span class="fc" id="L153">    }</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L157">        return &quot;REPEC New Economic Papers (NEP)&quot;;</span>
+    }
+
+    @Override
+    public String getId() {
+<span class="fc" id="L162">        return &quot;repecnep&quot;;</span>
+    }
+
+    @Override
+    public StandardFileType getFileType() {
+<span class="fc" id="L167">        return StandardFileType.TXT;</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L172">        return &quot;Imports a New Economics Papers-Message from the REPEC-NEP Service.&quot;;</span>
+    }
+
+    @Override
+    public boolean isRecognizedFormat(BufferedReader reader) throws IOException {
+        // read the first couple of lines
+        // NEP message usually contain the String 'NEP: New Economics Papers'
+        // or, they are from nep.repec.org
+<span class="fc" id="L180">        StringBuilder startOfMessage = new StringBuilder();</span>
+<span class="fc" id="L181">        String tmpLine = reader.readLine();</span>
+<span class="fc bfc" id="L182" title="All 4 branches covered.">        for (int i = 0; (i &lt; 25) &amp;&amp; (tmpLine != null); i++) {</span>
+<span class="fc" id="L183">            startOfMessage.append(tmpLine);</span>
+<span class="fc" id="L184">            tmpLine = reader.readLine();</span>
+        }
+<span class="fc bfc" id="L186" title="All 4 branches covered.">        return startOfMessage.toString().contains(&quot;NEP: New Economics Papers&quot;) || startOfMessage.toString().contains(</span>
+                &quot;nep.repec.org&quot;);
+    }
+
+    private boolean startsWithKeyword(Collection&lt;String&gt; keywords) {
+<span class="fc bfc" id="L191" title="All 2 branches covered.">        boolean result = this.lastLine.indexOf(':') &gt;= 1;</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        if (result) {</span>
+<span class="fc" id="L193">            String possibleKeyword = this.lastLine.substring(0, this.lastLine.indexOf(':'));</span>
+<span class="fc" id="L194">            result = keywords.contains(possibleKeyword);</span>
+        }
+<span class="fc" id="L196">        return result;</span>
+    }
+
+    private void readLine(BufferedReader in) throws IOException {
+<span class="fc" id="L200">        this.line++;</span>
+<span class="fc" id="L201">        this.preLine = this.lastLine;</span>
+<span class="fc" id="L202">        this.lastLine = in.readLine();</span>
+<span class="fc" id="L203">    }</span>
+
+    /**
+     * Read multiple lines.
+     * &lt;p&gt;
+     * &lt;p&gt;Reads multiple lines until either
+     * &lt;ul&gt;
+     * &lt;li&gt;an empty line&lt;/li&gt;
+     * &lt;li&gt;the end of file&lt;/li&gt;
+     * &lt;li&gt;the next working paper or&lt;/li&gt;
+     * &lt;li&gt;a keyword&lt;/li&gt;
+     * &lt;/ul&gt;
+     * is found. Whitespace at start or end of lines is trimmed except for one blank character.&lt;/p&gt;
+     *
+     * @return result
+     */
+    private String readMultipleLines(BufferedReader in) throws IOException {
+<span class="fc" id="L220">        StringBuilder result = new StringBuilder(this.lastLine.trim());</span>
+<span class="fc" id="L221">        readLine(in);</span>
+<span class="pc bpc" id="L222" title="4 of 8 branches missed.">        while ((this.lastLine != null) &amp;&amp; !&quot;&quot;.equals(this.lastLine.trim()) &amp;&amp; !startsWithKeyword(RepecNepImporter.RECOGNIZED_FIELDS) &amp;&amp; !isStartOfWorkingPaper()) {</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">            result.append(this.lastLine.isEmpty() ? this.lastLine.trim() : &quot; &quot; + this.lastLine.trim());</span>
+<span class="nc" id="L224">            readLine(in);</span>
+        }
+<span class="fc" id="L226">        return result.toString();</span>
+    }
+
+    /**
+     * Implements grammar rule &quot;TitleString&quot;.
+     *
+     * @param be
+     * @throws IOException
+     */
+    private void parseTitleString(BibEntry be, BufferedReader in) throws IOException {
+        // skip article number
+<span class="fc" id="L237">        this.lastLine = this.lastLine.substring(this.lastLine.indexOf('.') + 1, this.lastLine.length());</span>
+<span class="fc" id="L238">        be.setField(FieldName.TITLE, readMultipleLines(in));</span>
+<span class="fc" id="L239">    }</span>
+
+    /**
+     * Implements grammar rule &quot;Authors&quot;
+     *
+     * @param be
+     * @throws IOException
+     */
+    private void parseAuthors(BibEntry be, BufferedReader in) throws IOException {
+        // read authors and institutions
+<span class="fc" id="L249">        List&lt;String&gt; authors = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L250">        StringBuilder institutions = new StringBuilder();</span>
+<span class="pc bpc" id="L251" title="1 of 6 branches missed.">        while ((this.lastLine != null) &amp;&amp; !&quot;&quot;.equals(this.lastLine) &amp;&amp; !startsWithKeyword(RepecNepImporter.RECOGNIZED_FIELDS)) {</span>
+
+            // read single author
+            String author;
+<span class="fc" id="L255">            StringBuilder institution = new StringBuilder();</span>
+            boolean institutionDone;
+<span class="fc bfc" id="L257" title="All 2 branches covered.">            if (this.lastLine.indexOf('(') &gt;= 0) {</span>
+<span class="fc" id="L258">                author = this.lastLine.substring(0, this.lastLine.indexOf('(')).trim();</span>
+<span class="pc bpc" id="L259" title="1 of 2 branches missed.">                institutionDone = this.lastLine.indexOf(')') &gt;= 1;</span>
+<span class="fc" id="L260">                institution</span>
+<span class="pc bpc" id="L261" title="1 of 2 branches missed.">                        .append(this.lastLine.substring(this.lastLine.indexOf('(') + 1,</span>
+                                institutionDone &amp;&amp; (this.lastLine
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">                                        .indexOf(')') &gt; (this.lastLine.indexOf('(') + 1)) ? this.lastLine</span>
+<span class="pc" id="L264">                                        .indexOf(')') : this.lastLine.length())</span>
+<span class="fc" id="L265">                                .trim());</span>
+            } else {
+<span class="fc" id="L267">                author = this.lastLine.substring(0, this.lastLine.length()).trim();</span>
+<span class="fc" id="L268">                institutionDone = true;</span>
+            }
+
+<span class="fc" id="L271">            readLine(in);</span>
+<span class="pc bpc" id="L272" title="3 of 4 branches missed.">            while (!institutionDone &amp;&amp; (this.lastLine != null)) {</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">                institutionDone = this.lastLine.indexOf(')') &gt;= 1;</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">                institution.append(this.lastLine</span>
+<span class="nc" id="L275">                        .substring(0, institutionDone ? this.lastLine.indexOf(')') : this.lastLine.length()).trim());</span>
+<span class="nc" id="L276">                readLine(in);</span>
+            }
+
+<span class="fc" id="L279">            authors.add(author);</span>
+
+<span class="fc bfc" id="L281" title="All 2 branches covered.">            if (institution.length() &gt; 0) {</span>
+<span class="fc" id="L282">                institutions.append(</span>
+<span class="fc bfc" id="L283" title="All 2 branches covered.">                        (institutions.length() == 0) ? institution.toString() : &quot; and &quot; + institution.toString());</span>
+            }
+<span class="fc" id="L285">        }</span>
+
+<span class="fc bfc" id="L287" title="All 2 branches covered.">        if (!authors.isEmpty()) {</span>
+<span class="fc" id="L288">            be.setField(FieldName.AUTHOR, String.join(&quot; and &quot;, authors));</span>
+        }
+<span class="fc bfc" id="L290" title="All 2 branches covered.">        if (institutions.length() &gt; 0) {</span>
+<span class="fc" id="L291">            be.setField(FieldName.INSTITUTION, institutions.toString());</span>
+        }
+<span class="fc" id="L293">    }</span>
+
+    /**
+     * Implements grammar rule &quot;Abstract&quot;.
+     *
+     * @param be
+     * @throws IOException
+     */
+    private void parseAbstract(BibEntry be, BufferedReader in) throws IOException {
+<span class="fc" id="L302">        String theabstract = readMultipleLines(in);</span>
+
+<span class="pc bpc" id="L304" title="1 of 2 branches missed.">        if (!&quot;&quot;.equals(theabstract)) {</span>
+<span class="fc" id="L305">            be.setField(FieldName.ABSTRACT, theabstract);</span>
+        }
+<span class="fc" id="L307">    }</span>
+
+    /**
+     * Implements grammar rule &quot;AdditionalFields&quot;.
+     *
+     * @param be
+     * @throws IOException
+     */
+    private void parseAdditionalFields(BibEntry be, boolean multilineUrlFieldAllowed, BufferedReader in)
+            throws IOException {
+
+        // one empty line is possible before fields start
+<span class="pc bpc" id="L319" title="1 of 4 branches missed.">        if ((this.lastLine != null) &amp;&amp; &quot;&quot;.equals(this.lastLine.trim())) {</span>
+<span class="fc" id="L320">            readLine(in);</span>
+        }
+
+        // read other fields
+<span class="pc bpc" id="L324" title="1 of 8 branches missed.">        while ((this.lastLine != null) &amp;&amp; !isStartOfWorkingPaper() &amp;&amp; (startsWithKeyword(RepecNepImporter.RECOGNIZED_FIELDS) || &quot;&quot;.equals(this.lastLine))) {</span>
+
+            // if multiple lines for a field are allowed and field consists of multiple lines, join them
+<span class="fc bfc" id="L327" title="All 2 branches covered.">            String keyword = &quot;&quot;.equals(this.lastLine) ? &quot;&quot; : this.lastLine.substring(0, this.lastLine.indexOf(':')).trim();</span>
+            // skip keyword
+<span class="fc bfc" id="L329" title="All 2 branches covered.">            this.lastLine = &quot;&quot;.equals(this.lastLine) ? &quot;&quot; : this.lastLine.substring(this.lastLine.indexOf(':') + 1, this.lastLine.length()).trim();</span>
+
+            // parse keywords field
+<span class="fc bfc" id="L332" title="All 2 branches covered.">            if (&quot;Keywords&quot;.equals(keyword)) {</span>
+<span class="fc" id="L333">                String content = readMultipleLines(in);</span>
+<span class="fc" id="L334">                String[] keywords = content.split(&quot;[,;]&quot;);</span>
+<span class="fc" id="L335">                be.addKeywords(Arrays.asList(keywords),</span>
+<span class="fc" id="L336">                        importFormatPreferences.getKeywordSeparator());</span>
+                // parse JEL field
+<span class="fc bfc" id="L338" title="All 2 branches covered.">            } else if (&quot;JEL&quot;.equals(keyword)) {</span>
+<span class="fc" id="L339">                be.setField(&quot;jel&quot;, readMultipleLines(in));</span>
+
+<span class="fc bfc" id="L341" title="All 2 branches covered.">            } else if (keyword.startsWith(&quot;Date&quot;)) {</span>
+                // parse date field
+<span class="fc" id="L343">                String content = readMultipleLines(in);</span>
+<span class="fc" id="L344">                Date.parse(content).ifPresent(be::setDate);</span>
+                // parse URL field
+<span class="fc bfc" id="L346" title="All 2 branches covered.">            } else if (keyword.startsWith(&quot;URL&quot;)) {</span>
+                String content;
+<span class="fc bfc" id="L348" title="All 2 branches covered.">                if (multilineUrlFieldAllowed) {</span>
+<span class="fc" id="L349">                    content = readMultipleLines(in);</span>
+                } else {
+<span class="fc" id="L351">                    content = this.lastLine;</span>
+<span class="fc" id="L352">                    readLine(in);</span>
+                }
+<span class="fc" id="L354">                be.setField(FieldName.URL, content);</span>
+
+                // authors field
+<span class="fc bfc" id="L357" title="All 2 branches covered.">            } else if (keyword.startsWith(&quot;By&quot;)) {</span>
+                // parse authors
+<span class="fc" id="L359">                parseAuthors(be, in);</span>
+            } else {
+<span class="fc" id="L361">                readLine(in);</span>
+            }
+<span class="fc" id="L363">        }</span>
+<span class="fc" id="L364">    }</span>
+
+    /**
+     * if line starts with a string of the form 'x. ' and we are not in the overview
+     * section, we have a working paper entry we are interested in
+     */
+    private boolean isStartOfWorkingPaper() {
+<span class="pc bpc" id="L371" title="1 of 6 branches missed.">        return this.lastLine.matches(&quot;\\d+\\.\\s.*&quot;) &amp;&amp; !this.inOverviewSection &amp;&amp; &quot;&quot;.equals(this.preLine.trim());</span>
+    }
+
+    @Override
+    public ParserResult importDatabase(BufferedReader reader) throws IOException {
+<span class="fc" id="L376">        Objects.requireNonNull(reader);</span>
+
+<span class="fc" id="L378">        List&lt;BibEntry&gt; bibitems = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L379">        String paperNoStr = null;</span>
+<span class="fc" id="L380">        this.line = 0;</span>
+        try {
+<span class="fc" id="L382">            readLine(reader); // skip header and editor information</span>
+<span class="fc bfc" id="L383" title="All 2 branches covered.">            while (this.lastLine != null) {</span>
+
+<span class="fc bfc" id="L385" title="All 2 branches covered.">                if (this.lastLine.startsWith(&quot;-----------------------------&quot;)) {</span>
+<span class="fc" id="L386">                    this.inOverviewSection = this.preLine.startsWith(&quot;In this issue we have&quot;);</span>
+                }
+<span class="fc bfc" id="L388" title="All 2 branches covered.">                if (isStartOfWorkingPaper()) {</span>
+<span class="fc" id="L389">                    BibEntry be = new BibEntry();</span>
+<span class="fc" id="L390">                    be.setType(&quot;techreport&quot;);</span>
+<span class="fc" id="L391">                    paperNoStr = this.lastLine.substring(0, this.lastLine.indexOf('.'));</span>
+<span class="fc" id="L392">                    parseTitleString(be, reader);</span>
+<span class="fc bfc" id="L393" title="All 2 branches covered.">                    if (startsWithKeyword(RepecNepImporter.RECOGNIZED_FIELDS)) {</span>
+<span class="fc" id="L394">                        parseAdditionalFields(be, false, reader);</span>
+                    } else {
+<span class="fc" id="L396">                        readLine(reader); // skip empty line</span>
+<span class="fc" id="L397">                        parseAuthors(be, reader);</span>
+<span class="fc" id="L398">                        readLine(reader); // skip empty line</span>
+                    }
+<span class="fc bfc" id="L400" title="All 2 branches covered.">                    if (!startsWithKeyword(RepecNepImporter.RECOGNIZED_FIELDS)) {</span>
+<span class="fc" id="L401">                        parseAbstract(be, reader);</span>
+                    }
+<span class="fc" id="L403">                    parseAdditionalFields(be, true, reader);</span>
+
+<span class="fc" id="L405">                    bibitems.add(be);</span>
+<span class="fc" id="L406">                    paperNoStr = null;</span>
+
+<span class="fc" id="L408">                } else {</span>
+<span class="fc" id="L409">                    this.preLine = this.lastLine;</span>
+<span class="fc" id="L410">                    readLine(reader);</span>
+                }
+            }
+
+<span class="nc" id="L414">        } catch (Exception e) {</span>
+<span class="nc" id="L415">            String message = &quot;Error in REPEC-NEP import on line &quot; + this.line;</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">            if (paperNoStr != null) {</span>
+<span class="nc" id="L417">                message += &quot;, paper no. &quot; + paperNoStr + &quot;: &quot;;</span>
+            }
+<span class="nc" id="L419">            message += e.getLocalizedMessage();</span>
+<span class="nc" id="L420">            LOGGER.error(message, e);</span>
+<span class="nc" id="L421">            return ParserResult.fromErrorMessage(message);</span>
+<span class="fc" id="L422">        }</span>
+
+<span class="fc" id="L424">        return new ParserResult(bibitems);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

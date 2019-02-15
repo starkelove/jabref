@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenAccessDoi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fetcher</a> &gt; <span class="el_source">OpenAccessDoi.java</span></div><h1>OpenAccessDoi.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fetcher;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.logic.importer.FulltextFetcher;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.identifier.DOI;
+
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import org.json.JSONObject;
+
+/**
+ * A fulltext fetcher that uses &lt;a href=&quot;https://oadoi.org/&quot;&gt;oaDOI&lt;/a&gt;.
+ *
+ * @implSpec API is documented at http://unpaywall.org/api/v2
+ */
+<span class="fc" id="L25">public class OpenAccessDoi implements FulltextFetcher {</span>
+<span class="fc" id="L26">    private static String API_URL = &quot;https://api.oadoi.org/v2/&quot;;</span>
+
+    @Override
+    public Optional&lt;URL&gt; findFullText(BibEntry entry) throws IOException {
+<span class="fc" id="L30">        Objects.requireNonNull(entry);</span>
+
+<span class="fc" id="L32">        Optional&lt;DOI&gt; doi = entry.getField(FieldName.DOI)</span>
+<span class="fc" id="L33">                .flatMap(DOI::parse);</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        if (doi.isPresent()) {</span>
+            try {
+<span class="nc" id="L36">                return findFullText(doi.get());</span>
+<span class="nc" id="L37">            } catch (UnirestException e) {</span>
+<span class="nc" id="L38">                throw new IOException(e);</span>
+            }
+        } else {
+<span class="fc" id="L41">            return Optional.empty();</span>
+        }
+    }
+
+    @Override
+    public TrustLevel getTrustLevel() {
+<span class="nc" id="L47">        return TrustLevel.META_SEARCH;</span>
+    }
+
+    public Optional&lt;URL&gt; findFullText(DOI doi) throws UnirestException, MalformedURLException {
+<span class="nc" id="L51">        HttpResponse&lt;JsonNode&gt; jsonResponse = Unirest.get(API_URL + doi.getDOI() + &quot;?email=developers@jabref.org&quot;)</span>
+<span class="nc" id="L52">                .header(&quot;accept&quot;, &quot;application/json&quot;)</span>
+<span class="nc" id="L53">                .asJson();</span>
+<span class="nc" id="L54">        JSONObject root = jsonResponse.getBody().getObject();</span>
+<span class="nc" id="L55">        Optional&lt;String&gt; url = Optional.ofNullable(root.optJSONObject(&quot;best_oa_location&quot;))</span>
+<span class="nc" id="L56">                .map(location -&gt; location.optString(&quot;url&quot;));</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (url.isPresent()) {</span>
+<span class="nc" id="L58">            return Optional.of(new URL(url.get()));</span>
+        } else {
+<span class="nc" id="L60">            return Optional.empty();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

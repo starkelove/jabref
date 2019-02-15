@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.cli.AuxCommandLineTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:13" hostname="n184-p67.eduroam.kth.se" time="0.012">
+  <properties/>
+  <testcase name="test()" classname="org.jabref.cli.AuxCommandLineTest" time="0.012"/>
+  <system-out><![CDATA[keys in library 3
+found in AUX file 2
+resolved 2
+not found 0
+crossreferenced entries included 0
+strings included 0
+
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

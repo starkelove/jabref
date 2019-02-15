@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HtmlToLatexFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.formatter.bibtexfields</a> &gt; <span class="el_source">HtmlToLatexFormatter.java</span></div><h1>HtmlToLatexFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.formatter.bibtexfields;
+
+import java.util.Objects;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.layout.LayoutFormatter;
+import org.jabref.logic.util.strings.HTMLUnicodeConversionMaps;
+import org.jabref.model.cleanup.Formatter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+<span class="fc" id="L16">public class HtmlToLatexFormatter extends Formatter implements LayoutFormatter {</span>
+
+<span class="fc" id="L18">    private static final Logger LOGGER = LoggerFactory.getLogger(HtmlToLatexFormatter.class);</span>
+
+    private static final int MAX_TAG_LENGTH = 100;
+
+<span class="fc" id="L22">    private static final Pattern ESCAPED_PATTERN = Pattern.compile(&quot;&amp;#([x]*)([0]*)(\\p{XDigit}+);&quot;);</span>
+<span class="fc" id="L23">    private static final Pattern ESCAPED_PATTERN2 = Pattern.compile(&quot;(.)&amp;#([x]*)([0]*)(\\p{XDigit}+);&quot;);</span>
+<span class="fc" id="L24">    private static final Pattern ESCAPED_PATTERN3 = Pattern.compile(&quot;&amp;#([x]*)([0]*)(\\p{XDigit}+);&quot;);</span>
+<span class="fc" id="L25">    private static final Pattern ESCAPED_PATTERN4 = Pattern.compile(&quot;&amp;(\\w+);&quot;);</span>
+
+    @Override
+    public String format(String text) {
+<span class="fc" id="L29">        String result = Objects.requireNonNull(text);</span>
+
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        if (result.isEmpty()) {</span>
+<span class="fc" id="L32">            return result;</span>
+        }
+
+<span class="fc" id="L35">        StringBuilder sb = new StringBuilder();</span>
+        // Deal with the form &lt;sup&gt;k&lt;/sup&gt;and &lt;sub&gt;k&lt;/sub&gt;
+<span class="fc" id="L37">        result = result.replaceAll(&quot;&lt;[ ]?sup&gt;([^&lt;]+)&lt;/sup&gt;&quot;, &quot;\\\\textsuperscript\\{$1\\}&quot;);</span>
+<span class="fc" id="L38">        result = result.replaceAll(&quot;&lt;[ ]?sub&gt;([^&lt;]+)&lt;/sub&gt;&quot;, &quot;\\\\textsubscript\\{$1\\}&quot;);</span>
+
+        // TODO: maybe rewrite this based on regular expressions instead
+        // Note that (at least) the IEEE Xplore fetcher must be fixed as it relies on the current way to
+        // remove tags for its image alt-tag to equation converter
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        for (int i = 0; i &lt; result.length(); i++) {</span>
+
+<span class="fc" id="L45">            int c = result.charAt(i);</span>
+
+<span class="fc bfc" id="L47" title="All 2 branches covered.">            if (c == '&lt;') {</span>
+<span class="fc" id="L48">                i = readTag(result, i);</span>
+            } else {
+<span class="fc" id="L50">                sb.append((char) c);</span>
+            }
+
+        }
+<span class="fc" id="L54">        result = sb.toString();</span>
+
+        // Handle text based HTML entities
+<span class="fc" id="L57">        Set&lt;String&gt; patterns = HTMLUnicodeConversionMaps.HTML_LATEX_CONVERSION_MAP.keySet();</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        for (String pattern : patterns) {</span>
+<span class="fc" id="L59">            result = result.replace(pattern, HTMLUnicodeConversionMaps.HTML_LATEX_CONVERSION_MAP.get(pattern));</span>
+<span class="fc" id="L60">        }</span>
+
+        // Handle numerical HTML entities
+<span class="fc" id="L63">        Matcher m = ESCAPED_PATTERN.matcher(result);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        while (m.find()) {</span>
+<span class="fc" id="L65">            int num = Integer.decode(m.group(1).replace(&quot;x&quot;, &quot;#&quot;) + m.group(3));</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">            if (HTMLUnicodeConversionMaps.NUMERICAL_LATEX_CONVERSION_MAP.containsKey(num)) {</span>
+<span class="fc" id="L67">                result = result.replace(&quot;&amp;#&quot; + m.group(1) + m.group(2) + m.group(3) + &quot;;&quot;,</span>
+<span class="fc" id="L68">                        HTMLUnicodeConversionMaps.NUMERICAL_LATEX_CONVERSION_MAP.get(num));</span>
+            }
+<span class="fc" id="L70">        }</span>
+
+        // Combining accents
+<span class="fc" id="L73">        m = ESCAPED_PATTERN2.matcher(result);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        while (m.find()) {</span>
+<span class="fc" id="L75">            int num = Integer.decode(m.group(2).replace(&quot;x&quot;, &quot;#&quot;) + m.group(4));</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">            if (HTMLUnicodeConversionMaps.ESCAPED_ACCENTS.containsKey(num)) {</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">                if (&quot;i&quot;.equals(m.group(1))) {</span>
+<span class="fc" id="L78">                    result = result.replace(m.group(1) + &quot;&amp;#&quot; + m.group(2) + m.group(3) + m.group(4) + &quot;;&quot;,</span>
+<span class="fc" id="L79">                            &quot;{\\&quot; + HTMLUnicodeConversionMaps.ESCAPED_ACCENTS.get(num) + &quot;{\\i}}&quot;);</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">                } else if (&quot;j&quot;.equals(m.group(1))) {</span>
+<span class="nc" id="L81">                    result = result.replace(m.group(1) + &quot;&amp;#&quot; + m.group(2) + m.group(3) + m.group(4) + &quot;;&quot;,</span>
+<span class="nc" id="L82">                            &quot;{\\&quot; + HTMLUnicodeConversionMaps.ESCAPED_ACCENTS.get(num) + &quot;{\\j}}&quot;);</span>
+                } else {
+<span class="fc" id="L84">                    result = result.replace(m.group(1) + &quot;&amp;#&quot; + m.group(2) + m.group(3) + m.group(4) + &quot;;&quot;,</span>
+<span class="fc" id="L85">                            &quot;{\\&quot; + HTMLUnicodeConversionMaps.ESCAPED_ACCENTS.get(num) + &quot;{&quot; + m.group(1) + &quot;}}&quot;);</span>
+                }
+            }
+<span class="fc" id="L88">        }</span>
+
+        // Find non-converted numerical characters
+<span class="fc" id="L91">        m = ESCAPED_PATTERN3.matcher(result);</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        while (m.find()) {</span>
+<span class="nc" id="L93">            int num = Integer.decode(m.group(1).replace(&quot;x&quot;, &quot;#&quot;) + m.group(3));</span>
+<span class="nc" id="L94">            LOGGER.warn(&quot;HTML escaped char not converted: &quot; + m.group(1) + m.group(2) + m.group(3) + &quot; = &quot; + Integer.toString(num));</span>
+<span class="nc" id="L95">        }</span>
+
+        // Remove $$ in case of two adjacent conversions
+<span class="fc" id="L98">        result = result.replace(&quot;$$&quot;, &quot;&quot;);</span>
+
+        // Find non-covered special characters with alphabetic codes
+<span class="fc" id="L101">        m = ESCAPED_PATTERN4.matcher(result);</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">        while (m.find()) {</span>
+<span class="nc" id="L103">            LOGGER.warn(&quot;HTML escaped char not converted: &quot; + m.group(1));</span>
+        }
+
+<span class="fc" id="L106">        return result.trim();</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L111">        return Localization.lang(&quot;Converts HTML code to LaTeX code.&quot;);</span>
+    }
+
+    @Override
+    public String getExampleInput() {
+<span class="fc" id="L116">        return &quot;&lt;strong&gt;JabRef&lt;/strong&gt;&quot;;</span>
+    }
+
+    private int readTag(String text, int position) {
+        // Have just read the &lt; character that starts the tag.
+<span class="fc" id="L121">        int index = text.indexOf('&gt;', position);</span>
+<span class="pc bpc" id="L122" title="2 of 4 branches missed.">        if ((index &gt; position) &amp;&amp; ((index - position) &lt; MAX_TAG_LENGTH)) {</span>
+<span class="fc" id="L123">            return index; // Just skip the tag.</span>
+        } else {
+<span class="nc" id="L125">            return position; // Don't do anything.</span>
+        }
+    }
+
+    @Override
+    public String getName() {
+<span class="fc" id="L131">        return Localization.lang(&quot;HTML to LaTeX&quot;);</span>
+    }
+
+    @Override
+    public String getKey() {
+<span class="fc" id="L136">        return &quot;html_to_latex&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

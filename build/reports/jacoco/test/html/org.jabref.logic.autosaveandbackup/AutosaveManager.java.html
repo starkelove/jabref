@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AutosaveManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.autosaveandbackup</a> &gt; <span class="el_source">AutosaveManager.java</span></div><h1>AutosaveManager.java</h1><pre class="source lang-java linenums">package org.jabref.logic.autosaveandbackup;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.database.event.AutosaveEvent;
+import org.jabref.model.database.event.BibDatabaseContextChangedEvent;
+import org.jabref.model.database.event.CoarseChangeFilter;
+
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Saves the given {@link BibDatabaseContext} on every {@link BibDatabaseContextChangedEvent} by posting a new {@link AutosaveEvent}.
+ * An intelligent {@link ExecutorService} with a {@link BlockingQueue} prevents a high load while saving and rejects all redundant save tasks.
+ */
+public class AutosaveManager {
+
+<span class="nc" id="L28">    private static final Logger LOGGER = LoggerFactory.getLogger(AutosaveManager.class);</span>
+
+<span class="nc" id="L30">    private static Set&lt;AutosaveManager&gt; runningInstances = new HashSet&lt;&gt;();</span>
+
+    private final BibDatabaseContext bibDatabaseContext;
+    private final BlockingQueue&lt;Runnable&gt; workerQueue;
+    private final ExecutorService executor;
+    private final EventBus eventBus;
+    private final CoarseChangeFilter changeFilter;
+
+<span class="nc" id="L38">    private AutosaveManager(BibDatabaseContext bibDatabaseContext) {</span>
+<span class="nc" id="L39">        this.bibDatabaseContext = bibDatabaseContext;</span>
+<span class="nc" id="L40">        this.workerQueue = new ArrayBlockingQueue&lt;&gt;(1);</span>
+<span class="nc" id="L41">        this.executor = new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, workerQueue);</span>
+<span class="nc" id="L42">        this.eventBus = new EventBus();</span>
+<span class="nc" id="L43">        this.changeFilter = new CoarseChangeFilter(bibDatabaseContext);</span>
+<span class="nc" id="L44">        changeFilter.registerListener(this);</span>
+<span class="nc" id="L45">    }</span>
+
+    @Subscribe
+    public synchronized void listen(@SuppressWarnings(&quot;unused&quot;) BibDatabaseContextChangedEvent event) {
+        try {
+<span class="nc" id="L50">            executor.submit(() -&gt; {</span>
+<span class="nc" id="L51">                eventBus.post(new AutosaveEvent());</span>
+<span class="nc" id="L52">            });</span>
+<span class="nc" id="L53">        } catch (RejectedExecutionException e) {</span>
+<span class="nc" id="L54">            LOGGER.debug(&quot;Rejecting autosave while another save process is already running.&quot;);</span>
+<span class="nc" id="L55">        }</span>
+<span class="nc" id="L56">    }</span>
+
+    private void shutdown() {
+<span class="nc" id="L59">        changeFilter.unregisterListener(this);</span>
+<span class="nc" id="L60">        changeFilter.shutdown();</span>
+<span class="nc" id="L61">        executor.shutdown();</span>
+<span class="nc" id="L62">    }</span>
+
+    /**
+     * Starts the Autosaver which is associated with the given {@link BibDatabaseContext}.
+     *
+     * @param bibDatabaseContext Associated {@link BibDatabaseContext}
+     */
+    public static AutosaveManager start(BibDatabaseContext bibDatabaseContext) {
+<span class="nc" id="L70">        AutosaveManager autosaver = new AutosaveManager(bibDatabaseContext);</span>
+<span class="nc" id="L71">        runningInstances.add(autosaver);</span>
+<span class="nc" id="L72">        return autosaver;</span>
+    }
+
+    /**
+     * Shuts down the Autosaver which is associated with the given {@link BibDatabaseContext}.
+     *
+     * @param bibDatabaseContext Associated {@link BibDatabaseContext}
+     */
+    public static void shutdown(BibDatabaseContext bibDatabaseContext) {
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        runningInstances.stream().filter(instance -&gt; instance.bibDatabaseContext == bibDatabaseContext).findAny()</span>
+<span class="nc" id="L82">                .ifPresent(instance -&gt; {</span>
+<span class="nc" id="L83">                    instance.shutdown();</span>
+<span class="nc" id="L84">                    runningInstances.remove(instance);</span>
+<span class="nc" id="L85">                });</span>
+<span class="nc" id="L86">    }</span>
+
+    public void registerListener(Object listener) {
+<span class="nc" id="L89">        eventBus.register(listener);</span>
+<span class="nc" id="L90">    }</span>
+
+    public void unregisterListener(Object listener) {
+        try {
+<span class="nc" id="L94">            eventBus.unregister(listener);</span>
+<span class="nc" id="L95">        } catch (IllegalArgumentException e) {</span>
+            // occurs if the event source has not been registered, should not prevent shutdown
+<span class="nc" id="L97">            LOGGER.debug(&quot;Proble, unregistering&quot;, e);</span>
+<span class="nc" id="L98">        }</span>
+<span class="nc" id="L99">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

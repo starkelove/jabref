@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MSBibEntry.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.msbib</a> &gt; <span class="el_source">MSBibEntry.java</span></div><h1>MSBibEntry.java</h1><pre class="source lang-java linenums">package org.jabref.logic.msbib;
+
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jabref.model.entry.Author;
+import org.jabref.model.entry.AuthorList;
+import org.jabref.model.entry.Date;
+import org.jabref.model.strings.StringUtil;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+/**
+ * MSBib entry representation
+ *
+ * @see &lt;a href=&quot;http://mahbub.wordpress.com/2007/03/24/details-of-microsoft-office-2007-bibliographic-format-compared-to-bibtex/&quot;&gt;ms office 2007 bibliography format compared to bibtex&lt;/a&gt;
+ * @see &lt;a href=&quot;http://mahbub.wordpress.com/2007/03/22/deciphering-microsoft-office-2007-bibliography-format/&quot;&gt;deciphering ms office 2007 bibliography format&lt;/a&gt;
+ * @see &lt;a href=&quot;http://www.ecma-international.org/publications/standards/Ecma-376.htm&quot;&gt;ECMA Standard&lt;/a&gt;
+ */
+class MSBibEntry {
+
+    // MSBib fields and values
+<span class="fc" id="L31">    public Map&lt;String, String&gt; fields = new HashMap&lt;&gt;();</span>
+    public List&lt;MsBibAuthor&gt; authors;
+    public List&lt;MsBibAuthor&gt; bookAuthors;
+    public List&lt;MsBibAuthor&gt; editors;
+    public List&lt;MsBibAuthor&gt; translators;
+    public List&lt;MsBibAuthor&gt; producerNames;
+    public List&lt;MsBibAuthor&gt; composers;
+    public List&lt;MsBibAuthor&gt; conductors;
+    public List&lt;MsBibAuthor&gt; performers;
+    public List&lt;MsBibAuthor&gt; writers;
+    public List&lt;MsBibAuthor&gt; directors;
+    public List&lt;MsBibAuthor&gt; compilers;
+    public List&lt;MsBibAuthor&gt; interviewers;
+    public List&lt;MsBibAuthor&gt; interviewees;
+    public List&lt;MsBibAuthor&gt; inventors;
+
+    public List&lt;MsBibAuthor&gt; counsels;
+
+    public PageNumbers pages;
+    public String standardNumber;
+    public String address;
+    public String conferenceName;
+    public String thesisType;
+    public String internetSiteTitle;
+    public String dateAccessed;
+    public String publicationTitle;
+    public String albumTitle;
+    public String broadcastTitle;
+    public String year;
+    public String month;
+    public String day;
+    public String number;
+    public String patentNumber;
+
+    public String journalName;
+
+    private String bibtexEntryType;
+
+    /**
+     * reduced subset, supports only &quot;CITY , STATE, COUNTRY&quot; &lt;br&gt;
+     *  &lt;b&gt;\b(\w+)\s?[,]?\s?(\w+)\s?[,]?\s?(\w*)\b&lt;/b&gt; &lt;br&gt;
+     *  WORD SPACE , SPACE WORD SPACE (Can be zero or more) , SPACE WORD (Can be zero or more) &lt;br&gt;
+     *  Matches both single locations (only city) like Berlin and full locations like Stroudsburg, PA, USA &lt;br&gt;
+     *  tested using http://www.regexpal.com/
+     */
+
+<span class="fc" id="L77">    private final Pattern ADDRESS_PATTERN = Pattern.compile(&quot;\\b(\\w+)\\s?[,]?\\s?(\\w*)\\s?[,]?\\s?(\\w*)\\b&quot;);</span>
+
+<span class="fc" id="L79">    public MSBibEntry() {</span>
+        //empty
+<span class="fc" id="L81">    }</span>
+
+    /**
+     * Createa new {@link MsBibEntry} to import from an xml element
+     * @param entry
+     */
+<span class="fc" id="L87">    public MSBibEntry(Element entry) {</span>
+<span class="fc" id="L88">        populateFromXml(entry);</span>
+<span class="fc" id="L89">    }</span>
+
+    public String getType() {
+<span class="fc" id="L92">        return fields.get(&quot;SourceType&quot;);</span>
+    }
+
+    public String getCiteKey() {
+<span class="nc" id="L96">        return fields.get(&quot;Tag&quot;);</span>
+    }
+
+    private String getXmlElementTextContent(String name, Element entry) {
+<span class="fc" id="L100">        String value = null;</span>
+<span class="fc" id="L101">        NodeList nodeLst = entry.getElementsByTagNameNS(&quot;*&quot;, name);</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (nodeLst.getLength() &gt; 0) {</span>
+<span class="fc" id="L103">            value = nodeLst.item(0).getTextContent();</span>
+        }
+<span class="fc" id="L105">        return value;</span>
+    }
+
+    private void populateFromXml(Element entry) {
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        for (int i = 0; i &lt; entry.getChildNodes().getLength(); i++) {</span>
+<span class="fc" id="L110">            Node node = entry.getChildNodes().item(i);</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            if (node.getNodeType() == Node.ELEMENT_NODE) {</span>
+<span class="fc" id="L112">                String key = node.getLocalName();</span>
+<span class="fc" id="L113">                String value = node.getTextContent();</span>
+
+<span class="fc bfc" id="L115" title="All 2 branches covered.">                if (&quot;SourceType&quot;.equals(key)) {</span>
+<span class="fc" id="L116">                    this.bibtexEntryType = value;</span>
+                }
+<span class="fc" id="L118">                fields.put(key, value);</span>
+            }
+        }
+
+<span class="fc" id="L122">        String temp = getXmlElementTextContent(&quot;Pages&quot;, entry);</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (temp != null) {</span>
+<span class="fc" id="L124">            pages = new PageNumbers(temp);</span>
+        }
+
+<span class="fc" id="L127">        standardNumber = getXmlElementTextContent(&quot;StandardNumber&quot;, entry);</span>
+<span class="fc" id="L128">        conferenceName = getXmlElementTextContent(&quot;ConferenceName&quot;, entry);</span>
+
+<span class="fc" id="L130">        String city = getXmlElementTextContent(&quot;City&quot;, entry);</span>
+<span class="fc" id="L131">        String state = getXmlElementTextContent(&quot;StateProvince&quot;, entry);</span>
+<span class="fc" id="L132">        String country = getXmlElementTextContent(&quot;CountryRegion&quot;, entry);</span>
+
+<span class="fc" id="L134">        StringBuilder addressBuffer = new StringBuilder();</span>
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        if (city != null) {</span>
+<span class="fc" id="L136">            addressBuffer.append(city);</span>
+        }
+<span class="pc bpc" id="L138" title="2 of 8 branches missed.">        if (((state != null) &amp;&amp; !state.isEmpty()) &amp;&amp; ((city != null) &amp;&amp; !city.isEmpty())) {</span>
+<span class="fc" id="L139">            addressBuffer.append(&quot;,&quot;).append(' ');</span>
+<span class="fc" id="L140">            addressBuffer.append(state);</span>
+        }
+<span class="fc bfc" id="L142" title="All 4 branches covered.">        if ((country != null) &amp;&amp; !country.isEmpty()) {</span>
+<span class="fc" id="L143">            addressBuffer.append(&quot;,&quot;).append(' ');</span>
+<span class="fc" id="L144">            addressBuffer.append(country);</span>
+        }
+<span class="fc" id="L146">        address = addressBuffer.toString().trim();</span>
+<span class="pc bpc" id="L147" title="1 of 4 branches missed.">        if (address.isEmpty() || &quot;,&quot;.equals(address)) {</span>
+<span class="fc" id="L148">            address = null;</span>
+        }
+
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        if (&quot;Patent&quot;.equalsIgnoreCase(bibtexEntryType)) {</span>
+<span class="fc" id="L152">            number = getXmlElementTextContent(&quot;PatentNumber&quot;, entry);</span>
+        }
+<span class="fc" id="L154">        journalName = getXmlElementTextContent(&quot;JournalName&quot;, entry);</span>
+<span class="fc" id="L155">        month = getXmlElementTextContent(&quot;Month&quot;, entry);</span>
+<span class="fc" id="L156">        internetSiteTitle = getXmlElementTextContent(&quot;InternetSiteTitle&quot;, entry);</span>
+
+<span class="fc" id="L158">        String monthAccessed = getXmlElementTextContent(&quot;MonthAccessed&quot;, entry);</span>
+<span class="fc" id="L159">        String dayAccessed = getXmlElementTextContent(&quot;DayAccessed&quot;, entry);</span>
+<span class="fc" id="L160">        String yearAccessed = getXmlElementTextContent(&quot;YearAccessed&quot;, entry);</span>
+
+<span class="fc" id="L162">        Optional&lt;Date&gt; parsedDateAcessed = Date.parse(Optional.ofNullable(yearAccessed),</span>
+<span class="fc" id="L163">                Optional.ofNullable(monthAccessed),</span>
+<span class="fc" id="L164">                Optional.ofNullable(dayAccessed));</span>
+
+<span class="fc" id="L166">        parsedDateAcessed.map(Date::getNormalized).ifPresent(date -&gt; dateAccessed = date);</span>
+
+<span class="fc" id="L168">        NodeList nodeLst = entry.getElementsByTagNameNS(&quot;*&quot;, &quot;Author&quot;);</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        if (nodeLst.getLength() &gt; 0) {</span>
+<span class="fc" id="L170">            getAuthors((Element) nodeLst.item(0));</span>
+        }
+<span class="fc" id="L172">    }</span>
+
+    private void getAuthors(Element authorsElem) {
+<span class="fc" id="L175">        authors = getSpecificAuthors(&quot;Author&quot;, authorsElem);</span>
+<span class="fc" id="L176">        bookAuthors = getSpecificAuthors(&quot;BookAuthor&quot;, authorsElem);</span>
+<span class="fc" id="L177">        editors = getSpecificAuthors(&quot;Editor&quot;, authorsElem);</span>
+<span class="fc" id="L178">        translators = getSpecificAuthors(&quot;Translator&quot;, authorsElem);</span>
+<span class="fc" id="L179">        producerNames = getSpecificAuthors(&quot;ProducerName&quot;, authorsElem);</span>
+<span class="fc" id="L180">        composers = getSpecificAuthors(&quot;Composer&quot;, authorsElem);</span>
+<span class="fc" id="L181">        conductors = getSpecificAuthors(&quot;Conductor&quot;, authorsElem);</span>
+<span class="fc" id="L182">        performers = getSpecificAuthors(&quot;Performer&quot;, authorsElem);</span>
+<span class="fc" id="L183">        writers = getSpecificAuthors(&quot;Writer&quot;, authorsElem);</span>
+<span class="fc" id="L184">        directors = getSpecificAuthors(&quot;Director&quot;, authorsElem);</span>
+<span class="fc" id="L185">        compilers = getSpecificAuthors(&quot;Compiler&quot;, authorsElem);</span>
+<span class="fc" id="L186">        interviewers = getSpecificAuthors(&quot;Interviewer&quot;, authorsElem);</span>
+<span class="fc" id="L187">        interviewees = getSpecificAuthors(&quot;Interviewee&quot;, authorsElem);</span>
+<span class="fc" id="L188">        inventors = getSpecificAuthors(&quot;Inventor&quot;, authorsElem);</span>
+<span class="fc" id="L189">        counsels = getSpecificAuthors(&quot;Counsel&quot;, authorsElem);</span>
+<span class="fc" id="L190">    }</span>
+
+    private List&lt;MsBibAuthor&gt; getSpecificAuthors(String type, Element authors) {
+<span class="fc" id="L193">        List&lt;MsBibAuthor&gt; result = null;</span>
+<span class="fc" id="L194">        NodeList nodeLst = authors.getElementsByTagNameNS(&quot;*&quot;, type);</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">        if (nodeLst.getLength() &lt;= 0) {</span>
+<span class="fc" id="L196">            return result;</span>
+        }
+<span class="fc" id="L198">        nodeLst = ((Element) nodeLst.item(0)).getElementsByTagNameNS(&quot;*&quot;, &quot;NameList&quot;);</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">        if (nodeLst.getLength() &lt;= 0) {</span>
+<span class="fc" id="L200">            return result;</span>
+        }
+<span class="fc" id="L202">        NodeList person = ((Element) nodeLst.item(0)).getElementsByTagNameNS(&quot;*&quot;, &quot;Person&quot;);</span>
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">        if (person.getLength() &lt;= 0) {</span>
+<span class="nc" id="L204">            return result;</span>
+        }
+
+<span class="fc" id="L207">        result = new LinkedList&lt;&gt;();</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        for (int i = 0; i &lt; person.getLength(); i++) {</span>
+<span class="fc" id="L209">            NodeList firstName = ((Element) person.item(i)).getElementsByTagNameNS(&quot;*&quot;, &quot;First&quot;);</span>
+<span class="fc" id="L210">            NodeList lastName = ((Element) person.item(i)).getElementsByTagNameNS(&quot;*&quot;, &quot;Last&quot;);</span>
+<span class="fc" id="L211">            NodeList middleName = ((Element) person.item(i)).getElementsByTagNameNS(&quot;*&quot;, &quot;Middle&quot;);</span>
+
+<span class="fc" id="L213">            StringBuilder sb = new StringBuilder();</span>
+
+<span class="fc bfc" id="L215" title="All 2 branches covered.">            if (firstName.getLength() &gt; 0) {</span>
+<span class="fc" id="L216">                sb.append(firstName.item(0).getTextContent());</span>
+<span class="fc" id="L217">                sb.append(&quot; &quot;);</span>
+            }
+<span class="fc bfc" id="L219" title="All 2 branches covered.">            if (middleName.getLength() &gt; 0) {</span>
+<span class="fc" id="L220">                sb.append(middleName.item(0).getTextContent());</span>
+<span class="fc" id="L221">                sb.append(&quot; &quot;);</span>
+            }
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">            if (lastName.getLength() &gt; 0) {</span>
+<span class="fc" id="L224">                sb.append(lastName.item(0).getTextContent());</span>
+            }
+
+<span class="fc" id="L227">            AuthorList authorList = AuthorList.parse(sb.toString());</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">            for (Author author : authorList.getAuthors()) {</span>
+<span class="fc" id="L229">                result.add(new MsBibAuthor(author));</span>
+<span class="fc" id="L230">            }</span>
+        }
+
+<span class="fc" id="L233">        return result;</span>
+    }
+
+    /**
+     * Gets the dom representation for one entry, used for export
+     * @param document XmlDocument
+     * @return XmlElement represenation of one entry
+     */
+    public Element getEntryDom(Document document) {
+<span class="fc" id="L242">        Element rootNode = document.createElementNS(MSBibDatabase.NAMESPACE, MSBibDatabase.PREFIX + &quot;Source&quot;);</span>
+
+<span class="fc bfc" id="L244" title="All 2 branches covered.">        for (Map.Entry&lt;String, String&gt; entry : fields.entrySet()) {</span>
+<span class="fc" id="L245">            addField(document, rootNode, entry.getKey(), entry.getValue());</span>
+<span class="fc" id="L246">        }</span>
+
+<span class="fc" id="L248">        Optional.ofNullable(dateAccessed).ifPresent(field -&gt; addDateAcessedFields(document, rootNode));</span>
+
+<span class="fc" id="L250">        Element allAuthors = document.createElementNS(MSBibDatabase.NAMESPACE, MSBibDatabase.PREFIX + &quot;Author&quot;);</span>
+
+<span class="fc" id="L252">        addAuthor(document, allAuthors, &quot;Author&quot;, authors);</span>
+<span class="fc" id="L253">        addAuthor(document, allAuthors, &quot;BookAuthor&quot;, bookAuthors);</span>
+<span class="fc" id="L254">        addAuthor(document, allAuthors, &quot;Editor&quot;, editors);</span>
+<span class="fc" id="L255">        addAuthor(document, allAuthors, &quot;Translator&quot;, translators);</span>
+<span class="fc" id="L256">        addAuthor(document, allAuthors, &quot;ProducerName&quot;, producerNames);</span>
+<span class="fc" id="L257">        addAuthor(document, allAuthors, &quot;Composer&quot;, composers);</span>
+<span class="fc" id="L258">        addAuthor(document, allAuthors, &quot;Conductor&quot;, conductors);</span>
+<span class="fc" id="L259">        addAuthor(document, allAuthors, &quot;Performer&quot;, performers);</span>
+<span class="fc" id="L260">        addAuthor(document, allAuthors, &quot;Writer&quot;, writers);</span>
+<span class="fc" id="L261">        addAuthor(document, allAuthors, &quot;Director&quot;, directors);</span>
+<span class="fc" id="L262">        addAuthor(document, allAuthors, &quot;Compiler&quot;, compilers);</span>
+<span class="fc" id="L263">        addAuthor(document, allAuthors, &quot;Interviewer&quot;, interviewers);</span>
+<span class="fc" id="L264">        addAuthor(document, allAuthors, &quot;Interviewee&quot;, interviewees);</span>
+<span class="fc" id="L265">        addAuthor(document, allAuthors, &quot;Inventor&quot;, inventors);</span>
+<span class="fc" id="L266">        addAuthor(document, allAuthors, &quot;Counsel&quot;, counsels);</span>
+
+<span class="fc" id="L268">        rootNode.appendChild(allAuthors);</span>
+
+<span class="fc bfc" id="L270" title="All 2 branches covered.">        if (pages != null) {</span>
+<span class="fc" id="L271">            addField(document, rootNode, &quot;Pages&quot;, pages.toString(&quot;-&quot;));</span>
+        }
+<span class="fc" id="L273">        addField(document, rootNode, &quot;Year&quot;, year);</span>
+<span class="fc" id="L274">        addField(document, rootNode, &quot;Month&quot;, month);</span>
+<span class="fc" id="L275">        addField(document, rootNode, &quot;Day&quot;, day);</span>
+
+<span class="fc" id="L277">        addField(document, rootNode, &quot;JournalName&quot;, journalName);</span>
+<span class="fc" id="L278">        addField(document, rootNode, &quot;PatentNumber&quot;, patentNumber);</span>
+
+<span class="fc" id="L280">        addField(document, rootNode, &quot;Number&quot;, number);</span>
+
+<span class="fc" id="L282">        addField(document, rootNode, &quot;StandardNumber&quot;, standardNumber);</span>
+<span class="fc" id="L283">        addField(document, rootNode, &quot;ConferenceName&quot;, conferenceName);</span>
+
+<span class="fc" id="L285">        addAddress(document, rootNode, address);</span>
+
+<span class="fc" id="L287">        addField(document, rootNode, &quot;ThesisType&quot;, thesisType);</span>
+<span class="fc" id="L288">        addField(document, rootNode, &quot;InternetSiteTitle&quot;, internetSiteTitle);</span>
+
+<span class="fc" id="L290">        addField(document, rootNode, &quot;PublicationTitle&quot;, publicationTitle);</span>
+<span class="fc" id="L291">        addField(document, rootNode, &quot;AlbumTitle&quot;, albumTitle);</span>
+<span class="fc" id="L292">        addField(document, rootNode, &quot;BroadcastTitle&quot;, broadcastTitle);</span>
+
+<span class="fc" id="L294">        return rootNode;</span>
+    }
+
+    private void addField(Document document, Element parent, String name, String value) {
+<span class="fc bfc" id="L298" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L299">            return;</span>
+        }
+<span class="fc" id="L301">        Element elem = document.createElementNS(MSBibDatabase.NAMESPACE, MSBibDatabase.PREFIX + name);</span>
+<span class="fc" id="L302">        elem.appendChild(document.createTextNode(StringUtil.stripNonValidXMLCharacters(value)));</span>
+<span class="fc" id="L303">        parent.appendChild(elem);</span>
+<span class="fc" id="L304">    }</span>
+
+    //Add authors for export
+    private void addAuthor(Document document, Element allAuthors, String entryName, List&lt;MsBibAuthor&gt; authorsLst) {
+<span class="fc bfc" id="L308" title="All 2 branches covered.">        if (authorsLst == null) {</span>
+<span class="fc" id="L309">            return;</span>
+        }
+<span class="fc" id="L311">        Element authorTop = document.createElementNS(MSBibDatabase.NAMESPACE, MSBibDatabase.PREFIX + entryName);</span>
+
+<span class="fc" id="L313">        Optional&lt;MsBibAuthor&gt; personName = authorsLst.stream().filter(MsBibAuthor::isCorporate)</span>
+<span class="fc" id="L314">                .findFirst();</span>
+<span class="fc bfc" id="L315" title="All 2 branches covered.">        if (personName.isPresent()) {</span>
+<span class="fc" id="L316">            MsBibAuthor person = personName.get();</span>
+
+<span class="fc" id="L318">            Element corporate = document.createElementNS(MSBibDatabase.NAMESPACE,</span>
+                    MSBibDatabase.PREFIX + &quot;Corporate&quot;);
+<span class="fc" id="L320">            corporate.setTextContent(person.getFirstLast());</span>
+<span class="fc" id="L321">            authorTop.appendChild(corporate);</span>
+<span class="fc" id="L322">        } else {</span>
+
+<span class="fc" id="L324">            Element nameList = document.createElementNS(MSBibDatabase.NAMESPACE, MSBibDatabase.PREFIX + &quot;NameList&quot;);</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">            for (MsBibAuthor name : authorsLst) {</span>
+<span class="fc" id="L326">                Element person = document.createElementNS(MSBibDatabase.NAMESPACE, MSBibDatabase.PREFIX + &quot;Person&quot;);</span>
+<span class="fc" id="L327">                addField(document, person, &quot;Last&quot;, name.getLastName());</span>
+<span class="fc" id="L328">                addField(document, person, &quot;Middle&quot;, name.getMiddleName());</span>
+<span class="fc" id="L329">                addField(document, person, &quot;First&quot;, name.getFirstName());</span>
+<span class="fc" id="L330">                nameList.appendChild(person);</span>
+
+<span class="fc" id="L332">            }</span>
+<span class="fc" id="L333">            authorTop.appendChild(nameList);</span>
+        }
+<span class="fc" id="L335">        allAuthors.appendChild(authorTop);</span>
+
+<span class="fc" id="L337">    }</span>
+
+    private void addDateAcessedFields(Document document, Element rootNode) {
+<span class="fc" id="L340">        Optional&lt;Date&gt; parsedDateAcesseField = Date.parse(dateAccessed);</span>
+<span class="fc" id="L341">        parsedDateAcesseField.flatMap(Date::getYear).map(accYear -&gt; accYear.toString()).ifPresent(yearAccessed -&gt; {</span>
+<span class="fc" id="L342">            addField(document, rootNode, &quot;Year&quot; + &quot;Accessed&quot;, yearAccessed);</span>
+<span class="fc" id="L343">        });</span>
+
+<span class="fc" id="L345">        parsedDateAcesseField.flatMap(Date::getMonth)</span>
+<span class="fc" id="L346">                .map(accMonth -&gt; accMonth.getTwoDigitNumber()).ifPresent(monthAcessed -&gt; {</span>
+<span class="fc" id="L347">                    addField(document, rootNode, &quot;Month&quot; + &quot;Accessed&quot;, monthAcessed);</span>
+
+<span class="fc" id="L349">                });</span>
+<span class="fc" id="L350">        parsedDateAcesseField.flatMap(Date::getDay).map(accDay -&gt; accDay.toString()).ifPresent(dayAccessed -&gt; {</span>
+<span class="fc" id="L351">            addField(document, rootNode, &quot;Day&quot; + &quot;Accessed&quot;, dayAccessed);</span>
+<span class="fc" id="L352">        });</span>
+
+<span class="fc" id="L354">    }</span>
+
+    private void addAddress(Document document, Element parent, String addressToSplit) {
+<span class="fc bfc" id="L357" title="All 2 branches covered.">        if (addressToSplit == null) {</span>
+<span class="fc" id="L358">            return;</span>
+        }
+
+<span class="fc" id="L361">        Matcher matcher = ADDRESS_PATTERN.matcher(addressToSplit);</span>
+
+<span class="pc bpc" id="L363" title="2 of 6 branches missed.">        if (addressToSplit.contains(&quot;,&quot;) &amp;&amp; matcher.matches() &amp;&amp; (matcher.groupCount() &gt;= 3)) {</span>
+<span class="fc" id="L364">            addField(document, parent, &quot;City&quot;, matcher.group(1));</span>
+<span class="fc" id="L365">            addField(document, parent, &quot;StateProvince&quot;, matcher.group(2));</span>
+<span class="fc" id="L366">            addField(document, parent, &quot;CountryRegion&quot;, matcher.group(3));</span>
+        } else {
+<span class="fc" id="L368">            addField(document, parent, &quot;City&quot;, addressToSplit);</span>
+        }
+<span class="fc" id="L370">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

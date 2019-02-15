@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.gui.keyboard.KeyBindingsDialogViewModelTest" tests="10" skipped="4" failures="0" errors="0" timestamp="2019-02-15T14:25:20" hostname="n184-p67.eduroam.kth.se" time="0.037">
+  <properties/>
+  <testcase name="testRandomNewKeyKeyBindingInRepository()" classname="org.jabref.gui.keyboard.KeyBindingsDialogViewModelTest" time="0.018"/>
+  <testcase name="testSaveNewKeyBindingsToPreferences()" classname="org.jabref.gui.keyboard.KeyBindingsDialogViewModelTest" time="0.002">
+    <skipped/>
+  </testcase>
+  <testcase name="testSetAllKeyBindingsToDefault()" classname="org.jabref.gui.keyboard.KeyBindingsDialogViewModelTest" time="0.001">
+    <skipped/>
+  </testcase>
+  <testcase name="testConversionAwtKeyEventJavafxKeyEvent()" classname="org.jabref.gui.keyboard.KeyBindingsDialogViewModelTest" time="0.002">
+    <skipped/>
+  </testcase>
+  <testcase name="testSpecialKeysValidKeyBindingIsSaved()" classname="org.jabref.gui.keyboard.KeyBindingsDialogViewModelTest" time="0.003"/>
+  <testcase name="testInvalidKeyBindingIsNotSaved()" classname="org.jabref.gui.keyboard.KeyBindingsDialogViewModelTest" time="0.002"/>
+  <testcase name="testCloseEntryEditorCloseEntryKeybinding()" classname="org.jabref.gui.keyboard.KeyBindingsDialogViewModelTest" time="0.002"/>
+  <testcase name="testKeyBindingCategory()" classname="org.jabref.gui.keyboard.KeyBindingsDialogViewModelTest" time="0.002"/>
+  <testcase name="testSaveNewSpecialKeysKeyBindingsToPreferences()" classname="org.jabref.gui.keyboard.KeyBindingsDialogViewModelTest" time="0.003"/>
+  <testcase name="testSetSingleKeyBindingToDefault()" classname="org.jabref.gui.keyboard.KeyBindingsDialogViewModelTest" time="0.001">
+    <skipped/>
+  </testcase>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

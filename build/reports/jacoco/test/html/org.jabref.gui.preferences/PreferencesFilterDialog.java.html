@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PreferencesFilterDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.preferences</a> &gt; <span class="el_source">PreferencesFilterDialog.java</span></div><h1>PreferencesFilterDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.preferences;
+
+import java.util.Objects;
+
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+
+import org.jabref.gui.util.BaseDialog;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.preferences.JabRefPreferencesFilter;
+
+import com.airhacks.afterburner.views.ViewLoader;
+
+public class PreferencesFilterDialog extends BaseDialog&lt;Void&gt; {
+
+    private final JabRefPreferencesFilter preferencesFilter;
+    private final ObservableList&lt;JabRefPreferencesFilter.PreferenceOption&gt; preferenceOptions;
+
+    @FXML private TableView&lt;JabRefPreferencesFilter.PreferenceOption&gt; table;
+    @FXML private TableColumn&lt;JabRefPreferencesFilter.PreferenceOption, JabRefPreferencesFilter.PreferenceType&gt; columnType;
+    @FXML private TableColumn&lt;JabRefPreferencesFilter.PreferenceOption, String&gt; columnKey;
+    @FXML private TableColumn&lt;JabRefPreferencesFilter.PreferenceOption, Object&gt; columnValue;
+    @FXML private TableColumn&lt;JabRefPreferencesFilter.PreferenceOption, Object&gt; columnDefaultValue;
+    @FXML private CheckBox showOnlyDeviatingPreferenceOptions;
+    @FXML private Label count;
+
+<span class="nc" id="L34">    public PreferencesFilterDialog(JabRefPreferencesFilter preferencesFilter) {</span>
+<span class="nc" id="L35">        this.preferencesFilter = Objects.requireNonNull(preferencesFilter);</span>
+<span class="nc" id="L36">        this.preferenceOptions = FXCollections.observableArrayList();</span>
+
+<span class="nc" id="L38">        ViewLoader.view(this)</span>
+<span class="nc" id="L39">                  .load()</span>
+<span class="nc" id="L40">                  .setAsDialogPane(this);</span>
+
+<span class="nc" id="L42">        this.setTitle(Localization.lang(&quot;Preferences&quot;));</span>
+<span class="nc" id="L43">    }</span>
+
+    @FXML
+    private void initialize() {
+<span class="nc" id="L47">        showOnlyDeviatingPreferenceOptions.setOnAction(event -&gt; updateModel());</span>
+<span class="nc" id="L48">        columnType.setCellValueFactory(data -&gt; new ReadOnlyObjectWrapper&lt;&gt;(data.getValue().getType()));</span>
+<span class="nc" id="L49">        columnKey.setCellValueFactory(data -&gt; new ReadOnlyStringWrapper(data.getValue().getKey()));</span>
+<span class="nc" id="L50">        columnValue.setCellValueFactory(data -&gt; new ReadOnlyObjectWrapper&lt;&gt;(data.getValue().getValue()));</span>
+<span class="nc" id="L51">        columnDefaultValue.setCellValueFactory(data -&gt; new ReadOnlyObjectWrapper&lt;&gt;(data.getValue().getDefaultValue().orElse(&quot;&quot;)));</span>
+<span class="nc" id="L52">        table.setItems(preferenceOptions);</span>
+<span class="nc" id="L53">        updateModel();</span>
+<span class="nc" id="L54">    }</span>
+
+    private void updateModel() {
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (showOnlyDeviatingPreferenceOptions.isSelected()) {</span>
+<span class="nc" id="L58">            preferenceOptions.setAll(preferencesFilter.getDeviatingPreferences());</span>
+        } else {
+<span class="nc" id="L60">            preferenceOptions.setAll(preferencesFilter.getPreferenceOptions());</span>
+        }
+<span class="nc" id="L62">        count.setText(String.format(&quot;(%d)&quot;, preferenceOptions.size()));</span>
+<span class="nc" id="L63">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

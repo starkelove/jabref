@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbbreviationWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.journals</a> &gt; <span class="el_source">AbbreviationWriter.java</span></div><h1>AbbreviationWriter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.journals;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+import org.jabref.logic.util.OS;
+
+/**
+ * This class provides handy static methodes to save abbreviations to the file system.
+ */
+public class AbbreviationWriter {
+
+    private AbbreviationWriter() {
+    }
+
+    /**
+     * This method will write the list of abbreviations to a file on the file system specified by the given path.
+     * If the file already exists its content will be overridden, otherwise a new file will be created.
+     *
+     * @param path to a file (doesn't have to exist just yet)
+     * @param abbreviations as a list specifying which entries should be written
+     * @throws IOException
+     */
+    public static void writeOrCreate(Path path, List&lt;Abbreviation&gt; abbreviations, Charset encoding) throws IOException {
+<span class="fc" id="L30">        try (OutputStream outStream = Files.newOutputStream(path);</span>
+<span class="fc" id="L31">                OutputStreamWriter writer = new OutputStreamWriter(outStream, encoding)) {</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">            for (Abbreviation entry : abbreviations) {</span>
+<span class="fc" id="L33">                writer.write(entry.getName());</span>
+<span class="fc" id="L34">                writer.write(&quot; = &quot;);</span>
+<span class="fc" id="L35">                writer.write(entry.getAbbreviation());</span>
+<span class="fc" id="L36">                writer.write(OS.NEWLINE);</span>
+<span class="fc" id="L37">            }</span>
+        }
+
+<span class="fc" id="L40">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

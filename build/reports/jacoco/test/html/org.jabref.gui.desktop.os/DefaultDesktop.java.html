@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultDesktop.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.desktop.os</a> &gt; <span class="el_source">DefaultDesktop.java</span></div><h1>DefaultDesktop.java</h1><pre class="source lang-java linenums">package org.jabref.gui.desktop.os;
+
+import java.awt.Desktop;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+<span class="nc" id="L12">public class DefaultDesktop implements NativeDesktop {</span>
+<span class="nc" id="L13">    private static final Logger LOGGER = LoggerFactory.getLogger(NativeDesktop.class);</span>
+
+    @Override
+    public void openFile(String filePath, String fileType) throws IOException {
+<span class="nc" id="L17">        Desktop.getDesktop().open(new File(filePath));</span>
+<span class="nc" id="L18">    }</span>
+
+    @Override
+    public void openFileWithApplication(String filePath, String application) throws IOException {
+<span class="nc" id="L22">        Desktop.getDesktop().open(new File(filePath));</span>
+<span class="nc" id="L23">    }</span>
+
+    @Override
+    public void openFolderAndSelectFile(Path filePath) throws IOException {
+<span class="nc" id="L27">        File file = filePath.toAbsolutePath().getParent().toFile();</span>
+<span class="nc" id="L28">        Desktop.getDesktop().open(file);</span>
+<span class="nc" id="L29">    }</span>
+
+    @Override
+    public void openConsole(String absolutePath) throws IOException {
+<span class="nc" id="L33">        LOGGER.error(&quot;This feature is not supported by your Operating System.&quot;);</span>
+<span class="nc" id="L34">    }</span>
+
+    @Override
+    public void openPdfWithParameters(String filePath, List&lt;String&gt; parameters) throws IOException {
+        //TODO imlement default
+<span class="nc" id="L39">    }</span>
+
+    @Override
+    public String detectProgramPath(String programName, String directoryName) {
+<span class="nc" id="L43">        return programName;</span>
+    }
+
+    @Override
+    public Path getApplicationDirectory() {
+<span class="nc" id="L48">        return getUserDirectory();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

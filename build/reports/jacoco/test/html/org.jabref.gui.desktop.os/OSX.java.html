@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OSX.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.desktop.os</a> &gt; <span class="el_source">OSX.java</span></div><h1>OSX.java</h1><pre class="source lang-java linenums">package org.jabref.gui.desktop.os;
+
+import java.awt.Desktop;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
+
+import org.jabref.gui.externalfiletype.ExternalFileType;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+
+<span class="nc" id="L14">public class OSX implements NativeDesktop {</span>
+
+    @Override
+    public void openFile(String filePath, String fileType) throws IOException {
+<span class="nc" id="L18">        Optional&lt;ExternalFileType&gt; type = ExternalFileTypes.getInstance().getExternalFileTypeByExt(fileType);</span>
+<span class="nc bnc" id="L19" title="All 4 branches missed.">        if (type.isPresent() &amp;&amp; !type.get().getOpenWithApplication().isEmpty()) {</span>
+<span class="nc" id="L20">            openFileWithApplication(filePath, type.get().getOpenWithApplication());</span>
+        } else {
+<span class="nc" id="L22">            String[] cmd = {&quot;/usr/bin/open&quot;, filePath};</span>
+<span class="nc" id="L23">            Runtime.getRuntime().exec(cmd);</span>
+        }
+<span class="nc" id="L25">    }</span>
+
+    @Override
+    public void openFileWithApplication(String filePath, String application) throws IOException {
+        // Use &quot;-a &lt;application&gt;&quot; if the app is specified, and just &quot;open &lt;filename&gt;&quot; otherwise:
+<span class="nc bnc" id="L30" title="All 4 branches missed.">        String[] cmd = (application != null) &amp;&amp; !application.isEmpty() ? new String[] {&quot;/usr/bin/open&quot;, &quot;-a&quot;,</span>
+                application, filePath} : new String[] {&quot;/usr/bin/open&quot;, filePath};
+<span class="nc" id="L32">        Runtime.getRuntime().exec(cmd);</span>
+<span class="nc" id="L33">    }</span>
+
+    @Override
+    public void openFolderAndSelectFile(Path file) throws IOException {
+<span class="nc" id="L37">        Desktop.getDesktop().open(file.getParent().toFile());</span>
+<span class="nc" id="L38">    }</span>
+
+    @Override
+    public void openConsole(String absolutePath) throws IOException {
+<span class="nc" id="L42">        Runtime.getRuntime().exec(&quot;open -a Terminal &quot; + absolutePath, null, new File(absolutePath));</span>
+<span class="nc" id="L43">    }</span>
+
+    @Override
+    public void openPdfWithParameters(String filePath, List&lt;String&gt; parameters) throws IOException {
+        //TODO implement
+<span class="nc" id="L48">    }</span>
+
+    @Override
+    public String detectProgramPath(String programName, String directoryName) {
+<span class="nc" id="L52">        return programName;</span>
+    }
+
+    @Override
+    public Path getApplicationDirectory() {
+<span class="nc" id="L57">        return Paths.get(&quot;/Applications&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

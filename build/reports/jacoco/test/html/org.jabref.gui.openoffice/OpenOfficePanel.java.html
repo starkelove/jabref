@@ -1,0 +1,646 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenOfficePanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.openoffice</a> &gt; <span class="el_source">OpenOfficePanel.java</span></div><h1>OpenOfficePanel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.openoffice;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javafx.concurrent.Task;
+import javafx.geometry.Side;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.RadioMenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.actions.ActionFactory;
+import org.jabref.gui.actions.StandardActions;
+import org.jabref.gui.help.HelpAction;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.keyboard.KeyBindingRepository;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableKeyChange;
+import org.jabref.gui.util.TaskExecutor;
+import org.jabref.logic.bibtexkeypattern.BibtexKeyGenerator;
+import org.jabref.logic.bibtexkeypattern.BibtexKeyPatternPreferences;
+import org.jabref.logic.help.HelpFile;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.openoffice.OOBibStyle;
+import org.jabref.logic.openoffice.OpenOfficePreferences;
+import org.jabref.logic.openoffice.StyleLoader;
+import org.jabref.logic.openoffice.UndefinedParagraphFormatException;
+import org.jabref.logic.util.io.FileUtil;
+import org.jabref.model.Defaults;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.preferences.JabRefPreferences;
+
+import com.sun.star.beans.IllegalTypeException;
+import com.sun.star.beans.NotRemoveableException;
+import com.sun.star.beans.PropertyExistException;
+import com.sun.star.beans.PropertyVetoException;
+import com.sun.star.beans.UnknownPropertyException;
+import com.sun.star.comp.helper.BootstrapException;
+import com.sun.star.container.NoSuchElementException;
+import com.sun.star.lang.WrappedTargetException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Pane to manage the interaction between JabRef and OpenOffice.
+ */
+public class OpenOfficePanel {
+
+<span class="nc" id="L75">    private static final Logger LOGGER = LoggerFactory.getLogger(OpenOfficePanel.class);</span>
+    private final DialogService dialogService;
+
+    private final Button connect;
+    private final Button manualConnect;
+    private final Button selectDocument;
+<span class="nc" id="L81">    private final Button setStyleFile = new Button(Localization.lang(&quot;Select style&quot;));</span>
+<span class="nc" id="L82">    private final Button pushEntries = new Button(Localization.lang(&quot;Cite&quot;));</span>
+<span class="nc" id="L83">    private final Button pushEntriesInt = new Button(Localization.lang(&quot;Cite in-text&quot;));</span>
+<span class="nc" id="L84">    private final Button pushEntriesEmpty = new Button(Localization.lang(&quot;Insert empty citation&quot;));</span>
+<span class="nc" id="L85">    private final Button pushEntriesAdvanced = new Button(Localization.lang(&quot;Cite special&quot;));</span>
+    private final Button update;
+<span class="nc" id="L87">    private final Button merge = new Button(Localization.lang(&quot;Merge citations&quot;));</span>
+<span class="nc" id="L88">    private final Button manageCitations = new Button(Localization.lang(&quot;Manage citations&quot;));</span>
+<span class="nc" id="L89">    private final Button exportCitations = new Button(Localization.lang(&quot;Export cited&quot;));</span>
+<span class="nc" id="L90">    private final Button settingsB = new Button(Localization.lang(&quot;Settings&quot;));</span>
+    private final Button help;
+<span class="nc" id="L92">    private final VBox vbox = new VBox();</span>
+
+    private OOBibBase ooBase;
+    private final JabRefFrame frame;
+    private OOBibStyle style;
+    private final JabRefPreferences jabRefPreferences;
+    private final TaskExecutor taskExecutor;
+    private final StyleLoader loader;
+    private OpenOfficePreferences ooPrefs;
+
+<span class="nc" id="L102">    public OpenOfficePanel(JabRefFrame frame, JabRefPreferences jabRefPreferences, OpenOfficePreferences ooPrefs, KeyBindingRepository keyBindingRepository) {</span>
+<span class="nc" id="L103">        ActionFactory factory = new ActionFactory(keyBindingRepository);</span>
+<span class="nc" id="L104">        this.frame = frame;</span>
+<span class="nc" id="L105">        this.ooPrefs = ooPrefs;</span>
+<span class="nc" id="L106">        this.jabRefPreferences = jabRefPreferences;</span>
+<span class="nc" id="L107">        this.taskExecutor = Globals.TASK_EXECUTOR;</span>
+<span class="nc" id="L108">        dialogService = frame.getDialogService();</span>
+
+<span class="nc" id="L110">        connect = new Button();</span>
+<span class="nc" id="L111">        connect.setGraphic(IconTheme.JabRefIcons.CONNECT_OPEN_OFFICE.getGraphicNode());</span>
+<span class="nc" id="L112">        connect.setTooltip(new Tooltip(Localization.lang(&quot;Connect&quot;)));</span>
+<span class="nc" id="L113">        connect.setMaxWidth(Double.MAX_VALUE);</span>
+
+<span class="nc" id="L115">        manualConnect = new Button();</span>
+<span class="nc" id="L116">        manualConnect.setGraphic(IconTheme.JabRefIcons.CONNECT_OPEN_OFFICE.getGraphicNode());</span>
+<span class="nc" id="L117">        manualConnect.setTooltip(new Tooltip(Localization.lang(&quot;Manual connect&quot;)));</span>
+<span class="nc" id="L118">        manualConnect.setMaxWidth(Double.MAX_VALUE);</span>
+
+<span class="nc" id="L120">        HelpAction helpCommand = new HelpAction(HelpFile.OPENOFFICE_LIBREOFFICE);</span>
+
+<span class="nc" id="L122">        help = factory.createIconButton(StandardActions.HELP, helpCommand.getCommand());</span>
+<span class="nc" id="L123">        help.setMaxWidth(Double.MAX_VALUE);</span>
+
+<span class="nc" id="L125">        selectDocument = new Button();</span>
+<span class="nc" id="L126">        selectDocument.setGraphic(IconTheme.JabRefIcons.OPEN.getGraphicNode());</span>
+<span class="nc" id="L127">        selectDocument.setTooltip(new Tooltip(Localization.lang(&quot;Select Writer document&quot;)));</span>
+<span class="nc" id="L128">        selectDocument.setMaxWidth(Double.MAX_VALUE);</span>
+
+<span class="nc" id="L130">        update = new Button();</span>
+<span class="nc" id="L131">        update.setGraphic(IconTheme.JabRefIcons.REFRESH.getGraphicNode());</span>
+<span class="nc" id="L132">        update.setTooltip(new Tooltip(Localization.lang(&quot;Sync OpenOffice/LibreOffice bibliography&quot;)));</span>
+<span class="nc" id="L133">        update.setMaxWidth(Double.MAX_VALUE);</span>
+
+<span class="nc" id="L135">        loader = new StyleLoader(ooPrefs,</span>
+<span class="nc" id="L136">                Globals.prefs.getLayoutFormatterPreferences(Globals.journalAbbreviationLoader),</span>
+<span class="nc" id="L137">                Globals.prefs.getDefaultEncoding());</span>
+
+<span class="nc" id="L139">        initPanel();</span>
+<span class="nc" id="L140">    }</span>
+
+    private static void addURL(List&lt;URL&gt; jarList) throws IOException {
+<span class="nc" id="L143">        URLClassLoader sysloader = (URLClassLoader) ClassLoader.getSystemClassLoader();</span>
+<span class="nc" id="L144">        Class&lt;URLClassLoader&gt; sysclass = URLClassLoader.class;</span>
+        try {
+<span class="nc" id="L146">            Method method = sysclass.getDeclaredMethod(&quot;addURL&quot;, URL.class);</span>
+<span class="nc" id="L147">            method.setAccessible(true);</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">            for (URL anU : jarList) {</span>
+<span class="nc" id="L149">                method.invoke(sysloader, anU);</span>
+<span class="nc" id="L150">            }</span>
+<span class="nc" id="L151">        } catch (SecurityException | NoSuchMethodException | IllegalAccessException | IllegalArgumentException |</span>
+                InvocationTargetException e) {
+<span class="nc" id="L153">            LOGGER.error(&quot;Could not add URL to system classloader&quot;, e);</span>
+<span class="nc" id="L154">            sysloader.close();</span>
+<span class="nc" id="L155">            throw new IOException(&quot;Error, could not add URL to system classloader&quot;, e);</span>
+<span class="nc" id="L156">        }</span>
+<span class="nc" id="L157">    }</span>
+
+    public Node getContent() {
+<span class="nc" id="L160">        return vbox;</span>
+    }
+
+    private void initPanel() {
+
+<span class="nc" id="L165">        connect.setOnAction(e -&gt; connectAutomatically());</span>
+<span class="nc" id="L166">        manualConnect.setOnAction(e -&gt; connectManually());</span>
+
+<span class="nc" id="L168">        selectDocument.setTooltip(new Tooltip(Localization.lang(&quot;Select which open Writer document to work on&quot;)));</span>
+<span class="nc" id="L169">        selectDocument.setOnAction(e -&gt; {</span>
+
+            try {
+<span class="nc" id="L172">                ooBase.selectDocument();</span>
+<span class="nc" id="L173">                dialogService.notify(Localization.lang(&quot;Connected to document&quot;) + &quot;: &quot;</span>
+<span class="nc" id="L174">                        + ooBase.getCurrentDocumentTitle().orElse(&quot;&quot;));</span>
+<span class="nc" id="L175">            } catch (UnknownPropertyException | WrappedTargetException | IndexOutOfBoundsException |</span>
+                    NoSuchElementException | NoDocumentException ex) {
+<span class="nc" id="L177">                LOGGER.warn(&quot;Problem connecting&quot;, ex);</span>
+<span class="nc" id="L178">                dialogService.showErrorDialogAndWait(ex);</span>
+<span class="nc" id="L179">            }</span>
+
+<span class="nc" id="L181">        });</span>
+
+<span class="nc" id="L183">        setStyleFile.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L184">        setStyleFile.setOnAction(event -&gt; {</span>
+
+<span class="nc" id="L186">            StyleSelectDialogView styleDialog = new StyleSelectDialogView(loader);</span>
+<span class="nc" id="L187">            styleDialog.showAndWait().ifPresent(selectedStyle -&gt; {</span>
+<span class="nc" id="L188">                style = selectedStyle;</span>
+                try {
+<span class="nc" id="L190">                    style.ensureUpToDate();</span>
+<span class="nc" id="L191">                } catch (IOException e) {</span>
+<span class="nc" id="L192">                    LOGGER.warn(&quot;Unable to reload style file '&quot; + style.getPath() + &quot;'&quot;, e);</span>
+<span class="nc" id="L193">                }</span>
+<span class="nc" id="L194">                dialogService.notify(Localization.lang(&quot;Current style is '%0'&quot;, style.getName()));</span>
+<span class="nc" id="L195">            });</span>
+
+<span class="nc" id="L197">        });</span>
+
+<span class="nc" id="L199">        pushEntries.setTooltip(new Tooltip(Localization.lang(&quot;Cite selected entries between parenthesis&quot;)));</span>
+<span class="nc" id="L200">        pushEntries.setOnAction(e -&gt; pushEntries(true, true, false));</span>
+<span class="nc" id="L201">        pushEntries.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L202">        pushEntriesInt.setTooltip(new Tooltip(Localization.lang(&quot;Cite selected entries with in-text citation&quot;)));</span>
+<span class="nc" id="L203">        pushEntriesInt.setOnAction(e -&gt; pushEntries(false, true, false));</span>
+<span class="nc" id="L204">        pushEntriesInt.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L205">        pushEntriesEmpty.setTooltip(new Tooltip(Localization.lang(&quot;Insert a citation without text (the entry will appear in the reference list)&quot;)));</span>
+<span class="nc" id="L206">        pushEntriesEmpty.setOnAction(e -&gt; pushEntries(false, false, false));</span>
+<span class="nc" id="L207">        pushEntriesEmpty.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L208">        pushEntriesAdvanced.setTooltip(new Tooltip(Localization.lang(&quot;Cite selected entries with extra information&quot;)));</span>
+<span class="nc" id="L209">        pushEntriesAdvanced.setOnAction(e -&gt; pushEntries(false, true, true));</span>
+<span class="nc" id="L210">        pushEntriesAdvanced.setMaxWidth(Double.MAX_VALUE);</span>
+
+<span class="nc" id="L212">        update.setTooltip(new Tooltip(Localization.lang(&quot;Ensure that the bibliography is up-to-date&quot;)));</span>
+
+<span class="nc" id="L214">        update.setOnAction(event -&gt; {</span>
+            try {
+<span class="nc bnc" id="L216" title="All 2 branches missed.">                if (style == null) {</span>
+<span class="nc" id="L217">                    style = loader.getUsedStyle();</span>
+                } else {
+<span class="nc" id="L219">                    style.ensureUpToDate();</span>
+                }
+
+<span class="nc" id="L222">                ooBase.updateSortedReferenceMarks();</span>
+
+<span class="nc" id="L224">                List&lt;BibDatabase&gt; databases = getBaseList();</span>
+<span class="nc" id="L225">                List&lt;String&gt; unresolvedKeys = ooBase.refreshCiteMarkers(databases, style);</span>
+<span class="nc" id="L226">                ooBase.rebuildBibTextSection(databases, style);</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                if (!unresolvedKeys.isEmpty()) {</span>
+<span class="nc" id="L228">                    dialogService.showErrorDialogAndWait(Localization.lang(&quot;Unable to synchronize bibliography&quot;),</span>
+<span class="nc" id="L229">                            Localization.lang(&quot;Your OpenOffice/LibreOffice document references the BibTeX key '%0', which could not be found in your current library.&quot;,</span>
+<span class="nc" id="L230">                                    unresolvedKeys.get(0)));</span>
+                }
+<span class="nc" id="L232">            } catch (UndefinedCharacterFormatException ex) {</span>
+<span class="nc" id="L233">                reportUndefinedCharacterFormat(ex);</span>
+<span class="nc" id="L234">            } catch (UndefinedParagraphFormatException ex) {</span>
+<span class="nc" id="L235">                reportUndefinedParagraphFormat(ex);</span>
+<span class="nc" id="L236">            } catch (ConnectionLostException ex) {</span>
+<span class="nc" id="L237">                showConnectionLostErrorMessage();</span>
+<span class="nc" id="L238">            } catch (IOException ex) {</span>
+<span class="nc" id="L239">                LOGGER.warn(&quot;Problem with style file&quot;, ex);</span>
+<span class="nc" id="L240">                dialogService.showErrorDialogAndWait(Localization.lang(&quot;No valid style file defined&quot;),</span>
+<span class="nc" id="L241">                        Localization.lang(&quot;You must select either a valid style file, or use one of the default styles.&quot;));</span>
+<span class="nc" id="L242">            } catch (BibEntryNotFoundException ex) {</span>
+<span class="nc" id="L243">                LOGGER.debug(&quot;BibEntry not found&quot;, ex);</span>
+<span class="nc" id="L244">                dialogService.showErrorDialogAndWait(Localization.lang(&quot;Unable to synchronize bibliography&quot;), Localization.lang(</span>
+                        &quot;Your OpenOffice/LibreOffice document references the BibTeX key '%0', which could not be found in your current library.&quot;,
+<span class="nc" id="L246">                        ex.getBibtexKey()));</span>
+<span class="nc" id="L247">            } catch (com.sun.star.lang.IllegalArgumentException | PropertyVetoException | UnknownPropertyException | WrappedTargetException | NoSuchElementException |</span>
+                    CreationException ex) {
+<span class="nc" id="L249">                LOGGER.warn(&quot;Could not update bibliography&quot;, ex);</span>
+<span class="nc" id="L250">            }</span>
+<span class="nc" id="L251">        });</span>
+
+<span class="nc" id="L253">        merge.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L254">        merge.setTooltip(new Tooltip(Localization.lang(&quot;Combine pairs of citations that are separated by spaces only&quot;)));</span>
+<span class="nc" id="L255">        merge.setOnAction(e -&gt; {</span>
+            try {
+<span class="nc" id="L257">                ooBase.combineCiteMarkers(getBaseList(), style);</span>
+<span class="nc" id="L258">            } catch (UndefinedCharacterFormatException ex) {</span>
+<span class="nc" id="L259">                reportUndefinedCharacterFormat(ex);</span>
+<span class="nc" id="L260">            } catch (com.sun.star.lang.IllegalArgumentException | UnknownPropertyException | PropertyVetoException |</span>
+                    CreationException | NoSuchElementException | WrappedTargetException | IOException |
+                    BibEntryNotFoundException ex) {
+<span class="nc" id="L263">                LOGGER.warn(&quot;Problem combining cite markers&quot;, ex);</span>
+<span class="nc" id="L264">            }</span>
+
+<span class="nc" id="L266">        });</span>
+<span class="nc" id="L267">        ContextMenu settingsMenu = createSettingsPopup();</span>
+<span class="nc" id="L268">        settingsB.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L269">        settingsB.setContextMenu(settingsMenu);</span>
+<span class="nc" id="L270">        settingsB.setOnAction(e -&gt; settingsMenu.show(settingsB, Side.BOTTOM, 0, 0));</span>
+<span class="nc" id="L271">        manageCitations.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L272">        manageCitations.setOnAction(e -&gt; {</span>
+<span class="nc" id="L273">            ManageCitationsDialogView dlg = new ManageCitationsDialogView(ooBase);</span>
+<span class="nc" id="L274">            dlg.showAndWait();</span>
+<span class="nc" id="L275">        });</span>
+
+<span class="nc" id="L277">        exportCitations.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L278">        exportCitations.setOnAction(event -&gt; exportEntries());</span>
+
+<span class="nc" id="L280">        selectDocument.setDisable(true);</span>
+<span class="nc" id="L281">        pushEntries.setDisable(true);</span>
+<span class="nc" id="L282">        pushEntriesInt.setDisable(true);</span>
+<span class="nc" id="L283">        pushEntriesEmpty.setDisable(true);</span>
+<span class="nc" id="L284">        pushEntriesAdvanced.setDisable(true);</span>
+<span class="nc" id="L285">        update.setDisable(true);</span>
+<span class="nc" id="L286">        merge.setDisable(true);</span>
+<span class="nc" id="L287">        manageCitations.setDisable(true);</span>
+<span class="nc" id="L288">        exportCitations.setDisable(true);</span>
+
+<span class="nc" id="L290">        HBox hbox = new HBox();</span>
+<span class="nc" id="L291">        hbox.getChildren().addAll(connect, manualConnect, selectDocument, update, help);</span>
+<span class="nc" id="L292">        hbox.getChildren().forEach(btn -&gt; HBox.setHgrow(btn, Priority.ALWAYS));</span>
+
+<span class="nc" id="L294">        vbox.setFillWidth(true);</span>
+<span class="nc" id="L295">        vbox.getChildren().addAll(hbox, setStyleFile, pushEntries, pushEntriesInt, pushEntriesAdvanced, pushEntriesEmpty, merge, manageCitations, exportCitations, settingsB);</span>
+<span class="nc" id="L296">    }</span>
+
+    private void exportEntries() {
+        try {
+<span class="nc bnc" id="L300" title="All 2 branches missed.">            if (style == null) {</span>
+<span class="nc" id="L301">                style = loader.getUsedStyle();</span>
+            } else {
+<span class="nc" id="L303">                style.ensureUpToDate();</span>
+            }
+
+<span class="nc" id="L306">            ooBase.updateSortedReferenceMarks();</span>
+
+<span class="nc" id="L308">            List&lt;BibDatabase&gt; databases = getBaseList();</span>
+<span class="nc" id="L309">            List&lt;String&gt; unresolvedKeys = ooBase.refreshCiteMarkers(databases, style);</span>
+<span class="nc" id="L310">            BibDatabase newDatabase = ooBase.generateDatabase(databases);</span>
+<span class="nc bnc" id="L311" title="All 2 branches missed.">            if (!unresolvedKeys.isEmpty()) {</span>
+
+<span class="nc" id="L313">                dialogService.showErrorDialogAndWait(Localization.lang(&quot;Unable to generate new library&quot;),</span>
+<span class="nc" id="L314">                        Localization.lang(&quot;Your OpenOffice/LibreOffice document references the BibTeX key '%0', which could not be found in your current library.&quot;,</span>
+<span class="nc" id="L315">                                unresolvedKeys.get(0)));</span>
+
+            }
+
+<span class="nc" id="L319">            Defaults defaults = new Defaults(jabRefPreferences.getDefaultBibDatabaseMode());</span>
+<span class="nc" id="L320">            BibDatabaseContext databaseContext = new BibDatabaseContext(newDatabase, defaults);</span>
+<span class="nc" id="L321">            this.frame.addTab(databaseContext, true);</span>
+
+<span class="nc" id="L323">        } catch (BibEntryNotFoundException ex) {</span>
+<span class="nc" id="L324">            LOGGER.debug(&quot;BibEntry not found&quot;, ex);</span>
+<span class="nc" id="L325">            dialogService.showErrorDialogAndWait(Localization.lang(&quot;Unable to synchronize bibliography&quot;),</span>
+<span class="nc" id="L326">                    Localization.lang(&quot;Your OpenOffice/LibreOffice document references the BibTeX key '%0', which could not be found in your current library.&quot;,</span>
+<span class="nc" id="L327">                            ex.getBibtexKey()));</span>
+
+<span class="nc" id="L329">        } catch (com.sun.star.lang.IllegalArgumentException | UnknownPropertyException | PropertyVetoException |</span>
+                UndefinedCharacterFormatException | NoSuchElementException | WrappedTargetException | IOException |
+                CreationException e) {
+<span class="nc" id="L332">            LOGGER.warn(&quot;Problem generating new database.&quot;, e);</span>
+<span class="nc" id="L333">        }</span>
+
+<span class="nc" id="L335">    }</span>
+
+    private List&lt;BibDatabase&gt; getBaseList() {
+<span class="nc" id="L338">        List&lt;BibDatabase&gt; databases = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L339" title="All 2 branches missed.">        if (ooPrefs.getUseAllDatabases()) {</span>
+<span class="nc bnc" id="L340" title="All 2 branches missed.">            for (BasePanel basePanel : frame.getBasePanelList()) {</span>
+<span class="nc" id="L341">                databases.add(basePanel.getDatabase());</span>
+<span class="nc" id="L342">            }</span>
+        } else {
+<span class="nc" id="L344">            databases.add(frame.getCurrentBasePanel().getDatabase());</span>
+        }
+
+<span class="nc" id="L347">        return databases;</span>
+    }
+
+    private void connectAutomatically() {
+<span class="nc" id="L351">        DetectOpenOfficeInstallation officeInstallation = new DetectOpenOfficeInstallation(jabRefPreferences, dialogService);</span>
+
+<span class="nc bnc" id="L353" title="All 2 branches missed.">        if (officeInstallation.isExecutablePathDefined()) {</span>
+<span class="nc" id="L354">            connect();</span>
+        } else {
+
+<span class="nc" id="L357">            Task&lt;Void&gt; taskConnectIfInstalled = new Task&lt;Void&gt;() {</span>
+
+                @Override
+                protected Void call() throws Exception {
+<span class="nc" id="L361">                    updateProgress(ProgressBar.INDETERMINATE_PROGRESS, ProgressBar.INDETERMINATE_PROGRESS);</span>
+
+<span class="nc" id="L363">                    boolean installed = officeInstallation.isInstalled();</span>
+<span class="nc bnc" id="L364" title="All 2 branches missed.">                    if (!installed) {</span>
+<span class="nc" id="L365">                        throw new IllegalStateException(&quot;OpenOffice Installation could not be detected.&quot;);</span>
+                    }
+<span class="nc" id="L367">                    return null; // can not use BackgroundTask.wrap(Runnable) because Runnable.run() can't throw exceptions</span>
+                }
+            };
+
+<span class="nc" id="L371">            taskConnectIfInstalled.setOnSucceeded(value -&gt; connect());</span>
+<span class="nc" id="L372">            taskConnectIfInstalled.setOnFailed(value -&gt; dialogService.showErrorDialogAndWait(Localization.lang(&quot;Autodetection failed&quot;), Localization.lang(&quot;Autodetection failed&quot;), taskConnectIfInstalled.getException()));</span>
+
+<span class="nc" id="L374">            dialogService.showProgressDialogAndWait(Localization.lang(&quot;Autodetecting paths...&quot;), Localization.lang(&quot;Autodetecting paths...&quot;), taskConnectIfInstalled);</span>
+<span class="nc" id="L375">            taskExecutor.execute(taskConnectIfInstalled);</span>
+        }
+<span class="nc" id="L377">    }</span>
+
+    private void connectManually() {
+<span class="nc" id="L380">        showManualConnectionDialog().ifPresent(ok -&gt; connect());</span>
+<span class="nc" id="L381">    }</span>
+
+    private void connect() {
+<span class="nc" id="L384">        ooPrefs = jabRefPreferences.getOpenOfficePreferences();</span>
+
+<span class="nc" id="L386">        Task&lt;OOBibBase&gt; connectTask = new Task&lt;OOBibBase&gt;() {</span>
+
+            @Override
+            protected OOBibBase call() throws Exception {
+<span class="nc" id="L390">                updateProgress(ProgressBar.INDETERMINATE_PROGRESS, ProgressBar.INDETERMINATE_PROGRESS);</span>
+<span class="nc" id="L391">                loadOpenOfficeJars(Paths.get(ooPrefs.getInstallationPath()));</span>
+
+<span class="nc" id="L393">                return createBibBase();</span>
+            }
+        };
+
+<span class="nc" id="L397">        connectTask.setOnSucceeded(value -&gt; {</span>
+<span class="nc" id="L398">            ooBase = connectTask.getValue();</span>
+
+<span class="nc bnc" id="L400" title="All 2 branches missed.">            if (ooBase.isConnectedToDocument()) {</span>
+<span class="nc" id="L401">                dialogService.notify(Localization.lang(&quot;Connected to document&quot;) + &quot;: &quot; + ooBase.getCurrentDocumentTitle().orElse(&quot;&quot;));</span>
+            }
+
+            // Enable actions that depend on Connect:
+<span class="nc" id="L405">            selectDocument.setDisable(false);</span>
+<span class="nc" id="L406">            pushEntries.setDisable(false);</span>
+<span class="nc" id="L407">            pushEntriesInt.setDisable(false);</span>
+<span class="nc" id="L408">            pushEntriesEmpty.setDisable(false);</span>
+<span class="nc" id="L409">            pushEntriesAdvanced.setDisable(false);</span>
+<span class="nc" id="L410">            update.setDisable(false);</span>
+<span class="nc" id="L411">            merge.setDisable(false);</span>
+<span class="nc" id="L412">            manageCitations.setDisable(false);</span>
+<span class="nc" id="L413">            exportCitations.setDisable(false);</span>
+<span class="nc" id="L414">        });</span>
+<span class="nc" id="L415">        connectTask.setOnFailed(value -&gt; {</span>
+<span class="nc" id="L416">            Throwable ex = connectTask.getException();</span>
+<span class="nc bnc" id="L417" title="All 2 branches missed.">            if (ex instanceof UnsatisfiedLinkError) {</span>
+<span class="nc" id="L418">                LOGGER.warn(&quot;Could not connect to running OpenOffice/LibreOffice&quot;, ex);</span>
+
+<span class="nc" id="L420">                dialogService.showErrorDialogAndWait(Localization.lang(&quot;Unable to connect. One possible reason is that JabRef &quot;</span>
+                        + &quot;and OpenOffice/LibreOffice are not both running in either 32 bit mode or 64 bit mode.&quot;));
+<span class="nc bnc" id="L422" title="All 2 branches missed.">            } else if (ex instanceof IOException) {</span>
+<span class="nc" id="L423">                LOGGER.warn(&quot;Could not connect to running OpenOffice/LibreOffice&quot;, ex);</span>
+
+<span class="nc" id="L425">                dialogService.showErrorDialogAndWait(Localization.lang(&quot;Could not connect to running OpenOffice/LibreOffice.&quot;),</span>
+<span class="nc" id="L426">                        Localization.lang(&quot;Could not connect to running OpenOffice/LibreOffice.&quot;)</span>
+                                + &quot;\n&quot;
+<span class="nc" id="L428">                                + Localization.lang(&quot;Make sure you have installed OpenOffice/LibreOffice with Java support.&quot;) + &quot;\n&quot;</span>
+<span class="nc" id="L429">                                + Localization.lang(&quot;If connecting manually, please verify program and library paths.&quot;) + &quot;\n&quot; + &quot;\n&quot; + Localization.lang(&quot;Error message:&quot;),</span>
+                        ex);
+            } else {
+<span class="nc" id="L432">                dialogService.showErrorDialogAndWait(Localization.lang(&quot;Autodetection failed&quot;), Localization.lang(&quot;Autodetection failed&quot;), ex);</span>
+            }
+<span class="nc" id="L434">        });</span>
+
+<span class="nc" id="L436">        dialogService.showProgressDialogAndWait(Localization.lang(&quot;Autodetecting paths...&quot;), Localization.lang(&quot;Autodetecting paths...&quot;), connectTask);</span>
+<span class="nc" id="L437">        taskExecutor.execute(connectTask);</span>
+
+<span class="nc" id="L439">    }</span>
+
+    private void loadOpenOfficeJars(Path configurationPath) throws IOException {
+<span class="nc" id="L442">        List&lt;Optional&lt;Path&gt;&gt; filePaths = OpenOfficePreferences.OO_JARS.stream().map(jar -&gt; FileUtil.find(jar, configurationPath)).collect(Collectors.toList());</span>
+
+<span class="nc bnc" id="L444" title="All 2 branches missed.">        if (!filePaths.stream().allMatch(Optional::isPresent)) {</span>
+<span class="nc" id="L445">            throw new IOException(&quot;(Not all) required Open Office Jars were found inside installation path. Searched for &quot; + OpenOfficePreferences.OO_JARS + &quot; in &quot; + configurationPath);</span>
+        }
+
+<span class="nc" id="L448">        List&lt;URL&gt; jarURLs = new ArrayList&lt;&gt;(OpenOfficePreferences.OO_JARS.size());</span>
+<span class="nc bnc" id="L449" title="All 2 branches missed.">        for (Optional&lt;Path&gt; jarPath : filePaths) {</span>
+<span class="nc" id="L450">            jarURLs.add((jarPath.get().toUri().toURL()));</span>
+<span class="nc" id="L451">        }</span>
+<span class="nc" id="L452">        addURL(jarURLs);</span>
+<span class="nc" id="L453">    }</span>
+
+    private OOBibBase createBibBase() throws IOException, InvocationTargetException, IllegalAccessException,
+            WrappedTargetException, BootstrapException, UnknownPropertyException, NoDocumentException,
+            NoSuchElementException, CreationException {
+        // Connect
+<span class="nc" id="L459">        return new OOBibBase(ooPrefs.getExecutablePath(), true);</span>
+    }
+
+    private Optional&lt;Boolean&gt; showManualConnectionDialog() {
+<span class="nc" id="L463">        return new ManualConnectDialogView(dialogService).showAndWait();</span>
+    }
+
+    private void pushEntries(boolean inParenthesisIn, boolean withText, boolean addPageInfo) {
+<span class="nc bnc" id="L467" title="All 2 branches missed.">        if (!ooBase.isConnectedToDocument()) {</span>
+<span class="nc" id="L468">            dialogService.showErrorDialogAndWait(Localization.lang(&quot;Error pushing entries&quot;), Localization.lang(&quot;Not connected to any Writer document. Please&quot; + &quot; make sure a document is open, and use the 'Select Writer document' button to connect to it.&quot;));</span>
+<span class="nc" id="L469">            return;</span>
+        }
+
+<span class="nc" id="L472">        Boolean inParenthesis = inParenthesisIn;</span>
+<span class="nc" id="L473">        String pageInfo = null;</span>
+<span class="nc bnc" id="L474" title="All 2 branches missed.">        if (addPageInfo) {</span>
+
+<span class="nc" id="L476">            AdvancedCiteDialogView citeDialog = new AdvancedCiteDialogView();</span>
+<span class="nc" id="L477">            Optional&lt;AdvancedCiteDialogViewModel&gt; citeDialogViewModel = citeDialog.showAndWait();</span>
+
+<span class="nc bnc" id="L479" title="All 2 branches missed.">            if (citeDialogViewModel.isPresent()) {</span>
+
+<span class="nc" id="L481">                AdvancedCiteDialogViewModel model = citeDialogViewModel.get();</span>
+<span class="nc bnc" id="L482" title="All 2 branches missed.">                if (!model.pageInfoProperty().getValue().isEmpty()) {</span>
+<span class="nc" id="L483">                    pageInfo = model.pageInfoProperty().getValue();</span>
+                }
+<span class="nc" id="L485">                inParenthesis = model.citeInParProperty().getValue();</span>
+            }
+        }
+
+<span class="nc" id="L489">        BasePanel panel = frame.getCurrentBasePanel();</span>
+<span class="nc bnc" id="L490" title="All 2 branches missed.">        if (panel != null) {</span>
+<span class="nc" id="L491">            final BibDatabase database = panel.getDatabase();</span>
+<span class="nc" id="L492">            List&lt;BibEntry&gt; entries = panel.getSelectedEntries();</span>
+<span class="nc bnc" id="L493" title="All 4 branches missed.">            if (!entries.isEmpty() &amp;&amp; checkThatEntriesHaveKeys(entries)) {</span>
+
+                try {
+<span class="nc bnc" id="L496" title="All 2 branches missed.">                    if (style == null) {</span>
+<span class="nc" id="L497">                        style = loader.getUsedStyle();</span>
+                    }
+<span class="nc" id="L499">                    ooBase.insertEntry(entries, database, getBaseList(), style, inParenthesis, withText, pageInfo,</span>
+<span class="nc" id="L500">                            ooPrefs.getSyncWhenCiting());</span>
+<span class="nc" id="L501">                } catch (FileNotFoundException ex) {</span>
+
+<span class="nc" id="L503">                    dialogService.showErrorDialogAndWait(</span>
+<span class="nc" id="L504">                            Localization.lang(&quot;No valid style file defined&quot;),</span>
+<span class="nc" id="L505">                            Localization.lang(&quot;You must select either a valid style file, or use one of the default styles.&quot;));</span>
+
+<span class="nc" id="L507">                    LOGGER.warn(&quot;Problem with style file&quot;, ex);</span>
+<span class="nc" id="L508">                } catch (ConnectionLostException ex) {</span>
+<span class="nc" id="L509">                    showConnectionLostErrorMessage();</span>
+<span class="nc" id="L510">                } catch (UndefinedCharacterFormatException ex) {</span>
+<span class="nc" id="L511">                    reportUndefinedCharacterFormat(ex);</span>
+<span class="nc" id="L512">                } catch (UndefinedParagraphFormatException ex) {</span>
+<span class="nc" id="L513">                    reportUndefinedParagraphFormat(ex);</span>
+<span class="nc" id="L514">                } catch (com.sun.star.lang.IllegalArgumentException | UnknownPropertyException | PropertyVetoException |</span>
+                        CreationException | NoSuchElementException | WrappedTargetException | IOException |
+                        BibEntryNotFoundException | IllegalTypeException | PropertyExistException |
+                        NotRemoveableException ex) {
+<span class="nc" id="L518">                    LOGGER.warn(&quot;Could not insert entry&quot;, ex);</span>
+<span class="nc" id="L519">                }</span>
+            }
+
+        }
+
+<span class="nc" id="L524">    }</span>
+
+    /**
+     * Check that all entries in the list have BibTeX keys, if not ask if they should be generated
+     *
+     * @param entries A list of entries to be checked
+     * @return true if all entries have BibTeX keys, if it so may be after generating them
+     */
+    private boolean checkThatEntriesHaveKeys(List&lt;BibEntry&gt; entries) {
+        // Check if there are empty keys
+<span class="nc" id="L534">        boolean emptyKeys = false;</span>
+<span class="nc bnc" id="L535" title="All 2 branches missed.">        for (BibEntry entry : entries) {</span>
+<span class="nc bnc" id="L536" title="All 2 branches missed.">            if (!entry.getCiteKeyOptional().isPresent()) {</span>
+                // Found one, no need to look further for now
+<span class="nc" id="L538">                emptyKeys = true;</span>
+<span class="nc" id="L539">                break;</span>
+            }
+<span class="nc" id="L541">        }</span>
+
+        // If no empty keys, return true
+<span class="nc bnc" id="L544" title="All 2 branches missed.">        if (!emptyKeys) {</span>
+<span class="nc" id="L545">            return true;</span>
+        }
+
+        // Ask if keys should be generated
+<span class="nc" id="L549">        boolean citePressed = dialogService.showConfirmationDialogAndWait(Localization.lang(&quot;Cite&quot;),</span>
+<span class="nc" id="L550">                Localization.lang(&quot;Cannot cite entries without BibTeX keys. Generate keys now?&quot;),</span>
+<span class="nc" id="L551">                Localization.lang(&quot;Generate keys&quot;),</span>
+<span class="nc" id="L552">                Localization.lang(&quot;Cancel&quot;));</span>
+
+<span class="nc" id="L554">        BasePanel panel = frame.getCurrentBasePanel();</span>
+<span class="nc bnc" id="L555" title="All 4 branches missed.">        if (citePressed &amp;&amp; (panel != null)) {</span>
+            // Generate keys
+<span class="nc" id="L557">            BibtexKeyPatternPreferences prefs = jabRefPreferences.getBibtexKeyPatternPreferences();</span>
+<span class="nc" id="L558">            NamedCompound undoCompound = new NamedCompound(Localization.lang(&quot;Cite&quot;));</span>
+<span class="nc bnc" id="L559" title="All 2 branches missed.">            for (BibEntry entry : entries) {</span>
+<span class="nc bnc" id="L560" title="All 2 branches missed.">                if (!entry.getCiteKeyOptional().isPresent()) {</span>
+                    // Generate key
+<span class="nc" id="L562">                    new BibtexKeyGenerator(panel.getBibDatabaseContext(), prefs)</span>
+<span class="nc" id="L563">                            .generateAndSetKey(entry)</span>
+<span class="nc" id="L564">                            .ifPresent(change -&gt; undoCompound.addEdit(new UndoableKeyChange(change)));</span>
+                }
+<span class="nc" id="L566">            }</span>
+<span class="nc" id="L567">            undoCompound.end();</span>
+            // Add all undos
+<span class="nc" id="L569">            panel.getUndoManager().addEdit(undoCompound);</span>
+            // Now every entry has a key
+<span class="nc" id="L571">            return true;</span>
+        } else {
+            // No, we canceled (or there is no panel to get the database from, highly unlikely)
+<span class="nc" id="L574">            return false;</span>
+        }
+    }
+
+    private void showConnectionLostErrorMessage() {
+<span class="nc" id="L579">        dialogService.showErrorDialogAndWait(Localization.lang(&quot;Connection lost&quot;),</span>
+<span class="nc" id="L580">                Localization.lang(&quot;Connection to OpenOffice/LibreOffice has been lost. &quot; + &quot;Please make sure OpenOffice/LibreOffice is running, and try to reconnect.&quot;));</span>
+
+<span class="nc" id="L582">    }</span>
+
+    private void reportUndefinedParagraphFormat(UndefinedParagraphFormatException ex) {
+<span class="nc" id="L585">        dialogService.showErrorDialogAndWait(Localization.lang(&quot;Undefined paragraph format&quot;),</span>
+<span class="nc" id="L586">                Localization.lang(&quot;Your style file specifies the paragraph format '%0', &quot;</span>
+                                + &quot;which is undefined in your current OpenOffice/LibreOffice document.&quot;,
+<span class="nc" id="L588">                        ex.getFormatName()) + &quot;\n&quot; + Localization.lang(&quot;The paragraph format is controlled by the property 'ReferenceParagraphFormat' or 'ReferenceHeaderParagraphFormat' in the style file.&quot;));</span>
+
+<span class="nc" id="L590">    }</span>
+
+    private void reportUndefinedCharacterFormat(UndefinedCharacterFormatException ex) {
+<span class="nc" id="L593">        dialogService.showErrorDialogAndWait(Localization.lang(&quot;Undefined character format&quot;),</span>
+<span class="nc" id="L594">                Localization.lang(&quot;Your style file specifies the character format '%0', &quot;</span>
+                                + &quot;which is undefined in your current OpenOffice/LibreOffice document.&quot;,
+<span class="nc" id="L596">                        ex.getFormatName()) + &quot;\n&quot; + Localization.lang(&quot;The character format is controlled by the citation property 'CitationCharacterFormat' in the style file.&quot;)</span>
+
+        );
+<span class="nc" id="L599">    }</span>
+
+    private ContextMenu createSettingsPopup() {
+
+<span class="nc" id="L603">        ContextMenu contextMenu = new ContextMenu();</span>
+
+<span class="nc" id="L605">        CheckMenuItem autoSync = new CheckMenuItem(Localization.lang(&quot;Automatically sync bibliography when inserting citations&quot;));</span>
+<span class="nc" id="L606">        autoSync.selectedProperty().set(ooPrefs.getSyncWhenCiting());</span>
+
+<span class="nc" id="L608">        ToggleGroup toggleGroup = new ToggleGroup();</span>
+<span class="nc" id="L609">        RadioMenuItem useActiveBase = new RadioMenuItem(Localization.lang(&quot;Look up BibTeX entries in the active tab only&quot;));</span>
+<span class="nc" id="L610">        RadioMenuItem useAllBases = new RadioMenuItem(Localization.lang(&quot;Look up BibTeX entries in all open libraries&quot;));</span>
+<span class="nc" id="L611">        useActiveBase.setToggleGroup(toggleGroup);</span>
+<span class="nc" id="L612">        useAllBases.setToggleGroup(toggleGroup);</span>
+
+<span class="nc" id="L614">        MenuItem clearConnectionSettings = new MenuItem(Localization.lang(&quot;Clear connection settings&quot;));</span>
+
+<span class="nc bnc" id="L616" title="All 2 branches missed.">        if (ooPrefs.getUseAllDatabases()) {</span>
+<span class="nc" id="L617">            useAllBases.setSelected(true);</span>
+        } else {
+<span class="nc" id="L619">            useActiveBase.setSelected(true);</span>
+        }
+
+<span class="nc" id="L622">        autoSync.setOnAction(e -&gt; {</span>
+<span class="nc" id="L623">            ooPrefs.setSyncWhenCiting(autoSync.isSelected());</span>
+<span class="nc" id="L624">            jabRefPreferences.setOpenOfficePreferences(ooPrefs);</span>
+<span class="nc" id="L625">        });</span>
+<span class="nc" id="L626">        useAllBases.setOnAction(e -&gt; {</span>
+<span class="nc" id="L627">            ooPrefs.setUseAllDatabases(useAllBases.isSelected());</span>
+<span class="nc" id="L628">            jabRefPreferences.setOpenOfficePreferences(ooPrefs);</span>
+<span class="nc" id="L629">        });</span>
+<span class="nc" id="L630">        useActiveBase.setOnAction(e -&gt; {</span>
+<span class="nc bnc" id="L631" title="All 2 branches missed.">            ooPrefs.setUseAllDatabases(!useActiveBase.isSelected());</span>
+<span class="nc" id="L632">            jabRefPreferences.setOpenOfficePreferences(ooPrefs);</span>
+<span class="nc" id="L633">        });</span>
+<span class="nc" id="L634">        clearConnectionSettings.setOnAction(e -&gt; {</span>
+<span class="nc" id="L635">            ooPrefs.clearConnectionSettings();</span>
+<span class="nc" id="L636">            dialogService.notify(Localization.lang(&quot;Cleared connection settings&quot;));</span>
+<span class="nc" id="L637">            jabRefPreferences.setOpenOfficePreferences(ooPrefs);</span>
+<span class="nc" id="L638">        });</span>
+
+<span class="nc" id="L640">        contextMenu.getItems().addAll(autoSync, new SeparatorMenuItem(), useActiveBase, useAllBases, new SeparatorMenuItem(), clearConnectionSettings);</span>
+
+<span class="nc" id="L642">        return contextMenu;</span>
+
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

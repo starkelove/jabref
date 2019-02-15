@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransferableFileLinkSelection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.externalfiles</a> &gt; <span class="el_source">TransferableFileLinkSelection.java</span></div><h1>TransferableFileLinkSelection.java</h1><pre class="source lang-java linenums">package org.jabref.gui.externalfiles;
+
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.LinkedFile;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ */
+public class TransferableFileLinkSelection implements Transferable {
+
+<span class="nc" id="L24">    private static final Logger LOGGER = LoggerFactory.getLogger(TransferableFileLinkSelection.class);</span>
+
+<span class="nc" id="L26">    private final List&lt;Path&gt; fileList = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L28">    public TransferableFileLinkSelection(BasePanel panel, List&lt;BibEntry&gt; selection) {</span>
+<span class="nc" id="L29">        BibEntry entry = selection.get(0);</span>
+<span class="nc" id="L30">        List&lt;LinkedFile&gt; files = entry.getFiles();</span>
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        if (!files.isEmpty()) {</span>
+            // Find the default directory for this field type, if any:
+<span class="nc" id="L33">            LinkedFile firstFile = files.get(0);</span>
+<span class="nc" id="L34">            firstFile.findIn(panel.getBibDatabaseContext(), Globals.prefs.getFilePreferences())</span>
+<span class="nc" id="L35">                     .ifPresent(fileList::add);</span>
+        }
+<span class="nc" id="L37">    }</span>
+
+    @Override
+    public DataFlavor[] getTransferDataFlavors() {
+<span class="nc" id="L41">        return new DataFlavor[] {DataFlavor.javaFileListFlavor};//, DataFlavor.stringFlavor};</span>
+    }
+
+    @Override
+    public boolean isDataFlavorSupported(DataFlavor dataFlavor) {
+<span class="nc" id="L46">        LOGGER.debug(&quot;Query: &quot; + dataFlavor.getHumanPresentableName() + &quot; , &quot;</span>
+                +
+<span class="nc" id="L48">                dataFlavor.getDefaultRepresentationClass() + &quot; , &quot; + dataFlavor.getMimeType());</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        return dataFlavor.equals(DataFlavor.javaFileListFlavor)</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                || dataFlavor.equals(DataFlavor.stringFlavor);</span>
+    }
+
+    @Override
+    public Object getTransferData(DataFlavor dataFlavor) throws UnsupportedFlavorException, IOException {
+        //if (dataFlavor.equals(DataFlavor.javaFileListFlavor))
+<span class="nc" id="L56">        return fileList;</span>
+        //else
+        //    return &quot;test&quot;;
+    }
+    /*
+    private StringSelection ss;
+
+    public TransferableFileLinkSelection(BasePanel panel, BibEntry[] selection) {
+        String s = selection[0].getField(GUIGlobals.FILE_FIELD);
+        FileListTableModel tm = new FileListTableModel();
+        if (s != null)
+            tm.setContent(s);
+        if (tm.getRowCount() &gt; 0) {
+            // Find the default directory for this field type, if any:
+            String dir = panel.metaData().getFileDirectory(GUIGlobals.FILE_FIELD);
+            // Include the standard &quot;file&quot; directory:
+            String fileDir = panel.metaData().getFileDirectory(GUIGlobals.FILE_FIELD);
+            // Include the directory of the BIB file:
+            String[] dirs;
+            if (panel.metaData().getDatabaseFile() != null) {
+                String databaseDir = panel.metaData().getDatabaseFile().getParent();
+                dirs = new String[] { dir, fileDir, databaseDir };
+            }
+            else
+                dirs = new String[] { dir, fileDir };
+            System.out.println(tm.getEntry(0).getLink());
+            for (int i = 0; i &lt; dirs.length; i++) {
+                String dir1 = dirs[i];
+                System.out.println(&quot;dir:&quot;+dir1);
+            }
+            File expLink = Util.expandFilename(tm.getEntry(0).getLink(), dirs);
+            try {
+                System.out.println(expLink.toURI().toURL().toString());
+                ss = new StringSelection(expLink.toURI().toURL().toString());
+
+            } catch (MalformedURLException ex) {
+                ss = new StringSelection(&quot;&quot;);
+            }
+        }
+        else
+            ss = new StringSelection(&quot;&quot;);
+
+    }
+
+    public Transferable getTransferable() {
+        return ss;
+    } */
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

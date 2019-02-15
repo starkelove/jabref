@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.TypedBibEntryTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:25" hostname="n184-p67.eduroam.kth.se" time="0.003">
+  <properties/>
+  <testcase name="hasAllRequiredFieldsForUnknownTypeReturnsTrue()" classname="org.jabref.logic.TypedBibEntryTest" time="0.001"/>
+  <testcase name="hasAllRequiredFieldsFail()" classname="org.jabref.logic.TypedBibEntryTest" time="0.001"/>
+  <testcase name="hasAllRequiredFields()" classname="org.jabref.logic.TypedBibEntryTest" time="0.001"/>
+  <testcase name="getTypeForDisplayForUnknownTypeCapitalizeFirstLetter()" classname="org.jabref.logic.TypedBibEntryTest" time="0.0"/>
+  <testcase name="getTypeForDisplayReturnsTypeName()" classname="org.jabref.logic.TypedBibEntryTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

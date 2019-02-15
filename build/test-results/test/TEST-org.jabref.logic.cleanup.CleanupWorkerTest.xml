@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.cleanup.CleanupWorkerTest" tests="23" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:47" hostname="n184-p67.eduroam.kth.se" time="0.089">
+  <properties/>
+  <testcase name="cleanupMonthChangesNumberToBibtex()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.005"/>
+  <testcase name="upgradeExternalLinksMoveFromPdfToFile()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.004"/>
+  <testcase name="cleanupDoiRemovesLeadingHttp()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.003"/>
+  <testcase name="convertToBiblatexMovesAddressToLocation()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.002"/>
+  <testcase name="cleanupWithDisabledFieldFormatterChangesNothing()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.002"/>
+  <testcase name="cleanupFixFileLinksMovesSingleDescriptionToLink()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.003"/>
+  <testcase name="cleanupLatexMergesTwoLatexMathEnvironments()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.003"/>
+  <testcase name="cleanupWithNullPresetThrowsException()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.003"/>
+  <testcase name="convertToBiblatexMovesJournalToJournalTitle()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.003"/>
+  <testcase name="cleanupRenamePdfRenamesRelativeFile(Path)" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.004"/>
+  <testcase name="cleanupDoiReturnsChanges()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.002"/>
+  <testcase name="cleanupDatesConvertsToCorrectFormat()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.002"/>
+  <testcase name="cleanupRelativePathsConvertAbsoluteToRelativePath(Path)" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.004"/>
+  <testcase name="cleanupNullEntryThrowsException()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.003"/>
+  <testcase name="cleanupHtmlToLatexConvertsEpsilonToLatex()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.003"/>
+  <testcase name="cleanupDoiReturnsChangeWhenDoiInURLField()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.004"/>
+  <testcase name="cleanupMoveFilesMovesFileFromSubfolder(Path)" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.006"/>
+  <testcase name="cleanupUnitsConvertsOneAmpereToLatex()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.006"/>
+  <testcase name="upgradeExternalLinksMoveFromPsToFile()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.003"/>
+  <testcase name="cleanupDoesNothingByDefault(Path)" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.002"/>
+  <testcase name="cleanupCasesAddsBracketAroundAluminiumGalliumArsenid()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.007"/>
+  <testcase name="cleanupDoiFindsDoiInURLFieldAndMoveItToDOIField()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.003"/>
+  <testcase name="cleanupPageNumbersConvertsSingleDashToDouble()" classname="org.jabref.logic.cleanup.CleanupWorkerTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

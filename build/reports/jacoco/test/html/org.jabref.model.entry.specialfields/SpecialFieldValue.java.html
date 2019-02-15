@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SpecialFieldValue.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry.specialfields</a> &gt; <span class="el_source">SpecialFieldValue.java</span></div><h1>SpecialFieldValue.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry.specialfields;
+
+import java.util.Optional;
+
+import org.jabref.model.entry.Keyword;
+
+<span class="fc" id="L7">public enum SpecialFieldValue {</span>
+
+<span class="fc" id="L9">    PRINTED(&quot;printed&quot;),</span>
+<span class="fc" id="L10">    CLEAR_PRIORITY(null),</span>
+<span class="fc" id="L11">    PRIORITY_HIGH(&quot;prio1&quot;),</span>
+<span class="fc" id="L12">    PRIORITY_MEDIUM(&quot;prio2&quot;),</span>
+<span class="fc" id="L13">    PRIORITY_LOW(&quot;prio3&quot;),</span>
+<span class="fc" id="L14">    QUALITY_ASSURED(&quot;qualityAssured&quot;),</span>
+<span class="fc" id="L15">    CLEAR_RANK(null),</span>
+<span class="fc" id="L16">    RANK_1(&quot;rank1&quot;),</span>
+<span class="fc" id="L17">    RANK_2(&quot;rank2&quot;),</span>
+<span class="fc" id="L18">    RANK_3(&quot;rank3&quot;),</span>
+<span class="fc" id="L19">    RANK_4(&quot;rank4&quot;),</span>
+<span class="fc" id="L20">    RANK_5(&quot;rank5&quot;),</span>
+<span class="fc" id="L21">    CLEAR_READ_STATUS(null),</span>
+<span class="fc" id="L22">    READ(&quot;read&quot;),</span>
+<span class="fc" id="L23">    SKIMMED(&quot;skimmed&quot;),</span>
+<span class="fc" id="L24">    RELEVANT(&quot;relevant&quot;);</span>
+
+    // keyword used at keyword field
+    private final Optional&lt;Keyword&gt; keyword;
+
+    /**
+     *
+     * @param keyword - The keyword to be used at BibTex's keyword field. May be &quot;null&quot; if no keyword is to be set
+     */
+<span class="fc" id="L33">    SpecialFieldValue(String keyword) {</span>
+<span class="fc" id="L34">        this.keyword = Optional.ofNullable(keyword).map(Keyword::new);</span>
+<span class="fc" id="L35">    }</span>
+
+    public static SpecialFieldValue getRating(int ranking) {
+<span class="nc bnc" id="L38" title="All 6 branches missed.">        switch (ranking) {</span>
+            case 1:
+<span class="nc" id="L40">                return RANK_1;</span>
+            case 2:
+<span class="nc" id="L42">                return RANK_2;</span>
+            case 3:
+<span class="nc" id="L44">                return RANK_3;</span>
+            case 4:
+<span class="nc" id="L46">                return RANK_4;</span>
+            case 5:
+<span class="nc" id="L48">                return RANK_5;</span>
+            default:
+<span class="nc" id="L50">                throw new UnsupportedOperationException(ranking + &quot;is not a valid ranking&quot;);</span>
+        }
+    }
+
+    public Optional&lt;Keyword&gt; getKeyword() {
+<span class="fc" id="L55">        return keyword;</span>
+    }
+
+    public Optional&lt;String&gt; getFieldValue() {
+<span class="fc" id="L59">        return keyword.map(Keyword::toString);</span>
+    }
+
+    public int toRating() {
+<span class="nc bnc" id="L63" title="All 6 branches missed.">        switch (this) {</span>
+            case RANK_1:
+<span class="nc" id="L65">                return 1;</span>
+            case RANK_2:
+<span class="nc" id="L67">                return 2;</span>
+            case RANK_3:
+<span class="nc" id="L69">                return 3;</span>
+            case RANK_4:
+<span class="nc" id="L71">                return 4;</span>
+            case RANK_5:
+<span class="nc" id="L73">                return 5;</span>
+            default:
+<span class="nc" id="L75">                throw new UnsupportedOperationException(this + &quot;is not a valid ranking&quot;);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

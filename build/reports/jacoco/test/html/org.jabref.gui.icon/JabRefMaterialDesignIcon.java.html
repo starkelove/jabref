@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JabRefMaterialDesignIcon.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.icon</a> &gt; <span class="el_source">JabRefMaterialDesignIcon.java</span></div><h1>JabRefMaterialDesignIcon.java</h1><pre class="source lang-java linenums">package org.jabref.gui.icon;
+
+import de.jensd.fx.glyphs.GlyphIcons;
+
+/**
+ * Provides the same true-type font interface as MaterialDesignIcon itself, but uses a font we created ourselves that
+ * contains icons that are not available in MaterialDesignIcons.
+ *
+ * @implNote The glyphs of the ttf (speak: the icons) were created with Illustrator and a template from the material design icons
+ * web-page. The art boards for each icon was exported as SVG and then converted with &lt;a href=&quot;https://icomoon.io/app&quot;&gt;
+ * IcoMoon&lt;/a&gt;. The final TTF font is located in the resource folder.
+ * @see &lt;a href=&quot;https://github.com/JabRef/jabref/wiki/Custom-SVG-Icons-for-JabRef&quot;&gt;Tutorial on our Wiki&lt;/a&gt;
+ * @see &lt;a href=&quot;https://materialdesignicons.com/custom&quot;&gt;Material Design Icon custom page&lt;/a&gt;
+ */
+<span class="fc" id="L15">public enum JabRefMaterialDesignIcon implements GlyphIcons {</span>
+
+<span class="fc" id="L17">    TEX_STUDIO(&quot;\ue900&quot;),</span>
+<span class="fc" id="L18">    TEX_MAKER(&quot;\ue901&quot;),</span>
+<span class="fc" id="L19">    EMACS(&quot;\ue902&quot;),</span>
+<span class="fc" id="L20">    OPEN_OFFICE(&quot;\ue903&quot;),</span>
+<span class="fc" id="L21">    VIM(&quot;\ue904&quot;),</span>
+<span class="fc" id="L22">    VIM2(&quot;\ue905&quot;),</span>
+<span class="fc" id="L23">    LYX(&quot;\ue906&quot;),</span>
+<span class="fc" id="L24">    WINEDT(&quot;\ue907&quot;),</span>
+<span class="fc" id="L25">    ARXIV(&quot;\ue908&quot;),</span>
+<span class="fc" id="L26">    COPY(&quot;\ue909&quot;),</span>
+<span class="fc" id="L27">    PASTE(&quot;\ue90a&quot;),</span>
+<span class="fc" id="L28">    SET_CENTER(&quot;\ue90b&quot;),</span>
+<span class="fc" id="L29">    SET_ALL(&quot;\ue90c&quot;),</span>
+<span class="fc" id="L30">    VSCODE(&quot;\ue90d&quot;),</span>
+<span class="fc" id="L31">    CANCEL(&quot;\ue90e&quot;);</span>
+
+
+    private final String unicode;
+
+<span class="fc" id="L36">    JabRefMaterialDesignIcon(String unicode) {</span>
+<span class="fc" id="L37">        this.unicode = unicode;</span>
+<span class="fc" id="L38">    }</span>
+
+    @Override
+    public String unicode() {
+<span class="fc" id="L42">        return unicode;</span>
+    }
+
+    @Override
+    public String fontFamily() {
+<span class="fc" id="L47">        return &quot;\'JabRefMaterialDesign\'&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

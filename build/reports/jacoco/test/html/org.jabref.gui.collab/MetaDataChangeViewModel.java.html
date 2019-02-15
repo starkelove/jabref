@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MetaDataChangeViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.collab</a> &gt; <span class="el_source">MetaDataChangeViewModel.java</span></div><h1>MetaDataChangeViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.collab;
+
+import javax.swing.JComponent;
+import javax.swing.JScrollPane;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.logic.bibtex.comparator.MetaDataDiff;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.metadata.MetaData;
+
+class MetaDataChangeViewModel extends ChangeViewModel {
+
+<span class="nc" id="L15">    private final InfoPane infoPane = new InfoPane();</span>
+<span class="nc" id="L16">    private final JScrollPane sp = new JScrollPane(infoPane);</span>
+    private final MetaData newMetaData;
+
+    public MetaDataChangeViewModel(MetaDataDiff metaDataDiff) {
+<span class="nc" id="L20">        super(Localization.lang(&quot;Metadata change&quot;));</span>
+<span class="nc" id="L21">        this.newMetaData = metaDataDiff.getNewMetaData();</span>
+
+<span class="nc" id="L23">        infoPane.setText(&quot;&lt;html&gt;&quot; + Localization.lang(&quot;Metadata change&quot;) + &quot;&lt;/html&gt;&quot;);</span>
+<span class="nc" id="L24">    }</span>
+
+    @Override
+    public JComponent description() {
+        /*
+        // TODO: Show detailed description of the changes
+        StringBuilder sb = new StringBuilder(
+                &quot;&lt;html&gt;&quot; + Localization.lang(&quot;Changes have been made to the following metadata elements&quot;)
+                        + &quot;:&lt;p&gt;&lt;br&gt;&amp;nbsp;&amp;nbsp;&quot;);
+        sb.append(changes.stream().map(unit -&gt; unit.key).collect(Collectors.joining(&quot;&lt;br&gt;&amp;nbsp;&amp;nbsp;&quot;)));
+        sb.append(&quot;&lt;/html&gt;&quot;);
+        infoPane.setText(sb.toString());
+        */
+<span class="nc" id="L37">        return sp;</span>
+    }
+
+    @Override
+    public boolean makeChange(BasePanel panel, BibDatabase secondary, NamedCompound undoEdit) {
+<span class="nc" id="L42">        panel.getBibDatabaseContext().setMetaData(newMetaData);</span>
+<span class="nc" id="L43">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

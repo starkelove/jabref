@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JabRefIconView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.icon</a> &gt; <span class="el_source">JabRefIconView.java</span></div><h1>JabRefIconView.java</h1><pre class="source lang-java linenums">package org.jabref.gui.icon;
+
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+
+import de.jensd.fx.glyphs.GlyphIcon;
+import org.fxmisc.easybind.EasyBind;
+
+public class JabRefIconView extends GlyphIcon&lt;IconTheme.JabRefIcons&gt; {
+
+    /**
+     * This property is only needed to get proper IDE support in FXML files
+     * (e.g. validation that parameter passed to &quot;icon&quot; is indeed of type {@link IconTheme.JabRefIcons}).
+     */
+    private ObjectProperty&lt;IconTheme.JabRefIcons&gt; glyph;
+
+    public JabRefIconView(IconTheme.JabRefIcons icon, String iconSize) {
+<span class="fc" id="L18">        super(IconTheme.JabRefIcons.class);</span>
+<span class="fc" id="L19">        this.glyph = new SimpleObjectProperty&lt;&gt;(icon);</span>
+<span class="fc" id="L20">        EasyBind.subscribe(glyph, this::setIcon);</span>
+<span class="fc" id="L21">        setIcon(icon);</span>
+<span class="fc" id="L22">        setStyle(String.format(&quot;-fx-font-family: %s; -fx-font-size: %s;&quot;, icon.fontFamily(), iconSize));</span>
+<span class="fc" id="L23">    }</span>
+
+    public JabRefIconView(IconTheme.JabRefIcons icon) {
+<span class="nc" id="L26">        this(icon, &quot;1em&quot;);</span>
+<span class="nc" id="L27">    }</span>
+
+    public JabRefIconView() {
+<span class="fc" id="L30">        this(IconTheme.JabRefIcons.ERROR, &quot;1em&quot;);</span>
+<span class="fc" id="L31">    }</span>
+
+    @Override
+    public IconTheme.JabRefIcons getDefaultGlyph() {
+<span class="fc" id="L35">        return IconTheme.JabRefIcons.ERROR;</span>
+    }
+
+    public IconTheme.JabRefIcons getGlyph() {
+<span class="nc" id="L39">        return glyph.get();</span>
+    }
+
+    public void setGlyph(IconTheme.JabRefIcons icon) {
+<span class="fc" id="L43">        this.glyph.set(icon);</span>
+<span class="fc" id="L44">    }</span>
+
+    public ObjectProperty&lt;IconTheme.JabRefIcons&gt; glyphProperty() {
+<span class="nc" id="L47">        return glyph;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

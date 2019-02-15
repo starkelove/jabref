@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MoveGroupChange.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.groups</a> &gt; <span class="el_source">MoveGroupChange.java</span></div><h1>MoveGroupChange.java</h1><pre class="source lang-java linenums">package org.jabref.gui.groups;
+
+import org.jabref.model.groups.GroupTreeNode;
+
+public class MoveGroupChange {
+
+    private GroupTreeNode oldParent;
+    private int oldChildIndex;
+    private GroupTreeNode newParent;
+    private int newChildIndex;
+
+    /**
+     * @param oldParent
+     * @param oldChildIndex
+     * @param newParent The new parent node to which the node will be moved.
+     * @param newChildIndex The child index at newParent to which the node will be moved.
+     */
+<span class="nc" id="L18">    public MoveGroupChange(GroupTreeNode oldParent, int oldChildIndex, GroupTreeNode newParent, int newChildIndex) {</span>
+<span class="nc" id="L19">        this.oldParent = oldParent;</span>
+<span class="nc" id="L20">        this.oldChildIndex = oldChildIndex;</span>
+<span class="nc" id="L21">        this.newParent = newParent;</span>
+<span class="nc" id="L22">        this.newChildIndex = newChildIndex;</span>
+<span class="nc" id="L23">    }</span>
+
+    public GroupTreeNode getOldParent() {
+<span class="nc" id="L26">        return oldParent;</span>
+    }
+
+    public int getOldChildIndex() {
+<span class="nc" id="L30">        return oldChildIndex;</span>
+    }
+
+    public GroupTreeNode getNewParent() {
+<span class="nc" id="L34">        return newParent;</span>
+    }
+
+    public int getNewChildIndex() {
+<span class="nc" id="L38">        return newChildIndex;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

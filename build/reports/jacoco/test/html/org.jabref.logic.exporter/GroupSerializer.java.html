@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupSerializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.exporter</a> &gt; <span class="el_source">GroupSerializer.java</span></div><h1>GroupSerializer.java</h1><pre class="source lang-java linenums">package org.jabref.logic.exporter;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javafx.scene.paint.Color;
+
+import org.jabref.logic.util.MetadataSerializationConfiguration;
+import org.jabref.logic.util.io.FileUtil;
+import org.jabref.model.groups.AbstractGroup;
+import org.jabref.model.groups.AllEntriesGroup;
+import org.jabref.model.groups.AutomaticGroup;
+import org.jabref.model.groups.AutomaticKeywordGroup;
+import org.jabref.model.groups.AutomaticPersonsGroup;
+import org.jabref.model.groups.ExplicitGroup;
+import org.jabref.model.groups.GroupTreeNode;
+import org.jabref.model.groups.KeywordGroup;
+import org.jabref.model.groups.RegexKeywordGroup;
+import org.jabref.model.groups.SearchGroup;
+import org.jabref.model.groups.TexGroup;
+import org.jabref.model.strings.StringUtil;
+
+<span class="fc" id="L23">public class GroupSerializer {</span>
+    private static String serializeAllEntriesGroup() {
+<span class="fc" id="L25">        return MetadataSerializationConfiguration.ALL_ENTRIES_GROUP_ID;</span>
+    }
+
+    private String serializeExplicitGroup(ExplicitGroup group) {
+<span class="fc" id="L29">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L30">        sb.append(MetadataSerializationConfiguration.EXPLICIT_GROUP_ID);</span>
+<span class="fc" id="L31">        sb.append(StringUtil.quote(group.getName(), MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR, MetadataSerializationConfiguration.GROUP_QUOTE_CHAR));</span>
+<span class="fc" id="L32">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L33">        sb.append(group.getHierarchicalContext().ordinal());</span>
+<span class="fc" id="L34">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+
+<span class="fc" id="L36">        appendGroupDetails(sb, group);</span>
+
+<span class="fc" id="L38">        return sb.toString();</span>
+    }
+
+    private String serializeKeywordGroup(KeywordGroup group) {
+<span class="fc" id="L42">        Boolean isRegex = group instanceof RegexKeywordGroup;</span>
+<span class="fc" id="L43">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L44">        sb.append(MetadataSerializationConfiguration.KEYWORD_GROUP_ID);</span>
+<span class="fc" id="L45">        sb.append(StringUtil.quote(group.getName(), MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR, MetadataSerializationConfiguration.GROUP_QUOTE_CHAR));</span>
+<span class="fc" id="L46">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L47">        sb.append(group.getHierarchicalContext().ordinal());</span>
+<span class="fc" id="L48">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L49">        sb.append(StringUtil.quote(group.getSearchField(), MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR, MetadataSerializationConfiguration.GROUP_QUOTE_CHAR));</span>
+<span class="fc" id="L50">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L51">        sb.append(StringUtil.quote(group.getSearchExpression(), MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR, MetadataSerializationConfiguration.GROUP_QUOTE_CHAR));</span>
+<span class="fc" id="L52">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L53">        sb.append(StringUtil.booleanToBinaryString(group.isCaseSensitive()));</span>
+<span class="fc" id="L54">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L55">        sb.append(StringUtil.booleanToBinaryString(isRegex));</span>
+<span class="fc" id="L56">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+
+<span class="fc" id="L58">        appendGroupDetails(sb, group);</span>
+
+<span class="fc" id="L60">        return sb.toString();</span>
+    }
+
+    private String serializeSearchGroup(SearchGroup group) {
+<span class="fc" id="L64">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L65">        sb.append(MetadataSerializationConfiguration.SEARCH_GROUP_ID);</span>
+<span class="fc" id="L66">        sb.append(StringUtil.quote(group.getName(), MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR, MetadataSerializationConfiguration.GROUP_QUOTE_CHAR));</span>
+<span class="fc" id="L67">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L68">        sb.append(group.getHierarchicalContext().ordinal());</span>
+<span class="fc" id="L69">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L70">        sb.append(StringUtil.quote(group.getSearchExpression(), MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR, MetadataSerializationConfiguration.GROUP_QUOTE_CHAR));</span>
+<span class="fc" id="L71">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L72">        sb.append(StringUtil.booleanToBinaryString(group.isCaseSensitive()));</span>
+<span class="fc" id="L73">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L74">        sb.append(StringUtil.booleanToBinaryString(group.isRegularExpression()));</span>
+<span class="fc" id="L75">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+
+<span class="fc" id="L77">        appendGroupDetails(sb, group);</span>
+
+<span class="fc" id="L79">        return sb.toString();</span>
+    }
+
+    private void appendGroupDetails(StringBuilder builder, AbstractGroup group) {
+<span class="fc" id="L83">        builder.append(StringUtil.booleanToBinaryString(group.isExpanded()));</span>
+<span class="fc" id="L84">        builder.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L85">        builder.append(group.getColor().map(Color::toString).orElse(&quot;&quot;));</span>
+<span class="fc" id="L86">        builder.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L87">        builder.append(group.getIconName().orElse(&quot;&quot;));</span>
+<span class="fc" id="L88">        builder.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L89">        builder.append(group.getDescription().orElse(&quot;&quot;));</span>
+<span class="fc" id="L90">        builder.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L91">    }</span>
+
+    /**
+     * Returns a textual representation of this node and its children. This
+     * representation contains both the tree structure and the textual
+     * representations of the group associated with each node.
+     * Every node is one entry in the list of strings.
+     *
+     * @return a representation of the tree based at this node as a list of strings
+     */
+    public List&lt;String&gt; serializeTree(GroupTreeNode node) {
+
+<span class="fc" id="L103">        List&lt;String&gt; representation = new ArrayList&lt;&gt;();</span>
+
+        // Append current node
+<span class="fc" id="L106">        representation.add(String.valueOf(node.getLevel()) + ' ' + serializeGroup(node.getGroup()));</span>
+
+        // Append children
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        for (GroupTreeNode child : node.getChildren()) {</span>
+<span class="fc" id="L110">            representation.addAll(serializeTree(child));</span>
+<span class="fc" id="L111">        }</span>
+
+<span class="fc" id="L113">        return representation;</span>
+    }
+
+    private String serializeGroup(AbstractGroup group) {
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if (group instanceof AllEntriesGroup) {</span>
+<span class="fc" id="L118">            return serializeAllEntriesGroup();</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">        } else if (group instanceof ExplicitGroup) {</span>
+<span class="fc" id="L120">            return serializeExplicitGroup((ExplicitGroup)group);</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        } else if (group instanceof KeywordGroup) {</span>
+<span class="fc" id="L122">            return serializeKeywordGroup((KeywordGroup)group);</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        } else if (group instanceof SearchGroup) {</span>
+<span class="fc" id="L124">            return serializeSearchGroup((SearchGroup)group);</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        } else if (group instanceof AutomaticKeywordGroup) {</span>
+<span class="fc" id="L126">            return serializeAutomaticKeywordGroup((AutomaticKeywordGroup)group);</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        } else if (group instanceof AutomaticPersonsGroup) {</span>
+<span class="fc" id="L128">            return serializeAutomaticPersonsGroup((AutomaticPersonsGroup) group);</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        } else if (group instanceof TexGroup) {</span>
+<span class="fc" id="L130">            return serializeTexGroup((TexGroup) group);</span>
+        } else {
+<span class="nc" id="L132">            throw new UnsupportedOperationException(&quot;Don't know how to serialize group&quot; + group.getClass().getName());</span>
+        }
+    }
+
+    private String serializeTexGroup(TexGroup group) {
+<span class="fc" id="L137">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L138">        sb.append(MetadataSerializationConfiguration.TEX_GROUP_ID);</span>
+<span class="fc" id="L139">        sb.append(StringUtil.quote(group.getName(), MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR, MetadataSerializationConfiguration.GROUP_QUOTE_CHAR));</span>
+<span class="fc" id="L140">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L141">        sb.append(group.getHierarchicalContext().ordinal());</span>
+<span class="fc" id="L142">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L143">        sb.append(StringUtil.quote(FileUtil.toPortableString(group.getFilePath()), MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR, MetadataSerializationConfiguration.GROUP_QUOTE_CHAR));</span>
+<span class="fc" id="L144">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+
+<span class="fc" id="L146">        appendGroupDetails(sb, group);</span>
+
+<span class="fc" id="L148">        return sb.toString();</span>
+    }
+
+    private String serializeAutomaticPersonsGroup(AutomaticPersonsGroup group) {
+<span class="fc" id="L152">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L153">        sb.append(MetadataSerializationConfiguration.AUTOMATIC_PERSONS_GROUP_ID);</span>
+<span class="fc" id="L154">        appendAutomaticGroupDetails(sb, group);</span>
+<span class="fc" id="L155">        sb.append(StringUtil.quote(group.getField(), MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR, MetadataSerializationConfiguration.GROUP_QUOTE_CHAR));</span>
+<span class="fc" id="L156">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L157">        appendGroupDetails(sb, group);</span>
+<span class="fc" id="L158">        return sb.toString();</span>
+    }
+
+    private void appendAutomaticGroupDetails(StringBuilder builder, AutomaticGroup group) {
+<span class="fc" id="L162">        builder.append(StringUtil.quote(group.getName(), MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR, MetadataSerializationConfiguration.GROUP_QUOTE_CHAR));</span>
+<span class="fc" id="L163">        builder.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L164">        builder.append(group.getHierarchicalContext().ordinal());</span>
+<span class="fc" id="L165">        builder.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L166">    }</span>
+
+    private String serializeAutomaticKeywordGroup(AutomaticKeywordGroup group) {
+<span class="fc" id="L169">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L170">        sb.append(MetadataSerializationConfiguration.AUTOMATIC_KEYWORD_GROUP_ID);</span>
+<span class="fc" id="L171">        appendAutomaticGroupDetails(sb, group);</span>
+<span class="fc" id="L172">        sb.append(StringUtil.quote(group.getField(), MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR, MetadataSerializationConfiguration.GROUP_QUOTE_CHAR));</span>
+<span class="fc" id="L173">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L174">        sb.append(StringUtil.quote(group.getKeywordDelimiter().toString(), MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR, MetadataSerializationConfiguration.GROUP_QUOTE_CHAR));</span>
+<span class="fc" id="L175">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L176">        sb.append(StringUtil.quote(group.getKeywordHierarchicalDelimiter().toString(), MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR, MetadataSerializationConfiguration.GROUP_QUOTE_CHAR));</span>
+<span class="fc" id="L177">        sb.append(MetadataSerializationConfiguration.GROUP_UNIT_SEPARATOR);</span>
+<span class="fc" id="L178">        appendGroupDetails(sb, group);</span>
+<span class="fc" id="L179">        return sb.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

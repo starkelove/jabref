@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ColumnPreferences.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.maintable</a> &gt; <span class="el_source">ColumnPreferences.java</span></div><h1>ColumnPreferences.java</h1><pre class="source lang-java linenums">package org.jabref.gui.maintable;
+
+import java.util.List;
+import java.util.Map;
+
+import javafx.scene.control.TableColumn.SortType;
+
+import org.jabref.model.entry.BibtexSingleField;
+import org.jabref.model.entry.specialfields.SpecialField;
+
+public class ColumnPreferences {
+
+    private final boolean showFileColumn;
+    private final boolean showUrlColumn;
+    private final boolean preferDoiOverUrl;
+    private final boolean showEprintColumn;
+    private final List&lt;String&gt; normalColumns;
+    private final List&lt;SpecialField&gt; specialFieldColumns;
+    private final List&lt;String&gt; extraFileColumns;
+    private final Map&lt;String, Double&gt; columnWidths;
+    private final Map&lt;String, SortType&gt; columnSortType;
+
+<span class="nc" id="L23">    public ColumnPreferences(boolean showFileColumn, boolean showUrlColumn, boolean preferDoiOverUrl, boolean showEprintColumn, List&lt;String&gt; normalColumns, List&lt;SpecialField&gt; specialFieldColumns, List&lt;String&gt; extraFileColumns, Map&lt;String, Double&gt; columnWidths, Map&lt;String, SortType&gt; columnSortType) {</span>
+<span class="nc" id="L24">        this.showFileColumn = showFileColumn;</span>
+<span class="nc" id="L25">        this.showUrlColumn = showUrlColumn;</span>
+<span class="nc" id="L26">        this.preferDoiOverUrl = preferDoiOverUrl;</span>
+<span class="nc" id="L27">        this.showEprintColumn = showEprintColumn;</span>
+<span class="nc" id="L28">        this.normalColumns = normalColumns;</span>
+<span class="nc" id="L29">        this.specialFieldColumns = specialFieldColumns;</span>
+<span class="nc" id="L30">        this.extraFileColumns = extraFileColumns;</span>
+<span class="nc" id="L31">        this.columnWidths = columnWidths;</span>
+<span class="nc" id="L32">        this.columnSortType = columnSortType;</span>
+<span class="nc" id="L33">    }</span>
+
+    public boolean showFileColumn() {
+<span class="nc" id="L36">        return showFileColumn;</span>
+    }
+
+    public boolean showUrlColumn() {
+<span class="nc" id="L40">        return showUrlColumn;</span>
+    }
+
+    public boolean preferDoiOverUrl() {
+<span class="nc" id="L44">        return preferDoiOverUrl;</span>
+    }
+
+    public boolean showEprintColumn() {
+<span class="nc" id="L48">        return showEprintColumn;</span>
+    }
+
+    public List&lt;String&gt; getExtraFileColumns() {
+<span class="nc" id="L52">        return extraFileColumns;</span>
+    }
+
+    public List&lt;SpecialField&gt; getSpecialFieldColumns() {
+<span class="nc" id="L56">        return specialFieldColumns;</span>
+    }
+
+    public List&lt;String&gt; getNormalColumns() {
+<span class="nc" id="L60">        return normalColumns;</span>
+    }
+
+    public double getPrefColumnWidth(String columnName) {
+<span class="nc" id="L64">        return columnWidths.getOrDefault(columnName, BibtexSingleField.DEFAULT_FIELD_LENGTH);</span>
+    }
+
+    public Map&lt;String, SortType&gt; getSortTypesForColumns() {
+<span class="nc" id="L68">        return columnSortType;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

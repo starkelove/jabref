@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.l10n.LocalizationTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:23:41" hostname="n184-p67.eduroam.kth.se" time="0.08">
+  <properties/>
+  <testcase name="testSetKnownLanguage()" classname="org.jabref.logic.l10n.LocalizationTest" time="0.014"/>
+  <testcase name="testKnownEnglishTranslationOfUndo()" classname="org.jabref.logic.l10n.LocalizationTest" time="0.0"/>
+  <testcase name="testUnsetLanguageTranslation()" classname="org.jabref.logic.l10n.LocalizationTest" time="0.0"/>
+  <testcase name="testUnknownTranslation()" classname="org.jabref.logic.l10n.LocalizationTest" time="0.001"/>
+  <testcase name="testKnownTranslationWithGroups()" classname="org.jabref.logic.l10n.LocalizationTest" time="0.0"/>
+  <testcase name="testKnownTranslationWithCountryModifier()" classname="org.jabref.logic.l10n.LocalizationTest" time="0.028"/>
+  <testcase name="testKnownGermanTranslation()" classname="org.jabref.logic.l10n.LocalizationTest" time="0.031"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

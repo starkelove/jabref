@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchQueryHighlightObservable.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.search</a> &gt; <span class="el_source">SearchQueryHighlightObservable.java</span></div><h1>SearchQueryHighlightObservable.java</h1><pre class="source lang-java linenums">package org.jabref.logic.search;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.StringJoiner;
+import java.util.regex.Pattern;
+
+import com.google.common.eventbus.EventBus;
+
+<span class="fc" id="L11">public class SearchQueryHighlightObservable {</span>
+
+<span class="fc" id="L13">    private final EventBus eventBus = new EventBus();</span>
+
+<span class="fc" id="L15">    private Optional&lt;Pattern&gt; pattern = Optional.empty();</span>
+
+    /**
+     * Adds a SearchQueryHighlightListener to the search bar. The added listener is immediately informed about the current search.
+     * Subscribers will be notified about searches.
+     *
+     * @param newListener SearchQueryHighlightListener to be added
+     */
+    public void addSearchListener(SearchQueryHighlightListener newListener) {
+<span class="fc" id="L24">        Objects.requireNonNull(newListener);</span>
+
+<span class="fc" id="L26">        eventBus.register(newListener);</span>
+<span class="fc" id="L27">        newListener.highlightPattern(pattern);</span>
+
+<span class="fc" id="L29">    }</span>
+
+    public void removeSearchListener(SearchQueryHighlightListener listener) {
+<span class="nc" id="L32">        Objects.requireNonNull(listener);</span>
+
+        try {
+<span class="nc" id="L35">            eventBus.unregister(listener);</span>
+<span class="nc" id="L36">        } catch (IllegalArgumentException e) {</span>
+            // occurs if the event source has not been registered, should not prevent shutdown
+<span class="nc" id="L38">        }</span>
+<span class="nc" id="L39">    }</span>
+    /**
+     * Fires an event if a search was started (or cleared)
+     *
+     * @param searchQuery the search query
+     */
+
+    public void fireSearchlistenerEvent(SearchQuery searchQuery) {
+<span class="fc" id="L47">        Objects.requireNonNull(searchQuery);</span>
+
+        // Parse the search string to words
+<span class="fc" id="L50">        pattern = getPatternForWords(searchQuery.getSearchWords(), searchQuery.isRegularExpression(),</span>
+<span class="fc" id="L51">                searchQuery.isCaseSensitive());</span>
+
+<span class="fc" id="L53">        update();</span>
+<span class="fc" id="L54">    }</span>
+
+    public void reset() {
+<span class="nc" id="L57">        pattern = Optional.empty();</span>
+<span class="nc" id="L58">        update();</span>
+<span class="nc" id="L59">    }</span>
+
+    private void update() {
+        // Fire an event for every listener
+<span class="fc" id="L63">        eventBus.post(pattern);</span>
+<span class="fc" id="L64">    }</span>
+
+    // Returns a regular expression pattern in the form (w1)|(w2)| ... wi are escaped if no regular expression search is enabled
+    public static Optional&lt;Pattern&gt; getPatternForWords(List&lt;String&gt; words, boolean useRegex, boolean isCaseSensitive) {
+<span class="pc bpc" id="L68" title="3 of 6 branches missed.">        if ((words == null) || words.isEmpty() || words.get(0).isEmpty()) {</span>
+<span class="nc" id="L69">            return Optional.empty();</span>
+        }
+
+        // compile the words to a regular expression in the form (w1)|(w2)|(w3)
+<span class="fc" id="L73">        StringJoiner joiner = new StringJoiner(&quot;)|(&quot;, &quot;(&quot;, &quot;)&quot;);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        for (String word : words) {</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">            joiner.add(useRegex ? word : Pattern.quote(word));</span>
+<span class="fc" id="L76">        }</span>
+<span class="fc" id="L77">        String searchPattern = joiner.toString();</span>
+
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        if (isCaseSensitive) {</span>
+<span class="nc" id="L80">            return Optional.of(Pattern.compile(searchPattern));</span>
+        } else {
+<span class="fc" id="L82">            return Optional.of(Pattern.compile(searchPattern, Pattern.CASE_INSENSITIVE));</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

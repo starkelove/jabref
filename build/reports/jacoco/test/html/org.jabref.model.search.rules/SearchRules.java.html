@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchRules.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.search.rules</a> &gt; <span class="el_source">SearchRules.java</span></div><h1>SearchRules.java</h1><pre class="source lang-java linenums">package org.jabref.model.search.rules;
+
+import java.util.regex.Pattern;
+
+public class SearchRules {
+
+
+<span class="fc" id="L8">    private static final Pattern SIMPLE_EXPRESSION = Pattern.compile(&quot;[^\\p{Punct}]*&quot;);</span>
+
+    private SearchRules() {
+    }
+
+    /**
+     * Returns the appropriate search rule that fits best to the given parameter.
+     */
+    public static SearchRule getSearchRuleByQuery(String query, boolean caseSensitive, boolean regex) {
+<span class="fc bfc" id="L17" title="All 2 branches covered.">        if (isSimpleQuery(query)) {</span>
+<span class="fc" id="L18">            return new ContainBasedSearchRule(caseSensitive);</span>
+        }
+
+        // this searches specified fields if specified,
+        // and all fields otherwise
+<span class="fc" id="L23">        SearchRule searchExpression = new GrammarBasedSearchRule(caseSensitive, regex);</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">        if (searchExpression.validateSearchStrings(query)) {</span>
+<span class="fc" id="L25">            return searchExpression;</span>
+        } else {
+<span class="nc" id="L27">            return getSearchRule(caseSensitive, regex);</span>
+        }
+    }
+
+    private static boolean isSimpleQuery(String query) {
+<span class="fc" id="L32">        return SIMPLE_EXPRESSION.matcher(query).matches();</span>
+    }
+
+    private static SearchRule getSearchRule(boolean caseSensitive, boolean regex) {
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        if (regex) {</span>
+<span class="nc" id="L37">            return new RegexBasedSearchRule(caseSensitive);</span>
+        } else {
+<span class="nc" id="L39">            return new ContainBasedSearchRule(caseSensitive);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

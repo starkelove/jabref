@@ -1,0 +1,617 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DBMSProcessor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.shared</a> &gt; <span class="el_source">DBMSProcessor.java</span></div><h1>DBMSProcessor.java</h1><pre class="source lang-java linenums">package org.jabref.logic.shared;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
+import org.jabref.logic.shared.exception.OfflineLockException;
+import org.jabref.model.database.shared.DBMSType;
+import org.jabref.model.database.shared.DatabaseConnection;
+import org.jabref.model.database.shared.DatabaseConnectionProperties;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.event.EntryEventSource;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Processes all incoming or outgoing bib data to external SQL Database and manages its structure.
+ */
+public abstract class DBMSProcessor {
+
+<span class="nc" id="L33">    public static final String PROCESSOR_ID = UUID.randomUUID().toString();</span>
+
+
+<span class="nc" id="L36">    protected static final Logger LOGGER = LoggerFactory.getLogger(DBMSProcessor.class);</span>
+
+    protected final Connection connection;
+
+    protected DatabaseConnectionProperties connectionProperties;
+
+
+<span class="nc" id="L43">    protected DBMSProcessor(DatabaseConnection dbmsConnection) {</span>
+<span class="nc" id="L44">        this.connection = dbmsConnection.getConnection();</span>
+<span class="nc" id="L45">        this.connectionProperties = dbmsConnection.getProperties();</span>
+<span class="nc" id="L46">    }</span>
+
+    /**
+     * Scans the database for required tables.
+     *
+     * @return &lt;code&gt;true&lt;/code&gt; if the structure matches the requirements, &lt;code&gt;false&lt;/code&gt; if not.
+     * @throws SQLException
+     */
+    public boolean checkBaseIntegrity() throws SQLException {
+<span class="nc" id="L55">        return checkTableAvailibility(&quot;ENTRY&quot;, &quot;FIELD&quot;, &quot;METADATA&quot;);</span>
+    }
+
+    /**
+     * Determines whether the database is using an pre-3.6 structure.
+     *
+     * @return &lt;code&gt;true&lt;/code&gt; if the structure is old, else &lt;code&gt;false&lt;/code&gt;.
+     */
+    public boolean checkForPre3Dot6Intergrity() throws SQLException {
+<span class="nc" id="L64">        return checkTableAvailibility(</span>
+                &quot;ENTRIES&quot;,
+                &quot;ENTRY_GROUP&quot;,
+                &quot;ENTRY_TYPES&quot;,
+                &quot;GROUPS&quot;,
+                &quot;GROUP_TYPES&quot;,
+                &quot;JABREF_DATABASE&quot;,
+                &quot;STRINGS&quot;); // old tables
+    }
+
+    /**
+     * Checks whether all given table names (&lt;b&gt;case insensitive&lt;/b&gt;) exist in database.
+     *
+     * @param tableNames Table names to be checked
+     * @return &lt;code&gt;true&lt;/code&gt; if &lt;b&gt;all&lt;/b&gt; given tables are present, else &lt;code&gt;false&lt;/code&gt;.
+     */
+    private boolean checkTableAvailibility(String... tableNames) throws SQLException {
+<span class="nc" id="L81">        List&lt;String&gt; requiredTables = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        for (String name : tableNames) {</span>
+<span class="nc" id="L83">            requiredTables.add(name.toUpperCase(Locale.ENGLISH));</span>
+        }
+
+<span class="nc" id="L86">        DatabaseMetaData databaseMetaData = connection.getMetaData();</span>
+        // ...getTables(null, ...): no restrictions
+<span class="nc" id="L88">        try (ResultSet databaseMetaDataResultSet = databaseMetaData.getTables(null, null, null, null)) {</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">            while (databaseMetaDataResultSet.next()) {</span>
+<span class="nc" id="L90">                String tableName = databaseMetaDataResultSet.getString(&quot;TABLE_NAME&quot;).toUpperCase(Locale.ROOT);</span>
+<span class="nc" id="L91">                requiredTables.remove(tableName); // Remove matching tables to check requiredTables for emptiness</span>
+<span class="nc" id="L92">            }</span>
+<span class="nc" id="L93">            return requiredTables.isEmpty();</span>
+<span class="nc" id="L94">        }</span>
+    }
+
+    /**
+     * Creates and sets up the needed tables and columns according to the database type and
+     * performs a check whether the needed tables are present.
+     *
+     * @throws SQLException
+     */
+    public void setupSharedDatabase() throws SQLException {
+<span class="nc" id="L104">        setUp();</span>
+
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (!checkBaseIntegrity()) {</span>
+            // can only happen with users direct intervention on shared database
+<span class="nc" id="L108">            LOGGER.error(&quot;Corrupt_shared_database_structure.&quot;);</span>
+        }
+<span class="nc" id="L110">    }</span>
+
+    /**
+     * Creates and sets up the needed tables and columns according to the database type.
+     *
+     * @throws SQLException
+     */
+    protected abstract void setUp() throws SQLException;
+
+    /**
+     * Escapes parts of SQL expressions like table or field name to match the conventions
+     * of the database system using the current dbmsType.
+     *
+     * This method is package private, because of DBMSProcessorTest
+     *
+     * @param expression Table or field name
+     * @return Correctly escaped expression
+     */
+    abstract String escape(String expression);
+
+
+    /**
+     * Inserts the given bibEntry into shared database.
+     *
+     * @param bibEntry {@link BibEntry} to be inserted
+     */
+    public void insertEntry(BibEntry bibEntry) {
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        if (!checkForBibEntryExistence(bibEntry)) {</span>
+<span class="nc" id="L138">            insertIntoEntryTable(bibEntry);</span>
+<span class="nc" id="L139">            insertIntoFieldTable(bibEntry);</span>
+        }
+
+<span class="nc" id="L142">    }</span>
+
+    /**
+     * Inserts the given bibEntry into ENTRY table.
+     *
+     * @param bibEntry {@link BibEntry} to be inserted
+     */
+    protected void insertIntoEntryTable(BibEntry bibEntry) {
+        // Inserting into ENTRY table
+<span class="nc" id="L151">        StringBuilder insertIntoEntryQuery = new StringBuilder()</span>
+<span class="nc" id="L152">                .append(&quot;INSERT INTO &quot;)</span>
+<span class="nc" id="L153">                .append(escape(&quot;ENTRY&quot;))</span>
+<span class="nc" id="L154">                .append(&quot;(&quot;)</span>
+<span class="nc" id="L155">                .append(escape(&quot;TYPE&quot;))</span>
+<span class="nc" id="L156">                .append(&quot;) VALUES(?)&quot;);</span>
+
+        // This is the only method to get generated keys which is accepted by MySQL, PostgreSQL and Oracle.
+<span class="nc" id="L159">        try (PreparedStatement preparedEntryStatement = connection.prepareStatement(insertIntoEntryQuery.toString(),</span>
+                new String[] {&quot;SHARED_ID&quot;})) {
+
+<span class="nc" id="L162">            preparedEntryStatement.setString(1, bibEntry.getType());</span>
+<span class="nc" id="L163">            preparedEntryStatement.executeUpdate();</span>
+
+<span class="nc" id="L165">            try (ResultSet generatedKeys = preparedEntryStatement.getGeneratedKeys()) {</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">                if (generatedKeys.next()) {</span>
+<span class="nc" id="L167">                    bibEntry.getSharedBibEntryData().setSharedID(generatedKeys.getInt(1)); // set generated ID locally</span>
+                }
+            }
+<span class="nc" id="L170">        } catch (SQLException e) {</span>
+<span class="nc" id="L171">            LOGGER.error(&quot;SQL Error: &quot;, e);</span>
+<span class="nc" id="L172">        }</span>
+<span class="nc" id="L173">    }</span>
+
+    /**
+     * Checks whether the given bibEntry already exists on shared database.
+     * @param bibEntry {@link BibEntry} to be checked
+     * @return &lt;code&gt;true&lt;/code&gt; if existent, else &lt;code&gt;false&lt;/code&gt;
+     */
+    private boolean checkForBibEntryExistence(BibEntry bibEntry) {
+        try {
+            // Check if already exists
+<span class="nc" id="L183">            int sharedID = bibEntry.getSharedBibEntryData().getSharedID();</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">            if (sharedID != -1) {</span>
+<span class="nc" id="L185">                StringBuilder selectQuery = new StringBuilder()</span>
+<span class="nc" id="L186">                        .append(&quot;SELECT * FROM &quot;)</span>
+<span class="nc" id="L187">                        .append(escape(&quot;ENTRY&quot;))</span>
+<span class="nc" id="L188">                        .append(&quot; WHERE &quot;)</span>
+<span class="nc" id="L189">                        .append(escape(&quot;SHARED_ID&quot;))</span>
+<span class="nc" id="L190">                        .append(&quot; = ?&quot;);</span>
+
+<span class="nc" id="L192">                try (PreparedStatement preparedSelectStatement = connection.prepareStatement(selectQuery.toString())) {</span>
+<span class="nc" id="L193">                    preparedSelectStatement.setInt(1, sharedID);</span>
+<span class="nc" id="L194">                    try (ResultSet resultSet = preparedSelectStatement.executeQuery()) {</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">                        if (resultSet.next()) {</span>
+<span class="nc" id="L196">                            return true;</span>
+                        }
+                    }
+<span class="nc" id="L199">                }</span>
+            }
+<span class="nc" id="L201">        } catch (SQLException e) {</span>
+<span class="nc" id="L202">            LOGGER.error(&quot;SQL Error: &quot;, e);</span>
+<span class="nc" id="L203">        }</span>
+<span class="nc" id="L204">        return false;</span>
+    }
+
+    /**
+     * Inserts the given bibEntry into FIELD table.
+     *
+     * @param bibEntry {@link BibEntry} to be inserted
+     */
+    private void insertIntoFieldTable(BibEntry bibEntry) {
+        try {
+            // Inserting into FIELD table
+<span class="nc bnc" id="L215" title="All 2 branches missed.">            for (String fieldName : bibEntry.getFieldNames()) {</span>
+<span class="nc" id="L216">                StringBuilder insertFieldQuery = new StringBuilder()</span>
+<span class="nc" id="L217">                    .append(&quot;INSERT INTO &quot;)</span>
+<span class="nc" id="L218">                    .append(escape(&quot;FIELD&quot;))</span>
+<span class="nc" id="L219">                    .append(&quot;(&quot;)</span>
+<span class="nc" id="L220">                    .append(escape(&quot;ENTRY_SHARED_ID&quot;))</span>
+<span class="nc" id="L221">                    .append(&quot;, &quot;)</span>
+<span class="nc" id="L222">                    .append(escape(&quot;NAME&quot;))</span>
+<span class="nc" id="L223">                    .append(&quot;, &quot;)</span>
+<span class="nc" id="L224">                    .append(escape(&quot;VALUE&quot;))</span>
+<span class="nc" id="L225">                    .append(&quot;) VALUES(?, ?, ?)&quot;);</span>
+
+<span class="nc" id="L227">                try (PreparedStatement preparedFieldStatement = connection.prepareStatement(insertFieldQuery.toString())) {</span>
+                    // columnIndex starts with 1
+<span class="nc" id="L229">                    preparedFieldStatement.setInt(1, bibEntry.getSharedBibEntryData().getSharedID());</span>
+<span class="nc" id="L230">                    preparedFieldStatement.setString(2, fieldName);</span>
+<span class="nc" id="L231">                    preparedFieldStatement.setString(3, bibEntry.getField(fieldName).get());</span>
+<span class="nc" id="L232">                    preparedFieldStatement.executeUpdate();</span>
+                }
+<span class="nc" id="L234">            }</span>
+<span class="nc" id="L235">        } catch (SQLException e) {</span>
+<span class="nc" id="L236">            LOGGER.error(&quot;SQL Error: &quot;, e);</span>
+<span class="nc" id="L237">        }</span>
+<span class="nc" id="L238">    }</span>
+
+    /**
+     * Updates the whole {@link BibEntry} on shared database.
+     *
+     * @param localBibEntry {@link BibEntry} affected by changes
+     * @throws SQLException
+     */
+    public void updateEntry(BibEntry localBibEntry) throws OfflineLockException, SQLException {
+<span class="nc" id="L247">        connection.setAutoCommit(false); // disable auto commit due to transaction</span>
+
+        try {
+<span class="nc" id="L250">            Optional&lt;BibEntry&gt; sharedEntryOptional = getSharedEntry(localBibEntry.getSharedBibEntryData().getSharedID());</span>
+
+<span class="nc bnc" id="L252" title="All 2 branches missed.">            if (!sharedEntryOptional.isPresent()) {</span>
+<span class="nc" id="L253">                return;</span>
+            }
+
+<span class="nc" id="L256">            BibEntry sharedBibEntry = sharedEntryOptional.get();</span>
+
+            // remove shared fields which do not exist locally
+<span class="nc" id="L259">            removeSharedFieldsByDifference(localBibEntry, sharedBibEntry);</span>
+
+            // update only if local version is higher or the entries are equal
+<span class="nc" id="L262">            if ((localBibEntry.getSharedBibEntryData().getVersion() &gt;= sharedBibEntry.getSharedBibEntryData()</span>
+<span class="nc bnc" id="L263" title="All 4 branches missed.">                    .getVersion()) || localBibEntry.equals(sharedBibEntry)) {</span>
+
+<span class="nc" id="L265">                insertOrUpdateFields(localBibEntry);</span>
+
+                // updating entry type
+<span class="nc" id="L268">                StringBuilder updateEntryTypeQuery = new StringBuilder()</span>
+<span class="nc" id="L269">                    .append(&quot;UPDATE &quot;)</span>
+<span class="nc" id="L270">                    .append(escape(&quot;ENTRY&quot;))</span>
+<span class="nc" id="L271">                    .append(&quot; SET &quot;)</span>
+<span class="nc" id="L272">                    .append(escape(&quot;TYPE&quot;))</span>
+<span class="nc" id="L273">                    .append(&quot; = ?, &quot;)</span>
+<span class="nc" id="L274">                    .append(escape(&quot;VERSION&quot;))</span>
+<span class="nc" id="L275">                    .append(&quot; = &quot;)</span>
+<span class="nc" id="L276">                    .append(escape(&quot;VERSION&quot;))</span>
+<span class="nc" id="L277">                    .append(&quot; + 1 WHERE &quot;)</span>
+<span class="nc" id="L278">                    .append(escape(&quot;SHARED_ID&quot;))</span>
+<span class="nc" id="L279">                    .append(&quot; = ?&quot;);</span>
+
+<span class="nc" id="L281">                try (PreparedStatement preparedUpdateEntryTypeStatement = connection.prepareStatement(updateEntryTypeQuery.toString())) {</span>
+<span class="nc" id="L282">                    preparedUpdateEntryTypeStatement.setString(1, localBibEntry.getType());</span>
+<span class="nc" id="L283">                    preparedUpdateEntryTypeStatement.setInt(2, localBibEntry.getSharedBibEntryData().getSharedID());</span>
+<span class="nc" id="L284">                    preparedUpdateEntryTypeStatement.executeUpdate();</span>
+                }
+
+<span class="nc" id="L287">                connection.commit(); // apply all changes in current transaction</span>
+
+<span class="nc" id="L289">            } else {</span>
+<span class="nc" id="L290">                throw new OfflineLockException(localBibEntry, sharedBibEntry);</span>
+            }
+<span class="nc" id="L292">        } catch (SQLException e) {</span>
+<span class="nc" id="L293">            LOGGER.error(&quot;SQL Error: &quot;, e);</span>
+<span class="nc" id="L294">            connection.rollback(); // undo changes made in current transaction</span>
+        } finally {
+<span class="nc" id="L296">            connection.setAutoCommit(true); // enable auto commit mode again</span>
+        }
+<span class="nc" id="L298">    }</span>
+
+    /**
+     * Helping method. Removes shared fields which do not exist locally
+     */
+    private void removeSharedFieldsByDifference(BibEntry localBibEntry, BibEntry sharedBibEntry) throws SQLException {
+<span class="nc" id="L304">        Set&lt;String&gt; nullFields = new HashSet&lt;&gt;(sharedBibEntry.getFieldNames());</span>
+<span class="nc" id="L305">        nullFields.removeAll(localBibEntry.getFieldNames());</span>
+<span class="nc bnc" id="L306" title="All 2 branches missed.">        for (String nullField : nullFields) {</span>
+<span class="nc" id="L307">            StringBuilder deleteFieldQuery = new StringBuilder()</span>
+<span class="nc" id="L308">                .append(&quot;DELETE FROM &quot;)</span>
+<span class="nc" id="L309">                .append(escape(&quot;FIELD&quot;))</span>
+<span class="nc" id="L310">                .append(&quot; WHERE &quot;)</span>
+<span class="nc" id="L311">                .append(escape(&quot;NAME&quot;))</span>
+<span class="nc" id="L312">                .append(&quot; = ? AND &quot;)</span>
+<span class="nc" id="L313">                .append(escape(&quot;ENTRY_SHARED_ID&quot;))</span>
+<span class="nc" id="L314">                .append(&quot; = ?&quot;);</span>
+
+<span class="nc" id="L316">            try (PreparedStatement preparedDeleteFieldStatement = connection</span>
+<span class="nc" id="L317">                    .prepareStatement(deleteFieldQuery.toString())) {</span>
+<span class="nc" id="L318">                preparedDeleteFieldStatement.setString(1, nullField);</span>
+<span class="nc" id="L319">                preparedDeleteFieldStatement.setInt(2, localBibEntry.getSharedBibEntryData().getSharedID());</span>
+<span class="nc" id="L320">                preparedDeleteFieldStatement.executeUpdate();</span>
+            }
+<span class="nc" id="L322">        }</span>
+<span class="nc" id="L323">    }</span>
+
+    /**
+     * Helping method. Inserts a key-value pair into FIELD table for every field if not existing. Otherwise only an update is performed.
+     */
+    private void insertOrUpdateFields(BibEntry localBibEntry) throws SQLException {
+<span class="nc bnc" id="L329" title="All 2 branches missed.">        for (String fieldName : localBibEntry.getFieldNames()) {</span>
+            // avoiding to use deprecated BibEntry.getField() method. null values are accepted by PreparedStatement!
+<span class="nc" id="L331">            Optional&lt;String&gt; valueOptional = localBibEntry.getField(fieldName);</span>
+<span class="nc" id="L332">            String value = null;</span>
+<span class="nc bnc" id="L333" title="All 2 branches missed.">            if (valueOptional.isPresent()) {</span>
+<span class="nc" id="L334">                value = valueOptional.get();</span>
+            }
+
+<span class="nc" id="L337">            StringBuilder selectFieldQuery = new StringBuilder()</span>
+<span class="nc" id="L338">                    .append(&quot;SELECT * FROM &quot;)</span>
+<span class="nc" id="L339">                    .append(escape(&quot;FIELD&quot;))</span>
+<span class="nc" id="L340">                    .append(&quot; WHERE &quot;)</span>
+<span class="nc" id="L341">                    .append(escape(&quot;NAME&quot;))</span>
+<span class="nc" id="L342">                    .append(&quot; = ? AND &quot;)</span>
+<span class="nc" id="L343">                    .append(escape(&quot;ENTRY_SHARED_ID&quot;))</span>
+<span class="nc" id="L344">                    .append(&quot; = ?&quot;);</span>
+
+<span class="nc" id="L346">            try (PreparedStatement preparedSelectFieldStatement = connection</span>
+<span class="nc" id="L347">                    .prepareStatement(selectFieldQuery.toString())) {</span>
+<span class="nc" id="L348">                preparedSelectFieldStatement.setString(1, fieldName);</span>
+<span class="nc" id="L349">                preparedSelectFieldStatement.setInt(2, localBibEntry.getSharedBibEntryData().getSharedID());</span>
+
+<span class="nc" id="L351">                try (ResultSet selectFieldResultSet = preparedSelectFieldStatement.executeQuery()) {</span>
+<span class="nc bnc" id="L352" title="All 2 branches missed.">                    if (selectFieldResultSet.next()) { // check if field already exists</span>
+<span class="nc" id="L353">                        StringBuilder updateFieldQuery = new StringBuilder()</span>
+<span class="nc" id="L354">                                .append(&quot;UPDATE &quot;)</span>
+<span class="nc" id="L355">                                .append(escape(&quot;FIELD&quot;))</span>
+<span class="nc" id="L356">                                .append(&quot; SET &quot;)</span>
+<span class="nc" id="L357">                                .append(escape(&quot;VALUE&quot;))</span>
+<span class="nc" id="L358">                                .append(&quot; = ? WHERE &quot;)</span>
+<span class="nc" id="L359">                                .append(escape(&quot;NAME&quot;))</span>
+<span class="nc" id="L360">                                .append(&quot; = ? AND &quot;)</span>
+<span class="nc" id="L361">                                .append(escape(&quot;ENTRY_SHARED_ID&quot;))</span>
+<span class="nc" id="L362">                                .append(&quot; = ?&quot;);</span>
+
+<span class="nc" id="L364">                        try (PreparedStatement preparedUpdateFieldStatement = connection</span>
+<span class="nc" id="L365">                                .prepareStatement(updateFieldQuery.toString())) {</span>
+<span class="nc" id="L366">                            preparedUpdateFieldStatement.setString(1, value);</span>
+<span class="nc" id="L367">                            preparedUpdateFieldStatement.setString(2, fieldName);</span>
+<span class="nc" id="L368">                            preparedUpdateFieldStatement.setInt(3, localBibEntry.getSharedBibEntryData().getSharedID());</span>
+<span class="nc" id="L369">                            preparedUpdateFieldStatement.executeUpdate();</span>
+                        }
+<span class="nc" id="L371">                    } else {</span>
+<span class="nc" id="L372">                        StringBuilder insertFieldQuery = new StringBuilder()</span>
+<span class="nc" id="L373">                                .append(&quot;INSERT INTO &quot;)</span>
+<span class="nc" id="L374">                                .append(escape(&quot;FIELD&quot;))</span>
+<span class="nc" id="L375">                                .append(&quot;(&quot;)</span>
+<span class="nc" id="L376">                                .append(escape(&quot;ENTRY_SHARED_ID&quot;))</span>
+<span class="nc" id="L377">                                .append(&quot;, &quot;)</span>
+<span class="nc" id="L378">                                .append(escape(&quot;NAME&quot;))</span>
+<span class="nc" id="L379">                                .append(&quot;, &quot;)</span>
+<span class="nc" id="L380">                                .append(escape(&quot;VALUE&quot;))</span>
+<span class="nc" id="L381">                                .append(&quot;) VALUES(?, ?, ?)&quot;);</span>
+
+<span class="nc" id="L383">                        try (PreparedStatement preparedFieldStatement = connection</span>
+<span class="nc" id="L384">                                .prepareStatement(insertFieldQuery.toString())) {</span>
+<span class="nc" id="L385">                            preparedFieldStatement.setInt(1, localBibEntry.getSharedBibEntryData().getSharedID());</span>
+<span class="nc" id="L386">                            preparedFieldStatement.setString(2, fieldName);</span>
+<span class="nc" id="L387">                            preparedFieldStatement.setString(3, value);</span>
+<span class="nc" id="L388">                            preparedFieldStatement.executeUpdate();</span>
+                        }
+                    }
+                }
+            }
+<span class="nc" id="L393">        }</span>
+<span class="nc" id="L394">    }</span>
+
+    /**
+     * Removes the shared bibEntry.
+     *
+     * @param bibEntry {@link BibEntry} to be deleted
+     */
+    public void removeEntry(BibEntry bibEntry) {
+<span class="nc" id="L402">        StringBuilder query = new StringBuilder()</span>
+<span class="nc" id="L403">                .append(&quot;DELETE FROM &quot;)</span>
+<span class="nc" id="L404">                .append(escape(&quot;ENTRY&quot;))</span>
+<span class="nc" id="L405">                .append(&quot; WHERE &quot;)</span>
+<span class="nc" id="L406">                .append(escape(&quot;SHARED_ID&quot;))</span>
+<span class="nc" id="L407">                .append(&quot; = ?&quot;);</span>
+
+<span class="nc" id="L409">        try (PreparedStatement preparedStatement = connection.prepareStatement(query.toString())) {</span>
+<span class="nc" id="L410">            preparedStatement.setInt(1, bibEntry.getSharedBibEntryData().getSharedID());</span>
+<span class="nc" id="L411">            preparedStatement.executeUpdate();</span>
+<span class="nc" id="L412">        } catch (SQLException e) {</span>
+<span class="nc" id="L413">            LOGGER.error(&quot;SQL Error: &quot;, e);</span>
+<span class="nc" id="L414">        }</span>
+
+<span class="nc" id="L416">    }</span>
+
+    /**
+     * @param sharedID Entry ID
+     * @return instance of {@link BibEntry}
+     */
+    public Optional&lt;BibEntry&gt; getSharedEntry(int sharedID) {
+<span class="nc" id="L423">        List&lt;BibEntry&gt; sharedEntries = getSharedEntryList(sharedID);</span>
+<span class="nc bnc" id="L424" title="All 2 branches missed.">        if (!sharedEntries.isEmpty()) {</span>
+<span class="nc" id="L425">            return Optional.of(sharedEntries.get(0));</span>
+        }
+<span class="nc" id="L427">        return Optional.empty();</span>
+    }
+
+    public List&lt;BibEntry&gt; getSharedEntries() {
+<span class="nc" id="L431">        return getSharedEntryList(0);</span>
+    }
+
+    /**
+     * @param sharedID Entry ID. If 0, all entries are going to be fetched.
+     * @return List of {@link BibEntry} instances
+     */
+    private List&lt;BibEntry&gt; getSharedEntryList(int sharedID) {
+<span class="nc" id="L439">        List&lt;BibEntry&gt; sharedEntries = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L441">        StringBuilder selectEntryQuery = new StringBuilder();</span>
+<span class="nc" id="L442">        selectEntryQuery.append(&quot;SELECT * FROM &quot;);</span>
+<span class="nc" id="L443">        selectEntryQuery.append(escape(&quot;ENTRY&quot;));</span>
+
+<span class="nc bnc" id="L445" title="All 2 branches missed.">        if (sharedID != 0) {</span>
+<span class="nc" id="L446">            selectEntryQuery.append(&quot; WHERE &quot;);</span>
+<span class="nc" id="L447">            selectEntryQuery.append(escape(&quot;SHARED_ID&quot;));</span>
+<span class="nc" id="L448">            selectEntryQuery.append(&quot; = &quot;);</span>
+<span class="nc" id="L449">            selectEntryQuery.append(sharedID);</span>
+        }
+
+<span class="nc" id="L452">        selectEntryQuery.append(&quot; ORDER BY &quot;);</span>
+<span class="nc" id="L453">        selectEntryQuery.append(escape(&quot;SHARED_ID&quot;));</span>
+
+<span class="nc" id="L455">        try (ResultSet selectEntryResultSet = connection.createStatement().executeQuery(selectEntryQuery.toString())) {</span>
+<span class="nc bnc" id="L456" title="All 2 branches missed.">            while (selectEntryResultSet.next()) {</span>
+<span class="nc" id="L457">                BibEntry bibEntry = new BibEntry();</span>
+                // setting the base attributes once
+<span class="nc" id="L459">                bibEntry.getSharedBibEntryData().setSharedID(selectEntryResultSet.getInt(&quot;SHARED_ID&quot;));</span>
+<span class="nc" id="L460">                bibEntry.setType(selectEntryResultSet.getString(&quot;TYPE&quot;));</span>
+<span class="nc" id="L461">                bibEntry.getSharedBibEntryData().setVersion(selectEntryResultSet.getInt(&quot;VERSION&quot;));</span>
+
+<span class="nc" id="L463">                StringBuilder selectFieldQuery = new StringBuilder()</span>
+<span class="nc" id="L464">                    .append(&quot;SELECT * FROM &quot;)</span>
+<span class="nc" id="L465">                    .append(escape(&quot;FIELD&quot;))</span>
+<span class="nc" id="L466">                    .append(&quot; WHERE &quot;)</span>
+<span class="nc" id="L467">                    .append(escape(&quot;ENTRY_SHARED_ID&quot;))</span>
+<span class="nc" id="L468">                    .append(&quot; = ?&quot;);</span>
+
+<span class="nc" id="L470">                try (PreparedStatement preparedSelectFieldStatement = connection.prepareStatement(selectFieldQuery.toString())) {</span>
+<span class="nc" id="L471">                    preparedSelectFieldStatement.setInt(1, selectEntryResultSet.getInt(&quot;SHARED_ID&quot;));</span>
+<span class="nc" id="L472">                    try (ResultSet selectFieldResultSet = preparedSelectFieldStatement.executeQuery()) {</span>
+<span class="nc bnc" id="L473" title="All 2 branches missed.">                        while (selectFieldResultSet.next()) {</span>
+<span class="nc" id="L474">                            bibEntry.setField(selectFieldResultSet.getString(&quot;NAME&quot;),</span>
+<span class="nc" id="L475">                                    Optional.ofNullable(selectFieldResultSet.getString(&quot;VALUE&quot;)), EntryEventSource.SHARED);</span>
+                        }
+                    }
+                }
+<span class="nc" id="L479">                sharedEntries.add(bibEntry);</span>
+<span class="nc" id="L480">            }</span>
+<span class="nc" id="L481">        } catch (SQLException e) {</span>
+<span class="nc" id="L482">            LOGGER.error(&quot;SQL Error&quot;, e);</span>
+<span class="nc" id="L483">        }</span>
+
+<span class="nc" id="L485">        return sharedEntries;</span>
+    }
+
+    /**
+     * Retrieves a mapping between the columns SHARED_ID and VERSION.
+     */
+    public Map&lt;Integer, Integer&gt; getSharedIDVersionMapping() {
+<span class="nc" id="L492">        Map&lt;Integer, Integer&gt; sharedIDVersionMapping = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L493">        StringBuilder selectEntryQuery = new StringBuilder()</span>
+<span class="nc" id="L494">            .append(&quot;SELECT * FROM &quot;)</span>
+<span class="nc" id="L495">            .append(escape(&quot;ENTRY&quot;))</span>
+<span class="nc" id="L496">            .append(&quot; ORDER BY &quot;)</span>
+<span class="nc" id="L497">            .append(escape(&quot;SHARED_ID&quot;));</span>
+
+<span class="nc" id="L499">        try (ResultSet selectEntryResultSet = connection.createStatement().executeQuery(selectEntryQuery.toString())) {</span>
+<span class="nc bnc" id="L500" title="All 2 branches missed.">            while (selectEntryResultSet.next()) {</span>
+<span class="nc" id="L501">                sharedIDVersionMapping.put(selectEntryResultSet.getInt(&quot;SHARED_ID&quot;), selectEntryResultSet.getInt(&quot;VERSION&quot;));</span>
+            }
+<span class="nc" id="L503">        } catch (SQLException e) {</span>
+<span class="nc" id="L504">            LOGGER.error(&quot;SQL Error&quot;, e);</span>
+<span class="nc" id="L505">        }</span>
+
+<span class="nc" id="L507">        return sharedIDVersionMapping;</span>
+    }
+
+    /**
+     * Fetches and returns all shared meta data.
+     */
+    public Map&lt;String, String&gt; getSharedMetaData() {
+<span class="nc" id="L514">        Map&lt;String, String&gt; data = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L516">        try (ResultSet resultSet = connection.createStatement().executeQuery(&quot;SELECT * FROM &quot; + escape(&quot;METADATA&quot;))) {</span>
+<span class="nc bnc" id="L517" title="All 2 branches missed.">            while (resultSet.next()) {</span>
+<span class="nc" id="L518">                data.put(resultSet.getString(&quot;KEY&quot;), resultSet.getString(&quot;VALUE&quot;));</span>
+            }
+<span class="nc" id="L520">        } catch (SQLException e) {</span>
+<span class="nc" id="L521">            LOGGER.error(&quot;SQL Error&quot;, e);</span>
+<span class="nc" id="L522">        }</span>
+
+<span class="nc" id="L524">        return data;</span>
+    }
+
+    /**
+     * Clears and sets all shared meta data.
+     *
+     * @param data JabRef meta data as map
+     */
+    public void setSharedMetaData(Map&lt;String, String&gt; data) throws SQLException {
+<span class="nc" id="L533">        StringBuilder updateQuery = new StringBuilder()</span>
+<span class="nc" id="L534">                    .append(&quot;UPDATE &quot;)</span>
+<span class="nc" id="L535">                    .append(escape(&quot;METADATA&quot;))</span>
+<span class="nc" id="L536">                    .append(&quot; SET &quot;)</span>
+<span class="nc" id="L537">                    .append(escape(&quot;VALUE&quot;))</span>
+<span class="nc" id="L538">                    .append(&quot; = ? &quot;)</span>
+<span class="nc" id="L539">                    .append(&quot; WHERE &quot;)</span>
+<span class="nc" id="L540">                    .append(escape(&quot;KEY&quot;))</span>
+<span class="nc" id="L541">                    .append(&quot; = ?&quot;);</span>
+
+<span class="nc" id="L543">        StringBuilder insertQuery = new StringBuilder()</span>
+<span class="nc" id="L544">                .append(&quot;INSERT INTO &quot;)</span>
+<span class="nc" id="L545">                .append(escape(&quot;METADATA&quot;))</span>
+<span class="nc" id="L546">                .append(&quot;(&quot;)</span>
+<span class="nc" id="L547">                .append(escape(&quot;KEY&quot;))</span>
+<span class="nc" id="L548">                .append(&quot;, &quot;)</span>
+<span class="nc" id="L549">                .append(escape(&quot;VALUE&quot;))</span>
+<span class="nc" id="L550">                .append(&quot;) VALUES(?, ?)&quot;);</span>
+
+<span class="nc bnc" id="L552" title="All 2 branches missed.">        for (Map.Entry&lt;String, String&gt; metaEntry : data.entrySet()) {</span>
+<span class="nc" id="L553">            try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery.toString())) {</span>
+<span class="nc" id="L554">                updateStatement.setString(2, metaEntry.getKey());</span>
+<span class="nc" id="L555">                updateStatement.setString(1, metaEntry.getValue());</span>
+<span class="nc bnc" id="L556" title="All 2 branches missed.">                if (updateStatement.executeUpdate() == 0) {</span>
+                    // No rows updated -&gt; insert data
+<span class="nc" id="L558">                    try (PreparedStatement insertStatement = connection.prepareStatement(insertQuery.toString())) {</span>
+<span class="nc" id="L559">                        insertStatement.setString(1, metaEntry.getKey());</span>
+<span class="nc" id="L560">                        insertStatement.setString(2, metaEntry.getValue());</span>
+<span class="nc" id="L561">                        insertStatement.executeUpdate();</span>
+<span class="nc" id="L562">                    } catch (SQLException e) {</span>
+<span class="nc" id="L563">                        LOGGER.error(&quot;SQL Error: &quot;, e);</span>
+<span class="nc" id="L564">                    }</span>
+                }
+<span class="nc" id="L566">            } catch (SQLException e) {</span>
+<span class="nc" id="L567">                LOGGER.error(&quot;SQL Error: &quot;, e);</span>
+<span class="nc" id="L568">            }</span>
+<span class="nc" id="L569">        }</span>
+<span class="nc" id="L570">    }</span>
+
+    /**
+     *  Returns a new instance of the abstract type {@link DBMSProcessor}
+     */
+    public static DBMSProcessor getProcessorInstance(DatabaseConnection connection) {
+<span class="nc" id="L576">        DBMSType type = connection.getProperties().getType();</span>
+<span class="nc bnc" id="L577" title="All 2 branches missed.">        if (type == DBMSType.MYSQL) {</span>
+<span class="nc" id="L578">            return new MySQLProcessor(connection);</span>
+<span class="nc bnc" id="L579" title="All 2 branches missed.">        } else if (type == DBMSType.POSTGRESQL) {</span>
+<span class="nc" id="L580">            return new PostgreSQLProcessor(connection);</span>
+<span class="nc bnc" id="L581" title="All 2 branches missed.">        } else if (type == DBMSType.ORACLE) {</span>
+<span class="nc" id="L582">            return new OracleProcessor(connection);</span>
+        }
+<span class="nc" id="L584">        return null; // can never happen except new types were added without updating this method.</span>
+    }
+
+    public DatabaseConnectionProperties getDBMSConnectionProperties() {
+<span class="nc" id="L588">        return this.connectionProperties;</span>
+    }
+
+    /**
+     * Listens for notifications from DBMS.
+     * Needs to be implemented if LiveUpdate is supported by the DBMS
+     *
+     * @param dbmsSynchronizer {@link DBMSSynchronizer} which handles the notification.
+     */
+    public void startNotificationListener(@SuppressWarnings(&quot;unused&quot;) DBMSSynchronizer dbmsSynchronizer) {
+        // nothing to do
+<span class="nc" id="L599">    }</span>
+
+    /**
+     * Terminates the notification listener.
+     * Needs to be implemented if LiveUpdate is supported by the DBMS
+     */
+    public void stopNotificationListener() {
+        // nothing to do
+<span class="nc" id="L607">    }</span>
+
+    /**
+     * Notifies all clients ({@link DBMSSynchronizer}) which are connected to the same DBMS.
+     * Needs to be implemented if LiveUpdate is supported by the DBMS
+     */
+    public void notifyClients() {
+        // nothing to do
+<span class="nc" id="L615">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

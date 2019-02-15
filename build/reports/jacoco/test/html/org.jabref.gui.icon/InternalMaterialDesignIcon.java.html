@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InternalMaterialDesignIcon.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.icon</a> &gt; <span class="el_source">InternalMaterialDesignIcon.java</span></div><h1>InternalMaterialDesignIcon.java</h1><pre class="source lang-java linenums">package org.jabref.gui.icon;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.swing.Icon;
+
+import javafx.scene.Node;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
+
+import org.jabref.gui.util.ColorUtil;
+
+import de.jensd.fx.glyphs.GlyphIcons;
+
+public class InternalMaterialDesignIcon implements JabRefIcon {
+    private final List&lt;GlyphIcons&gt; icons;
+    private Optional&lt;Color&gt; color;
+    private final String unicode;
+
+    public InternalMaterialDesignIcon(java.awt.Color color, GlyphIcons... icons) {
+<span class="fc" id="L24">        this(ColorUtil.toFX(color), Arrays.asList(icons));</span>
+<span class="fc" id="L25">    }</span>
+
+    public InternalMaterialDesignIcon(Color color, GlyphIcons... icons) {
+<span class="nc" id="L28">        this(color, Arrays.asList(icons));</span>
+<span class="nc" id="L29">    }</span>
+
+    InternalMaterialDesignIcon(Color color, List&lt;GlyphIcons&gt; icons) {
+<span class="fc" id="L32">        this(icons);</span>
+<span class="fc" id="L33">        this.color = Optional.of(color);</span>
+<span class="fc" id="L34">    }</span>
+
+    public InternalMaterialDesignIcon(GlyphIcons... icons) {
+<span class="fc" id="L37">        this(Arrays.asList(icons));</span>
+<span class="fc" id="L38">    }</span>
+
+<span class="fc" id="L40">    public InternalMaterialDesignIcon(List&lt;GlyphIcons&gt; icons) {</span>
+<span class="fc" id="L41">        this.icons = icons;</span>
+<span class="fc" id="L42">        this.unicode = icons.stream().map(GlyphIcons::unicode).collect(Collectors.joining());</span>
+<span class="fc" id="L43">        this.color = Optional.empty();</span>
+<span class="fc" id="L44">    }</span>
+
+    @Override
+    public Icon getIcon() {
+<span class="nc" id="L48">        return new IconTheme.FontBasedIcon(this.unicode, ColorUtil.toAWT(this.color.orElse(IconTheme.getDefaultColor())));</span>
+    }
+
+    @Override
+    public Icon getSmallIcon() {
+<span class="nc" id="L53">        return new IconTheme.FontBasedIcon(this.unicode, ColorUtil.toAWT(this.color.orElse(IconTheme.getDefaultColor())));</span>
+    }
+
+    @Override
+    public Node getGraphicNode() {
+<span class="fc" id="L58">        GlyphIcons icon = icons.get(0);</span>
+
+<span class="fc" id="L60">        Text text = new Text(unicode);</span>
+<span class="fc" id="L61">        text.getStyleClass().add(&quot;glyph-icon&quot;);</span>
+<span class="fc" id="L62">        text.setStyle(String.format(&quot;-fx-font-family: %s;&quot;, icon.fontFamily()));</span>
+
+<span class="pc" id="L64">        color.ifPresent(color -&gt; text.setStyle(text.getStyle() + String.format(&quot;-fx-fill: %s;&quot;, ColorUtil.toRGBCode(color))));</span>
+<span class="fc" id="L65">        return text;</span>
+    }
+
+    @Override
+    public JabRefIcon disabled() {
+<span class="nc" id="L70">        return new InternalMaterialDesignIcon(ColorUtil.toFX(IconTheme.DEFAULT_DISABLED_COLOR), icons);</span>
+    }
+
+    @Override
+    public JabRefIcon withColor(Color color) {
+<span class="nc" id="L75">        return new InternalMaterialDesignIcon(color, icons);</span>
+    }
+
+    @Override
+    public String name() {
+<span class="nc" id="L80">        return unicode;</span>
+    }
+
+    public String getCode() {
+<span class="nc" id="L84">        return this.unicode;</span>
+    }
+
+    @Override
+    public String unicode() {
+<span class="fc" id="L89">        return icons.get(0).unicode();</span>
+    }
+
+    @Override
+    public String fontFamily() {
+<span class="fc" id="L94">        return icons.get(0).fontFamily();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

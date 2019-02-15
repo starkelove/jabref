@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileHistory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util.io</a> &gt; <span class="el_source">FileHistory.java</span></div><h1>FileHistory.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util.io;
+
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+
+public class FileHistory {
+
+    private static final int HISTORY_SIZE = 8;
+
+    private final LinkedList&lt;Path&gt; history;
+
+<span class="fc" id="L15">    public FileHistory(List&lt;Path&gt; files) {</span>
+<span class="fc" id="L16">        history = new LinkedList&lt;&gt;(Objects.requireNonNull(files));</span>
+<span class="fc" id="L17">    }</span>
+
+    public int size() {
+<span class="fc" id="L20">        return history.size();</span>
+    }
+
+    public boolean isEmpty() {
+<span class="nc" id="L24">        return history.isEmpty();</span>
+    }
+
+    /**
+     * Adds the file to the top of the list. If it already is in the list, it is merely moved to the top.
+     */
+    public void newFile(Path file) {
+<span class="fc" id="L31">        removeItem(file);</span>
+<span class="fc" id="L32">        history.addFirst(file);</span>
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">        while (size() &gt; HISTORY_SIZE) {</span>
+<span class="nc" id="L34">            history.removeLast();</span>
+        }
+<span class="fc" id="L36">    }</span>
+
+    public Path getFileAt(int index) {
+<span class="nc" id="L39">        return history.get(index);</span>
+    }
+
+    public void removeItem(Path file) {
+<span class="fc" id="L43">        history.remove(file);</span>
+<span class="fc" id="L44">    }</span>
+
+    public List&lt;Path&gt; getHistory() {
+<span class="fc" id="L47">        return Collections.unmodifiableList(history);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CreateBibORDFAuthors.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.layout.format</a> &gt; <span class="el_source">CreateBibORDFAuthors.java</span></div><h1>CreateBibORDFAuthors.java</h1><pre class="source lang-java linenums">package org.jabref.logic.layout.format;
+
+import org.jabref.logic.layout.LayoutFormatter;
+
+<span class="nc" id="L5">public class CreateBibORDFAuthors implements LayoutFormatter {</span>
+
+    @Override
+    public String format(String fieldText) {
+        // Yeah, the format is quite verbose... sorry about that :)
+
+        //      &lt;bibo:contribution&gt;
+        //        &lt;bibo:Contribution&gt;
+        //          &lt;bibo:role rdf:resource=&quot;http://purl.org/ontology/bibo/roles/author&quot; /&gt;
+        //          &lt;bibo:contributor&gt;&lt;foaf:Person foaf:name=&quot;Ola Spjuth&quot;/&gt;&lt;/bibo:contributor&gt;
+        //          &lt;bibo:position&gt;1&lt;/bibo:position&gt;
+        //        &lt;/bibo:Contribution&gt;
+        //      &lt;/bibo:contribution&gt;
+
+<span class="nc" id="L19">        StringBuilder sb = new StringBuilder(100);</span>
+
+<span class="nc bnc" id="L21" title="All 2 branches missed.">        if (!fieldText.contains(&quot; and &quot;)) {</span>
+<span class="nc" id="L22">            singleAuthor(sb, fieldText, 1);</span>
+        } else {
+<span class="nc" id="L24">            String[] names = fieldText.split(&quot; and &quot;);</span>
+<span class="nc bnc" id="L25" title="All 2 branches missed.">            for (int i = 0; i &lt; names.length; i++) {</span>
+<span class="nc" id="L26">                singleAuthor(sb, names[i], i + 1);</span>
+<span class="nc bnc" id="L27" title="All 2 branches missed.">                if (i &lt; (names.length - 1)) {</span>
+<span class="nc" id="L28">                    sb.append('\n');</span>
+                }
+            }
+        }
+
+<span class="nc" id="L33">        return sb.toString();</span>
+    }
+
+    private static void singleAuthor(StringBuilder sb, String author, int position) {
+<span class="nc" id="L37">        sb.append(&quot;&lt;bibo:contribution&gt;\n&quot;);</span>
+<span class="nc" id="L38">        sb.append(&quot;  &lt;bibo:Contribution&gt;\n&quot;);</span>
+<span class="nc" id="L39">        sb.append(&quot;    &lt;bibo:role rdf:resource=\&quot;http://purl.org/ontology/bibo/roles/author\&quot; /&gt;\n&quot;);</span>
+<span class="nc" id="L40">        sb.append(&quot;    &lt;bibo:contributor&gt;&lt;foaf:Person foaf:name=\&quot;&quot;).append(author).append(&quot;\&quot;/&gt;&lt;/bibo:contributor&gt;\n&quot;);</span>
+<span class="nc" id="L41">        sb.append(&quot;    &lt;bibo:position&gt;&quot;).append(position).append(&quot;&lt;/bibo:position&gt;\n&quot;);</span>
+<span class="nc" id="L42">        sb.append(&quot;  &lt;/bibo:Contribution&gt;\n&quot;);</span>
+<span class="nc" id="L43">        sb.append(&quot;&lt;/bibo:contribution&gt;\n&quot;);</span>
+<span class="nc" id="L44">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

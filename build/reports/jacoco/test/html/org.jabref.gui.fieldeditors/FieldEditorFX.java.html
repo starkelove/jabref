@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldEditorFX.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.fieldeditors</a> &gt; <span class="el_source">FieldEditorFX.java</span></div><h1>FieldEditorFX.java</h1><pre class="source lang-java linenums">package org.jabref.gui.fieldeditors;
+
+import javafx.scene.Parent;
+
+import org.jabref.gui.util.ControlHelper;
+import org.jabref.model.entry.BibEntry;
+
+public interface FieldEditorFX {
+
+    void bindToEntry(BibEntry entry);
+
+    Parent getNode();
+
+    default void focus() {
+<span class="nc" id="L15">        getNode().getChildrenUnmodifiable()</span>
+<span class="nc" id="L16">                 .stream()</span>
+<span class="nc" id="L17">                 .findFirst()</span>
+<span class="nc" id="L18">                 .orElse(getNode())</span>
+<span class="nc" id="L19">                 .requestFocus();</span>
+<span class="nc" id="L20">    }</span>
+
+    default boolean childIsFocused() {
+<span class="nc" id="L23">        return ControlHelper.childIsFocused(getNode());</span>
+    }
+
+    /**
+     * Returns relative size of the field editor in terms of display space.
+     *
+     * A value of 1 means that the editor gets exactly as much space as all other regular editors.
+     * A value of 2 means that the editor gets twice as much space as regular editors.
+     *
+     * @return the relative weight of the editor in terms of display space
+     */
+<span class="nc" id="L34">    default double getWeight() { return 1; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

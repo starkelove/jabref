@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EntryEditorPreferences.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.entryeditor</a> &gt; <span class="el_source">EntryEditorPreferences.java</span></div><h1>EntryEditorPreferences.java</h1><pre class="source lang-java linenums">package org.jabref.gui.entryeditor;
+
+import java.util.List;
+import java.util.Map;
+
+import org.jabref.gui.keyboard.KeyBindingRepository;
+import org.jabref.logic.bibtex.LatexFieldFormatterPreferences;
+import org.jabref.logic.bibtexkeypattern.BibtexKeyPatternPreferences;
+import org.jabref.logic.importer.ImportFormatPreferences;
+
+public class EntryEditorPreferences {
+
+    private final Map&lt;String, List&lt;String&gt;&gt; entryEditorTabList;
+    private final LatexFieldFormatterPreferences latexFieldFormatterPreferences;
+    private final ImportFormatPreferences importFormatPreferences;
+    private final BibtexKeyPatternPreferences bibtexKeyPatternPreferences;
+    private final List&lt;String&gt; customTabFieldNames;
+    private final boolean shouldShowRecommendationsTab;
+    private final boolean isMrdlibAccepted;
+    private boolean showSourceTabByDefault;
+    private final KeyBindingRepository keyBindings;
+    private boolean avoidOverwritingCiteKey;
+
+<span class="nc" id="L24">    public EntryEditorPreferences(Map&lt;String, List&lt;String&gt;&gt; entryEditorTabList, LatexFieldFormatterPreferences latexFieldFormatterPreferences, ImportFormatPreferences importFormatPreferences, List&lt;String&gt; customTabFieldNames, boolean shouldShowRecommendationsTab, boolean isMrdlibAccepted, boolean showSourceTabByDefault, BibtexKeyPatternPreferences bibtexKeyPatternPreferences, KeyBindingRepository keyBindings, boolean avoidOverwritingCiteKey) {</span>
+<span class="nc" id="L25">        this.entryEditorTabList = entryEditorTabList;</span>
+<span class="nc" id="L26">        this.latexFieldFormatterPreferences = latexFieldFormatterPreferences;</span>
+<span class="nc" id="L27">        this.importFormatPreferences = importFormatPreferences;</span>
+<span class="nc" id="L28">        this.customTabFieldNames = customTabFieldNames;</span>
+<span class="nc" id="L29">        this.shouldShowRecommendationsTab = shouldShowRecommendationsTab;</span>
+<span class="nc" id="L30">        this.isMrdlibAccepted = isMrdlibAccepted;</span>
+<span class="nc" id="L31">        this.showSourceTabByDefault = showSourceTabByDefault;</span>
+<span class="nc" id="L32">        this.bibtexKeyPatternPreferences = bibtexKeyPatternPreferences;</span>
+<span class="nc" id="L33">        this.keyBindings = keyBindings;</span>
+<span class="nc" id="L34">        this.avoidOverwritingCiteKey = avoidOverwritingCiteKey;</span>
+<span class="nc" id="L35">    }</span>
+
+    public Map&lt;String, List&lt;String&gt;&gt; getEntryEditorTabList() {
+<span class="nc" id="L38">        return entryEditorTabList;</span>
+    }
+
+    public LatexFieldFormatterPreferences getLatexFieldFormatterPreferences() {
+<span class="nc" id="L42">        return latexFieldFormatterPreferences;</span>
+    }
+
+    public ImportFormatPreferences getImportFormatPreferences() {
+<span class="nc" id="L46">        return importFormatPreferences;</span>
+    }
+
+    public List&lt;String&gt; getCustomTabFieldNames() {
+<span class="nc" id="L50">        return customTabFieldNames;</span>
+    }
+
+    public boolean shouldShowRecommendationsTab() {
+<span class="nc" id="L54">        return shouldShowRecommendationsTab;</span>
+    }
+
+    public boolean isMrdlibAccepted() {
+<span class="nc" id="L58">        return isMrdlibAccepted;</span>
+    }
+
+    public boolean showSourceTabByDefault() {
+<span class="nc" id="L62">        return showSourceTabByDefault;</span>
+    }
+
+    public KeyBindingRepository getKeyBindings() {
+<span class="nc" id="L66">        return keyBindings;</span>
+    }
+
+    public BibtexKeyPatternPreferences getBibtexKeyPatternPreferences() {
+<span class="nc" id="L70">        return bibtexKeyPatternPreferences;</span>
+    }
+
+    public boolean isShowSourceTabByDefault() {
+<span class="nc" id="L74">        return showSourceTabByDefault;</span>
+    }
+
+    public void setShowSourceTabByDefault(boolean showSourceTabByDefault) {
+<span class="nc" id="L78">        this.showSourceTabByDefault = showSourceTabByDefault;</span>
+<span class="nc" id="L79">    }</span>
+
+    public boolean avoidOverwritingCiteKey() {
+<span class="nc" id="L82">        return avoidOverwritingCiteKey;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

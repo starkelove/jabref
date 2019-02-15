@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MySQLProcessor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.shared</a> &gt; <span class="el_source">MySQLProcessor.java</span></div><h1>MySQLProcessor.java</h1><pre class="source lang-java linenums">package org.jabref.logic.shared;
+
+import java.sql.SQLException;
+
+import org.jabref.model.database.shared.DatabaseConnection;
+
+/**
+ * Processes all incoming or outgoing bib data to MySQL Database and manages its structure.
+ */
+public class MySQLProcessor extends DBMSProcessor {
+
+    public MySQLProcessor(DatabaseConnection connection) {
+<span class="nc" id="L13">        super(connection);</span>
+<span class="nc" id="L14">    }</span>
+
+    /**
+     * Creates and sets up the needed tables and columns according to the database type.
+     *
+     * @throws SQLException
+     */
+    @Override
+    public void setUp() throws SQLException {
+<span class="nc" id="L23">        connection.createStatement().executeUpdate(</span>
+                &quot;CREATE TABLE IF NOT EXISTS `ENTRY` (&quot; +
+                &quot;`SHARED_ID` INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT, &quot; +
+                &quot;`TYPE` VARCHAR(255) NOT NULL, &quot; +
+                &quot;`VERSION` INT(11) DEFAULT 1)&quot;);
+
+<span class="nc" id="L29">        connection.createStatement().executeUpdate(</span>
+                &quot;CREATE TABLE IF NOT EXISTS `FIELD` (&quot; +
+                &quot;`ENTRY_SHARED_ID` INT(11) NOT NULL, &quot; +
+                &quot;`NAME` VARCHAR(255) NOT NULL, &quot; +
+                &quot;`VALUE` TEXT DEFAULT NULL, &quot; +
+                &quot;FOREIGN KEY (`ENTRY_SHARED_ID`) REFERENCES `ENTRY`(`SHARED_ID`) ON DELETE CASCADE)&quot;);
+
+<span class="nc" id="L36">        connection.createStatement().executeUpdate(</span>
+                &quot;CREATE TABLE IF NOT EXISTS `METADATA` (&quot; +
+                &quot;`KEY` varchar(255) NOT NULL,&quot; +
+                &quot;`VALUE` text NOT NULL)&quot;);
+<span class="nc" id="L40">    }</span>
+
+    @Override
+    String escape(String expression) {
+<span class="nc" id="L44">        return &quot;`&quot; + expression + &quot;`&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringRemoveChangeViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.collab</a> &gt; <span class="el_source">StringRemoveChangeViewModel.java</span></div><h1>StringRemoveChangeViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.collab;
+
+import javax.swing.JComponent;
+import javax.swing.JScrollPane;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableRemoveString;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibtexString;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+class StringRemoveChangeViewModel extends ChangeViewModel {
+<span class="nc" id="L17">    private static final Logger LOGGER = LoggerFactory.getLogger(StringRemoveChangeViewModel.class);</span>
+    private final BibtexString string;
+
+    private final BibtexString inMem;
+<span class="nc" id="L21">    private final InfoPane tp = new InfoPane();</span>
+<span class="nc" id="L22">    private final JScrollPane sp = new JScrollPane(tp);</span>
+
+    public StringRemoveChangeViewModel(BibtexString string, BibtexString inMem) {
+<span class="nc" id="L25">        super(Localization.lang(&quot;Removed string&quot;) + &quot;: '&quot; + string.getName() + '\'');</span>
+<span class="nc" id="L26">        this.string = string;</span>
+<span class="nc" id="L27">        this.inMem = inMem; // Holds the version in memory. Check if it has been modified...?</span>
+
+<span class="nc" id="L29">        tp.setText(&quot;&lt;HTML&gt;&lt;H2&gt;&quot; + Localization.lang(&quot;Removed string&quot;) + &quot;&lt;/H2&gt;&lt;H3&gt;&quot; +</span>
+<span class="nc" id="L30">                Localization.lang(&quot;Label&quot;) + &quot;:&lt;/H3&gt;&quot; + string.getName() + &quot;&lt;H3&gt;&quot; +</span>
+<span class="nc" id="L31">                Localization.lang(&quot;Content&quot;) + &quot;:&lt;/H3&gt;&quot; + string.getContent() + &quot;&lt;/HTML&gt;&quot;);</span>
+<span class="nc" id="L32">    }</span>
+
+    @Override
+    public boolean makeChange(BasePanel panel, BibDatabase secondary, NamedCompound undoEdit) {
+
+        try {
+<span class="nc" id="L38">            panel.getDatabase().removeString(inMem.getId());</span>
+<span class="nc" id="L39">            undoEdit.addEdit(new UndoableRemoveString(panel, panel.getDatabase(), string));</span>
+<span class="nc" id="L40">        } catch (Exception ex) {</span>
+<span class="nc" id="L41">            LOGGER.info(&quot;Error: could not add string '&quot; + string.getName() + &quot;': &quot; + ex.getMessage(), ex);</span>
+<span class="nc" id="L42">        }</span>
+
+        // Update tmp database:
+<span class="nc" id="L45">        secondary.removeString(string.getId());</span>
+
+<span class="nc" id="L47">        return true;</span>
+    }
+
+    @Override
+    public JComponent description() {
+<span class="nc" id="L52">        return sp;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

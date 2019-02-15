@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RemoteListenerServerThread.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.remote.server</a> &gt; <span class="el_source">RemoteListenerServerThread.java</span></div><h1>RemoteListenerServerThread.java</h1><pre class="source lang-java linenums">package org.jabref.logic.remote.server;
+
+import java.io.IOException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * This thread wrapper is required to be able to interrupt the remote listener while listening on a port.
+ */
+public class RemoteListenerServerThread extends Thread {
+
+<span class="fc" id="L13">    private static final Logger LOGGER = LoggerFactory.getLogger(RemoteListenerServerThread.class);</span>
+
+    private final RemoteListenerServer server;
+
+<span class="fc" id="L17">    public RemoteListenerServerThread(MessageHandler messageHandler, int port) throws IOException {</span>
+<span class="fc" id="L18">        this.server = new RemoteListenerServer(messageHandler, port);</span>
+<span class="fc" id="L19">        this.setName(&quot;JabRef - Remote Listener Server on port &quot; + port);</span>
+<span class="fc" id="L20">    }</span>
+
+    @Override
+    public void interrupt() {
+<span class="fc" id="L24">        super.interrupt();</span>
+
+<span class="fc" id="L26">        LOGGER.debug(&quot;Interrupting &quot; + this.getName());</span>
+<span class="fc" id="L27">        this.server.closeServerSocket();</span>
+<span class="fc" id="L28">    }</span>
+
+    @Override
+    public void run() {
+<span class="fc" id="L32">        this.server.run();</span>
+<span class="fc" id="L33">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

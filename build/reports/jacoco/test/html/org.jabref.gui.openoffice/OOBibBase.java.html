@@ -1,0 +1,1383 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OOBibBase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.openoffice</a> &gt; <span class="el_source">OOBibBase.java</span></div><h1>OOBibBase.java</h1><pre class="source lang-java linenums">package org.jabref.gui.openoffice;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.ListSelectionModel;
+
+import org.jabref.logic.bibtex.comparator.FieldComparator;
+import org.jabref.logic.bibtex.comparator.FieldComparatorStack;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.layout.Layout;
+import org.jabref.logic.openoffice.OOBibStyle;
+import org.jabref.logic.openoffice.OOPreFormatter;
+import org.jabref.logic.openoffice.OOUtil;
+import org.jabref.logic.openoffice.UndefinedBibtexEntry;
+import org.jabref.logic.openoffice.UndefinedParagraphFormatException;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+
+import com.sun.star.awt.Point;
+import com.sun.star.beans.IllegalTypeException;
+import com.sun.star.beans.NotRemoveableException;
+import com.sun.star.beans.PropertyExistException;
+import com.sun.star.beans.PropertyVetoException;
+import com.sun.star.beans.UnknownPropertyException;
+import com.sun.star.beans.XPropertyContainer;
+import com.sun.star.beans.XPropertySet;
+import com.sun.star.comp.helper.Bootstrap;
+import com.sun.star.comp.helper.BootstrapException;
+import com.sun.star.container.NoSuchElementException;
+import com.sun.star.container.XEnumeration;
+import com.sun.star.container.XEnumerationAccess;
+import com.sun.star.container.XNameAccess;
+import com.sun.star.container.XNamed;
+import com.sun.star.document.XDocumentPropertiesSupplier;
+import com.sun.star.frame.XComponentLoader;
+import com.sun.star.frame.XController;
+import com.sun.star.frame.XDesktop;
+import com.sun.star.frame.XModel;
+import com.sun.star.lang.DisposedException;
+import com.sun.star.lang.IllegalArgumentException;
+import com.sun.star.lang.Locale;
+import com.sun.star.lang.WrappedTargetException;
+import com.sun.star.lang.XComponent;
+import com.sun.star.lang.XMultiComponentFactory;
+import com.sun.star.lang.XMultiServiceFactory;
+import com.sun.star.text.XBookmarksSupplier;
+import com.sun.star.text.XDocumentIndexesSupplier;
+import com.sun.star.text.XFootnote;
+import com.sun.star.text.XReferenceMarksSupplier;
+import com.sun.star.text.XText;
+import com.sun.star.text.XTextContent;
+import com.sun.star.text.XTextCursor;
+import com.sun.star.text.XTextDocument;
+import com.sun.star.text.XTextRange;
+import com.sun.star.text.XTextRangeCompare;
+import com.sun.star.text.XTextSection;
+import com.sun.star.text.XTextSectionsSupplier;
+import com.sun.star.text.XTextViewCursor;
+import com.sun.star.text.XTextViewCursorSupplier;
+import com.sun.star.uno.Any;
+import com.sun.star.uno.Type;
+import com.sun.star.uno.UnoRuntime;
+import com.sun.star.uno.XComponentContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Class for manipulating the Bibliography of the currently start document in OpenOffice.
+ */
+class OOBibBase {
+
+<span class="nc" id="L100">    private static final OOPreFormatter POSTFORMATTER = new OOPreFormatter();</span>
+
+    private static final String BIB_SECTION_NAME = &quot;JR_bib&quot;;
+    private static final String BIB_SECTION_END_NAME = &quot;JR_bib_end&quot;;
+    private static final String BIB_CITATION = &quot;JR_cite&quot;;
+<span class="nc" id="L105">    private static final Pattern CITE_PATTERN = Pattern.compile(OOBibBase.BIB_CITATION + &quot;\\d*_(\\d*)_(.*)&quot;);</span>
+
+    private static final String CHAR_STYLE_NAME = &quot;CharStyleName&quot;;
+
+    private static final int AUTHORYEAR_PAR = 1;
+    private static final int AUTHORYEAR_INTEXT = 2;
+    private static final int INVISIBLE_CIT = 3;
+
+<span class="nc" id="L113">    private static final Logger LOGGER = LoggerFactory.getLogger(OOBibBase.class);</span>
+    private XMultiServiceFactory mxDocFactory;
+    private XTextDocument mxDoc;
+    private XText text;
+    private final XDesktop xDesktop;
+    private XTextViewCursorSupplier xViewCursorSupplier;
+    private XComponent xCurrentComponent;
+    private XPropertySet propertySet;
+
+    private XPropertyContainer userProperties;
+    private final boolean atEnd;
+    private final Comparator&lt;BibEntry&gt; entryComparator;
+    private final Comparator&lt;BibEntry&gt; yearAuthorTitleComparator;
+<span class="nc" id="L126">    private final FieldComparator authComp = new FieldComparator(FieldName.AUTHOR);</span>
+<span class="nc" id="L127">    private final FieldComparator yearComp = new FieldComparator(FieldName.YEAR);</span>
+
+<span class="nc" id="L129">    private final FieldComparator titleComp = new FieldComparator(FieldName.TITLE);</span>
+<span class="nc" id="L130">    private final List&lt;Comparator&lt;BibEntry&gt;&gt; authorYearTitleList = new ArrayList&lt;&gt;(3);</span>
+
+<span class="nc" id="L132">    private final List&lt;Comparator&lt;BibEntry&gt;&gt; yearAuthorTitleList = new ArrayList&lt;&gt;(3);</span>
+
+<span class="nc" id="L134">    private final Map&lt;String, String&gt; uniquefiers = new HashMap&lt;&gt;();</span>
+
+    private List&lt;String&gt; sortedReferenceMarks;
+
+    public OOBibBase(String pathToOO, boolean atEnd) throws IOException, IllegalAccessException,
+            InvocationTargetException, BootstrapException, CreationException, UnknownPropertyException,
+<span class="nc" id="L140">            WrappedTargetException, IndexOutOfBoundsException, NoSuchElementException, NoDocumentException {</span>
+<span class="nc" id="L141">        authorYearTitleList.add(authComp);</span>
+<span class="nc" id="L142">        authorYearTitleList.add(yearComp);</span>
+<span class="nc" id="L143">        authorYearTitleList.add(titleComp);</span>
+
+<span class="nc" id="L145">        yearAuthorTitleList.add(yearComp);</span>
+<span class="nc" id="L146">        yearAuthorTitleList.add(authComp);</span>
+<span class="nc" id="L147">        yearAuthorTitleList.add(titleComp);</span>
+
+<span class="nc" id="L149">        entryComparator = new FieldComparatorStack&lt;&gt;(authorYearTitleList);</span>
+<span class="nc" id="L150">        yearAuthorTitleComparator = new FieldComparatorStack&lt;&gt;(yearAuthorTitleList);</span>
+
+<span class="nc" id="L152">        this.atEnd = atEnd;</span>
+<span class="nc" id="L153">        xDesktop = simpleBootstrap(pathToOO);</span>
+<span class="nc" id="L154">        selectDocument();</span>
+<span class="nc" id="L155">    }</span>
+
+    public boolean isConnectedToDocument() {
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        return xCurrentComponent != null;</span>
+    }
+
+    public static XTextDocument selectComponent(List&lt;XTextDocument&gt; list)
+            throws UnknownPropertyException, WrappedTargetException, IndexOutOfBoundsException {
+<span class="nc" id="L163">        String[] values = new String[list.size()];</span>
+<span class="nc" id="L164">        int ii = 0;</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        for (XTextDocument doc : list) {</span>
+<span class="nc" id="L166">            values[ii] = String.valueOf(OOUtil.getProperty(doc.getCurrentController().getFrame(), &quot;Title&quot;));</span>
+<span class="nc" id="L167">            ii++;</span>
+<span class="nc" id="L168">        }</span>
+<span class="nc" id="L169">        JList&lt;String&gt; sel = new JList&lt;&gt;(values);</span>
+<span class="nc" id="L170">        sel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);</span>
+<span class="nc" id="L171">        sel.setSelectedIndex(0);</span>
+<span class="nc" id="L172">        int ans = JOptionPane.showConfirmDialog(null, new JScrollPane(sel), Localization.lang(&quot;Select document&quot;),</span>
+                JOptionPane.OK_CANCEL_OPTION);
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        if (ans == JOptionPane.OK_OPTION) {</span>
+<span class="nc" id="L175">            return list.get(sel.getSelectedIndex());</span>
+        } else {
+<span class="nc" id="L177">            return null;</span>
+        }
+    }
+
+    public Optional&lt;String&gt; getCurrentDocumentTitle() {
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if (mxDoc == null) {</span>
+<span class="nc" id="L183">            return Optional.empty();</span>
+        } else {
+            try {
+<span class="nc" id="L186">                return Optional</span>
+<span class="nc" id="L187">                        .of(String.valueOf(OOUtil.getProperty(mxDoc.getCurrentController().getFrame(), &quot;Title&quot;)));</span>
+<span class="nc" id="L188">            } catch (UnknownPropertyException | WrappedTargetException e) {</span>
+<span class="nc" id="L189">                LOGGER.warn(&quot;Could not get document title&quot;, e);</span>
+<span class="nc" id="L190">                return Optional.empty();</span>
+            }
+        }
+    }
+
+    public void selectDocument() throws UnknownPropertyException, WrappedTargetException, IndexOutOfBoundsException,
+            NoSuchElementException, NoDocumentException {
+<span class="nc" id="L197">        List&lt;XTextDocument&gt; textDocumentList = getTextDocuments();</span>
+        XTextDocument selected;
+<span class="nc bnc" id="L199" title="All 2 branches missed.">        if (textDocumentList.isEmpty()) {</span>
+            // No text documents found.
+<span class="nc" id="L201">            throw new NoDocumentException(&quot;No Writer documents found&quot;);</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">        } else if (textDocumentList.size() == 1) {</span>
+            // Get the only one
+<span class="nc" id="L204">            selected = textDocumentList.get(0);</span>
+        } else {
+            // Bring up a dialog
+<span class="nc" id="L207">            selected = selectComponent(textDocumentList);</span>
+        }
+
+<span class="nc bnc" id="L210" title="All 2 branches missed.">        if (selected == null) {</span>
+<span class="nc" id="L211">            return;</span>
+        }
+<span class="nc" id="L213">        xCurrentComponent = UnoRuntime.queryInterface(XComponent.class, selected);</span>
+<span class="nc" id="L214">        mxDoc = selected;</span>
+
+<span class="nc" id="L216">        UnoRuntime.queryInterface(XDocumentIndexesSupplier.class, xCurrentComponent);</span>
+
+<span class="nc" id="L218">        XModel xModel = UnoRuntime.queryInterface(XModel.class, xCurrentComponent);</span>
+<span class="nc" id="L219">        XController xController = xModel.getCurrentController();</span>
+<span class="nc" id="L220">        xViewCursorSupplier = UnoRuntime.queryInterface(XTextViewCursorSupplier.class, xController);</span>
+
+        // get a reference to the body text of the document
+<span class="nc" id="L223">        text = mxDoc.getText();</span>
+
+        // Access the text document's multi service factory:
+<span class="nc" id="L226">        mxDocFactory = UnoRuntime.queryInterface(XMultiServiceFactory.class, mxDoc);</span>
+
+<span class="nc" id="L228">        XDocumentPropertiesSupplier supp = UnoRuntime.queryInterface(XDocumentPropertiesSupplier.class, mxDoc);</span>
+<span class="nc" id="L229">        userProperties = supp.getDocumentProperties().getUserDefinedProperties();</span>
+<span class="nc" id="L230">        propertySet = UnoRuntime.queryInterface(XPropertySet.class, userProperties);</span>
+
+<span class="nc" id="L232">    }</span>
+
+    private List&lt;XTextDocument&gt; getTextDocuments() throws NoSuchElementException, WrappedTargetException {
+<span class="nc" id="L235">        List&lt;XTextDocument&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L236">        XEnumerationAccess enumAccess = xDesktop.getComponents();</span>
+<span class="nc" id="L237">        XEnumeration componentEnumeration = enumAccess.createEnumeration();</span>
+
+        // TODO: http://api.openoffice.org/docs/DevelopersGuide/OfficeDev/OfficeDev.xhtml#1_1_3_2_1_2_Frame_Hierarchies
+
+<span class="nc bnc" id="L241" title="All 2 branches missed.">        while (componentEnumeration.hasMoreElements()) {</span>
+<span class="nc" id="L242">            Object nextElement = componentEnumeration.nextElement();</span>
+<span class="nc" id="L243">            XComponent component = UnoRuntime.queryInterface(XComponent.class, nextElement);</span>
+<span class="nc" id="L244">            XTextDocument document = UnoRuntime.queryInterface(XTextDocument.class, component);</span>
+<span class="nc bnc" id="L245" title="All 2 branches missed.">            if (document != null) {</span>
+<span class="nc" id="L246">                result.add(document);</span>
+            }
+<span class="nc" id="L248">        }</span>
+<span class="nc" id="L249">        return result;</span>
+    }
+
+    private XDesktop simpleBootstrap(String pathToExecutable)
+            throws IllegalAccessException, InvocationTargetException, BootstrapException,
+            CreationException, IOException {
+
+<span class="nc" id="L256">        ClassLoader loader = ClassLoader.getSystemClassLoader();</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">        if (loader instanceof URLClassLoader) {</span>
+<span class="nc" id="L258">            URLClassLoader cl = (URLClassLoader) loader;</span>
+<span class="nc" id="L259">            Class&lt;URLClassLoader&gt; sysclass = URLClassLoader.class;</span>
+            try {
+<span class="nc" id="L261">                Method method = sysclass.getDeclaredMethod(&quot;addURL&quot;, URL.class);</span>
+<span class="nc" id="L262">                method.setAccessible(true);</span>
+<span class="nc" id="L263">                method.invoke(cl, new File(pathToExecutable).toURI().toURL());</span>
+<span class="nc" id="L264">            } catch (SecurityException | NoSuchMethodException | MalformedURLException t) {</span>
+<span class="nc" id="L265">                LOGGER.error(&quot;Error, could not add URL to system classloader&quot;, t);</span>
+<span class="nc" id="L266">                cl.close();</span>
+<span class="nc" id="L267">                throw new IOException(&quot;Error, could not add URL to system classloader&quot;, t);</span>
+<span class="nc" id="L268">            }</span>
+<span class="nc" id="L269">        } else {</span>
+<span class="nc" id="L270">            LOGGER.error(&quot;Error occured, URLClassLoader expected but &quot; + loader.getClass()</span>
+                    + &quot; received. Could not continue.&quot;);
+        }
+
+        //Get the office component context:
+<span class="nc" id="L275">        XComponentContext xContext = Bootstrap.bootstrap();</span>
+        //Get the office service manager:
+<span class="nc" id="L277">        XMultiComponentFactory xServiceManager = xContext.getServiceManager();</span>
+        //Create the desktop, which is the root frame of the
+        //hierarchy of frames that contain viewable components:
+        Object desktop;
+        try {
+<span class="nc" id="L282">            desktop = xServiceManager.createInstanceWithContext(&quot;com.sun.star.frame.Desktop&quot;, xContext);</span>
+<span class="nc" id="L283">        } catch (Exception e) {</span>
+<span class="nc" id="L284">            throw new CreationException(e.getMessage());</span>
+<span class="nc" id="L285">        }</span>
+<span class="nc" id="L286">        XDesktop resultDesktop = UnoRuntime.queryInterface(XDesktop.class, desktop);</span>
+
+<span class="nc" id="L288">        UnoRuntime.queryInterface(XComponentLoader.class, desktop);</span>
+
+<span class="nc" id="L290">        return resultDesktop;</span>
+    }
+
+    public Optional&lt;String&gt; getCustomProperty(String property) throws UnknownPropertyException, WrappedTargetException {
+<span class="nc bnc" id="L294" title="All 2 branches missed.">        if (propertySet.getPropertySetInfo().hasPropertyByName(property)) {</span>
+<span class="nc" id="L295">            return Optional.ofNullable(propertySet.getPropertyValue(property).toString());</span>
+        }
+<span class="nc" id="L297">        return Optional.empty();</span>
+    }
+
+    public void updateSortedReferenceMarks() throws WrappedTargetException, NoSuchElementException {
+<span class="nc" id="L301">        sortedReferenceMarks = getSortedReferenceMarks(getReferenceMarks());</span>
+<span class="nc" id="L302">    }</span>
+
+    public void setCustomProperty(String property, String value) throws UnknownPropertyException,
+            NotRemoveableException, PropertyExistException, IllegalTypeException, IllegalArgumentException {
+<span class="nc bnc" id="L306" title="All 2 branches missed.">        if (propertySet.getPropertySetInfo().hasPropertyByName(property)) {</span>
+<span class="nc" id="L307">            userProperties.removeProperty(property);</span>
+        }
+<span class="nc bnc" id="L309" title="All 2 branches missed.">        if (value != null) {</span>
+<span class="nc" id="L310">            userProperties.addProperty(property, com.sun.star.beans.PropertyAttribute.REMOVEABLE,</span>
+                    new Any(Type.STRING, value));
+        }
+<span class="nc" id="L313">    }</span>
+
+    /**
+     * This method inserts a cite marker in the text for the given BibEntry,
+     * and may refresh the bibliography.
+     * @param entries The entries to cite.
+     * @param database The database the entry belongs to.
+     * @param style The bibliography style we are using.
+     * @param inParenthesis Indicates whether it is an in-text citation or a citation in parenthesis.
+     *   This is not relevant if numbered citations are used.
+     * @param withText Indicates whether this should be a normal citation (true) or an empty
+     *   (invisible) citation (false).
+     * @param sync Indicates whether the reference list should be refreshed.
+     * @throws IllegalTypeException
+     * @throws PropertyExistException
+     * @throws NotRemoveableException
+     * @throws UnknownPropertyException
+     * @throws UndefinedCharacterFormatException
+     * @throws NoSuchElementException
+     * @throws WrappedTargetException
+     * @throws IOException
+     * @throws PropertyVetoException
+     * @throws CreationException
+     * @throws BibEntryNotFoundException
+     * @throws UndefinedParagraphFormatException
+     */
+    public void insertEntry(List&lt;BibEntry&gt; entries, BibDatabase database,
+                            List&lt;BibDatabase&gt; allBases, OOBibStyle style,
+                            boolean inParenthesis, boolean withText, String pageInfo, boolean sync)
+            throws IllegalArgumentException,
+            UnknownPropertyException, NotRemoveableException, PropertyExistException, IllegalTypeException,
+            UndefinedCharacterFormatException, WrappedTargetException, NoSuchElementException, PropertyVetoException,
+            IOException, CreationException, BibEntryNotFoundException, UndefinedParagraphFormatException {
+
+        try {
+
+<span class="nc" id="L349">            XTextViewCursor xViewCursor = xViewCursorSupplier.getViewCursor();</span>
+
+<span class="nc bnc" id="L351" title="All 2 branches missed.">            if (entries.size() &gt; 1) {</span>
+<span class="nc bnc" id="L352" title="All 2 branches missed.">                if (style.getBooleanCitProperty(OOBibStyle.MULTI_CITE_CHRONOLOGICAL)) {</span>
+<span class="nc" id="L353">                    entries.sort(yearAuthorTitleComparator);</span>
+                } else {
+<span class="nc" id="L355">                    entries.sort(entryComparator);</span>
+                }
+            }
+
+<span class="nc" id="L359">            String keyString = String.join(&quot;,&quot;,</span>
+<span class="nc" id="L360">                    entries.stream().map(entry -&gt; entry.getCiteKeyOptional().orElse(&quot;&quot;)).collect(Collectors.toList()));</span>
+            // Insert bookmark:
+<span class="nc bnc" id="L362" title="All 4 branches missed.">            String bName = getUniqueReferenceMarkName(keyString,</span>
+                    withText ? inParenthesis ? OOBibBase.AUTHORYEAR_PAR : OOBibBase.AUTHORYEAR_INTEXT : OOBibBase.INVISIBLE_CIT);
+
+            // If we should store metadata for page info, do that now:
+<span class="nc bnc" id="L366" title="All 2 branches missed.">            if (pageInfo != null) {</span>
+<span class="nc" id="L367">                LOGGER.info(&quot;Storing page info: &quot; + pageInfo);</span>
+<span class="nc" id="L368">                setCustomProperty(bName, pageInfo);</span>
+            }
+
+<span class="nc" id="L371">            xViewCursor.getText().insertString(xViewCursor, &quot; &quot;, false);</span>
+<span class="nc bnc" id="L372" title="All 2 branches missed.">            if (style.isFormatCitations()) {</span>
+<span class="nc" id="L373">                XPropertySet xCursorProps = UnoRuntime.queryInterface(XPropertySet.class, xViewCursor);</span>
+<span class="nc" id="L374">                String charStyle = style.getCitationCharacterFormat();</span>
+                try {
+<span class="nc" id="L376">                    xCursorProps.setPropertyValue(CHAR_STYLE_NAME, charStyle);</span>
+<span class="nc" id="L377">                } catch (UnknownPropertyException | PropertyVetoException | IllegalArgumentException |</span>
+                        WrappedTargetException ex) {
+                    // Setting the character format failed, so we throw an exception that
+                    // will result in an error message for the user. Before that,
+                    // delete the space we inserted:
+<span class="nc" id="L382">                    xViewCursor.goLeft((short) 1, true);</span>
+<span class="nc" id="L383">                    xViewCursor.setString(&quot;&quot;);</span>
+<span class="nc" id="L384">                    throw new UndefinedCharacterFormatException(charStyle);</span>
+<span class="nc" id="L385">                }</span>
+            }
+<span class="nc" id="L387">            xViewCursor.goLeft((short) 1, false);</span>
+<span class="nc" id="L388">            Map&lt;BibEntry, BibDatabase&gt; databaseMap = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L389" title="All 2 branches missed.">            for (BibEntry entry : entries) {</span>
+<span class="nc" id="L390">                databaseMap.put(entry, database);</span>
+<span class="nc" id="L391">            }</span>
+<span class="nc bnc" id="L392" title="All 2 branches missed.">            String citeText = style.isNumberEntries() ? &quot;-&quot; : style.getCitationMarker(entries, databaseMap,</span>
+                    inParenthesis, null, null);
+<span class="nc" id="L394">            insertReferenceMark(bName, citeText, xViewCursor, withText, style);</span>
+
+<span class="nc" id="L396">            xViewCursor.collapseToEnd();</span>
+<span class="nc" id="L397">            xViewCursor.goRight((short) 1, false);</span>
+
+<span class="nc" id="L399">            XTextRange position = xViewCursor.getEnd();</span>
+
+<span class="nc bnc" id="L401" title="All 2 branches missed.">            if (sync) {</span>
+                // To account for numbering and for uniqiefiers, we must refresh the cite markers:
+<span class="nc" id="L403">                updateSortedReferenceMarks();</span>
+<span class="nc" id="L404">                refreshCiteMarkers(allBases, style);</span>
+
+                // Insert it at the current position:
+<span class="nc" id="L407">                rebuildBibTextSection(allBases, style);</span>
+            }
+
+            // Go back to the relevant position:
+<span class="nc" id="L411">            xViewCursor.gotoRange(position, false);</span>
+<span class="nc" id="L412">        } catch (DisposedException ex) {</span>
+            // We need to catch this one here because the OpenOfficePanel class is
+            // loaded before connection, and therefore cannot directly reference
+            // or catch a DisposedException (which is in a OO JAR file).
+<span class="nc" id="L416">            throw new ConnectionLostException(ex.getMessage());</span>
+<span class="nc" id="L417">        }</span>
+<span class="nc" id="L418">    }</span>
+
+    public List&lt;String&gt; getJabRefReferenceMarks(XNameAccess nameAccess) {
+<span class="nc" id="L421">        String[] names = nameAccess.getElementNames();</span>
+        // Remove all reference marks that don't look like JabRef citations:
+<span class="nc" id="L423">        List&lt;String&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L424" title="All 2 branches missed.">        if (names != null) {</span>
+<span class="nc bnc" id="L425" title="All 2 branches missed.">            for (String name : names) {</span>
+<span class="nc bnc" id="L426" title="All 2 branches missed.">                if (CITE_PATTERN.matcher(name).find()) {</span>
+<span class="nc" id="L427">                    result.add(name);</span>
+                }
+            }
+        }
+<span class="nc" id="L431">        return result;</span>
+    }
+
+    /**
+     * Refresh all cite markers in the document.
+     * @param databases The databases to get entries from.
+     * @param style The bibliography style to use.
+     * @return A list of those referenced BibTeX keys that could not be resolved.
+     * @throws UndefinedCharacterFormatException
+     * @throws NoSuchElementException
+     * @throws IllegalArgumentException
+     * @throws WrappedTargetException
+     * @throws BibEntryNotFoundException
+     * @throws CreationException
+     * @throws IOException
+     * @throws PropertyVetoException
+     * @throws UnknownPropertyException
+     */
+    public List&lt;String&gt; refreshCiteMarkers(List&lt;BibDatabase&gt; databases, OOBibStyle style)
+            throws WrappedTargetException, IllegalArgumentException, NoSuchElementException,
+            UndefinedCharacterFormatException, UnknownPropertyException, PropertyVetoException, IOException,
+            CreationException, BibEntryNotFoundException {
+        try {
+<span class="nc" id="L454">            return refreshCiteMarkersInternal(databases, style);</span>
+<span class="nc" id="L455">        } catch (DisposedException ex) {</span>
+            // We need to catch this one here because the OpenOfficePanel class is
+            // loaded before connection, and therefore cannot directly reference
+            // or catch a DisposedException (which is in a OO JAR file).
+<span class="nc" id="L459">            throw new ConnectionLostException(ex.getMessage());</span>
+        }
+    }
+
+    private List&lt;String&gt; refreshCiteMarkersInternal(List&lt;BibDatabase&gt; databases, OOBibStyle style)
+            throws WrappedTargetException, IllegalArgumentException, NoSuchElementException,
+            UndefinedCharacterFormatException, UnknownPropertyException, PropertyVetoException,
+            CreationException, BibEntryNotFoundException {
+
+<span class="nc" id="L468">        List&lt;String&gt; cited = findCitedKeys();</span>
+<span class="nc" id="L469">        Map&lt;String, BibDatabase&gt; linkSourceBase = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L470">        Map&lt;BibEntry, BibDatabase&gt; entries = findCitedEntries(databases, cited, linkSourceBase);</span>
+
+<span class="nc" id="L472">        XNameAccess xReferenceMarks = getReferenceMarks();</span>
+
+        List&lt;String&gt; names;
+<span class="nc bnc" id="L475" title="All 2 branches missed.">        if (style.isSortByPosition()) {</span>
+            // We need to sort the reference marks according to their order of appearance:
+<span class="nc" id="L477">            names = sortedReferenceMarks;</span>
+<span class="nc bnc" id="L478" title="All 2 branches missed.">        } else if (style.isNumberEntries()) {</span>
+            // We need to sort the reference marks according to the sorting of the bibliographic
+            // entries:
+<span class="nc" id="L481">            SortedMap&lt;BibEntry, BibDatabase&gt; newMap = new TreeMap&lt;&gt;(entryComparator);</span>
+<span class="nc bnc" id="L482" title="All 2 branches missed.">            for (Map.Entry&lt;BibEntry, BibDatabase&gt; bibtexEntryBibtexDatabaseEntry : entries.entrySet()) {</span>
+<span class="nc" id="L483">                newMap.put(bibtexEntryBibtexDatabaseEntry.getKey(), bibtexEntryBibtexDatabaseEntry.getValue());</span>
+<span class="nc" id="L484">            }</span>
+<span class="nc" id="L485">            entries = newMap;</span>
+            // Rebuild the list of cited keys according to the sort order:
+<span class="nc" id="L487">            cited.clear();</span>
+<span class="nc bnc" id="L488" title="All 2 branches missed.">            for (BibEntry entry : entries.keySet()) {</span>
+<span class="nc" id="L489">                cited.add(entry.getCiteKeyOptional().orElse(null));</span>
+<span class="nc" id="L490">            }</span>
+<span class="nc" id="L491">            names = Arrays.asList(xReferenceMarks.getElementNames());</span>
+<span class="nc" id="L492">        } else {</span>
+<span class="nc" id="L493">            names = sortedReferenceMarks;</span>
+        }
+
+        // Remove all reference marks that don't look like JabRef citations:
+<span class="nc" id="L497">        List&lt;String&gt; tmp = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L498" title="All 2 branches missed.">        for (String name : names) {</span>
+<span class="nc bnc" id="L499" title="All 2 branches missed.">            if (CITE_PATTERN.matcher(name).find()) {</span>
+<span class="nc" id="L500">                tmp.add(name);</span>
+            }
+<span class="nc" id="L502">        }</span>
+<span class="nc" id="L503">        names = tmp;</span>
+
+<span class="nc" id="L505">        Map&lt;String, Integer&gt; numbers = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L506">        int lastNum = 0;</span>
+        // First compute citation markers for all citations:
+<span class="nc" id="L508">        String[] citMarkers = new String[names.size()];</span>
+<span class="nc" id="L509">        String[][] normCitMarkers = new String[names.size()][];</span>
+<span class="nc" id="L510">        String[][] bibtexKeys = new String[names.size()][];</span>
+
+<span class="nc" id="L512">        int minGroupingCount = style.getIntCitProperty(OOBibStyle.MINIMUM_GROUPING_COUNT);</span>
+
+<span class="nc" id="L514">        int[] types = new int[names.size()];</span>
+<span class="nc bnc" id="L515" title="All 2 branches missed.">        for (int i = 0; i &lt; names.size(); i++) {</span>
+<span class="nc" id="L516">            Matcher citeMatcher = CITE_PATTERN.matcher(names.get(i));</span>
+<span class="nc bnc" id="L517" title="All 2 branches missed.">            if (citeMatcher.find()) {</span>
+<span class="nc" id="L518">                String typeStr = citeMatcher.group(1);</span>
+<span class="nc" id="L519">                int type = Integer.parseInt(typeStr);</span>
+<span class="nc" id="L520">                types[i] = type; // Remember the type in case we need to uniquefy.</span>
+<span class="nc" id="L521">                String[] keys = citeMatcher.group(2).split(&quot;,&quot;);</span>
+<span class="nc" id="L522">                bibtexKeys[i] = keys;</span>
+<span class="nc" id="L523">                BibEntry[] cEntries = new BibEntry[keys.length];</span>
+<span class="nc bnc" id="L524" title="All 2 branches missed.">                for (int j = 0; j &lt; cEntries.length; j++) {</span>
+<span class="nc" id="L525">                    BibDatabase database = linkSourceBase.get(keys[j]);</span>
+<span class="nc" id="L526">                    Optional&lt;BibEntry&gt; tmpEntry = Optional.empty();</span>
+<span class="nc bnc" id="L527" title="All 2 branches missed.">                    if (database != null) {</span>
+<span class="nc" id="L528">                        tmpEntry = database.getEntryByKey(keys[j]);</span>
+                    }
+<span class="nc bnc" id="L530" title="All 2 branches missed.">                    if (tmpEntry.isPresent()) {</span>
+<span class="nc" id="L531">                        cEntries[j] = tmpEntry.get();</span>
+                    } else {
+<span class="nc" id="L533">                        LOGGER.info(&quot;BibTeX key not found: '&quot; + keys[j] + '\'');</span>
+<span class="nc" id="L534">                        LOGGER.info(&quot;Problem with reference mark: '&quot; + names.get(i) + '\'');</span>
+<span class="nc" id="L535">                        cEntries[j] = new UndefinedBibtexEntry(keys[j]);</span>
+                    }
+                }
+
+<span class="nc" id="L539">                String[] normCitMarker = new String[keys.length];</span>
+                String citationMarker;
+<span class="nc bnc" id="L541" title="All 2 branches missed.">                if (style.isBibtexKeyCiteMarkers()) {</span>
+<span class="nc" id="L542">                    StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L543">                    normCitMarkers[i] = new String[keys.length];</span>
+<span class="nc bnc" id="L544" title="All 2 branches missed.">                    for (int j = 0; j &lt; keys.length; j++) {</span>
+<span class="nc" id="L545">                        normCitMarkers[i][j] = cEntries[j].getCiteKeyOptional().orElse(null);</span>
+<span class="nc" id="L546">                        sb.append(cEntries[j].getCiteKeyOptional().orElse(&quot;&quot;));</span>
+<span class="nc bnc" id="L547" title="All 2 branches missed.">                        if (j &lt; (keys.length - 1)) {</span>
+<span class="nc" id="L548">                            sb.append(',');</span>
+                        }
+                    }
+<span class="nc" id="L551">                    citationMarker = sb.toString();</span>
+<span class="nc bnc" id="L552" title="All 2 branches missed.">                } else if (style.isNumberEntries()) {</span>
+<span class="nc bnc" id="L553" title="All 2 branches missed.">                    if (style.isSortByPosition()) {</span>
+                        // We have sorted the citation markers according to their order of appearance,
+                        // so we simply count up for each marker referring to a new entry:
+<span class="nc" id="L556">                        List&lt;Integer&gt; num = new ArrayList&lt;&gt;(keys.length);</span>
+<span class="nc bnc" id="L557" title="All 2 branches missed.">                        for (int j = 0; j &lt; keys.length; j++) {</span>
+<span class="nc bnc" id="L558" title="All 2 branches missed.">                            if (cEntries[j] instanceof UndefinedBibtexEntry) {</span>
+<span class="nc" id="L559">                                num.add(j, -1);</span>
+                            } else {
+<span class="nc" id="L561">                                num.add(j, lastNum + 1);</span>
+<span class="nc bnc" id="L562" title="All 2 branches missed.">                                if (numbers.containsKey(keys[j])) {</span>
+<span class="nc" id="L563">                                    num.set(j, numbers.get(keys[j]));</span>
+                                } else {
+<span class="nc" id="L565">                                    numbers.put(keys[j], num.get(j));</span>
+<span class="nc" id="L566">                                    lastNum = num.get(j);</span>
+                                }
+                            }
+                        }
+<span class="nc" id="L570">                        citationMarker = style.getNumCitationMarker(num, minGroupingCount, false);</span>
+<span class="nc bnc" id="L571" title="All 2 branches missed.">                        for (int j = 0; j &lt; keys.length; j++) {</span>
+<span class="nc" id="L572">                            normCitMarker[j] = style.getNumCitationMarker(Collections.singletonList(num.get(j)),</span>
+                                    minGroupingCount, false);
+                        }
+<span class="nc" id="L575">                    } else {</span>
+                        // We need to find the number of the cited entry in the bibliography,
+                        // and use that number for the cite marker:
+<span class="nc" id="L578">                        List&lt;Integer&gt; num = findCitedEntryIndex(names.get(i), cited);</span>
+
+<span class="nc bnc" id="L580" title="All 2 branches missed.">                        if (num.isEmpty()) {</span>
+<span class="nc" id="L581">                            throw new BibEntryNotFoundException(names.get(i), Localization</span>
+<span class="nc" id="L582">                                    .lang(&quot;Could not resolve BibTeX entry for citation marker '%0'.&quot;, names.get(i)));</span>
+                        } else {
+<span class="nc" id="L584">                            citationMarker = style.getNumCitationMarker(num, minGroupingCount, false);</span>
+                        }
+
+<span class="nc bnc" id="L587" title="All 2 branches missed.">                        for (int j = 0; j &lt; keys.length; j++) {</span>
+<span class="nc" id="L588">                            List&lt;Integer&gt; list = new ArrayList&lt;&gt;(1);</span>
+<span class="nc" id="L589">                            list.add(num.get(j));</span>
+<span class="nc" id="L590">                            normCitMarker[j] = style.getNumCitationMarker(list, minGroupingCount, false);</span>
+                        }
+<span class="nc" id="L592">                    }</span>
+                } else {
+
+<span class="nc bnc" id="L595" title="All 2 branches missed.">                    if (cEntries.length &gt; 1) {</span>
+<span class="nc bnc" id="L596" title="All 2 branches missed.">                        if (style.getBooleanCitProperty(OOBibStyle.MULTI_CITE_CHRONOLOGICAL)) {</span>
+<span class="nc" id="L597">                            Arrays.sort(cEntries, yearAuthorTitleComparator);</span>
+                        } else {
+<span class="nc" id="L599">                            Arrays.sort(cEntries, entryComparator);</span>
+                        }
+                        // Update key list to match the new sorting:
+<span class="nc bnc" id="L602" title="All 2 branches missed.">                        for (int j = 0; j &lt; cEntries.length; j++) {</span>
+<span class="nc" id="L603">                            bibtexKeys[i][j] = cEntries[j].getCiteKeyOptional().orElse(null);</span>
+                        }
+                    }
+
+<span class="nc bnc" id="L607" title="All 2 branches missed.">                    citationMarker = style.getCitationMarker(Arrays.asList(cEntries), entries,</span>
+                            type == OOBibBase.AUTHORYEAR_PAR, null, null);
+                    // We need &quot;normalized&quot; (in parenthesis) markers for uniqueness checking purposes:
+<span class="nc bnc" id="L610" title="All 2 branches missed.">                    for (int j = 0; j &lt; cEntries.length; j++) {</span>
+<span class="nc" id="L611">                        normCitMarker[j] = style.getCitationMarker(Collections.singletonList(cEntries[j]), entries,</span>
+                                true, null, new int[]{-1});
+                    }
+                }
+<span class="nc" id="L615">                citMarkers[i] = citationMarker;</span>
+<span class="nc" id="L616">                normCitMarkers[i] = normCitMarker;</span>
+
+            }
+
+        }
+
+<span class="nc" id="L622">        uniquefiers.clear();</span>
+<span class="nc bnc" id="L623" title="All 4 branches missed.">        if (!style.isBibtexKeyCiteMarkers() &amp;&amp; !style.isNumberEntries()) {</span>
+            // See if there are duplicate citations marks referring to different entries. If so, we need to
+            // use uniquefiers:
+<span class="nc" id="L626">            Map&lt;String, List&lt;String&gt;&gt; refKeys = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L627">            Map&lt;String, List&lt;Integer&gt;&gt; refNums = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L628" title="All 2 branches missed.">            for (int i = 0; i &lt; citMarkers.length; i++) {</span>
+<span class="nc" id="L629">                String[] markers = normCitMarkers[i]; // compare normalized markers, since the actual markers can be different</span>
+<span class="nc bnc" id="L630" title="All 2 branches missed.">                for (int j = 0; j &lt; markers.length; j++) {</span>
+<span class="nc" id="L631">                    String marker = markers[j];</span>
+<span class="nc" id="L632">                    String currentKey = bibtexKeys[i][j];</span>
+<span class="nc bnc" id="L633" title="All 2 branches missed.">                    if (refKeys.containsKey(marker)) {</span>
+                        // Ok, we have seen this exact marker before.
+<span class="nc bnc" id="L635" title="All 2 branches missed.">                        if (!refKeys.get(marker).contains(currentKey)) {</span>
+                            // ... but not for this entry.
+<span class="nc" id="L637">                            refKeys.get(marker).add(currentKey);</span>
+<span class="nc" id="L638">                            refNums.get(marker).add(i);</span>
+                        }
+                    } else {
+<span class="nc" id="L641">                        List&lt;String&gt; l = new ArrayList&lt;&gt;(1);</span>
+<span class="nc" id="L642">                        l.add(currentKey);</span>
+<span class="nc" id="L643">                        refKeys.put(marker, l);</span>
+<span class="nc" id="L644">                        List&lt;Integer&gt; l2 = new ArrayList&lt;&gt;(1);</span>
+<span class="nc" id="L645">                        l2.add(i);</span>
+<span class="nc" id="L646">                        refNums.put(marker, l2);</span>
+                    }
+                }
+            }
+            // Go through the collected lists and see where we need to uniquefy:
+<span class="nc bnc" id="L651" title="All 2 branches missed.">            for (Map.Entry&lt;String, List&lt;String&gt;&gt; stringListEntry : refKeys.entrySet()) {</span>
+<span class="nc" id="L652">                List&lt;String&gt; keys = stringListEntry.getValue();</span>
+<span class="nc bnc" id="L653" title="All 2 branches missed.">                if (keys.size() &gt; 1) {</span>
+                    // This marker appears for more than one unique entry:
+<span class="nc" id="L655">                    int uniq = 'a';</span>
+<span class="nc bnc" id="L656" title="All 2 branches missed.">                    for (String key : keys) {</span>
+                        // Update the map of uniquefiers for the benefit of both the following generation of new
+                        // citation markers, and for the method that builds the bibliography:
+<span class="nc" id="L659">                        uniquefiers.put(key, String.valueOf((char) uniq));</span>
+<span class="nc" id="L660">                        uniq++;</span>
+<span class="nc" id="L661">                    }</span>
+                }
+<span class="nc" id="L663">            }</span>
+
+            // Finally, go through all citation markers, and update those referring to entries in our current list:
+<span class="nc" id="L666">            int maxAuthorsFirst = style.getIntCitProperty(OOBibStyle.MAX_AUTHORS_FIRST);</span>
+<span class="nc" id="L667">            Set&lt;String&gt; seenBefore = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L668" title="All 2 branches missed.">            for (int j = 0; j &lt; bibtexKeys.length; j++) {</span>
+<span class="nc" id="L669">                boolean needsChange = false;</span>
+<span class="nc" id="L670">                int[] firstLimAuthors = new int[bibtexKeys[j].length];</span>
+<span class="nc" id="L671">                String[] uniquif = new String[bibtexKeys[j].length];</span>
+<span class="nc" id="L672">                BibEntry[] cEntries = new BibEntry[bibtexKeys[j].length];</span>
+<span class="nc bnc" id="L673" title="All 2 branches missed.">                for (int k = 0; k &lt; bibtexKeys[j].length; k++) {</span>
+<span class="nc" id="L674">                    String currentKey = bibtexKeys[j][k];</span>
+<span class="nc" id="L675">                    firstLimAuthors[k] = -1;</span>
+<span class="nc bnc" id="L676" title="All 2 branches missed.">                    if (maxAuthorsFirst &gt; 0) {</span>
+<span class="nc bnc" id="L677" title="All 2 branches missed.">                        if (!seenBefore.contains(currentKey)) {</span>
+<span class="nc" id="L678">                            firstLimAuthors[k] = maxAuthorsFirst;</span>
+                        }
+<span class="nc" id="L680">                        seenBefore.add(currentKey);</span>
+                    }
+<span class="nc" id="L682">                    String uniq = uniquefiers.get(currentKey);</span>
+<span class="nc" id="L683">                    Optional&lt;BibEntry&gt; tmpEntry = Optional.empty();</span>
+<span class="nc bnc" id="L684" title="All 2 branches missed.">                    if (uniq == null) {</span>
+<span class="nc bnc" id="L685" title="All 2 branches missed.">                        if (firstLimAuthors[k] &gt; 0) {</span>
+<span class="nc" id="L686">                            needsChange = true;</span>
+<span class="nc" id="L687">                            BibDatabase database = linkSourceBase.get(currentKey);</span>
+<span class="nc bnc" id="L688" title="All 2 branches missed.">                            if (database != null) {</span>
+<span class="nc" id="L689">                                tmpEntry = database.getEntryByKey(currentKey);</span>
+                            }
+<span class="nc" id="L691">                        } else {</span>
+<span class="nc" id="L692">                            BibDatabase database = linkSourceBase.get(currentKey);</span>
+<span class="nc bnc" id="L693" title="All 2 branches missed.">                            if (database != null) {</span>
+<span class="nc" id="L694">                                tmpEntry = database.getEntryByKey(currentKey);</span>
+                            }
+                        }
+<span class="nc" id="L697">                        uniquif[k] = &quot;&quot;;</span>
+                    } else {
+<span class="nc" id="L699">                        needsChange = true;</span>
+<span class="nc" id="L700">                        BibDatabase database = linkSourceBase.get(currentKey);</span>
+<span class="nc bnc" id="L701" title="All 2 branches missed.">                        if (database != null) {</span>
+<span class="nc" id="L702">                            tmpEntry = database.getEntryByKey(currentKey);</span>
+                        }
+<span class="nc" id="L704">                        uniquif[k] = uniq;</span>
+                    }
+<span class="nc bnc" id="L706" title="All 2 branches missed.">                    if (tmpEntry.isPresent()) {</span>
+<span class="nc" id="L707">                        cEntries[k] = tmpEntry.get();</span>
+                    }
+                }
+<span class="nc bnc" id="L710" title="All 2 branches missed.">                if (needsChange) {</span>
+<span class="nc bnc" id="L711" title="All 2 branches missed.">                    citMarkers[j] = style.getCitationMarker(Arrays.asList(cEntries), entries,</span>
+                            types[j] == OOBibBase.AUTHORYEAR_PAR, uniquif, firstLimAuthors);
+                }
+            }
+        }
+
+        // Refresh all reference marks with the citation markers we computed:
+<span class="nc bnc" id="L718" title="All 2 branches missed.">        boolean hadBibSection = getBookmarkRange(OOBibBase.BIB_SECTION_NAME) != null;</span>
+        // Check if we are supposed to set a character format for citations:
+<span class="nc" id="L720">        boolean mustTestCharFormat = style.isFormatCitations();</span>
+<span class="nc bnc" id="L721" title="All 2 branches missed.">        for (int i = 0; i &lt; names.size(); i++) {</span>
+<span class="nc" id="L722">            Object referenceMark = xReferenceMarks.getByName(names.get(i));</span>
+<span class="nc" id="L723">            XTextContent bookmark = UnoRuntime.queryInterface(XTextContent.class, referenceMark);</span>
+
+<span class="nc" id="L725">            XTextCursor cursor = bookmark.getAnchor().getText().createTextCursorByRange(bookmark.getAnchor());</span>
+
+<span class="nc bnc" id="L727" title="All 2 branches missed.">            if (mustTestCharFormat) {</span>
+                // If we are supposed to set character format for citations, must run a test before we
+                // delete old citation markers. Otherwise, if the specified character format doesn't
+                // exist, we end up deleting the markers before the process crashes due to a the missing
+                // format, with catastrophic consequences for the user.
+<span class="nc" id="L732">                mustTestCharFormat = false; // need to do this only once</span>
+<span class="nc" id="L733">                XPropertySet xCursorProps = UnoRuntime.queryInterface(XPropertySet.class, cursor);</span>
+<span class="nc" id="L734">                String charStyle = style.getCitationCharacterFormat();</span>
+                try {
+<span class="nc" id="L736">                    xCursorProps.setPropertyValue(CHAR_STYLE_NAME, charStyle);</span>
+<span class="nc" id="L737">                } catch (UnknownPropertyException | PropertyVetoException | IllegalArgumentException |</span>
+                        WrappedTargetException ex) {
+<span class="nc" id="L739">                    throw new UndefinedCharacterFormatException(charStyle);</span>
+<span class="nc" id="L740">                }</span>
+            }
+
+<span class="nc" id="L743">            text.removeTextContent(bookmark);</span>
+
+<span class="nc bnc" id="L745" title="All 2 branches missed.">            insertReferenceMark(names.get(i), citMarkers[i], cursor, types[i] != OOBibBase.INVISIBLE_CIT, style);</span>
+<span class="nc bnc" id="L746" title="All 4 branches missed.">            if (hadBibSection &amp;&amp; (getBookmarkRange(OOBibBase.BIB_SECTION_NAME) == null)) {</span>
+                // We have overwritten the marker for the start of the reference list.
+                // We need to add it again.
+<span class="nc" id="L749">                cursor.collapseToEnd();</span>
+<span class="nc" id="L750">                OOUtil.insertParagraphBreak(text, cursor);</span>
+<span class="nc" id="L751">                insertBookMark(OOBibBase.BIB_SECTION_NAME, cursor);</span>
+            }
+        }
+
+<span class="nc" id="L755">        List&lt;String&gt; unresolvedKeys = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L756" title="All 2 branches missed.">        for (BibEntry entry : entries.keySet()) {</span>
+<span class="nc bnc" id="L757" title="All 2 branches missed.">            if (entry instanceof UndefinedBibtexEntry) {</span>
+<span class="nc" id="L758">                String key = ((UndefinedBibtexEntry) entry).getKey();</span>
+<span class="nc bnc" id="L759" title="All 2 branches missed.">                if (!unresolvedKeys.contains(key)) {</span>
+<span class="nc" id="L760">                    unresolvedKeys.add(key);</span>
+                }
+            }
+<span class="nc" id="L763">        }</span>
+<span class="nc" id="L764">        return unresolvedKeys;</span>
+    }
+
+    private List&lt;String&gt; getSortedReferenceMarks(final XNameAccess nameAccess)
+            throws WrappedTargetException, NoSuchElementException {
+<span class="nc" id="L769">        XTextViewCursorSupplier cursorSupplier = UnoRuntime.queryInterface(XTextViewCursorSupplier.class,</span>
+<span class="nc" id="L770">                mxDoc.getCurrentController());</span>
+
+<span class="nc" id="L772">        XTextViewCursor viewCursor = cursorSupplier.getViewCursor();</span>
+<span class="nc" id="L773">        XTextRange initialPos = viewCursor.getStart();</span>
+<span class="nc" id="L774">        List&lt;String&gt; names = Arrays.asList(nameAccess.getElementNames());</span>
+<span class="nc" id="L775">        List&lt;Point&gt; positions = new ArrayList&lt;&gt;(names.size());</span>
+<span class="nc bnc" id="L776" title="All 2 branches missed.">        for (String name : names) {</span>
+<span class="nc" id="L777">            XTextContent textContent = UnoRuntime.queryInterface(XTextContent.class, nameAccess.getByName(name));</span>
+<span class="nc" id="L778">            XTextRange range = textContent.getAnchor();</span>
+            // Check if we are inside a footnote:
+<span class="nc bnc" id="L780" title="All 2 branches missed.">            if (UnoRuntime.queryInterface(XFootnote.class, range.getText()) != null) {</span>
+                // Find the linking footnote marker:
+<span class="nc" id="L782">                XFootnote footer = UnoRuntime.queryInterface(XFootnote.class, range.getText());</span>
+                // The footnote's anchor gives the correct position in the text:
+<span class="nc" id="L784">                range = footer.getAnchor();</span>
+            }
+
+<span class="nc" id="L787">            positions.add(findPosition(viewCursor, range));</span>
+<span class="nc" id="L788">        }</span>
+<span class="nc" id="L789">        Set&lt;ComparableMark&gt; set = new TreeSet&lt;&gt;();</span>
+<span class="nc bnc" id="L790" title="All 2 branches missed.">        for (int i = 0; i &lt; positions.size(); i++) {</span>
+<span class="nc" id="L791">            set.add(new ComparableMark(names.get(i), positions.get(i)));</span>
+        }
+
+<span class="nc" id="L794">        List&lt;String&gt; result = new ArrayList&lt;&gt;(set.size());</span>
+<span class="nc bnc" id="L795" title="All 2 branches missed.">        for (ComparableMark mark : set) {</span>
+<span class="nc" id="L796">            result.add(mark.getName());</span>
+<span class="nc" id="L797">        }</span>
+<span class="nc" id="L798">        viewCursor.gotoRange(initialPos, false);</span>
+
+<span class="nc" id="L800">        return result;</span>
+    }
+
+    public XNameAccess getReferenceMarks() {
+<span class="nc" id="L804">        XReferenceMarksSupplier supplier = UnoRuntime.queryInterface(XReferenceMarksSupplier.class, xCurrentComponent);</span>
+<span class="nc" id="L805">        return supplier.getReferenceMarks();</span>
+    }
+
+    private String getUniqueReferenceMarkName(String bibtexKey, int type) {
+<span class="nc" id="L809">        XNameAccess xNamedRefMarks = getReferenceMarks();</span>
+<span class="nc" id="L810">        int i = 0;</span>
+<span class="nc" id="L811">        String name = OOBibBase.BIB_CITATION + '_' + type + '_' + bibtexKey;</span>
+<span class="nc bnc" id="L812" title="All 2 branches missed.">        while (xNamedRefMarks.hasByName(name)) {</span>
+<span class="nc" id="L813">            name = OOBibBase.BIB_CITATION + i + '_' + type + '_' + bibtexKey;</span>
+<span class="nc" id="L814">            i++;</span>
+        }
+<span class="nc" id="L816">        return name;</span>
+    }
+
+    public void rebuildBibTextSection(List&lt;BibDatabase&gt; databases, OOBibStyle style)
+            throws NoSuchElementException, WrappedTargetException, IllegalArgumentException,
+            CreationException, PropertyVetoException, UnknownPropertyException, UndefinedParagraphFormatException {
+<span class="nc" id="L822">        List&lt;String&gt; cited = findCitedKeys();</span>
+<span class="nc" id="L823">        Map&lt;String, BibDatabase&gt; linkSourceBase = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L824">        Map&lt;BibEntry, BibDatabase&gt; entries = findCitedEntries(databases, cited, linkSourceBase); // Although entries are redefined without use, this also updates linkSourceBase</span>
+
+<span class="nc" id="L826">        List&lt;String&gt; names = sortedReferenceMarks;</span>
+
+<span class="nc bnc" id="L828" title="All 2 branches missed.">        if (style.isSortByPosition()) {</span>
+            // We need to sort the entries according to their order of appearance:
+<span class="nc" id="L830">            entries = getSortedEntriesFromSortedRefMarks(names, linkSourceBase);</span>
+        } else {
+<span class="nc" id="L832">            SortedMap&lt;BibEntry, BibDatabase&gt; newMap = new TreeMap&lt;&gt;(entryComparator);</span>
+<span class="nc bnc" id="L833" title="All 2 branches missed.">            for (Map.Entry&lt;BibEntry, BibDatabase&gt; bibtexEntryBibtexDatabaseEntry : findCitedEntries(databases, cited,</span>
+<span class="nc" id="L834">                    linkSourceBase).entrySet()) {</span>
+<span class="nc" id="L835">                newMap.put(bibtexEntryBibtexDatabaseEntry.getKey(), bibtexEntryBibtexDatabaseEntry.getValue());</span>
+<span class="nc" id="L836">            }</span>
+<span class="nc" id="L837">            entries = newMap;</span>
+        }
+<span class="nc" id="L839">        clearBibTextSectionContent2();</span>
+<span class="nc" id="L840">        populateBibTextSection(entries, style);</span>
+<span class="nc" id="L841">    }</span>
+
+    private List&lt;String&gt; findCitedKeys() throws NoSuchElementException, WrappedTargetException {
+<span class="nc" id="L844">        XNameAccess xNamedMarks = getReferenceMarks();</span>
+<span class="nc" id="L845">        String[] names = xNamedMarks.getElementNames();</span>
+<span class="nc" id="L846">        List&lt;String&gt; keys = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L847" title="All 2 branches missed.">        for (String name1 : names) {</span>
+<span class="nc" id="L848">            Object bookmark = xNamedMarks.getByName(name1);</span>
+<span class="nc" id="L849">            UnoRuntime.queryInterface(XTextContent.class, bookmark);</span>
+
+<span class="nc" id="L851">            List&lt;String&gt; newKeys = parseRefMarkName(name1);</span>
+<span class="nc bnc" id="L852" title="All 2 branches missed.">            for (String key : newKeys) {</span>
+<span class="nc bnc" id="L853" title="All 2 branches missed.">                if (!keys.contains(key)) {</span>
+<span class="nc" id="L854">                    keys.add(key);</span>
+                }
+<span class="nc" id="L856">            }</span>
+        }
+
+<span class="nc" id="L859">        return keys;</span>
+    }
+
+    private Map&lt;BibEntry, BibDatabase&gt; findCitedEntries(List&lt;BibDatabase&gt; databases, List&lt;String&gt; keys,
+                                                        Map&lt;String, BibDatabase&gt; linkSourceBase) {
+<span class="nc" id="L864">        Map&lt;BibEntry, BibDatabase&gt; entries = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L865" title="All 2 branches missed.">        for (String key : keys) {</span>
+<span class="nc" id="L866">            boolean found = false;</span>
+<span class="nc bnc" id="L867" title="All 2 branches missed.">            for (BibDatabase database : databases) {</span>
+<span class="nc" id="L868">                Optional&lt;BibEntry&gt; entry = database.getEntryByKey(key);</span>
+<span class="nc bnc" id="L869" title="All 2 branches missed.">                if (entry.isPresent()) {</span>
+<span class="nc" id="L870">                    entries.put(entry.get(), database);</span>
+<span class="nc" id="L871">                    linkSourceBase.put(key, database);</span>
+<span class="nc" id="L872">                    found = true;</span>
+<span class="nc" id="L873">                    break;</span>
+                }
+<span class="nc" id="L875">            }</span>
+
+<span class="nc bnc" id="L877" title="All 2 branches missed.">            if (!found) {</span>
+<span class="nc" id="L878">                entries.put(new UndefinedBibtexEntry(key), null);</span>
+            }
+<span class="nc" id="L880">        }</span>
+<span class="nc" id="L881">        return entries;</span>
+    }
+
+    private Point findPosition(XTextViewCursor cursor, XTextRange range) {
+<span class="nc" id="L885">        cursor.gotoRange(range, false);</span>
+<span class="nc" id="L886">        return cursor.getPosition();</span>
+    }
+
+    /**
+     * Extract the list of bibtex keys from a reference mark name.
+     * @param name The reference mark name.
+     * @return The list of bibtex keys encoded in the name.
+     */
+    public List&lt;String&gt; parseRefMarkName(String name) {
+<span class="nc" id="L895">        List&lt;String&gt; keys = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L896">        Matcher citeMatcher = CITE_PATTERN.matcher(name);</span>
+<span class="nc bnc" id="L897" title="All 2 branches missed.">        if (citeMatcher.find()) {</span>
+<span class="nc" id="L898">            String[] keystring = citeMatcher.group(2).split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L899" title="All 2 branches missed.">            for (String aKeystring : keystring) {</span>
+<span class="nc bnc" id="L900" title="All 2 branches missed.">                if (!keys.contains(aKeystring)) {</span>
+<span class="nc" id="L901">                    keys.add(aKeystring);</span>
+                }
+            }
+        }
+<span class="nc" id="L905">        return keys;</span>
+    }
+
+    /**
+     * Resolve the bibtex key from a citation reference marker name, and look up
+     * the index of the key in a list of keys.
+     * @param citRefName The name of the ReferenceMark representing the citation.
+     * @param keys A List of bibtex keys representing the entries in the bibliography.
+     * @return the indices of the cited keys, -1 if a key is not found. Returns null if the ref name
+     *   could not be resolved as a citation.
+     */
+
+    private List&lt;Integer&gt; findCitedEntryIndex(String citRefName, List&lt;String&gt; keys) {
+<span class="nc" id="L918">        Matcher citeMatcher = CITE_PATTERN.matcher(citRefName);</span>
+<span class="nc bnc" id="L919" title="All 2 branches missed.">        if (citeMatcher.find()) {</span>
+<span class="nc" id="L920">            List&lt;String&gt; keyStrings = Arrays.asList(citeMatcher.group(2).split(&quot;,&quot;));</span>
+<span class="nc" id="L921">            List&lt;Integer&gt; result = new ArrayList&lt;&gt;(keyStrings.size());</span>
+<span class="nc bnc" id="L922" title="All 2 branches missed.">            for (String key : keyStrings) {</span>
+<span class="nc" id="L923">                int ind = keys.indexOf(key);</span>
+<span class="nc bnc" id="L924" title="All 2 branches missed.">                result.add(ind == -1 ? -1 : 1 + ind);</span>
+<span class="nc" id="L925">            }</span>
+<span class="nc" id="L926">            return result;</span>
+        } else {
+<span class="nc" id="L928">            return Collections.emptyList();</span>
+        }
+    }
+
+    private Map&lt;BibEntry, BibDatabase&gt; getSortedEntriesFromSortedRefMarks(List&lt;String&gt; names,
+                                                                          Map&lt;String, BibDatabase&gt; linkSourceBase) {
+
+<span class="nc" id="L935">        Map&lt;BibEntry, BibDatabase&gt; newList = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L936" title="All 2 branches missed.">        for (String name : names) {</span>
+<span class="nc" id="L937">            Matcher citeMatcher = CITE_PATTERN.matcher(name);</span>
+<span class="nc bnc" id="L938" title="All 2 branches missed.">            if (citeMatcher.find()) {</span>
+<span class="nc" id="L939">                String[] keys = citeMatcher.group(2).split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L940" title="All 2 branches missed.">                for (String key : keys) {</span>
+<span class="nc" id="L941">                    BibDatabase database = linkSourceBase.get(key);</span>
+<span class="nc" id="L942">                    Optional&lt;BibEntry&gt; origEntry = Optional.empty();</span>
+<span class="nc bnc" id="L943" title="All 2 branches missed.">                    if (database != null) {</span>
+<span class="nc" id="L944">                        origEntry = database.getEntryByKey(key);</span>
+                    }
+<span class="nc bnc" id="L946" title="All 2 branches missed.">                    if (origEntry.isPresent()) {</span>
+<span class="nc bnc" id="L947" title="All 2 branches missed.">                        if (!newList.containsKey(origEntry.get())) {</span>
+<span class="nc" id="L948">                            newList.put(origEntry.get(), database);</span>
+                        }
+                    } else {
+<span class="nc" id="L951">                        LOGGER.info(&quot;BibTeX key not found: '&quot; + key + &quot;'&quot;);</span>
+<span class="nc" id="L952">                        LOGGER.info(&quot;Problem with reference mark: '&quot; + name + &quot;'&quot;);</span>
+<span class="nc" id="L953">                        newList.put(new UndefinedBibtexEntry(key), null);</span>
+                    }
+                }
+            }
+<span class="nc" id="L957">        }</span>
+
+<span class="nc" id="L959">        return newList;</span>
+    }
+
+    public String getCitationContext(XNameAccess nameAccess, String refMarkName, int charBefore, int charAfter,
+                                     boolean htmlMarkup)
+            throws NoSuchElementException, WrappedTargetException {
+<span class="nc" id="L965">        Object referenceMark = nameAccess.getByName(refMarkName);</span>
+<span class="nc" id="L966">        XTextContent bookmark = UnoRuntime.queryInterface(XTextContent.class, referenceMark);</span>
+
+<span class="nc" id="L968">        XTextCursor cursor = bookmark.getAnchor().getText().createTextCursorByRange(bookmark.getAnchor());</span>
+<span class="nc" id="L969">        String citPart = cursor.getString();</span>
+<span class="nc" id="L970">        int flex = 8;</span>
+<span class="nc bnc" id="L971" title="All 2 branches missed.">        for (int i = 0; i &lt; charBefore; i++) {</span>
+            try {
+<span class="nc" id="L973">                cursor.goLeft((short) 1, true);</span>
+<span class="nc bnc" id="L974" title="All 4 branches missed.">                if ((i &gt;= (charBefore - flex)) &amp;&amp; Character.isWhitespace(cursor.getString().charAt(0))) {</span>
+<span class="nc" id="L975">                    break;</span>
+                }
+<span class="nc" id="L977">            } catch (IndexOutOfBoundsException ex) {</span>
+<span class="nc" id="L978">                LOGGER.warn(&quot;Problem going left&quot;, ex);</span>
+<span class="nc" id="L979">            }</span>
+        }
+<span class="nc" id="L981">        int length = cursor.getString().length();</span>
+<span class="nc" id="L982">        int added = length - citPart.length();</span>
+<span class="nc" id="L983">        cursor.collapseToStart();</span>
+<span class="nc bnc" id="L984" title="All 2 branches missed.">        for (int i = 0; i &lt; (charAfter + length); i++) {</span>
+            try {
+<span class="nc" id="L986">                cursor.goRight((short) 1, true);</span>
+<span class="nc bnc" id="L987" title="All 2 branches missed.">                if (i &gt;= ((charAfter + length) - flex)) {</span>
+<span class="nc" id="L988">                    String strNow = cursor.getString();</span>
+<span class="nc bnc" id="L989" title="All 2 branches missed.">                    if (Character.isWhitespace(strNow.charAt(strNow.length() - 1))) {</span>
+<span class="nc" id="L990">                        break;</span>
+                    }
+                }
+<span class="nc" id="L993">            } catch (IndexOutOfBoundsException ex) {</span>
+<span class="nc" id="L994">                LOGGER.warn(&quot;Problem going right&quot;, ex);</span>
+<span class="nc" id="L995">            }</span>
+        }
+
+<span class="nc" id="L998">        String result = cursor.getString();</span>
+<span class="nc bnc" id="L999" title="All 2 branches missed.">        if (htmlMarkup) {</span>
+<span class="nc" id="L1000">            result = result.substring(0, added) + &quot;&lt;b&gt;&quot; + citPart + &quot;&lt;/b&gt;&quot; + result.substring(length);</span>
+        }
+<span class="nc" id="L1002">        return result.trim();</span>
+    }
+
+    private void insertFullReferenceAtCursor(XTextCursor cursor, Map&lt;BibEntry, BibDatabase&gt; entries, OOBibStyle style,
+                                             String parFormat)
+            throws UndefinedParagraphFormatException, IllegalArgumentException,
+            UnknownPropertyException, PropertyVetoException, WrappedTargetException {
+        Map&lt;BibEntry, BibDatabase&gt; correctEntries;
+        // If we don't have numbered entries, we need to sort the entries before adding them:
+<span class="nc bnc" id="L1011" title="All 2 branches missed.">        if (style.isSortByPosition()) {</span>
+            // Use the received map directly
+<span class="nc" id="L1013">            correctEntries = entries;</span>
+        } else {
+            // Sort map
+<span class="nc" id="L1016">            Map&lt;BibEntry, BibDatabase&gt; newMap = new TreeMap&lt;&gt;(entryComparator);</span>
+<span class="nc" id="L1017">            newMap.putAll(entries);</span>
+<span class="nc" id="L1018">            correctEntries = newMap;</span>
+        }
+<span class="nc" id="L1020">        int number = 1;</span>
+<span class="nc bnc" id="L1021" title="All 2 branches missed.">        for (Map.Entry&lt;BibEntry, BibDatabase&gt; entry : correctEntries.entrySet()) {</span>
+<span class="nc bnc" id="L1022" title="All 2 branches missed.">            if (entry.getKey() instanceof UndefinedBibtexEntry) {</span>
+<span class="nc" id="L1023">                continue;</span>
+            }
+<span class="nc" id="L1025">            OOUtil.insertParagraphBreak(text, cursor);</span>
+<span class="nc bnc" id="L1026" title="All 2 branches missed.">            if (style.isNumberEntries()) {</span>
+<span class="nc" id="L1027">                int minGroupingCount = style.getIntCitProperty(OOBibStyle.MINIMUM_GROUPING_COUNT);</span>
+<span class="nc" id="L1028">                OOUtil.insertTextAtCurrentLocation(text, cursor,</span>
+<span class="nc" id="L1029">                        style.getNumCitationMarker(Collections.singletonList(number++), minGroupingCount, true), Collections.emptyList());</span>
+            }
+<span class="nc" id="L1031">            Layout layout = style.getReferenceFormat(entry.getKey().getType());</span>
+<span class="nc" id="L1032">            layout.setPostFormatter(POSTFORMATTER);</span>
+<span class="nc" id="L1033">            OOUtil.insertFullReferenceAtCurrentLocation(text, cursor, layout, parFormat, entry.getKey(),</span>
+<span class="nc" id="L1034">                    entry.getValue(), uniquefiers.get(entry.getKey().getCiteKeyOptional().orElse(null)));</span>
+<span class="nc" id="L1035">        }</span>
+
+<span class="nc" id="L1037">    }</span>
+
+    private void createBibTextSection2(boolean end)
+            throws IllegalArgumentException, CreationException {
+
+<span class="nc" id="L1042">        XTextCursor mxDocCursor = text.createTextCursor();</span>
+<span class="nc bnc" id="L1043" title="All 2 branches missed.">        if (end) {</span>
+<span class="nc" id="L1044">            mxDocCursor.gotoEnd(false);</span>
+        }
+<span class="nc" id="L1046">        OOUtil.insertParagraphBreak(text, mxDocCursor);</span>
+        // Create a new TextSection from the document factory and access it's XNamed interface
+        XNamed xChildNamed;
+        try {
+<span class="nc" id="L1050">            xChildNamed = UnoRuntime.queryInterface(XNamed.class,</span>
+<span class="nc" id="L1051">                    mxDocFactory.createInstance(&quot;com.sun.star.text.TextSection&quot;));</span>
+<span class="nc" id="L1052">        } catch (Exception e) {</span>
+<span class="nc" id="L1053">            throw new CreationException(e.getMessage());</span>
+<span class="nc" id="L1054">        }</span>
+        // Set the new sections name to 'Child_Section'
+<span class="nc" id="L1056">        xChildNamed.setName(OOBibBase.BIB_SECTION_NAME);</span>
+        // Access the Child_Section's XTextContent interface and insert it into the document
+<span class="nc" id="L1058">        XTextContent xChildSection = UnoRuntime.queryInterface(XTextContent.class, xChildNamed);</span>
+<span class="nc" id="L1059">        text.insertTextContent(mxDocCursor, xChildSection, false);</span>
+
+<span class="nc" id="L1061">    }</span>
+
+    private void clearBibTextSectionContent2()
+            throws NoSuchElementException, WrappedTargetException, IllegalArgumentException, CreationException {
+
+        // Check if the section exists:
+<span class="nc" id="L1067">        XTextSectionsSupplier supplier = UnoRuntime.queryInterface(XTextSectionsSupplier.class, mxDoc);</span>
+<span class="nc bnc" id="L1068" title="All 2 branches missed.">        if (supplier.getTextSections().hasByName(OOBibBase.BIB_SECTION_NAME)) {</span>
+<span class="nc" id="L1069">            XTextSection section = (XTextSection) ((Any) supplier.getTextSections().getByName(OOBibBase.BIB_SECTION_NAME))</span>
+<span class="nc" id="L1070">                    .getObject();</span>
+            // Clear it:
+<span class="nc" id="L1072">            XTextCursor cursor = text.createTextCursorByRange(section.getAnchor());</span>
+<span class="nc" id="L1073">            cursor.gotoRange(section.getAnchor(), false);</span>
+<span class="nc" id="L1074">            cursor.setString(&quot;&quot;);</span>
+<span class="nc" id="L1075">        } else {</span>
+<span class="nc" id="L1076">            createBibTextSection2(atEnd);</span>
+        }
+<span class="nc" id="L1078">    }</span>
+
+    private void populateBibTextSection(Map&lt;BibEntry, BibDatabase&gt; entries, OOBibStyle style)
+            throws NoSuchElementException, WrappedTargetException, PropertyVetoException,
+            UnknownPropertyException, UndefinedParagraphFormatException, IllegalArgumentException, CreationException {
+<span class="nc" id="L1083">        XTextSectionsSupplier supplier = UnoRuntime.queryInterface(XTextSectionsSupplier.class, mxDoc);</span>
+<span class="nc" id="L1084">        XTextSection section = (XTextSection) ((Any) supplier.getTextSections().getByName(OOBibBase.BIB_SECTION_NAME))</span>
+<span class="nc" id="L1085">                .getObject();</span>
+<span class="nc" id="L1086">        XTextCursor cursor = text.createTextCursorByRange(section.getAnchor());</span>
+<span class="nc" id="L1087">        OOUtil.insertTextAtCurrentLocation(text, cursor, (String) style.getProperty(OOBibStyle.TITLE),</span>
+<span class="nc" id="L1088">                (String) style.getProperty(OOBibStyle.REFERENCE_HEADER_PARAGRAPH_FORMAT));</span>
+<span class="nc" id="L1089">        insertFullReferenceAtCursor(cursor, entries, style,</span>
+<span class="nc" id="L1090">                (String) style.getProperty(OOBibStyle.REFERENCE_PARAGRAPH_FORMAT));</span>
+<span class="nc" id="L1091">        insertBookMark(OOBibBase.BIB_SECTION_END_NAME, cursor);</span>
+<span class="nc" id="L1092">    }</span>
+
+    private XTextContent insertBookMark(String name, XTextCursor position)
+            throws IllegalArgumentException, CreationException {
+        Object bookmark;
+        try {
+<span class="nc" id="L1098">            bookmark = mxDocFactory.createInstance(&quot;com.sun.star.text.Bookmark&quot;);</span>
+<span class="nc" id="L1099">        } catch (Exception e) {</span>
+<span class="nc" id="L1100">            throw new CreationException(e.getMessage());</span>
+<span class="nc" id="L1101">        }</span>
+        // name the bookmark
+<span class="nc" id="L1103">        XNamed xNamed = UnoRuntime.queryInterface(XNamed.class, bookmark);</span>
+<span class="nc" id="L1104">        xNamed.setName(name);</span>
+        // get XTextContent interface
+<span class="nc" id="L1106">        XTextContent xTextContent = UnoRuntime.queryInterface(XTextContent.class, bookmark);</span>
+        // insert bookmark at the end of the document
+        // instead of mxDocText.getEnd you could use a text cursor's XTextRange interface or any XTextRange
+<span class="nc" id="L1109">        text.insertTextContent(position, xTextContent, true);</span>
+<span class="nc" id="L1110">        position.collapseToEnd();</span>
+<span class="nc" id="L1111">        return xTextContent;</span>
+    }
+
+    private void insertReferenceMark(String name, String citationText, XTextCursor position, boolean withText,
+                                     OOBibStyle style)
+            throws UnknownPropertyException, WrappedTargetException,
+            PropertyVetoException, IllegalArgumentException, UndefinedCharacterFormatException, CreationException {
+
+        // Check if there is &quot;page info&quot; stored for this citation. If so, insert it into
+        // the citation text before inserting the citation:
+<span class="nc" id="L1121">        Optional&lt;String&gt; pageInfo = getCustomProperty(name);</span>
+        String citText;
+<span class="nc bnc" id="L1123" title="All 4 branches missed.">        if ((pageInfo.isPresent()) &amp;&amp; !pageInfo.get().isEmpty()) {</span>
+<span class="nc" id="L1124">            citText = style.insertPageInfo(citationText, pageInfo.get());</span>
+        } else {
+<span class="nc" id="L1126">            citText = citationText;</span>
+        }
+
+        Object bookmark;
+        try {
+<span class="nc" id="L1131">            bookmark = mxDocFactory.createInstance(&quot;com.sun.star.text.ReferenceMark&quot;);</span>
+<span class="nc" id="L1132">        } catch (Exception e) {</span>
+<span class="nc" id="L1133">            throw new CreationException(e.getMessage());</span>
+<span class="nc" id="L1134">        }</span>
+        // Name the reference
+<span class="nc" id="L1136">        XNamed xNamed = UnoRuntime.queryInterface(XNamed.class, bookmark);</span>
+<span class="nc" id="L1137">        xNamed.setName(name);</span>
+
+<span class="nc bnc" id="L1139" title="All 2 branches missed.">        if (withText) {</span>
+<span class="nc" id="L1140">            position.setString(citText);</span>
+<span class="nc" id="L1141">            XPropertySet xCursorProps = UnoRuntime.queryInterface(XPropertySet.class, position);</span>
+
+            // Set language to [None]:
+<span class="nc" id="L1144">            xCursorProps.setPropertyValue(&quot;CharLocale&quot;, new Locale(&quot;zxx&quot;, &quot;&quot;, &quot;&quot;));</span>
+<span class="nc bnc" id="L1145" title="All 2 branches missed.">            if (style.isFormatCitations()) {</span>
+<span class="nc" id="L1146">                String charStyle = style.getCitationCharacterFormat();</span>
+                try {
+<span class="nc" id="L1148">                    xCursorProps.setPropertyValue(CHAR_STYLE_NAME, charStyle);</span>
+<span class="nc" id="L1149">                } catch (UnknownPropertyException | PropertyVetoException | IllegalArgumentException |</span>
+                        WrappedTargetException ex) {
+<span class="nc" id="L1151">                    throw new UndefinedCharacterFormatException(charStyle);</span>
+<span class="nc" id="L1152">                }</span>
+            }
+<span class="nc" id="L1154">        } else {</span>
+<span class="nc" id="L1155">            position.setString(&quot;&quot;);</span>
+        }
+
+        // get XTextContent interface
+<span class="nc" id="L1159">        XTextContent xTextContent = UnoRuntime.queryInterface(XTextContent.class, bookmark);</span>
+
+<span class="nc" id="L1161">        position.getText().insertTextContent(position, xTextContent, true);</span>
+
+        // Check if we should italicize the &quot;et al.&quot; string in citations:
+<span class="nc" id="L1164">        boolean italicize = style.getBooleanCitProperty(OOBibStyle.ITALIC_ET_AL);</span>
+<span class="nc bnc" id="L1165" title="All 2 branches missed.">        if (italicize) {</span>
+<span class="nc" id="L1166">            String etAlString = style.getStringCitProperty(OOBibStyle.ET_AL_STRING);</span>
+<span class="nc" id="L1167">            int index = citText.indexOf(etAlString);</span>
+<span class="nc bnc" id="L1168" title="All 2 branches missed.">            if (index &gt;= 0) {</span>
+<span class="nc" id="L1169">                italicizeOrBold(position, true, index, index + etAlString.length());</span>
+            }
+        }
+
+<span class="nc" id="L1173">        position.collapseToEnd();</span>
+
+<span class="nc" id="L1175">    }</span>
+
+    private void removeReferenceMark(String name) throws NoSuchElementException, WrappedTargetException {
+<span class="nc" id="L1178">        XNameAccess xReferenceMarks = getReferenceMarks();</span>
+<span class="nc bnc" id="L1179" title="All 2 branches missed.">        if (xReferenceMarks.hasByName(name)) {</span>
+<span class="nc" id="L1180">            Object referenceMark = xReferenceMarks.getByName(name);</span>
+<span class="nc" id="L1181">            XTextContent bookmark = UnoRuntime.queryInterface(XTextContent.class, referenceMark);</span>
+<span class="nc" id="L1182">            text.removeTextContent(bookmark);</span>
+        }
+<span class="nc" id="L1184">    }</span>
+
+    /**
+     * Get the XTextRange corresponding to the named bookmark.
+     * @param name The name of the bookmark to find.
+     * @return The XTextRange for the bookmark.
+     * @throws WrappedTargetException
+     * @throws NoSuchElementException
+     */
+    private XTextRange getBookmarkRange(String name) throws NoSuchElementException, WrappedTargetException {
+<span class="nc" id="L1194">        XNameAccess xNamedBookmarks = getBookmarks();</span>
+
+        // retrieve bookmark by name
+<span class="nc bnc" id="L1197" title="All 2 branches missed.">        if (!xNamedBookmarks.hasByName(name)) {</span>
+<span class="nc" id="L1198">            return null;</span>
+        }
+<span class="nc" id="L1200">        Object foundBookmark = xNamedBookmarks.getByName(name);</span>
+<span class="nc" id="L1201">        XTextContent xFoundBookmark = UnoRuntime.queryInterface(XTextContent.class, foundBookmark);</span>
+<span class="nc" id="L1202">        return xFoundBookmark.getAnchor();</span>
+    }
+
+    private XNameAccess getBookmarks() {
+        // query XBookmarksSupplier from document model and get bookmarks collection
+<span class="nc" id="L1207">        XBookmarksSupplier xBookmarksSupplier = UnoRuntime.queryInterface(XBookmarksSupplier.class, xCurrentComponent);</span>
+<span class="nc" id="L1208">        XNameAccess xNamedBookmarks = xBookmarksSupplier.getBookmarks();</span>
+<span class="nc" id="L1209">        return xNamedBookmarks;</span>
+    }
+
+    private void italicizeOrBold(XTextCursor position, boolean italicize, int start, int end)
+            throws UnknownPropertyException, PropertyVetoException, IllegalArgumentException, WrappedTargetException {
+<span class="nc" id="L1214">        XTextRange range = position.getStart();</span>
+<span class="nc" id="L1215">        XTextCursor cursor = position.getText().createTextCursorByRange(range);</span>
+<span class="nc" id="L1216">        cursor.goRight((short) start, false);</span>
+<span class="nc" id="L1217">        cursor.goRight((short) (end - start), true);</span>
+<span class="nc" id="L1218">        XPropertySet xcp = UnoRuntime.queryInterface(XPropertySet.class, cursor);</span>
+<span class="nc bnc" id="L1219" title="All 2 branches missed.">        if (italicize) {</span>
+<span class="nc" id="L1220">            xcp.setPropertyValue(&quot;CharPosture&quot;, com.sun.star.awt.FontSlant.ITALIC);</span>
+        } else {
+<span class="nc" id="L1222">            xcp.setPropertyValue(&quot;CharWeight&quot;, com.sun.star.awt.FontWeight.BOLD);</span>
+        }
+<span class="nc" id="L1224">    }</span>
+
+    public void combineCiteMarkers(List&lt;BibDatabase&gt; databases, OOBibStyle style)
+            throws IOException, WrappedTargetException, NoSuchElementException, IllegalArgumentException,
+            UndefinedCharacterFormatException, UnknownPropertyException, PropertyVetoException, CreationException,
+            BibEntryNotFoundException {
+<span class="nc" id="L1230">        XNameAccess nameAccess = getReferenceMarks();</span>
+        // TODO: doesn't work for citations in footnotes/tables
+<span class="nc" id="L1232">        List&lt;String&gt; names = getSortedReferenceMarks(nameAccess);</span>
+
+<span class="nc" id="L1234">        final XTextRangeCompare compare = UnoRuntime.queryInterface(XTextRangeCompare.class, text);</span>
+
+<span class="nc" id="L1236">        int piv = 0;</span>
+<span class="nc" id="L1237">        boolean madeModifications = false;</span>
+<span class="nc bnc" id="L1238" title="All 2 branches missed.">        while (piv &lt; (names.size() - 1)) {</span>
+<span class="nc" id="L1239">            XTextRange range1 = UnoRuntime.queryInterface(XTextContent.class, nameAccess.getByName(names.get(piv)))</span>
+<span class="nc" id="L1240">                                          .getAnchor().getEnd();</span>
+<span class="nc" id="L1241">            XTextRange range2 = UnoRuntime.queryInterface(XTextContent.class, nameAccess.getByName(names.get(piv + 1)))</span>
+<span class="nc" id="L1242">                                          .getAnchor().getStart();</span>
+<span class="nc bnc" id="L1243" title="All 2 branches missed.">            if (range1.getText() != range2.getText()) {</span>
+<span class="nc" id="L1244">                piv++;</span>
+<span class="nc" id="L1245">                continue;</span>
+            }
+<span class="nc" id="L1247">            XTextCursor mxDocCursor = range1.getText().createTextCursorByRange(range1);</span>
+<span class="nc" id="L1248">            mxDocCursor.goRight((short) 1, true);</span>
+<span class="nc" id="L1249">            boolean couldExpand = true;</span>
+<span class="nc bnc" id="L1250" title="All 4 branches missed.">            while (couldExpand &amp;&amp; (compare.compareRegionEnds(mxDocCursor, range2) &gt; 0)) {</span>
+<span class="nc" id="L1251">                couldExpand = mxDocCursor.goRight((short) 1, true);</span>
+            }
+<span class="nc" id="L1253">            String cursorText = mxDocCursor.getString();</span>
+            // Check if the string contains no line breaks and only whitespace:
+<span class="nc bnc" id="L1255" title="All 4 branches missed.">            if ((cursorText.indexOf('\n') == -1) &amp;&amp; cursorText.trim().isEmpty()) {</span>
+
+                // If we are supposed to set character format for citations, test this before
+                // making any changes. This way we can throw an exception before any reference
+                // marks are removed, preventing damage to the user's document:
+<span class="nc bnc" id="L1260" title="All 2 branches missed.">                if (style.isFormatCitations()) {</span>
+<span class="nc" id="L1261">                    XPropertySet xCursorProps = UnoRuntime.queryInterface(XPropertySet.class, mxDocCursor);</span>
+<span class="nc" id="L1262">                    String charStyle = style.getCitationCharacterFormat();</span>
+                    try {
+<span class="nc" id="L1264">                        xCursorProps.setPropertyValue(CHAR_STYLE_NAME, charStyle);</span>
+<span class="nc" id="L1265">                    } catch (UnknownPropertyException | PropertyVetoException | IllegalArgumentException |</span>
+                            WrappedTargetException ex) {
+                        // Setting the character format failed, so we throw an exception that
+                        // will result in an error message for the user:
+<span class="nc" id="L1269">                        throw new UndefinedCharacterFormatException(charStyle);</span>
+<span class="nc" id="L1270">                    }</span>
+                }
+
+<span class="nc" id="L1273">                List&lt;String&gt; keys = parseRefMarkName(names.get(piv));</span>
+<span class="nc" id="L1274">                keys.addAll(parseRefMarkName(names.get(piv + 1)));</span>
+<span class="nc" id="L1275">                removeReferenceMark(names.get(piv));</span>
+<span class="nc" id="L1276">                removeReferenceMark(names.get(piv + 1));</span>
+<span class="nc" id="L1277">                List&lt;BibEntry&gt; entries = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L1278" title="All 2 branches missed.">                for (String key : keys) {</span>
+<span class="nc bnc" id="L1279" title="All 2 branches missed.">                    for (BibDatabase database : databases) {</span>
+<span class="nc" id="L1280">                        Optional&lt;BibEntry&gt; entry = database.getEntryByKey(key);</span>
+<span class="nc bnc" id="L1281" title="All 2 branches missed.">                        if (entry.isPresent()) {</span>
+<span class="nc" id="L1282">                            entries.add(entry.get());</span>
+<span class="nc" id="L1283">                            break;</span>
+                        }
+<span class="nc" id="L1285">                    }</span>
+<span class="nc" id="L1286">                }</span>
+<span class="nc" id="L1287">                Collections.sort(entries, new FieldComparator(FieldName.YEAR));</span>
+<span class="nc" id="L1288">                String keyString = String.join(&quot;,&quot;, entries.stream().map(entry -&gt; entry.getCiteKeyOptional().orElse(&quot;&quot;))</span>
+<span class="nc" id="L1289">                                                           .collect(Collectors.toList()));</span>
+                // Insert bookmark:
+<span class="nc" id="L1291">                String bName = getUniqueReferenceMarkName(keyString, OOBibBase.AUTHORYEAR_PAR);</span>
+<span class="nc" id="L1292">                insertReferenceMark(bName, &quot;tmp&quot;, mxDocCursor, true, style);</span>
+<span class="nc" id="L1293">                names.set(piv + 1, bName);</span>
+<span class="nc" id="L1294">                madeModifications = true;</span>
+            }
+<span class="nc" id="L1296">            piv++;</span>
+<span class="nc" id="L1297">        }</span>
+<span class="nc bnc" id="L1298" title="All 2 branches missed.">        if (madeModifications) {</span>
+<span class="nc" id="L1299">            updateSortedReferenceMarks();</span>
+<span class="nc" id="L1300">            refreshCiteMarkers(databases, style);</span>
+        }
+
+<span class="nc" id="L1303">    }</span>
+
+    public BibDatabase generateDatabase(List&lt;BibDatabase&gt; databases)
+            throws NoSuchElementException, WrappedTargetException {
+<span class="nc" id="L1307">        BibDatabase resultDatabase = new BibDatabase();</span>
+<span class="nc" id="L1308">        List&lt;String&gt; cited = findCitedKeys();</span>
+
+        // For each cited key
+<span class="nc bnc" id="L1311" title="All 2 branches missed.">        for (String key : cited) {</span>
+            // Loop through the available databases
+<span class="nc bnc" id="L1313" title="All 2 branches missed.">            for (BibDatabase loopDatabase : databases) {</span>
+<span class="nc" id="L1314">                Optional&lt;BibEntry&gt; entry = loopDatabase.getEntryByKey(key);</span>
+                // If entry found
+<span class="nc bnc" id="L1316" title="All 2 branches missed.">                if (entry.isPresent()) {</span>
+<span class="nc" id="L1317">                    BibEntry clonedEntry = (BibEntry) entry.get().clone();</span>
+                    // Insert a copy of the entry
+<span class="nc" id="L1319">                    resultDatabase.insertEntry(clonedEntry);</span>
+                    // Check if the cloned entry has a crossref field
+<span class="nc" id="L1321">                    clonedEntry.getField(FieldName.CROSSREF).ifPresent(crossref -&gt; {</span>
+                        // If the crossref entry is not already in the database
+<span class="nc bnc" id="L1323" title="All 2 branches missed.">                        if (!resultDatabase.getEntryByKey(crossref).isPresent()) {</span>
+                            // Add it if it is in the current library
+<span class="nc" id="L1325">                            loopDatabase.getEntryByKey(crossref).ifPresent(resultDatabase::insertEntry);</span>
+                        }
+<span class="nc" id="L1327">                    });</span>
+
+                    // Be happy with the first found BibEntry and move on to next key
+<span class="nc" id="L1330">                    break;</span>
+                }
+<span class="nc" id="L1332">            }</span>
+<span class="nc" id="L1333">        }</span>
+
+<span class="nc" id="L1335">        return resultDatabase;</span>
+    }
+
+    private static class ComparableMark implements Comparable&lt;ComparableMark&gt; {
+
+        private final String name;
+        private final Point position;
+
+<span class="nc" id="L1343">        public ComparableMark(String name, Point position) {</span>
+<span class="nc" id="L1344">            this.name = name;</span>
+<span class="nc" id="L1345">            this.position = position;</span>
+<span class="nc" id="L1346">        }</span>
+
+        @Override
+        public int compareTo(ComparableMark other) {
+<span class="nc bnc" id="L1350" title="All 2 branches missed.">            if (position.Y == other.position.Y) {</span>
+<span class="nc" id="L1351">                return position.X - other.position.X;</span>
+            } else {
+<span class="nc" id="L1353">                return position.Y - other.position.Y;</span>
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+<span class="nc bnc" id="L1359" title="All 2 branches missed.">            if (this == o) {</span>
+<span class="nc" id="L1360">                return true;</span>
+            }
+
+<span class="nc bnc" id="L1363" title="All 2 branches missed.">            if (o instanceof ComparableMark) {</span>
+<span class="nc" id="L1364">                ComparableMark other = (ComparableMark) o;</span>
+<span class="nc bnc" id="L1365" title="All 4 branches missed.">                return (this.position.X == other.position.X) &amp;&amp; (this.position.Y == other.position.Y)</span>
+<span class="nc bnc" id="L1366" title="All 2 branches missed.">                        &amp;&amp; Objects.equals(this.name, other.name);</span>
+            }
+<span class="nc" id="L1368">            return false;</span>
+        }
+
+        public String getName() {
+<span class="nc" id="L1372">            return name;</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L1377">            return Objects.hash(position, name);</span>
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

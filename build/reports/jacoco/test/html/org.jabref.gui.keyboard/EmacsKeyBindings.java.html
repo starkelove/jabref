@@ -1,0 +1,791 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EmacsKeyBindings.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.keyboard</a> &gt; <span class="el_source">EmacsKeyBindings.java</span></div><h1>EmacsKeyBindings.java</h1><pre class="source lang-java linenums">package org.jabref.gui.keyboard;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+
+import javax.swing.Action;
+import javax.swing.JEditorPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+import javax.swing.KeyStroke;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultEditorKit;
+import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.Keymap;
+import javax.swing.text.TextAction;
+import javax.swing.text.Utilities;
+
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Generic class which activates Emacs keybindings for java input {@link
+ * JTextComponent}s.
+ *
+ * The inner class actions can also be used independently.
+ */
+public class EmacsKeyBindings {
+<span class="nc" id="L38">    private static final Logger LOGGER = LoggerFactory.getLogger(EmacsKeyBindings.class);</span>
+
+    private static final String KILL_LINE_ACTION = &quot;emacs-kill-line&quot;;
+
+    private static final String KILL_RING_SAVE_ACTION = &quot;emacs-kill-ring-save&quot;;
+
+    private static final String KILL_REGION_ACTION = &quot;emacs-kill-region&quot;;
+
+    private static final String BACKWARD_KILL_WORD_ACTION = &quot;emacs-backward-kill-word&quot;;
+
+    private static final String CAPITALIZE_WORD_ACTION = &quot;emacs-capitalize-word&quot;;
+
+    private static final String DOWNCASE_WORD_ACTION = &quot;emacs-downcase-word&quot;;
+
+    private static final String KILL_WORD_ACTION = &quot;emacs-kill-word&quot;;
+
+    private static final String SET_MARK_COMMAND_ACTION = &quot;emacs-set-mark-command&quot;;
+
+    private static final String YANK_ACTION = &quot;emacs-yank&quot;;
+
+    private static final String YANK_POP_ACTION = &quot;emacs-yank-pop&quot;;
+
+    private static final String UPCASE_WORD_ACTION = &quot;emacs-upcase-word&quot;;
+
+<span class="nc" id="L62">    private static final JTextComponent.KeyBinding[] EMACS_KEY_BINDINGS_BASE = {</span>
+            new JTextComponent.
+<span class="nc" id="L64">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_E,</span>
+                    InputEvent.CTRL_MASK),
+                    DefaultEditorKit.endLineAction),
+            new JTextComponent.
+<span class="nc" id="L68">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_D,</span>
+                    InputEvent.CTRL_MASK),
+                    DefaultEditorKit.deleteNextCharAction),
+            new JTextComponent.
+<span class="nc" id="L72">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_N,</span>
+                    InputEvent.CTRL_MASK),
+                    DefaultEditorKit.downAction),
+            new JTextComponent.
+<span class="nc" id="L76">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_P,</span>
+                    InputEvent.CTRL_MASK),
+                    DefaultEditorKit.upAction),
+            new JTextComponent.
+<span class="nc" id="L80">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_B,</span>
+                    InputEvent.ALT_MASK),
+                    DefaultEditorKit.previousWordAction),
+            new JTextComponent.
+<span class="nc" id="L84">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_LESS,</span>
+                    InputEvent.ALT_MASK),
+                    DefaultEditorKit.beginAction),
+            new JTextComponent.
+<span class="nc" id="L88">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_LESS,</span>
+                    InputEvent.ALT_MASK
+                            + InputEvent.SHIFT_MASK),
+                    DefaultEditorKit.endAction),
+            new JTextComponent.
+<span class="nc" id="L93">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_F,</span>
+                    InputEvent.ALT_MASK),
+                    DefaultEditorKit.nextWordAction),
+            new JTextComponent.
+<span class="nc" id="L97">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_B,</span>
+                    InputEvent.CTRL_MASK),
+                    DefaultEditorKit.backwardAction),
+            // CTRL+V and ALT+V are disabled as CTRL+V is also &quot;paste&quot;
+            //		new JTextComponent.
+            //			KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_V,
+            //											  InputEvent.CTRL_MASK),
+            //					   DefaultEditorKit.pageDownAction),
+            //		new JTextComponent.
+            //			KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_V,
+            //											  InputEvent.ALT_MASK),
+            //					   DefaultEditorKit.pageUpAction),
+            new JTextComponent.
+<span class="nc" id="L110">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_D,</span>
+                    InputEvent.ALT_MASK),
+                    EmacsKeyBindings.KILL_WORD_ACTION),
+            new JTextComponent.
+<span class="nc" id="L114">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE,</span>
+                    InputEvent.ALT_MASK),
+                    EmacsKeyBindings.BACKWARD_KILL_WORD_ACTION),
+            new JTextComponent.
+<span class="nc" id="L118">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE,</span>
+                    InputEvent.CTRL_MASK),
+                    EmacsKeyBindings.SET_MARK_COMMAND_ACTION),
+            new JTextComponent.
+<span class="nc" id="L122">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_W,</span>
+                    InputEvent.ALT_MASK),
+                    EmacsKeyBindings.KILL_RING_SAVE_ACTION),
+            new JTextComponent.
+<span class="nc" id="L126">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_W,</span>
+                    InputEvent.CTRL_MASK),
+                    EmacsKeyBindings.KILL_REGION_ACTION),
+
+            new JTextComponent.
+<span class="nc" id="L131">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_K,</span>
+                    InputEvent.CTRL_MASK),
+                    EmacsKeyBindings.KILL_LINE_ACTION),
+
+            new JTextComponent.
+<span class="nc" id="L136">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_Y,</span>
+                    InputEvent.CTRL_MASK),
+                    EmacsKeyBindings.YANK_ACTION),
+
+            new JTextComponent.
+<span class="nc" id="L141">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_Y,</span>
+                    InputEvent.ALT_MASK),
+                    EmacsKeyBindings.YANK_POP_ACTION),
+
+            new JTextComponent.
+<span class="nc" id="L146">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_C,</span>
+                    InputEvent.ALT_MASK),
+                    EmacsKeyBindings.CAPITALIZE_WORD_ACTION),
+
+            new JTextComponent.
+<span class="nc" id="L151">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_L,</span>
+                    InputEvent.ALT_MASK),
+                    EmacsKeyBindings.DOWNCASE_WORD_ACTION),
+
+            new JTextComponent.
+<span class="nc" id="L156">                    KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_U,</span>
+                    InputEvent.ALT_MASK),
+                    EmacsKeyBindings.UPCASE_WORD_ACTION),
+    };
+
+<span class="nc" id="L161">    private static final JTextComponent.KeyBinding EMACS_KEY_BINDING_C_A = new JTextComponent.KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_A,</span>
+            InputEvent.CTRL_MASK),
+            DefaultEditorKit.beginLineAction);
+
+<span class="nc" id="L165">    private static final JTextComponent.KeyBinding EMACS_KEY_BINDING_C_F = new JTextComponent.KeyBinding(KeyStroke.getKeyStroke(KeyEvent.VK_F,</span>
+            InputEvent.CTRL_MASK),
+            DefaultEditorKit.forwardAction);
+
+<span class="nc" id="L169">    private static final TextAction[] EMACS_ACTIONS = {</span>
+            new KillWordAction(EmacsKeyBindings.KILL_WORD_ACTION),
+            new BackwardKillWordAction(EmacsKeyBindings.BACKWARD_KILL_WORD_ACTION),
+            new SetMarkCommandAction(EmacsKeyBindings.SET_MARK_COMMAND_ACTION),
+            new KillRingSaveAction(EmacsKeyBindings.KILL_RING_SAVE_ACTION),
+            new KillRegionAction(EmacsKeyBindings.KILL_REGION_ACTION),
+            new KillLineAction(EmacsKeyBindings.KILL_LINE_ACTION),
+            new YankAction(EmacsKeyBindings.YANK_ACTION),
+            new YankPopAction(EmacsKeyBindings.YANK_POP_ACTION),
+            new CapitalizeWordAction(EmacsKeyBindings.CAPITALIZE_WORD_ACTION),
+            new DowncaseWordAction(EmacsKeyBindings.DOWNCASE_WORD_ACTION),
+            new UpcaseWordAction(EmacsKeyBindings.UPCASE_WORD_ACTION)
+    };
+
+    // components to modify
+<span class="nc" id="L184">    private static final JTextComponent[] JTCS = new JTextComponent[]{</span>
+            new JTextArea(),
+            new JTextPane(),
+            new JTextField(),
+            new JEditorPane(),
+    };
+
+    private EmacsKeyBindings() {
+    }
+
+    /**
+     * Loads the emacs keybindings for all common &lt;code&gt;JTextComponent&lt;/code&gt;s.
+     *
+     * The shared keymap instances of the concrete subclasses of
+     * {@link JTextComponent} are fed with the keybindings.
+     *
+     * The original keybindings are stored in a backup array.
+     */
+    public static void load() {
+<span class="nc" id="L203">        EmacsKeyBindings.createBackup();</span>
+<span class="nc" id="L204">        EmacsKeyBindings.loadEmacsKeyBindings();</span>
+<span class="nc" id="L205">    }</span>
+
+    private static void createBackup() {
+<span class="nc" id="L208">        Keymap oldBackup = JTextComponent.getKeymap(EmacsKeyBindings.JTCS[0].getClass().getName());</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (oldBackup != null) {</span>
+            // if there is already a backup, do not create a new backup
+<span class="nc" id="L211">            return;</span>
+        }
+
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        for (JTextComponent jtc : EmacsKeyBindings.JTCS) {</span>
+<span class="nc" id="L215">            Keymap orig = jtc.getKeymap();</span>
+<span class="nc" id="L216">            Keymap backup = JTextComponent.addKeymap</span>
+<span class="nc" id="L217">                    (jtc.getClass().getName(), null);</span>
+<span class="nc" id="L218">            Action[] bound = orig.getBoundActions();</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">            for (Action aBound : bound) {</span>
+<span class="nc" id="L220">                KeyStroke[] strokes = orig.getKeyStrokesForAction(aBound);</span>
+<span class="nc bnc" id="L221" title="All 2 branches missed.">                for (KeyStroke stroke : strokes) {</span>
+<span class="nc" id="L222">                    backup.addActionForKeyStroke(stroke, aBound);</span>
+                }
+            }
+<span class="nc" id="L225">            backup.setDefaultAction(orig.getDefaultAction());</span>
+        }
+<span class="nc" id="L227">    }</span>
+
+    /**
+     * Restores the original keybindings for the concrete subclasses of
+     * {@link JTextComponent}.
+     */
+    public static void unload() {
+<span class="nc bnc" id="L234" title="All 2 branches missed.">        for (int i = 0; i &lt; EmacsKeyBindings.JTCS.length; i++) {</span>
+<span class="nc" id="L235">            Keymap backup = JTextComponent.getKeymap</span>
+<span class="nc" id="L236">                    (EmacsKeyBindings.JTCS[i].getClass().getName());</span>
+
+<span class="nc bnc" id="L238" title="All 2 branches missed.">            if (backup != null) {</span>
+<span class="nc" id="L239">                Keymap current = EmacsKeyBindings.JTCS[i].getKeymap();</span>
+<span class="nc" id="L240">                current.removeBindings();</span>
+
+<span class="nc" id="L242">                Action[] bound = backup.getBoundActions();</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">                for (Action aBound : bound) {</span>
+<span class="nc" id="L244">                    KeyStroke[] strokes =</span>
+<span class="nc" id="L245">                            backup.getKeyStrokesForAction(bound[i]);</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">                    for (KeyStroke stroke : strokes) {</span>
+<span class="nc" id="L247">                        current.addActionForKeyStroke(stroke, aBound);</span>
+                    }
+                }
+<span class="nc" id="L250">                current.setDefaultAction(backup.getDefaultAction());</span>
+            }
+        }
+<span class="nc" id="L253">    }</span>
+
+    /**
+     * Activates Emacs keybindings for all text components extending {@link
+     * JTextComponent}.
+     */
+    private static void loadEmacsKeyBindings() {
+<span class="nc" id="L260">        EmacsKeyBindings.LOGGER.debug(&quot;Loading emacs keybindings&quot;);</span>
+
+<span class="nc bnc" id="L262" title="All 2 branches missed.">        for (JTextComponent jtc : EmacsKeyBindings.JTCS) {</span>
+<span class="nc" id="L263">            Action[] origActions = jtc.getActions();</span>
+<span class="nc" id="L264">            Action[] actions = new Action[origActions.length + EmacsKeyBindings.EMACS_ACTIONS.length];</span>
+<span class="nc" id="L265">            System.arraycopy(origActions, 0, actions, 0, origActions.length);</span>
+<span class="nc" id="L266">            System.arraycopy(EmacsKeyBindings.EMACS_ACTIONS, 0, actions, origActions.length, EmacsKeyBindings.EMACS_ACTIONS.length);</span>
+
+<span class="nc" id="L268">            Keymap k = jtc.getKeymap();</span>
+
+            JTextComponent.KeyBinding[] keybindings;
+<span class="nc" id="L271">            boolean rebindCA = JabRefPreferences.getInstance().getBoolean(JabRefPreferences.EDITOR_EMACS_KEYBINDINGS_REBIND_CA);</span>
+<span class="nc" id="L272">            boolean rebindCF = JabRefPreferences.getInstance().getBoolean(JabRefPreferences.EDITOR_EMACS_KEYBINDINGS_REBIND_CF);</span>
+<span class="nc bnc" id="L273" title="All 4 branches missed.">            if (rebindCA || rebindCF) {</span>
+                // if we additionally rebind C-a or C-f, we have to add the shortcuts to EmacsKeyBindings.EMACS_KEY_BINDINGS_BASE
+
+                // determine size of new array and position of the new key bindings in the array
+<span class="nc" id="L277">                int size = EmacsKeyBindings.EMACS_KEY_BINDINGS_BASE.length;</span>
+<span class="nc" id="L278">                int posCA = -1;</span>
+<span class="nc" id="L279">                int posCF = -1;</span>
+<span class="nc bnc" id="L280" title="All 2 branches missed.">                if (rebindCA) {</span>
+<span class="nc" id="L281">                    posCA = size;</span>
+<span class="nc" id="L282">                    size++;</span>
+                }
+<span class="nc bnc" id="L284" title="All 2 branches missed.">                if (rebindCF) {</span>
+<span class="nc" id="L285">                    posCF = size;</span>
+<span class="nc" id="L286">                    size++;</span>
+                }
+
+                // generate new array
+<span class="nc" id="L290">                keybindings = new JTextComponent.KeyBinding[size];</span>
+<span class="nc" id="L291">                System.arraycopy(EmacsKeyBindings.EMACS_KEY_BINDINGS_BASE, 0, keybindings, 0, EmacsKeyBindings.EMACS_KEY_BINDINGS_BASE.length);</span>
+<span class="nc bnc" id="L292" title="All 2 branches missed.">                if (rebindCA) {</span>
+<span class="nc" id="L293">                    keybindings[posCA] = EmacsKeyBindings.EMACS_KEY_BINDING_C_A;</span>
+                }
+<span class="nc bnc" id="L295" title="All 2 branches missed.">                if (rebindCF) {</span>
+<span class="nc" id="L296">                    keybindings[posCF] = EmacsKeyBindings.EMACS_KEY_BINDING_C_F;</span>
+                }
+<span class="nc" id="L298">            } else {</span>
+<span class="nc" id="L299">                keybindings = EmacsKeyBindings.EMACS_KEY_BINDINGS_BASE;</span>
+            }
+<span class="nc" id="L301">            JTextComponent.loadKeymap(k, keybindings, actions);</span>
+        }
+<span class="nc" id="L303">    }</span>
+
+
+    /**
+     * This action kills the next word.
+     *
+     * It removes the next word on the right side of the cursor from the active
+     * text component and adds it to the clipboard.
+     */
+    @SuppressWarnings(&quot;serial&quot;)
+    public static class KillWordAction extends TextAction {
+
+        public KillWordAction(String nm) {
+<span class="nc" id="L316">            super(nm);</span>
+<span class="nc" id="L317">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L321">            JTextComponent jtc = getTextComponent(e);</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">            if (jtc != null) {</span>
+                try {
+<span class="nc" id="L324">                    int offs = jtc.getCaretPosition();</span>
+<span class="nc" id="L325">                    jtc.setSelectionStart(offs);</span>
+<span class="nc" id="L326">                    offs = EmacsKeyBindings.getWordEnd(jtc, offs);</span>
+<span class="nc" id="L327">                    jtc.setSelectionEnd(offs);</span>
+<span class="nc" id="L328">                    String selectedText = jtc.getSelectedText();</span>
+<span class="nc bnc" id="L329" title="All 2 branches missed.">                    if (selectedText != null) {</span>
+<span class="nc" id="L330">                        KillRing.getInstance().add(selectedText);</span>
+                    }
+<span class="nc" id="L332">                    jtc.cut();</span>
+<span class="nc" id="L333">                } catch (BadLocationException ble) {</span>
+<span class="nc" id="L334">                    jtc.getToolkit().beep();</span>
+<span class="nc" id="L335">                }</span>
+            }
+<span class="nc" id="L337">        }</span>
+    }
+
+    /**
+     * This action kills the previous word.
+     *
+     * It removes the previous word on the left side of the cursor from the
+     * active text component and adds it to the clipboard.
+     */
+    @SuppressWarnings(&quot;serial&quot;)
+    public static class BackwardKillWordAction extends TextAction {
+
+        public BackwardKillWordAction(String nm) {
+<span class="nc" id="L350">            super(nm);</span>
+<span class="nc" id="L351">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L355">            JTextComponent jtc = getTextComponent(e);</span>
+<span class="nc bnc" id="L356" title="All 2 branches missed.">            if (jtc != null) {</span>
+                try {
+<span class="nc" id="L358">                    int offs = jtc.getCaretPosition();</span>
+<span class="nc" id="L359">                    jtc.setSelectionEnd(offs);</span>
+<span class="nc" id="L360">                    offs = Utilities.getPreviousWord(jtc, offs);</span>
+<span class="nc" id="L361">                    jtc.setSelectionStart(offs);</span>
+<span class="nc" id="L362">                    String selectedText = jtc.getSelectedText();</span>
+<span class="nc bnc" id="L363" title="All 2 branches missed.">                    if (selectedText != null) {</span>
+<span class="nc" id="L364">                        KillRing.getInstance().add(selectedText);</span>
+                    }
+<span class="nc" id="L366">                    jtc.cut();</span>
+<span class="nc" id="L367">                } catch (BadLocationException ble) {</span>
+<span class="nc" id="L368">                    jtc.getToolkit().beep();</span>
+<span class="nc" id="L369">                }</span>
+            }
+<span class="nc" id="L371">        }</span>
+    }
+
+    /**
+     * This action copies the marked region and stores it in the killring.
+     */
+    @SuppressWarnings(&quot;serial&quot;)
+    public static class KillRingSaveAction extends TextAction {
+
+        public KillRingSaveAction(String nm) {
+<span class="nc" id="L381">            super(nm);</span>
+<span class="nc" id="L382">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L386">            JTextComponent jtc = getTextComponent(e);</span>
+<span class="nc" id="L387">            EmacsKeyBindings.doCopyOrCut(jtc, true);</span>
+<span class="nc" id="L388">        }</span>
+    }
+
+    /**
+     * This action Kills the marked region and stores it in the killring.
+     */
+    @SuppressWarnings(&quot;serial&quot;)
+    public static class KillRegionAction extends TextAction {
+
+        public KillRegionAction(String nm) {
+<span class="nc" id="L398">            super(nm);</span>
+<span class="nc" id="L399">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L403">            JTextComponent jtc = getTextComponent(e);</span>
+<span class="nc" id="L404">            EmacsKeyBindings.doCopyOrCut(jtc, false);</span>
+<span class="nc" id="L405">        }</span>
+    }
+
+    private static void doCopyOrCut(JTextComponent jtc, boolean copy) {
+<span class="nc bnc" id="L409" title="All 2 branches missed.">        if (jtc != null) {</span>
+<span class="nc" id="L410">            int caretPosition = jtc.getCaretPosition();</span>
+<span class="nc" id="L411">            String text = jtc.getSelectedText();</span>
+<span class="nc bnc" id="L412" title="All 2 branches missed.">            if (text != null) {</span>
+                // user has manually marked a text without using CTRL+W
+                // we obey that selection and copy it.
+<span class="nc bnc" id="L415" title="All 2 branches missed.">            } else if (SetMarkCommandAction.isMarked(jtc)) {</span>
+<span class="nc" id="L416">                int beginPos = caretPosition;</span>
+<span class="nc" id="L417">                int endPos = SetMarkCommandAction.getCaretPosition();</span>
+<span class="nc bnc" id="L418" title="All 2 branches missed.">                if (beginPos &gt; endPos) {</span>
+<span class="nc" id="L419">                    int tmp = endPos;</span>
+<span class="nc" id="L420">                    endPos = beginPos;</span>
+<span class="nc" id="L421">                    beginPos = tmp;</span>
+                }
+<span class="nc" id="L423">                jtc.select(beginPos, endPos);</span>
+<span class="nc" id="L424">                SetMarkCommandAction.reset();</span>
+            }
+<span class="nc" id="L426">            text = jtc.getSelectedText();</span>
+<span class="nc bnc" id="L427" title="All 2 branches missed.">            if (text == null) {</span>
+<span class="nc" id="L428">                jtc.getToolkit().beep();</span>
+            } else {
+<span class="nc bnc" id="L430" title="All 2 branches missed.">                if (copy) {</span>
+<span class="nc" id="L431">                    jtc.copy();</span>
+                    // clear the selection
+<span class="nc" id="L433">                    jtc.select(caretPosition, caretPosition);</span>
+                } else {
+<span class="nc" id="L435">                    int newCaretPos = jtc.getSelectionStart();</span>
+<span class="nc" id="L436">                    jtc.cut();</span>
+                    // put the cursor to the beginning of the text to cut
+<span class="nc" id="L438">                    jtc.setCaretPosition(newCaretPos);</span>
+                }
+<span class="nc" id="L440">                KillRing.getInstance().add(text);</span>
+            }
+        }
+<span class="nc" id="L443">    }</span>
+
+
+    /**
+     * This actin kills text up to the end of the current line and stores it in
+     * the killring.
+     */
+    @SuppressWarnings(&quot;serial&quot;)
+    public static class KillLineAction extends TextAction {
+
+        public KillLineAction(String nm) {
+<span class="nc" id="L454">            super(nm);</span>
+<span class="nc" id="L455">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L459">            JTextComponent jtc = getTextComponent(e);</span>
+<span class="nc bnc" id="L460" title="All 2 branches missed.">            if (jtc != null) {</span>
+                try {
+<span class="nc" id="L462">                    int start = jtc.getCaretPosition();</span>
+<span class="nc" id="L463">                    int end = Utilities.getRowEnd(jtc, start);</span>
+<span class="nc bnc" id="L464" title="All 4 branches missed.">                    if ((start == end) &amp;&amp; jtc.isEditable()) {</span>
+<span class="nc" id="L465">                        Document doc = jtc.getDocument();</span>
+<span class="nc" id="L466">                        doc.remove(end, 1);</span>
+<span class="nc" id="L467">                    } else {</span>
+<span class="nc" id="L468">                        jtc.setSelectionStart(start);</span>
+<span class="nc" id="L469">                        jtc.setSelectionEnd(end);</span>
+<span class="nc" id="L470">                        String selectedText = jtc.getSelectedText();</span>
+<span class="nc bnc" id="L471" title="All 2 branches missed.">                        if (selectedText != null) {</span>
+<span class="nc" id="L472">                            KillRing.getInstance().add(selectedText);</span>
+                        }
+
+<span class="nc" id="L475">                        jtc.cut();</span>
+                        // jtc.replaceSelection(&quot;&quot;);
+                    }
+<span class="nc" id="L478">                } catch (BadLocationException ble) {</span>
+<span class="nc" id="L479">                    jtc.getToolkit().beep();</span>
+<span class="nc" id="L480">                }</span>
+            }
+<span class="nc" id="L482">        }</span>
+    }
+
+    /**
+     * This action matchers a beginning mark for a selection.
+     */
+    @SuppressWarnings(&quot;serial&quot;)
+    public static class SetMarkCommandAction extends TextAction {
+
+<span class="nc" id="L491">        private static int position = -1;</span>
+        private static JTextComponent jtc;
+
+
+        public SetMarkCommandAction(String nm) {
+<span class="nc" id="L496">            super(nm);</span>
+<span class="nc" id="L497">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L501">            SetMarkCommandAction.jtc = getTextComponent(e);</span>
+<span class="nc bnc" id="L502" title="All 2 branches missed.">            if (SetMarkCommandAction.jtc != null) {</span>
+<span class="nc" id="L503">                SetMarkCommandAction.position = SetMarkCommandAction.jtc.getCaretPosition();</span>
+            }
+<span class="nc" id="L505">        }</span>
+
+        public static boolean isMarked(JTextComponent jt) {
+<span class="nc bnc" id="L508" title="All 4 branches missed.">            return (SetMarkCommandAction.jtc == jt) &amp;&amp; (SetMarkCommandAction.position != -1);</span>
+        }
+
+        public static void reset() {
+<span class="nc" id="L512">            SetMarkCommandAction.jtc = null;</span>
+<span class="nc" id="L513">            SetMarkCommandAction.position = -1;</span>
+<span class="nc" id="L514">        }</span>
+
+        public static int getCaretPosition() {
+<span class="nc" id="L517">            return SetMarkCommandAction.position;</span>
+        }
+    }
+
+    /**
+     * This action pastes text from the killring.
+     */
+    @SuppressWarnings(&quot;serial&quot;)
+    public static class YankAction extends TextAction {
+
+<span class="nc" id="L527">        public static int start = -1;</span>
+<span class="nc" id="L528">        public static int end = -1;</span>
+
+
+        public YankAction(String nm) {
+<span class="nc" id="L532">            super(nm);</span>
+<span class="nc" id="L533">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent event) {
+<span class="nc" id="L537">            JTextComponent jtc = getTextComponent(event);</span>
+
+<span class="nc bnc" id="L539" title="All 2 branches missed.">            if (jtc != null) {</span>
+                try {
+<span class="nc" id="L541">                    YankAction.start = jtc.getCaretPosition();</span>
+<span class="nc" id="L542">                    jtc.paste();</span>
+<span class="nc" id="L543">                    YankAction.end = jtc.getCaretPosition();</span>
+<span class="nc" id="L544">                    KillRing.getInstance().add(jtc.getText(YankAction.start, YankAction.end));</span>
+<span class="nc" id="L545">                    KillRing.getInstance().setCurrentTextComponent(jtc);</span>
+<span class="nc" id="L546">                } catch (BadLocationException e) {</span>
+<span class="nc" id="L547">                    LOGGER.info(&quot;Bad location when yanking&quot;, e);</span>
+<span class="nc" id="L548">                }</span>
+            }
+<span class="nc" id="L550">        }</span>
+    }
+
+    /**
+     * This action pastes an element from the killring cycling through it.
+     */
+    @SuppressWarnings(&quot;serial&quot;)
+    public static class YankPopAction extends TextAction {
+
+        public YankPopAction(String nm) {
+<span class="nc" id="L560">            super(nm);</span>
+<span class="nc" id="L561">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent event) {
+<span class="nc" id="L565">            JTextComponent jtc = getTextComponent(event);</span>
+<span class="nc bnc" id="L566" title="All 2 branches missed.">            boolean jtcNotNull = jtc != null;</span>
+<span class="nc bnc" id="L567" title="All 2 branches missed.">            boolean jtcIsCurrentTextComponent = KillRing.getInstance().getCurrentTextComponent() == jtc;</span>
+<span class="nc bnc" id="L568" title="All 4 branches missed.">            boolean caretPositionIsEndOfLastYank = jtcNotNull &amp;&amp; (jtc.getCaretPosition() == YankAction.end);</span>
+<span class="nc bnc" id="L569" title="All 2 branches missed.">            boolean killRingNotEmpty = !KillRing.getInstance().isEmpty();</span>
+<span class="nc bnc" id="L570" title="All 8 branches missed.">            if (jtcNotNull &amp;&amp; jtcIsCurrentTextComponent &amp;&amp; caretPositionIsEndOfLastYank &amp;&amp; killRingNotEmpty) {</span>
+<span class="nc" id="L571">                jtc.setSelectionStart(YankAction.start);</span>
+<span class="nc" id="L572">                jtc.setSelectionEnd(YankAction.end);</span>
+<span class="nc" id="L573">                String toYank = KillRing.getInstance().next();</span>
+<span class="nc bnc" id="L574" title="All 2 branches missed.">                if (toYank == null) {</span>
+<span class="nc" id="L575">                    jtc.getToolkit().beep();</span>
+                } else {
+<span class="nc" id="L577">                    jtc.replaceSelection(toYank);</span>
+<span class="nc" id="L578">                    YankAction.end = jtc.getCaretPosition();</span>
+                }
+            }
+<span class="nc" id="L581">        }</span>
+    }
+
+<span class="nc" id="L584">    public static class KillRing {</span>
+
+        /**
+         * Manages all killed (cut) text pieces in a ring which is accessible
+         * through {@link YankPopAction}.
+         * &lt;p&gt;
+         * Also provides an unmodifiable copy of all cut pieces.
+         */
+<span class="nc" id="L592">        private static final KillRing INSTANCE = new KillRing();</span>
+        private JTextComponent jtc;
+<span class="nc" id="L594">        private final LinkedList&lt;String&gt; ring = new LinkedList&lt;&gt;();</span>
+
+<span class="nc" id="L596">        private Iterator&lt;String&gt; iter = ring.iterator();</span>
+
+        public static KillRing getInstance() {
+<span class="nc" id="L599">            return KillRing.INSTANCE;</span>
+        }
+
+        public void setCurrentTextComponent(JTextComponent jtc) {
+<span class="nc" id="L603">            this.jtc = jtc;</span>
+<span class="nc" id="L604">        }</span>
+
+        public JTextComponent getCurrentTextComponent() {
+<span class="nc" id="L607">            return jtc;</span>
+        }
+
+        /**
+         * Adds text to the front of the kill ring.
+         * &lt;p&gt;
+         * Deviating from the Emacs implementation we make sure the
+         * exact same text is not somewhere else in the ring.
+         */
+        public void add(String text) {
+<span class="nc bnc" id="L617" title="All 2 branches missed.">            if (text.isEmpty()) {</span>
+<span class="nc" id="L618">                return;</span>
+            }
+
+<span class="nc" id="L621">            ring.remove(text);</span>
+<span class="nc" id="L622">            ring.addFirst(text);</span>
+<span class="nc bnc" id="L623" title="All 2 branches missed.">            while (ring.size() &gt; 60) {</span>
+<span class="nc" id="L624">                ring.removeLast();</span>
+            }
+<span class="nc" id="L626">            iter = ring.iterator();</span>
+            // skip first entry, the one we just added
+<span class="nc" id="L628">            iter.next();</span>
+<span class="nc" id="L629">        }</span>
+
+        /**
+         * Returns an unmodifiable version of the ring list which contains
+         * the killed texts.
+         *
+         * @return the content of the kill ring
+         */
+        public List&lt;String&gt; getRing() {
+<span class="nc" id="L638">            return Collections.unmodifiableList(ring);</span>
+        }
+
+        public boolean isEmpty() {
+<span class="nc" id="L642">            return ring.isEmpty();</span>
+        }
+
+        /**
+         * Returns the next text element which is to be yank-popped.
+         *
+         * @return &lt;code&gt;null&lt;/code&gt; if the ring is empty
+         */
+        public String next() {
+<span class="nc bnc" id="L651" title="All 2 branches missed.">            if (ring.isEmpty()) {</span>
+<span class="nc" id="L652">                return null;</span>
+<span class="nc bnc" id="L653" title="All 2 branches missed.">            } else if (iter.hasNext()) {</span>
+<span class="nc" id="L654">                return iter.next();</span>
+            } else {
+<span class="nc" id="L656">                iter = ring.iterator();</span>
+                // guaranteed to not throw an exception, since ring is not empty
+<span class="nc" id="L658">                return iter.next();</span>
+            }
+        }
+    }
+
+    /**
+     * This action capitalizes the next word on the right side of the caret.
+     */
+    @SuppressWarnings(&quot;serial&quot;)
+    public static class CapitalizeWordAction extends TextAction {
+
+        public CapitalizeWordAction(String nm) {
+<span class="nc" id="L670">            super(nm);</span>
+<span class="nc" id="L671">        }</span>
+
+        /**
+         * At first the same code as in {@link
+         * EmacsKeyBindings.DowncaseWordAction} is performed, to ensure the
+         * word is in lower case, then the first letter is capialized.
+         */
+        @Override
+        public void actionPerformed(ActionEvent event) {
+<span class="nc" id="L680">            JTextComponent jtc = getTextComponent(event);</span>
+
+<span class="nc bnc" id="L682" title="All 2 branches missed.">            if (jtc != null) {</span>
+                try {
+                    /* downcase code */
+<span class="nc" id="L685">                    int start = jtc.getCaretPosition();</span>
+<span class="nc" id="L686">                    int end = EmacsKeyBindings.getWordEnd(jtc, start);</span>
+<span class="nc" id="L687">                    jtc.setSelectionStart(start);</span>
+<span class="nc" id="L688">                    jtc.setSelectionEnd(end);</span>
+<span class="nc" id="L689">                    String word = jtc.getText(start, end - start);</span>
+<span class="nc" id="L690">                    jtc.replaceSelection(word.toLowerCase(Locale.ROOT));</span>
+
+                    /* actual capitalize code */
+<span class="nc" id="L693">                    int offs = Utilities.getWordStart(jtc, start);</span>
+                    // get first letter
+<span class="nc" id="L695">                    String c = jtc.getText(offs, 1);</span>
+                    // we're at the end of the previous word
+<span class="nc bnc" id="L697" title="All 2 branches missed.">                    if (&quot; &quot;.equals(c)) {</span>
+                        /* ugly java workaround to get the beginning of the
+                           word.  */
+<span class="nc" id="L700">                        offs = Utilities.getWordStart(jtc, ++offs);</span>
+<span class="nc" id="L701">                        c = jtc.getText(offs, 1);</span>
+                    }
+<span class="nc bnc" id="L703" title="All 2 branches missed.">                    if (Character.isLetter(c.charAt(0))) {</span>
+<span class="nc" id="L704">                        jtc.setSelectionStart(offs);</span>
+<span class="nc" id="L705">                        jtc.setSelectionEnd(offs + 1);</span>
+<span class="nc" id="L706">                        jtc.replaceSelection(c.toUpperCase(Locale.ROOT));</span>
+                    }
+<span class="nc" id="L708">                    end = Utilities.getWordEnd(jtc, offs);</span>
+<span class="nc" id="L709">                    jtc.setCaretPosition(end);</span>
+<span class="nc" id="L710">                } catch (BadLocationException ble) {</span>
+<span class="nc" id="L711">                    jtc.getToolkit().beep();</span>
+<span class="nc" id="L712">                }</span>
+            }
+<span class="nc" id="L714">        }</span>
+    }
+
+    /**
+     * This action renders all characters of the next word to lowercase.
+     */
+    @SuppressWarnings(&quot;serial&quot;)
+    public static class DowncaseWordAction extends TextAction {
+
+        public DowncaseWordAction(String nm) {
+<span class="nc" id="L724">            super(nm);</span>
+<span class="nc" id="L725">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent event) {
+<span class="nc" id="L729">            JTextComponent jtc = getTextComponent(event);</span>
+
+<span class="nc bnc" id="L731" title="All 2 branches missed.">            if (jtc != null) {</span>
+                try {
+<span class="nc" id="L733">                    int start = jtc.getCaretPosition();</span>
+<span class="nc" id="L734">                    int end = EmacsKeyBindings.getWordEnd(jtc, start);</span>
+<span class="nc" id="L735">                    jtc.setSelectionStart(start);</span>
+<span class="nc" id="L736">                    jtc.setSelectionEnd(end);</span>
+<span class="nc" id="L737">                    String word = jtc.getText(start, end - start);</span>
+<span class="nc" id="L738">                    jtc.replaceSelection(word.toLowerCase(Locale.ROOT));</span>
+<span class="nc" id="L739">                    jtc.setCaretPosition(end);</span>
+<span class="nc" id="L740">                } catch (BadLocationException ble) {</span>
+<span class="nc" id="L741">                    jtc.getToolkit().beep();</span>
+<span class="nc" id="L742">                }</span>
+            }
+<span class="nc" id="L744">        }</span>
+    }
+
+    /**
+     * This action renders all characters of the next word to upppercase.
+     */
+    @SuppressWarnings(&quot;serial&quot;)
+    public static class UpcaseWordAction extends TextAction {
+
+        public UpcaseWordAction(String nm) {
+<span class="nc" id="L754">            super(nm);</span>
+<span class="nc" id="L755">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent event) {
+<span class="nc" id="L759">            JTextComponent jtc = getTextComponent(event);</span>
+
+<span class="nc bnc" id="L761" title="All 2 branches missed.">            if (jtc != null) {</span>
+                try {
+<span class="nc" id="L763">                    int start = jtc.getCaretPosition();</span>
+<span class="nc" id="L764">                    int end = EmacsKeyBindings.getWordEnd(jtc, start);</span>
+<span class="nc" id="L765">                    jtc.setSelectionStart(start);</span>
+<span class="nc" id="L766">                    jtc.setSelectionEnd(end);</span>
+<span class="nc" id="L767">                    String word = jtc.getText(start, end - start);</span>
+<span class="nc" id="L768">                    jtc.replaceSelection(word.toUpperCase(Locale.ROOT));</span>
+<span class="nc" id="L769">                    jtc.setCaretPosition(end);</span>
+<span class="nc" id="L770">                } catch (BadLocationException ble) {</span>
+<span class="nc" id="L771">                    jtc.getToolkit().beep();</span>
+<span class="nc" id="L772">                }</span>
+            }
+<span class="nc" id="L774">        }</span>
+    }
+
+    private static int getWordEnd(JTextComponent jtc, int start)
+            throws BadLocationException {
+        try {
+<span class="nc" id="L780">            return Utilities.getNextWord(jtc, start);</span>
+<span class="nc" id="L781">        } catch (BadLocationException ble) {</span>
+<span class="nc" id="L782">            int end = jtc.getText().length();</span>
+<span class="nc bnc" id="L783" title="All 2 branches missed.">            if (start &lt; end) {</span>
+<span class="nc" id="L784">                return end;</span>
+            } else {
+<span class="nc" id="L786">                throw ble;</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

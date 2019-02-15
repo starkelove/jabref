@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LinkedFilesEditorViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.fieldeditors</a> &gt; <span class="el_source">LinkedFilesEditorViewModel.java</span></div><h1>LinkedFilesEditorViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.fieldeditors;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleListProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
+import org.jabref.gui.DialogService;
+import org.jabref.gui.autocompleter.AutoCompleteSuggestionProvider;
+import org.jabref.gui.externalfiles.AutoSetFileLinksUtil;
+import org.jabref.gui.externalfiletype.CustomExternalFileType;
+import org.jabref.gui.externalfiletype.ExternalFileType;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.gui.externalfiletype.UnknownExternalFileType;
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.gui.util.BindingsHelper;
+import org.jabref.gui.util.FileDialogConfiguration;
+import org.jabref.gui.util.TaskExecutor;
+import org.jabref.logic.importer.FulltextFetchers;
+import org.jabref.logic.integrity.FieldCheckers;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.io.FileUtil;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FileFieldParser;
+import org.jabref.model.entry.FileFieldWriter;
+import org.jabref.model.entry.LinkedFile;
+import org.jabref.model.util.FileHelper;
+import org.jabref.preferences.JabRefPreferences;
+
+public class LinkedFilesEditorViewModel extends AbstractEditorViewModel {
+
+<span class="nc" id="L45">    private final ListProperty&lt;LinkedFileViewModel&gt; files = new SimpleListProperty&lt;&gt;(FXCollections.observableArrayList(LinkedFileViewModel::getObservables));</span>
+<span class="nc" id="L46">    private final BooleanProperty fulltextLookupInProgress = new SimpleBooleanProperty(false);</span>
+    private final DialogService dialogService;
+    private final BibDatabaseContext databaseContext;
+    private final TaskExecutor taskExecutor;
+    private final JabRefPreferences preferences;
+
+    public LinkedFilesEditorViewModel(String fieldName, AutoCompleteSuggestionProvider&lt;?&gt; suggestionProvider,
+                                      DialogService dialogService,
+                                      BibDatabaseContext databaseContext,
+                                      TaskExecutor taskExecutor,
+                                      FieldCheckers fieldCheckers,
+                                      JabRefPreferences preferences) {
+<span class="nc" id="L58">        super(fieldName, suggestionProvider, fieldCheckers);</span>
+
+<span class="nc" id="L60">        this.dialogService = dialogService;</span>
+<span class="nc" id="L61">        this.databaseContext = databaseContext;</span>
+<span class="nc" id="L62">        this.taskExecutor = taskExecutor;</span>
+<span class="nc" id="L63">        this.preferences = preferences;</span>
+
+
+<span class="nc" id="L66">        BindingsHelper.bindContentBidirectional(</span>
+                files,
+                text,
+                LinkedFilesEditorViewModel::getStringRepresentation,
+                this::parseToFileViewModel);
+<span class="nc" id="L71">    }</span>
+
+    private static String getStringRepresentation(List&lt;LinkedFileViewModel&gt; files) {
+        // Only serialize linked files, not the ones that are automatically found
+<span class="nc" id="L75">        List&lt;LinkedFile&gt; filesToSerialize = files.stream()</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                .filter(file -&gt; !file.isAutomaticallyFound())</span>
+<span class="nc" id="L77">                .map(LinkedFileViewModel::getFile)</span>
+<span class="nc" id="L78">                .collect(Collectors.toList());</span>
+
+<span class="nc" id="L80">        return FileFieldWriter.getStringRepresentation(filesToSerialize);</span>
+    }
+
+    /**
+     * Creates an instance of {@link LinkedFile} based on the given file.
+     * We try to guess the file type and relativize the path against the given file directories.
+     *
+     * TODO: Move this method to {@link LinkedFile} as soon as {@link CustomExternalFileType} lives in model.
+     */
+    public static LinkedFile fromFile(Path file, List&lt;Path&gt; fileDirectories) {
+<span class="nc" id="L90">        String fileExtension = FileHelper.getFileExtension(file).orElse(&quot;&quot;);</span>
+<span class="nc" id="L91">        ExternalFileType suggestedFileType = ExternalFileTypes.getInstance()</span>
+<span class="nc" id="L92">                .getExternalFileTypeByExt(fileExtension)</span>
+<span class="nc" id="L93">                .orElse(new UnknownExternalFileType(fileExtension));</span>
+<span class="nc" id="L94">        Path relativePath = FileUtil.relativize(file, fileDirectories);</span>
+<span class="nc" id="L95">        return new LinkedFile(&quot;&quot;, relativePath.toString(), suggestedFileType.getName());</span>
+    }
+
+    public LinkedFileViewModel fromFile(Path file) {
+<span class="nc" id="L99">        List&lt;Path&gt; fileDirectories = databaseContext.getFileDirectoriesAsPaths(preferences.getFilePreferences());</span>
+
+<span class="nc" id="L101">        LinkedFile linkedFile = fromFile(file, fileDirectories);</span>
+<span class="nc" id="L102">        return new LinkedFileViewModel(linkedFile, entry, databaseContext, taskExecutor, dialogService, preferences);</span>
+
+    }
+
+    public boolean isFulltextLookupInProgress() {
+<span class="nc" id="L107">        return fulltextLookupInProgress.get();</span>
+    }
+
+    public BooleanProperty fulltextLookupInProgressProperty() {
+<span class="nc" id="L111">        return fulltextLookupInProgress;</span>
+    }
+
+    private List&lt;LinkedFileViewModel&gt; parseToFileViewModel(String stringValue) {
+<span class="nc" id="L115">        return FileFieldParser.parse(stringValue).stream()</span>
+<span class="nc" id="L116">                              .map(linkedFile -&gt; new LinkedFileViewModel(linkedFile, entry, databaseContext, taskExecutor, dialogService, preferences))</span>
+<span class="nc" id="L117">                              .collect(Collectors.toList());</span>
+    }
+
+    public ObservableList&lt;LinkedFileViewModel&gt; getFiles() {
+<span class="nc" id="L121">        return files.get();</span>
+    }
+
+    public ListProperty&lt;LinkedFileViewModel&gt; filesProperty() {
+<span class="nc" id="L125">        return files;</span>
+    }
+
+    public void addNewFile() {
+<span class="nc" id="L129">        Path workingDirectory = databaseContext.getFirstExistingFileDir(preferences.getFilePreferences())</span>
+<span class="nc" id="L130">                                               .orElse(Paths.get(preferences.get(JabRefPreferences.WORKING_DIRECTORY)));</span>
+
+<span class="nc" id="L132">        FileDialogConfiguration fileDialogConfiguration = new FileDialogConfiguration.Builder()</span>
+<span class="nc" id="L133">                .withInitialDirectory(workingDirectory)</span>
+<span class="nc" id="L134">                .build();</span>
+
+<span class="nc" id="L136">        List&lt;Path&gt; fileDirectories = databaseContext.getFileDirectoriesAsPaths(preferences.getFilePreferences());</span>
+<span class="nc" id="L137">        dialogService.showFileOpenDialog(fileDialogConfiguration).ifPresent(newFile -&gt; {</span>
+<span class="nc" id="L138">                LinkedFile newLinkedFile = fromFile(newFile, fileDirectories);</span>
+<span class="nc" id="L139">            files.add(new LinkedFileViewModel(newLinkedFile, entry, databaseContext, taskExecutor, dialogService, preferences));</span>
+<span class="nc" id="L140">                });</span>
+<span class="nc" id="L141">    }</span>
+
+    @Override
+    public void bindToEntry(BibEntry entry) {
+<span class="nc" id="L145">        super.bindToEntry(entry);</span>
+
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        if (entry != null) {</span>
+<span class="nc" id="L148">            BackgroundTask&lt;List&lt;LinkedFileViewModel&gt;&gt; findAssociatedNotLinkedFiles = BackgroundTask</span>
+<span class="nc" id="L149">                    .wrap(() -&gt; findAssociatedNotLinkedFiles(entry))</span>
+<span class="nc" id="L150">                    .onSuccess(files::addAll);</span>
+<span class="nc" id="L151">            taskExecutor.execute(findAssociatedNotLinkedFiles);</span>
+        }
+<span class="nc" id="L153">    }</span>
+
+    /**
+     * Find files that are probably associated  to the given entry but not yet linked.
+     */
+    private List&lt;LinkedFileViewModel&gt; findAssociatedNotLinkedFiles(BibEntry entry) {
+<span class="nc" id="L159">        List&lt;LinkedFileViewModel&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L161">        AutoSetFileLinksUtil util = new AutoSetFileLinksUtil(databaseContext, preferences.getFilePreferences(), preferences.getAutoLinkPreferences(), ExternalFileTypes.getInstance());</span>
+        try {
+<span class="nc" id="L163">            List&lt;LinkedFile&gt; linkedFiles = util.findAssociatedNotLinkedFiles(entry);</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">            for (LinkedFile linkedFile : linkedFiles) {</span>
+<span class="nc" id="L165">                LinkedFileViewModel newLinkedFile = new LinkedFileViewModel(linkedFile, entry, databaseContext, taskExecutor, dialogService, preferences);</span>
+<span class="nc" id="L166">                newLinkedFile.markAsAutomaticallyFound();</span>
+<span class="nc" id="L167">                result.add(newLinkedFile);</span>
+<span class="nc" id="L168">            }</span>
+<span class="nc" id="L169">        } catch (IOException e) {</span>
+<span class="nc" id="L170">            dialogService.showErrorDialogAndWait(&quot;Error accessing the file system&quot;, e);</span>
+<span class="nc" id="L171">        }</span>
+
+<span class="nc" id="L173">        return result;</span>
+    }
+
+    public void fetchFulltext() {
+<span class="nc" id="L177">        FulltextFetchers fetcher = new FulltextFetchers(preferences.getImportFormatPreferences());</span>
+<span class="nc" id="L178">        BackgroundTask</span>
+<span class="nc" id="L179">                .wrap(() -&gt; fetcher.findFullTextPDF(entry))</span>
+<span class="nc" id="L180">                .onRunning(() -&gt; fulltextLookupInProgress.setValue(true))</span>
+<span class="nc" id="L181">                .onFinished(() -&gt; fulltextLookupInProgress.setValue(false))</span>
+<span class="nc" id="L182">                .onSuccess(url -&gt; {</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">                    if (url.isPresent()) {</span>
+<span class="nc" id="L184">                        addFromURL(url.get());</span>
+                    } else {
+<span class="nc" id="L186">                        dialogService.notify(Localization.lang(&quot;No full text document found&quot;));</span>
+                    }
+<span class="nc" id="L188">                })</span>
+<span class="nc" id="L189">                .executeWith(taskExecutor);</span>
+<span class="nc" id="L190">    }</span>
+
+    public void addFromURL() {
+<span class="nc" id="L193">        Optional&lt;String&gt; urlText = dialogService.showInputDialogAndWait(</span>
+<span class="nc" id="L194">                Localization.lang(&quot;Download file&quot;), Localization.lang(&quot;Enter URL to download&quot;));</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        if (urlText.isPresent()) {</span>
+            try {
+<span class="nc" id="L197">                URL url = new URL(urlText.get());</span>
+<span class="nc" id="L198">                addFromURL(url);</span>
+<span class="nc" id="L199">            } catch (MalformedURLException exception) {</span>
+<span class="nc" id="L200">                dialogService.showErrorDialogAndWait(</span>
+<span class="nc" id="L201">                        Localization.lang(&quot;Invalid URL&quot;),</span>
+                        exception);
+<span class="nc" id="L203">            }</span>
+        }
+<span class="nc" id="L205">    }</span>
+
+    private void addFromURL(URL url) {
+<span class="nc" id="L208">        LinkedFileViewModel onlineFile = new LinkedFileViewModel(new LinkedFile(url, &quot;&quot;), entry, databaseContext, taskExecutor, dialogService, preferences);</span>
+<span class="nc" id="L209">        files.add(onlineFile);</span>
+<span class="nc" id="L210">        onlineFile.download();</span>
+<span class="nc" id="L211">    }</span>
+
+    public void deleteFile(LinkedFileViewModel file) {
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        if (file.getFile().isOnlineLink()) {</span>
+<span class="nc" id="L215">            removeFileLink(file);</span>
+        } else {
+<span class="nc" id="L217">            boolean deleteSuccessful = file.delete();</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            if (deleteSuccessful) {</span>
+<span class="nc" id="L219">                files.remove(file);</span>
+            }
+        }
+<span class="nc" id="L222">    }</span>
+
+    public void removeFileLink(LinkedFileViewModel file) {
+<span class="nc" id="L225">        files.remove(file);</span>
+<span class="nc" id="L226">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TemporalAccessorPicker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util.component</a> &gt; <span class="el_source">TemporalAccessorPicker.java</span></div><h1>TemporalAccessorPicker.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util.component;
+
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQueries;
+
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.scene.control.DatePicker;
+import javafx.util.StringConverter;
+
+import org.jabref.gui.util.BindingsHelper;
+
+/**
+ * A date picker with configurable datetime format where both date and time can be changed via the text field and the
+ * date can additionally be changed via the JavaFX default date picker. Also supports incomplete dates.
+ *
+ * First recall how the date picker normally works: - The user selects a date in the popup, which sets {@link
+ * #valueProperty()} to the selected date. - The converter ({@link #converterProperty()}) is used to transform the date
+ * to a string representation and display it in the text field.
+ *
+ * The idea is now to intercept the process and add an additional step: - The user selects a date in the popup, which
+ * sets {@link #valueProperty()} to the selected date. - The date is converted to a {@link TemporalAccessor} (i.e,
+ * enriched by a time component) using {@link #addCurrentTime(LocalDate)} - The string converter ({@link
+ * #stringConverterProperty()}) is used to transform the temporal accessor to a string representation and display it in
+ * the text field.
+ *
+ * Inspiration taken from https://github.com/edvin/tornadofx-controls/blob/master/src/main/java/tornadofx/control/DateTimePicker.java
+ */
+public class TemporalAccessorPicker extends DatePicker {
+<span class="fc" id="L37">    private ObjectProperty&lt;TemporalAccessor&gt; temporalAccessorValue = new SimpleObjectProperty&lt;&gt;(null);</span>
+
+<span class="fc" id="L39">    private DateTimeFormatter defaultFormatter = DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd HH:mm&quot;);</span>
+<span class="fc" id="L40">    private ObjectProperty&lt;StringConverter&lt;TemporalAccessor&gt;&gt; converter = new SimpleObjectProperty&lt;StringConverter&lt;TemporalAccessor&gt;&gt;(null);</span>
+
+<span class="fc" id="L42">    public TemporalAccessorPicker() {</span>
+<span class="fc" id="L43">        setConverter(new InternalConverter());</span>
+
+        // Synchronize changes of the underlying date value with the temporalAccessorValue
+<span class="fc" id="L46">        BindingsHelper.bindBidirectional(valueProperty(), temporalAccessorValue,</span>
+                TemporalAccessorPicker::addCurrentTime,
+                TemporalAccessorPicker::getDate);
+<span class="fc" id="L49">    }</span>
+
+    private static TemporalAccessor addCurrentTime(LocalDate date) {
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (date == null) {</span>
+<span class="nc" id="L53">            return null;</span>
+        }
+<span class="nc" id="L55">        return LocalDateTime.of(date, LocalTime.now());</span>
+    }
+
+    private static LocalDate getDate(TemporalAccessor temporalAccessor) {
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        if (temporalAccessor == null) {</span>
+<span class="fc" id="L60">            return null;</span>
+        }
+
+<span class="nc" id="L63">        return getLocalDate(temporalAccessor);</span>
+    }
+
+    private static LocalDate getLocalDate(TemporalAccessor dateTime) {
+        // Try to get as much information from the temporal accessor
+<span class="nc" id="L68">        LocalDate date = dateTime.query(TemporalQueries.localDate());</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (date != null) {</span>
+<span class="nc" id="L70">            return date;</span>
+        }
+
+        try {
+<span class="nc" id="L74">            return YearMonth.from(dateTime).atDay(1);</span>
+<span class="nc" id="L75">        } catch (DateTimeException exception) {</span>
+<span class="nc" id="L76">            return Year.from(dateTime).atDay(1);</span>
+        }
+    }
+
+    public final ObjectProperty&lt;StringConverter&lt;TemporalAccessor&gt;&gt; stringConverterProperty() {
+<span class="nc" id="L81">        return converter;</span>
+    }
+
+    public final StringConverter&lt;TemporalAccessor&gt; getStringConverter() {
+<span class="nc" id="L85">        StringConverter&lt;TemporalAccessor&gt; converter = stringConverterProperty().get();</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (converter != null) {</span>
+<span class="nc" id="L87">            return converter;</span>
+        } else {
+<span class="nc" id="L89">            return new StringConverter&lt;TemporalAccessor&gt;() {</span>
+                @Override
+                public String toString(TemporalAccessor value) {
+<span class="nc" id="L92">                    return defaultFormatter.format(value);</span>
+                }
+
+                @Override
+                public TemporalAccessor fromString(String value) {
+<span class="nc" id="L97">                    return LocalDateTime.parse(value, defaultFormatter);</span>
+                }
+            };
+        }
+    }
+
+    public final void setStringConverter(StringConverter&lt;TemporalAccessor&gt; value) {
+<span class="nc" id="L104">        stringConverterProperty().set(value);</span>
+<span class="nc" id="L105">    }</span>
+
+    public TemporalAccessor getTemporalAccessorValue() {
+<span class="nc" id="L108">        return temporalAccessorValue.get();</span>
+    }
+
+    public void setTemporalAccessorValue(TemporalAccessor temporalAccessorValue) {
+<span class="nc" id="L112">        this.temporalAccessorValue.set(temporalAccessorValue);</span>
+<span class="nc" id="L113">    }</span>
+
+    public ObjectProperty&lt;TemporalAccessor&gt; temporalAccessorValueProperty() {
+<span class="nc" id="L116">        return temporalAccessorValue;</span>
+    }
+
+<span class="fc" id="L119">    private class InternalConverter extends StringConverter&lt;LocalDate&gt; {</span>
+        public String toString(LocalDate object) {
+<span class="nc" id="L121">            TemporalAccessor value = getTemporalAccessorValue();</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            return (value != null) ? getStringConverter().toString(value) : &quot;&quot;;</span>
+        }
+
+        public LocalDate fromString(String value) {
+<span class="nc bnc" id="L126" title="All 4 branches missed.">            if (value == null || value.isEmpty()) {</span>
+<span class="nc" id="L127">                temporalAccessorValue.set(null);</span>
+<span class="nc" id="L128">                return null;</span>
+            }
+
+<span class="nc" id="L131">            TemporalAccessor dateTime = getStringConverter().fromString(value);</span>
+<span class="nc" id="L132">            temporalAccessorValue.set(dateTime);</span>
+<span class="nc" id="L133">            return getLocalDate(dateTime);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SharedDatabaseUIManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.shared</a> &gt; <span class="el_source">SharedDatabaseUIManager.java</span></div><h1>SharedDatabaseUIManager.java</h1><pre class="source lang-java linenums">package org.jabref.gui.shared;
+
+import java.sql.SQLException;
+import java.util.Objects;
+import java.util.Optional;
+
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonBar.ButtonData;
+import javafx.scene.control.ButtonType;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.entryeditor.EntryEditor;
+import org.jabref.gui.exporter.SaveDatabaseAction;
+import org.jabref.gui.undo.UndoableRemoveEntry;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.shared.DBMSConnection;
+import org.jabref.logic.shared.DBMSConnectionProperties;
+import org.jabref.logic.shared.DBMSSynchronizer;
+import org.jabref.logic.shared.event.ConnectionLostEvent;
+import org.jabref.logic.shared.event.SharedEntryNotPresentEvent;
+import org.jabref.logic.shared.event.UpdateRefusedEvent;
+import org.jabref.logic.shared.exception.InvalidDBMSConnectionPropertiesException;
+import org.jabref.logic.shared.exception.NotASharedDatabaseException;
+import org.jabref.logic.shared.prefs.SharedDatabasePreferences;
+import org.jabref.model.Defaults;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.database.shared.DatabaseNotSupportedException;
+import org.jabref.model.database.shared.DatabaseSynchronizer;
+
+import com.google.common.eventbus.Subscribe;
+
+public class SharedDatabaseUIManager {
+
+    private final JabRefFrame jabRefFrame;
+    private DatabaseSynchronizer dbmsSynchronizer;
+    private final DialogService dialogService;
+
+<span class="nc" id="L43">    public SharedDatabaseUIManager(JabRefFrame jabRefFrame) {</span>
+<span class="nc" id="L44">        this.jabRefFrame = jabRefFrame;</span>
+<span class="nc" id="L45">        this.dialogService = jabRefFrame.getDialogService();</span>
+<span class="nc" id="L46">    }</span>
+
+    @Subscribe
+    public void listen(ConnectionLostEvent connectionLostEvent) {
+
+<span class="nc" id="L51">        jabRefFrame.output(Localization.lang(&quot;Connection lost.&quot;));</span>
+
+<span class="nc" id="L53">        ButtonType reconnect = new ButtonType(Localization.lang(&quot;Reconnect&quot;), ButtonData.YES);</span>
+<span class="nc" id="L54">        ButtonType workOffline = new ButtonType(Localization.lang(&quot;Work offline&quot;), ButtonData.NO);</span>
+<span class="nc" id="L55">        ButtonType closeLibrary = new ButtonType(Localization.lang(&quot;Close library&quot;), ButtonData.CANCEL_CLOSE);</span>
+
+<span class="nc" id="L57">        Optional&lt;ButtonType&gt; answer = dialogService.showCustomButtonDialogAndWait(AlertType.WARNING,</span>
+<span class="nc" id="L58">                                                                                  Localization.lang(&quot;Connection lost&quot;),</span>
+<span class="nc" id="L59">                                                                                  Localization.lang(&quot;The connection to the server has been terminated.&quot;),</span>
+                                                                                  reconnect,
+                                                                                  workOffline,
+                                                                                  closeLibrary);
+
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (answer.isPresent()) {</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">            if (answer.get().equals(reconnect)) {</span>
+<span class="nc" id="L66">                jabRefFrame.closeCurrentTab();</span>
+<span class="nc" id="L67">                new SharedDatabaseLoginDialogView(jabRefFrame).showAndWait();</span>
+
+<span class="nc bnc" id="L69" title="All 2 branches missed.">            } else if (answer.get().equals(workOffline)) {</span>
+<span class="nc" id="L70">                connectionLostEvent.getBibDatabaseContext().convertToLocalDatabase();</span>
+<span class="nc" id="L71">                jabRefFrame.refreshTitleAndTabs();</span>
+<span class="nc" id="L72">                jabRefFrame.output(Localization.lang(&quot;Working offline.&quot;));</span>
+            }
+        } else {
+<span class="nc" id="L75">            jabRefFrame.closeCurrentTab();</span>
+        }
+<span class="nc" id="L77">    }</span>
+
+    @Subscribe
+    public void listen(UpdateRefusedEvent updateRefusedEvent) {
+
+<span class="nc" id="L82">        jabRefFrame.output(Localization.lang(&quot;Update refused.&quot;));</span>
+
+<span class="nc" id="L84">        new MergeSharedEntryDialog(jabRefFrame, dbmsSynchronizer, updateRefusedEvent.getLocalBibEntry(),</span>
+<span class="nc" id="L85">                                   updateRefusedEvent.getSharedBibEntry(),</span>
+<span class="nc" id="L86">                                   updateRefusedEvent.getBibDatabaseContext().getMode()).showMergeDialog();</span>
+<span class="nc" id="L87">    }</span>
+
+    @Subscribe
+    public void listen(SharedEntryNotPresentEvent event) {
+<span class="nc" id="L91">        BasePanel panel = jabRefFrame.getCurrentBasePanel();</span>
+<span class="nc" id="L92">        EntryEditor entryEditor = panel.getEntryEditor();</span>
+
+<span class="nc" id="L94">        panel.getUndoManager().addEdit(new UndoableRemoveEntry(panel.getDatabase(), event.getBibEntry(), panel));</span>
+
+<span class="nc bnc" id="L96" title="All 4 branches missed.">        if (Objects.nonNull(entryEditor) &amp;&amp; (entryEditor.getEntry() == event.getBibEntry())) {</span>
+
+<span class="nc" id="L98">            dialogService.showInformationDialogAndWait(Localization.lang(&quot;Shared entry is no longer present&quot;),</span>
+<span class="nc" id="L99">                                                       Localization.lang(&quot;The entry you currently work on has been deleted on the shared side.&quot;)</span>
+                                                                                                               + &quot;\n&quot;
+<span class="nc" id="L101">                                                                                                               + Localization.lang(&quot;You can restore the entry using the \&quot;Undo\&quot; operation.&quot;));</span>
+<span class="nc" id="L102">            panel.closeBottomPane();</span>
+        }
+<span class="nc" id="L104">    }</span>
+
+    /**
+     * Opens a new shared database tab with the given {@link DBMSConnectionProperties}.
+     *
+     * @param dbmsConnectionProperties Connection data
+     * @param raiseTab If &lt;code&gt;true&lt;/code&gt; the new tab gets selected.
+     * @return BasePanel which also used by {@link SaveDatabaseAction}
+     */
+    public BasePanel openNewSharedDatabaseTab(DBMSConnectionProperties dbmsConnectionProperties)
+        throws SQLException, DatabaseNotSupportedException, InvalidDBMSConnectionPropertiesException {
+
+<span class="nc" id="L116">        BibDatabaseMode selectedMode = Globals.prefs.getDefaultBibDatabaseMode();</span>
+<span class="nc" id="L117">        BibDatabaseContext bibDatabaseContext = new BibDatabaseContext(new Defaults(selectedMode));</span>
+<span class="nc" id="L118">        DBMSSynchronizer synchronizer = new DBMSSynchronizer(bibDatabaseContext, Globals.prefs.getKeywordDelimiter(), Globals.prefs.getKeyPattern(), Globals.getFileUpdateMonitor());</span>
+<span class="nc" id="L119">        bibDatabaseContext.convertToSharedDatabase(synchronizer);</span>
+
+<span class="nc" id="L121">        dbmsSynchronizer = bibDatabaseContext.getDBMSSynchronizer();</span>
+<span class="nc" id="L122">        dbmsSynchronizer.openSharedDatabase(new DBMSConnection(dbmsConnectionProperties));</span>
+<span class="nc" id="L123">        dbmsSynchronizer.registerListener(this);</span>
+<span class="nc" id="L124">        jabRefFrame.output(Localization.lang(&quot;Connection to %0 server established.&quot;, dbmsConnectionProperties.getType().toString()));</span>
+<span class="nc" id="L125">        return jabRefFrame.addTab(bibDatabaseContext, true);</span>
+    }
+
+    public void openSharedDatabaseFromParserResult(ParserResult parserResult)
+        throws SQLException, DatabaseNotSupportedException, InvalidDBMSConnectionPropertiesException,
+        NotASharedDatabaseException {
+
+<span class="nc" id="L132">        Optional&lt;String&gt; sharedDatabaseIDOptional = parserResult.getDatabase().getSharedDatabaseID();</span>
+
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (!sharedDatabaseIDOptional.isPresent()) {</span>
+<span class="nc" id="L135">            throw new NotASharedDatabaseException();</span>
+        }
+
+<span class="nc" id="L138">        String sharedDatabaseID = sharedDatabaseIDOptional.get();</span>
+<span class="nc" id="L139">        DBMSConnectionProperties dbmsConnectionProperties = new DBMSConnectionProperties(new SharedDatabasePreferences(sharedDatabaseID));</span>
+
+<span class="nc" id="L141">        BibDatabaseMode selectedMode = Globals.prefs.getDefaultBibDatabaseMode();</span>
+<span class="nc" id="L142">        BibDatabaseContext bibDatabaseContext = new BibDatabaseContext(new Defaults(selectedMode));</span>
+<span class="nc" id="L143">        DBMSSynchronizer synchronizer = new DBMSSynchronizer(bibDatabaseContext, Globals.prefs.getKeywordDelimiter(), Globals.prefs.getKeyPattern(), Globals.getFileUpdateMonitor());</span>
+<span class="nc" id="L144">        bibDatabaseContext.convertToSharedDatabase(synchronizer);</span>
+
+<span class="nc" id="L146">        bibDatabaseContext.getDatabase().setSharedDatabaseID(sharedDatabaseID);</span>
+<span class="nc" id="L147">        bibDatabaseContext.setDatabaseFile(parserResult.getDatabaseContext().getDatabasePath().orElse(null));</span>
+
+<span class="nc" id="L149">        dbmsSynchronizer = bibDatabaseContext.getDBMSSynchronizer();</span>
+<span class="nc" id="L150">        dbmsSynchronizer.openSharedDatabase(new DBMSConnection(dbmsConnectionProperties));</span>
+<span class="nc" id="L151">        dbmsSynchronizer.registerListener(this);</span>
+<span class="nc" id="L152">        parserResult.setDatabaseContext(bibDatabaseContext);</span>
+<span class="nc" id="L153">        jabRefFrame.output(Localization.lang(&quot;Connection to %0 server established.&quot;, dbmsConnectionProperties.getType().toString()));</span>
+<span class="nc" id="L154">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

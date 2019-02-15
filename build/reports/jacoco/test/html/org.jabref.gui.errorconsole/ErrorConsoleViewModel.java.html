@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ErrorConsoleViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.errorconsole</a> &gt; <span class="el_source">ErrorConsoleViewModel.java</span></div><h1>ErrorConsoleViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.errorconsole;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.ReadOnlyListWrapper;
+import javafx.collections.ObservableList;
+
+import org.jabref.gui.AbstractViewModel;
+import org.jabref.gui.ClipBoardManager;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.desktop.JabRefDesktop;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.logging.LogMessages;
+import org.jabref.logic.util.BuildInfo;
+import org.jabref.logic.util.OS;
+
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.logging.log4j.core.LogEvent;
+import org.fxmisc.easybind.EasyBind;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class ErrorConsoleViewModel extends AbstractViewModel {
+<span class="nc" id="L32">    private static final Logger LOGGER = LoggerFactory.getLogger(ErrorConsoleViewModel.class);</span>
+
+<span class="nc" id="L34">    private final DateFormat dateFormat = new SimpleDateFormat(&quot;yyyyMMddHHmmss&quot;);</span>
+<span class="nc" id="L35">    private final Date date = new Date();</span>
+    private final DialogService dialogService;
+    private final ClipBoardManager clipBoardManager;
+    private final BuildInfo buildInfo;
+    private final ListProperty&lt;LogEventViewModel&gt; allMessagesData;
+
+<span class="nc" id="L41">    public ErrorConsoleViewModel(DialogService dialogService, ClipBoardManager clipBoardManager, BuildInfo buildInfo) {</span>
+<span class="nc" id="L42">        this.dialogService = Objects.requireNonNull(dialogService);</span>
+<span class="nc" id="L43">        this.clipBoardManager = Objects.requireNonNull(clipBoardManager);</span>
+<span class="nc" id="L44">        this.buildInfo = Objects.requireNonNull(buildInfo);</span>
+<span class="nc" id="L45">        ObservableList&lt;LogEventViewModel&gt; eventViewModels = EasyBind.map(LogMessages.getInstance().getMessages(), LogEventViewModel::new);</span>
+<span class="nc" id="L46">        allMessagesData = new ReadOnlyListWrapper&lt;&gt;(eventViewModels);</span>
+<span class="nc" id="L47">    }</span>
+
+    public ListProperty&lt;LogEventViewModel&gt; allMessagesDataProperty() {
+<span class="nc" id="L50">        return this.allMessagesData;</span>
+    }
+
+    /**
+     * Concatenates the formatted message of the given {@link LogEvent}s by using the a new line separator.
+     *
+     * @return all messages as String
+     */
+    private String getLogMessagesAsString(List&lt;LogEventViewModel&gt; messages) {
+<span class="nc" id="L59">        return messages.stream()</span>
+<span class="nc" id="L60">                .map(LogEventViewModel::getDetailedText)</span>
+<span class="nc" id="L61">                .collect(Collectors.joining(OS.NEWLINE));</span>
+    }
+
+    /**
+     * Copies the whole log to the clipboard
+     */
+    public void copyLog() {
+<span class="nc" id="L68">        copyLog(allMessagesData);</span>
+<span class="nc" id="L69">    }</span>
+
+    /**
+     * Copies the given list of {@link LogEvent}s to the clipboard.
+     */
+    public void copyLog(List&lt;LogEventViewModel&gt; messages) {
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (messages.isEmpty()) {</span>
+<span class="nc" id="L76">            return;</span>
+        }
+<span class="nc" id="L78">        clipBoardManager.setContent(getLogMessagesAsString(messages));</span>
+<span class="nc" id="L79">        dialogService.notify(Localization.lang(&quot;Log copied to clipboard.&quot;));</span>
+<span class="nc" id="L80">    }</span>
+
+    /**
+     * Clears the current log
+     */
+    public void clearLog() {
+<span class="nc" id="L86">        LogMessages.getInstance().clear();</span>
+<span class="nc" id="L87">    }</span>
+
+    /**
+     * Opens a new issue on GitHub and copies log to clipboard.
+     */
+    public void reportIssue() {
+        try {
+<span class="nc" id="L94">            String issueTitle = &quot;Automatic Bug Report - &quot; + dateFormat.format(date);</span>
+            // system info
+<span class="nc" id="L96">            String systemInfo = String.format(&quot;JabRef %s%n%s %s %s %nJava %s&quot;, buildInfo.getVersion(), BuildInfo.OS,</span>
+                    BuildInfo.OS_VERSION, BuildInfo.OS_ARCH, BuildInfo.JAVA_VERSION);
+            // steps to reproduce
+<span class="nc" id="L99">            String howToReproduce = &quot;Steps to reproduce:\n\n1. ...\n2. ...\n3. ...&quot;;</span>
+            // log messages
+<span class="nc" id="L101">            String issueDetails = &quot;&lt;details&gt;\n&quot; + &quot;&lt;summary&gt;&quot; + &quot;Detail information:&quot; + &quot;&lt;/summary&gt;\n\n```\n&quot;</span>
+<span class="nc" id="L102">                    + getLogMessagesAsString(allMessagesData) + &quot;\n```\n\n&lt;/details&gt;&quot;;</span>
+<span class="nc" id="L103">            clipBoardManager.setContent(issueDetails);</span>
+            // bug report body
+<span class="nc" id="L105">            String issueBody = systemInfo + &quot;\n\n&quot; + howToReproduce + &quot;\n\n&quot; + &quot;Paste your log details here.&quot;;</span>
+
+<span class="nc" id="L107">            dialogService.notify(Localization.lang(&quot;Issue on GitHub successfully reported.&quot;));</span>
+<span class="nc" id="L108">            dialogService.showInformationDialogAndWait(Localization.lang(&quot;Issue report successful&quot;),</span>
+<span class="nc" id="L109">                    Localization.lang(&quot;Your issue was reported in your browser.&quot;) + &quot;\n&quot; +</span>
+<span class="nc" id="L110">                            Localization.lang(&quot;The log and exception information was copied to your clipboard.&quot;) + &quot; &quot; +</span>
+<span class="nc" id="L111">                            Localization.lang(&quot;Please paste this information (with Ctrl+V) in the issue description.&quot;) + &quot;\n&quot; +</span>
+<span class="nc" id="L112">                            Localization.lang(&quot;Please also add all steps to reproduce this issue, if possible.&quot;));</span>
+
+<span class="nc" id="L114">            URIBuilder uriBuilder = new URIBuilder()</span>
+<span class="nc" id="L115">                    .setScheme(&quot;https&quot;).setHost(&quot;github.com&quot;)</span>
+<span class="nc" id="L116">                    .setPath(&quot;/JabRef/jabref/issues/new&quot;)</span>
+<span class="nc" id="L117">                    .setParameter(&quot;title&quot;, issueTitle)</span>
+<span class="nc" id="L118">                    .setParameter(&quot;body&quot;, issueBody);</span>
+<span class="nc" id="L119">            JabRefDesktop.openBrowser(uriBuilder.build().toString());</span>
+<span class="nc" id="L120">        } catch (IOException | URISyntaxException e) {</span>
+<span class="nc" id="L121">            LOGGER.error(&quot;Problem opening url&quot;, e);</span>
+<span class="nc" id="L122">        }</span>
+<span class="nc" id="L123">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

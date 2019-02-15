@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IsbnViaEbookDeFetcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fetcher</a> &gt; <span class="el_source">IsbnViaEbookDeFetcher.java</span></div><h1>IsbnViaEbookDeFetcher.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fetcher;
+
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+
+import org.jabref.logic.formatter.bibtexfields.NormalizeNamesFormatter;
+import org.jabref.logic.formatter.bibtexfields.NormalizePagesFormatter;
+import org.jabref.logic.importer.FetcherException;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.model.cleanup.FieldFormatterCleanup;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+
+import org.apache.http.client.utils.URIBuilder;
+
+/**
+ * Fetcher for ISBN using http://www.ebook.de.
+ */
+public class IsbnViaEbookDeFetcher extends AbstractIsbnFetcher {
+    private static final String BASE_URL = &quot;http://www.ebook.de/de/tools/isbn2bibtex&quot;;
+
+    public IsbnViaEbookDeFetcher(ImportFormatPreferences importFormatPreferences) {
+<span class="nc" id="L24">        super(importFormatPreferences);</span>
+<span class="nc" id="L25">    }</span>
+
+    @Override
+    public String getName() {
+<span class="nc" id="L29">        return &quot;ISBN (ebook.de)&quot;;</span>
+    }
+
+    @Override
+    public URL getURLForID(String identifier) throws URISyntaxException, MalformedURLException, FetcherException {
+<span class="nc" id="L34">        this.ensureThatIsbnIsValid(identifier);</span>
+<span class="nc" id="L35">        URIBuilder uriBuilder = new URIBuilder(BASE_URL);</span>
+<span class="nc" id="L36">        uriBuilder.addParameter(&quot;isbn&quot;, identifier);</span>
+<span class="nc" id="L37">        return uriBuilder.build().toURL();</span>
+    }
+
+    @Override
+    public void doPostCleanup(BibEntry entry) {
+        // We MUST NOT clean the URL. this is the deal with ebook.de
+        // DO NOT add following code:
+        // new FieldFormatterCleanup(FieldName.URL, new ClearFormatter()).cleanup(entry);
+
+        // Fetcher returns page numbers as &quot;30 Seiten&quot; -&gt; remove every non-digit character in the PAGETOTAL field
+<span class="nc" id="L47">        entry.getField(FieldName.PAGETOTAL).ifPresent(pages -&gt;</span>
+<span class="nc" id="L48">                entry.setField(FieldName.PAGETOTAL, pages.replaceAll(&quot;[\\D]&quot;, &quot;&quot;)));</span>
+<span class="nc" id="L49">        new FieldFormatterCleanup(FieldName.PAGETOTAL, new NormalizePagesFormatter()).cleanup(entry);</span>
+<span class="nc" id="L50">        new FieldFormatterCleanup(FieldName.AUTHOR, new NormalizeNamesFormatter()).cleanup(entry);</span>
+<span class="nc" id="L51">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

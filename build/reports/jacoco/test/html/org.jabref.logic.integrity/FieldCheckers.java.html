@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldCheckers.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.integrity</a> &gt; <span class="el_source">FieldCheckers.java</span></div><h1>FieldCheckers.java</h1><pre class="source lang-java linenums">package org.jabref.logic.integrity;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.jabref.logic.journals.JournalAbbreviationRepository;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.InternalBibtexFields;
+import org.jabref.model.metadata.FilePreferences;
+
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+
+public class FieldCheckers {
+
+    private Multimap&lt;String, ValueChecker&gt; fieldChecker;
+
+<span class="fc" id="L20">    public FieldCheckers(BibDatabaseContext databaseContext, FilePreferences filePreferences, JournalAbbreviationRepository abbreviationRepository, boolean enforceLegalKey) {</span>
+<span class="fc" id="L21">        fieldChecker = getAllMap(databaseContext, filePreferences, abbreviationRepository, enforceLegalKey);</span>
+<span class="fc" id="L22">    }</span>
+
+    private static Multimap&lt;String, ValueChecker&gt; getAllMap(BibDatabaseContext databaseContext, FilePreferences filePreferences, JournalAbbreviationRepository abbreviationRepository, boolean enforceLegalKey) {
+<span class="fc" id="L25">        ArrayListMultimap&lt;String, ValueChecker&gt; fieldCheckers = ArrayListMultimap.create(50, 10);</span>
+
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        for (String field : InternalBibtexFields.getJournalNameFields()) {</span>
+<span class="fc" id="L28">            fieldCheckers.put(field, new AbbreviationChecker(abbreviationRepository));</span>
+<span class="fc" id="L29">        }</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        for (String field : InternalBibtexFields.getBookNameFields()) {</span>
+<span class="fc" id="L31">            fieldCheckers.put(field, new AbbreviationChecker(abbreviationRepository));</span>
+<span class="fc" id="L32">        }</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        for (String field : InternalBibtexFields.getPersonNameFields()) {</span>
+<span class="fc" id="L34">            fieldCheckers.put(field, new PersonNamesChecker(databaseContext));</span>
+<span class="fc" id="L35">        }</span>
+<span class="fc" id="L36">        fieldCheckers.put(FieldName.BOOKTITLE, new BooktitleChecker());</span>
+<span class="fc" id="L37">        fieldCheckers.put(FieldName.TITLE, new BracketChecker());</span>
+<span class="fc" id="L38">        fieldCheckers.put(FieldName.TITLE, new TitleChecker(databaseContext));</span>
+<span class="fc" id="L39">        fieldCheckers.put(FieldName.DOI, new DOIValidityChecker());</span>
+<span class="fc" id="L40">        fieldCheckers.put(FieldName.EDITION, new EditionChecker(databaseContext));</span>
+<span class="fc" id="L41">        fieldCheckers.put(FieldName.FILE, new FileChecker(databaseContext, filePreferences));</span>
+<span class="fc" id="L42">        fieldCheckers.put(FieldName.HOWPUBLISHED, new HowPublishedChecker(databaseContext));</span>
+<span class="fc" id="L43">        fieldCheckers.put(FieldName.ISBN, new ISBNChecker());</span>
+<span class="fc" id="L44">        fieldCheckers.put(FieldName.ISSN, new ISSNChecker());</span>
+<span class="fc" id="L45">        fieldCheckers.put(FieldName.MONTH, new MonthChecker(databaseContext));</span>
+<span class="fc" id="L46">        fieldCheckers.put(FieldName.MONTHFILED, new MonthChecker(databaseContext));</span>
+<span class="fc" id="L47">        fieldCheckers.put(FieldName.NOTE, new NoteChecker(databaseContext));</span>
+<span class="fc" id="L48">        fieldCheckers.put(FieldName.PAGES, new PagesChecker(databaseContext));</span>
+<span class="fc" id="L49">        fieldCheckers.put(FieldName.URL, new UrlChecker());</span>
+<span class="fc" id="L50">        fieldCheckers.put(FieldName.YEAR, new YearChecker());</span>
+<span class="fc" id="L51">        fieldCheckers.put(FieldName.KEY, new ValidBibtexKeyChecker(enforceLegalKey));</span>
+
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (databaseContext.isBiblatexMode()) {</span>
+<span class="fc" id="L54">            fieldCheckers.put(FieldName.DATE, new DateChecker());</span>
+<span class="fc" id="L55">            fieldCheckers.put(FieldName.URLDATE, new DateChecker());</span>
+<span class="fc" id="L56">            fieldCheckers.put(FieldName.EVENTDATE, new DateChecker());</span>
+<span class="fc" id="L57">            fieldCheckers.put(FieldName.ORIGDATE, new DateChecker());</span>
+        }
+
+<span class="fc" id="L60">        return fieldCheckers;</span>
+    }
+
+    public List&lt;FieldChecker&gt; getAll() {
+<span class="fc" id="L64">        return fieldChecker</span>
+<span class="fc" id="L65">                .entries()</span>
+<span class="fc" id="L66">                .stream()</span>
+<span class="fc" id="L67">                .map(pair -&gt; new FieldChecker(pair.getKey(), pair.getValue()))</span>
+<span class="fc" id="L68">                .collect(Collectors.toList());</span>
+    }
+
+    public Collection&lt;ValueChecker&gt; getForField(String field) {
+<span class="nc" id="L72">        return fieldChecker</span>
+<span class="nc" id="L73">                .get(field);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

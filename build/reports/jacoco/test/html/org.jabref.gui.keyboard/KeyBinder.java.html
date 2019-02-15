@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KeyBinder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.keyboard</a> &gt; <span class="el_source">KeyBinder.java</span></div><h1>KeyBinder.java</h1><pre class="source lang-java linenums">package org.jabref.gui.keyboard;
+
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
+import javax.swing.JRootPane;
+
+import org.jabref.Globals;
+
+public class KeyBinder {
+
+    private KeyBinder() {
+    }
+
+    /**
+     * Binds ESC-Key to cancel button
+     *
+     * @param rootPane     the pane to bind the action to. Typically, this variable is retrieved by this.getRootPane();
+     * @param cancelAction the action to bind
+     */
+    public static void bindCloseDialogKeyToCancelAction(JRootPane rootPane, Action cancelAction) {
+<span class="nc" id="L23">        InputMap im = rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);</span>
+<span class="nc" id="L24">        ActionMap am = rootPane.getActionMap();</span>
+<span class="nc" id="L25">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.CLOSE), &quot;close&quot;);</span>
+<span class="nc" id="L26">        am.put(&quot;close&quot;, cancelAction);</span>
+<span class="nc" id="L27">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

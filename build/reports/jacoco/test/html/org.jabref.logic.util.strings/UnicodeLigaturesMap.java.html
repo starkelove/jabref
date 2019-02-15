@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnicodeLigaturesMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util.strings</a> &gt; <span class="el_source">UnicodeLigaturesMap.java</span></div><h1>UnicodeLigaturesMap.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util.strings;
+
+import java.util.HashMap;
+
+public class UnicodeLigaturesMap extends HashMap&lt;String, String&gt; {
+
+    /**
+     * Ligature mapping taken from https://en.wikipedia.org/wiki/Typographic_ligature#Ligatures_in_Unicode_(Latin_alphabets)
+     *
+     * The mapping is bijective. In case it is ever needed to turn the extended version back to unicode ligatures, the
+     * map can easily be reversed.
+     */
+<span class="fc" id="L13">    public UnicodeLigaturesMap() {</span>
+<span class="fc" id="L14">        put(&quot;\uA732&quot;, &quot;AA&quot;);</span>
+<span class="fc" id="L15">        put(&quot;\uA733&quot;, &quot;aa&quot;);</span>
+<span class="fc" id="L16">        put(&quot;\u00C6&quot;, &quot;AE&quot;);</span>
+<span class="fc" id="L17">        put(&quot;\u00E6&quot;, &quot;ae&quot;);</span>
+<span class="fc" id="L18">        put(&quot;\uA734&quot;, &quot;AO&quot;);</span>
+<span class="fc" id="L19">        put(&quot;\uA735&quot;, &quot;ao&quot;);</span>
+<span class="fc" id="L20">        put(&quot;\uA736&quot;, &quot;AU&quot;);</span>
+<span class="fc" id="L21">        put(&quot;\uA737&quot;, &quot;au&quot;);</span>
+<span class="fc" id="L22">        put(&quot;\uA738&quot;, &quot;AV&quot;);</span>
+<span class="fc" id="L23">        put(&quot;\uA739&quot;, &quot;av&quot;);</span>
+        //AV, av with bar
+<span class="fc" id="L25">        put(&quot;\uA73A&quot;, &quot;AV&quot;);</span>
+<span class="fc" id="L26">        put(&quot;\uA73B&quot;, &quot;av&quot;);</span>
+<span class="fc" id="L27">        put(&quot;\uA73C&quot;, &quot;AY&quot;);</span>
+<span class="fc" id="L28">        put(&quot;\uA73D&quot;, &quot;ay&quot;);</span>
+<span class="fc" id="L29">        put(&quot;\uD83D\uDE70&quot;, &quot;et&quot;);</span>
+<span class="fc" id="L30">        put(&quot;\uFB00&quot;, &quot;ff&quot;);</span>
+<span class="fc" id="L31">        put(&quot;\uFB01&quot;, &quot;fi&quot;);</span>
+<span class="fc" id="L32">        put(&quot;\uFB02&quot;, &quot;fl&quot;);</span>
+<span class="fc" id="L33">        put(&quot;\uFB03&quot;, &quot;ffi&quot;);</span>
+<span class="fc" id="L34">        put(&quot;\uFB04&quot;, &quot;ffl&quot;);</span>
+<span class="fc" id="L35">        put(&quot;\uFB05&quot;, &quot;ſt&quot;);</span>
+<span class="fc" id="L36">        put(&quot;\uFB06&quot;, &quot;st&quot;);</span>
+<span class="fc" id="L37">        put(&quot;\u0152&quot;, &quot;OE&quot;);</span>
+<span class="fc" id="L38">        put(&quot;\u0153&quot;, &quot;oe&quot;);</span>
+<span class="fc" id="L39">        put(&quot;\uA74E&quot;, &quot;OO&quot;);</span>
+<span class="fc" id="L40">        put(&quot;\uA74F&quot;, &quot;oo&quot;);</span>
+        // we explicitly decided to exclude the conversion of ß or ẞ
+        // put(&quot;\u1E9E&quot;, &quot;ſs&quot;);
+        // put(&quot;\u00DF&quot;, &quot;ſz&quot;);
+<span class="fc" id="L44">        put(&quot;\uA728&quot;, &quot;TZ&quot;);</span>
+<span class="fc" id="L45">        put(&quot;\uA729&quot;, &quot;tz&quot;);</span>
+<span class="fc" id="L46">        put(&quot;\u1D6B&quot;, &quot;ue&quot;);</span>
+<span class="fc" id="L47">        put(&quot;\uA760&quot;, &quot;VY&quot;);</span>
+<span class="fc" id="L48">        put(&quot;\uA761&quot;, &quot;vy&quot;);</span>
+
+        // ligatures for phonetic transcription
+<span class="fc" id="L51">        put(&quot;\u0238&quot;, &quot;db&quot;);</span>
+<span class="fc" id="L52">        put(&quot;\u02A3&quot;, &quot;dz&quot;);</span>
+<span class="fc" id="L53">        put(&quot;\u02A5&quot;, &quot;dʑ&quot;);</span>
+<span class="fc" id="L54">        put(&quot;\u02A4&quot;, &quot;dʒ&quot;);</span>
+<span class="fc" id="L55">        put(&quot;\u02A9&quot;, &quot;fŋ&quot;);</span>
+<span class="fc" id="L56">        put(&quot;\u0132&quot;, &quot;IJ&quot;);</span>
+<span class="fc" id="L57">        put(&quot;\u0133&quot;, &quot;ij&quot;);</span>
+<span class="fc" id="L58">        put(&quot;\u02AA&quot;, &quot;ls&quot;);</span>
+<span class="fc" id="L59">        put(&quot;\u02AB&quot;, &quot;lz&quot;);</span>
+<span class="fc" id="L60">        put(&quot;\u026E&quot;, &quot;lʒ&quot;);</span>
+<span class="fc" id="L61">        put(&quot;\u0239&quot;, &quot;qp&quot;);</span>
+<span class="fc" id="L62">        put(&quot;\u02A6&quot;, &quot;ts&quot;);</span>
+<span class="fc" id="L63">        put(&quot;\u02A7&quot;, &quot;tʃ&quot;);</span>
+<span class="fc" id="L64">        put(&quot;\u02A8&quot;, &quot;tɕ&quot;);</span>
+<span class="fc" id="L65">        put(&quot;\uAB50&quot;, &quot;ui&quot;);</span>
+<span class="fc" id="L66">        put(&quot;\uAB51&quot;, &quot;turned ui&quot;);</span>
+<span class="fc" id="L67">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,714 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MedlineImporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fileformat</a> &gt; <span class="el_source">MedlineImporter.java</span></div><h1>MedlineImporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fileformat;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+
+import org.jabref.logic.importer.Importer;
+import org.jabref.logic.importer.ParseException;
+import org.jabref.logic.importer.Parser;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.importer.fileformat.medline.Abstract;
+import org.jabref.logic.importer.fileformat.medline.AbstractText;
+import org.jabref.logic.importer.fileformat.medline.AffiliationInfo;
+import org.jabref.logic.importer.fileformat.medline.ArticleId;
+import org.jabref.logic.importer.fileformat.medline.ArticleIdList;
+import org.jabref.logic.importer.fileformat.medline.ArticleTitle;
+import org.jabref.logic.importer.fileformat.medline.Author;
+import org.jabref.logic.importer.fileformat.medline.AuthorList;
+import org.jabref.logic.importer.fileformat.medline.Book;
+import org.jabref.logic.importer.fileformat.medline.BookDocument;
+import org.jabref.logic.importer.fileformat.medline.BookTitle;
+import org.jabref.logic.importer.fileformat.medline.Chemical;
+import org.jabref.logic.importer.fileformat.medline.ContributionDate;
+import org.jabref.logic.importer.fileformat.medline.DateCompleted;
+import org.jabref.logic.importer.fileformat.medline.DateCreated;
+import org.jabref.logic.importer.fileformat.medline.DateRevised;
+import org.jabref.logic.importer.fileformat.medline.ELocationID;
+import org.jabref.logic.importer.fileformat.medline.GeneSymbolList;
+import org.jabref.logic.importer.fileformat.medline.GeneralNote;
+import org.jabref.logic.importer.fileformat.medline.ISSN;
+import org.jabref.logic.importer.fileformat.medline.Investigator;
+import org.jabref.logic.importer.fileformat.medline.InvestigatorList;
+import org.jabref.logic.importer.fileformat.medline.Journal;
+import org.jabref.logic.importer.fileformat.medline.JournalIssue;
+import org.jabref.logic.importer.fileformat.medline.Keyword;
+import org.jabref.logic.importer.fileformat.medline.KeywordList;
+import org.jabref.logic.importer.fileformat.medline.MedlineCitation;
+import org.jabref.logic.importer.fileformat.medline.MedlineJournalInfo;
+import org.jabref.logic.importer.fileformat.medline.MeshHeading;
+import org.jabref.logic.importer.fileformat.medline.MeshHeadingList;
+import org.jabref.logic.importer.fileformat.medline.OtherID;
+import org.jabref.logic.importer.fileformat.medline.Pagination;
+import org.jabref.logic.importer.fileformat.medline.PersonalNameSubject;
+import org.jabref.logic.importer.fileformat.medline.PersonalNameSubjectList;
+import org.jabref.logic.importer.fileformat.medline.PubDate;
+import org.jabref.logic.importer.fileformat.medline.PublicationType;
+import org.jabref.logic.importer.fileformat.medline.Publisher;
+import org.jabref.logic.importer.fileformat.medline.PubmedArticle;
+import org.jabref.logic.importer.fileformat.medline.PubmedArticleSet;
+import org.jabref.logic.importer.fileformat.medline.PubmedBookArticle;
+import org.jabref.logic.importer.fileformat.medline.PubmedBookArticleSet;
+import org.jabref.logic.importer.fileformat.medline.PubmedBookData;
+import org.jabref.logic.importer.fileformat.medline.QualifierName;
+import org.jabref.logic.importer.fileformat.medline.Section;
+import org.jabref.logic.importer.fileformat.medline.Sections;
+import org.jabref.logic.importer.fileformat.medline.Text;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BibtexEntryTypes;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.strings.StringUtil;
+
+import com.google.common.base.Joiner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Importer for the Medline/Pubmed format.
+ * &lt;p&gt;
+ * check here for details on the format
+ * https://www.nlm.nih.gov/bsd/licensee/elements_descriptions.html
+ */
+<span class="fc" id="L91">public class MedlineImporter extends Importer implements Parser {</span>
+
+<span class="fc" id="L93">    private static final Logger LOGGER = LoggerFactory.getLogger(MedlineImporter.class);</span>
+    private static final String KEYWORD_SEPARATOR = &quot;; &quot;;
+
+<span class="fc" id="L96">    private static final Locale ENGLISH = Locale.ENGLISH;</span>
+    private Unmarshaller unmarshaller;
+
+    private static String join(List&lt;String&gt; list, String string) {
+<span class="fc" id="L100">        return Joiner.on(string).join(list);</span>
+    }
+
+    @Override
+    public String getName() {
+<span class="fc" id="L105">        return &quot;Medline/PubMed&quot;;</span>
+    }
+
+    @Override
+    public StandardFileType getFileType() {
+<span class="fc" id="L110">        return StandardFileType.MEDLINE;</span>
+    }
+
+    @Override
+    public String getId() {
+<span class="fc" id="L115">        return &quot;medline&quot;;</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L120">        return &quot;Importer for the Medline format.&quot;;</span>
+    }
+
+    @Override
+    public boolean isRecognizedFormat(BufferedReader reader) throws IOException {
+        String str;
+<span class="fc" id="L126">        int i = 0;</span>
+<span class="fc bfc" id="L127" title="All 4 branches covered.">        while (((str = reader.readLine()) != null) &amp;&amp; (i &lt; 50)) {</span>
+
+<span class="fc bfc" id="L129" title="All 2 branches covered.">            if (str.toLowerCase(ENGLISH).contains(&quot;&lt;pubmedarticle&gt;&quot;)</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                    || str.toLowerCase(ENGLISH).contains(&quot;&lt;pubmedbookarticle&gt;&quot;)) {</span>
+<span class="fc" id="L131">                return true;</span>
+            }
+
+<span class="fc" id="L134">            i++;</span>
+        }
+<span class="fc" id="L136">        return false;</span>
+    }
+
+    @Override
+    public ParserResult importDatabase(BufferedReader reader) throws IOException {
+<span class="fc" id="L141">        Objects.requireNonNull(reader);</span>
+
+<span class="fc" id="L143">        List&lt;BibEntry&gt; bibItems = new ArrayList&lt;&gt;();</span>
+
+        try {
+<span class="fc" id="L146">            Object unmarshalledObject = unmarshallRoot(reader);</span>
+
+            //check whether we have an article set, an article, a book article or a book article set
+<span class="fc bfc" id="L149" title="All 2 branches covered.">            if (unmarshalledObject instanceof PubmedArticleSet) {</span>
+<span class="fc" id="L150">                PubmedArticleSet articleSet = (PubmedArticleSet) unmarshalledObject;</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">                for (Object article : articleSet.getPubmedArticleOrPubmedBookArticle()) {</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">                    if (article instanceof PubmedArticle) {</span>
+<span class="fc" id="L153">                        PubmedArticle currentArticle = (PubmedArticle) article;</span>
+<span class="fc" id="L154">                        parseArticle(currentArticle, bibItems);</span>
+                    }
+<span class="fc bfc" id="L156" title="All 2 branches covered.">                    if (article instanceof PubmedBookArticle) {</span>
+<span class="fc" id="L157">                        PubmedBookArticle currentArticle = (PubmedBookArticle) article;</span>
+<span class="fc" id="L158">                        parseBookArticle(currentArticle, bibItems);</span>
+                    }
+<span class="fc" id="L160">                }</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">            } else if (unmarshalledObject instanceof PubmedArticle) {</span>
+<span class="fc" id="L162">                PubmedArticle article = (PubmedArticle) unmarshalledObject;</span>
+<span class="fc" id="L163">                parseArticle(article, bibItems);</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">            } else if (unmarshalledObject instanceof PubmedBookArticle) {</span>
+<span class="fc" id="L165">                PubmedBookArticle currentArticle = (PubmedBookArticle) unmarshalledObject;</span>
+<span class="fc" id="L166">                parseBookArticle(currentArticle, bibItems);</span>
+<span class="fc" id="L167">            } else {</span>
+<span class="fc" id="L168">                PubmedBookArticleSet bookArticleSet = (PubmedBookArticleSet) unmarshalledObject;</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">                for (PubmedBookArticle bookArticle : bookArticleSet.getPubmedBookArticle()) {</span>
+<span class="fc" id="L170">                    parseBookArticle(bookArticle, bibItems);</span>
+<span class="fc" id="L171">                }</span>
+            }
+<span class="fc" id="L173">        } catch (JAXBException | XMLStreamException e) {</span>
+<span class="fc" id="L174">            LOGGER.debug(&quot;could not parse document&quot;, e);</span>
+<span class="fc" id="L175">            return ParserResult.fromError(e);</span>
+<span class="fc" id="L176">        }</span>
+<span class="fc" id="L177">        return new ParserResult(bibItems);</span>
+    }
+
+    private Object unmarshallRoot(BufferedReader reader) throws JAXBException, XMLStreamException {
+<span class="fc" id="L181">        initUmarshaller();</span>
+
+<span class="fc" id="L183">        XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();</span>
+<span class="fc" id="L184">        XMLStreamReader xmlStreamReader = xmlInputFactory.createXMLStreamReader(reader);</span>
+
+        //go to the root element
+<span class="fc bfc" id="L187" title="All 2 branches covered.">        while (!xmlStreamReader.isStartElement()) {</span>
+<span class="fc" id="L188">            xmlStreamReader.next();</span>
+        }
+
+<span class="fc" id="L191">        return unmarshaller.unmarshal(xmlStreamReader);</span>
+    }
+
+    private void initUmarshaller() throws JAXBException {
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">        if (unmarshaller == null) {</span>
+            // Lazy init because this is expensive
+<span class="fc" id="L197">            JAXBContext context = JAXBContext.newInstance(&quot;org.jabref.logic.importer.fileformat.medline&quot;);</span>
+<span class="fc" id="L198">            unmarshaller = context.createUnmarshaller();</span>
+        }
+<span class="fc" id="L200">    }</span>
+
+    private void parseBookArticle(PubmedBookArticle currentArticle, List&lt;BibEntry&gt; bibItems) {
+<span class="fc" id="L203">        Map&lt;String, String&gt; fields = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">        if (currentArticle.getBookDocument() != null) {</span>
+<span class="fc" id="L205">            BookDocument bookDocument = currentArticle.getBookDocument();</span>
+<span class="fc" id="L206">            fields.put(FieldName.PMID, bookDocument.getPMID().getContent());</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">            if (bookDocument.getDateRevised() != null) {</span>
+<span class="fc" id="L208">                DateRevised dateRevised = bookDocument.getDateRevised();</span>
+<span class="fc" id="L209">                addDateRevised(fields, dateRevised);</span>
+            }
+<span class="fc bfc" id="L211" title="All 2 branches covered.">            if (bookDocument.getAbstract() != null) {</span>
+<span class="fc" id="L212">                Abstract abs = bookDocument.getAbstract();</span>
+<span class="fc" id="L213">                addAbstract(fields, abs);</span>
+            }
+<span class="fc bfc" id="L215" title="All 2 branches covered.">            if (bookDocument.getPagination() != null) {</span>
+<span class="fc" id="L216">                Pagination pagination = bookDocument.getPagination();</span>
+<span class="fc" id="L217">                addPagination(fields, pagination);</span>
+            }
+<span class="fc bfc" id="L219" title="All 2 branches covered.">            if (bookDocument.getSections() != null) {</span>
+<span class="fc" id="L220">                ArrayList&lt;String&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L221">                Sections sections = bookDocument.getSections();</span>
+<span class="fc bfc" id="L222" title="All 2 branches covered.">                for (Section section : sections.getSection()) {</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">                    for (Serializable content : section.getSectionTitle().getContent()) {</span>
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">                        if (content instanceof String) {</span>
+<span class="fc" id="L225">                            result.add((String) content);</span>
+                        }
+<span class="fc" id="L227">                    }</span>
+<span class="fc" id="L228">                }</span>
+<span class="fc" id="L229">                fields.put(&quot;sections&quot;, join(result, &quot;; &quot;));</span>
+            }
+<span class="pc bpc" id="L231" title="1 of 2 branches missed.">            if (bookDocument.getKeywordList() != null) {</span>
+<span class="fc" id="L232">                addKeyWords(fields, bookDocument.getKeywordList());</span>
+            }
+<span class="fc bfc" id="L234" title="All 2 branches covered.">            if (bookDocument.getContributionDate() != null) {</span>
+<span class="fc" id="L235">                addContributionDate(fields, bookDocument.getContributionDate());</span>
+            }
+<span class="pc bpc" id="L237" title="1 of 2 branches missed.">            if (bookDocument.getPublicationType() != null) {</span>
+<span class="fc" id="L238">                List&lt;String&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">                for (PublicationType type : bookDocument.getPublicationType()) {</span>
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">                    if (type.getContent() != null) {</span>
+<span class="fc" id="L241">                        result.add(type.getContent());</span>
+                    }
+<span class="fc" id="L243">                }</span>
+<span class="fc" id="L244">                fields.put(&quot;pubtype&quot;, join(result, &quot;, &quot;));</span>
+            }
+<span class="fc bfc" id="L246" title="All 2 branches covered.">            if (bookDocument.getArticleTitle() != null) {</span>
+<span class="fc" id="L247">                ArticleTitle articleTitle = bookDocument.getArticleTitle();</span>
+<span class="fc" id="L248">                ArrayList&lt;String&gt; titles = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L249" title="All 2 branches covered.">                for (Serializable content : articleTitle.getContent()) {</span>
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">                    if (content instanceof String) {</span>
+<span class="fc" id="L251">                        titles.add((String) content);</span>
+                    }
+<span class="fc" id="L253">                }</span>
+<span class="fc" id="L254">                fields.put(&quot;article&quot;, join(titles, &quot;, &quot;));</span>
+            }
+<span class="fc bfc" id="L256" title="All 2 branches covered.">            if (bookDocument.getBook() != null) {</span>
+<span class="fc" id="L257">                addBookInformation(fields, bookDocument.getBook());</span>
+            }
+        }
+
+<span class="fc bfc" id="L261" title="All 2 branches covered.">        if (currentArticle.getPubmedBookData() != null) {</span>
+<span class="fc" id="L262">            PubmedBookData bookData = currentArticle.getPubmedBookData();</span>
+<span class="fc" id="L263">            putIfValueNotNull(fields, &quot;pubstatus&quot;, bookData.getPublicationStatus());</span>
+        }
+
+<span class="fc" id="L266">        BibEntry entry = new BibEntry(BibtexEntryTypes.ARTICLE);</span>
+<span class="fc" id="L267">        entry.setField(fields);</span>
+
+<span class="fc" id="L269">        bibItems.add(entry);</span>
+<span class="fc" id="L270">    }</span>
+
+    private void addBookInformation(Map&lt;String, String&gt; fields, Book book) {
+<span class="pc bpc" id="L273" title="1 of 2 branches missed.">        if (book.getPublisher() != null) {</span>
+<span class="fc" id="L274">            Publisher publisher = book.getPublisher();</span>
+<span class="fc" id="L275">            putIfValueNotNull(fields, &quot;publocation&quot;, publisher.getPublisherLocation());</span>
+<span class="fc" id="L276">            putStringFromSerializableList(fields, FieldName.PUBLISHER, publisher.getPublisherName().getContent());</span>
+        }
+<span class="pc bpc" id="L278" title="1 of 2 branches missed.">        if (book.getBookTitle() != null) {</span>
+<span class="fc" id="L279">            BookTitle title = book.getBookTitle();</span>
+<span class="fc" id="L280">            putStringFromSerializableList(fields, FieldName.TITLE, title.getContent());</span>
+        }
+<span class="pc bpc" id="L282" title="1 of 2 branches missed.">        if (book.getPubDate() != null) {</span>
+<span class="fc" id="L283">            addPubDate(fields, book.getPubDate());</span>
+        }
+<span class="pc bpc" id="L285" title="1 of 2 branches missed.">        if (book.getAuthorList() != null) {</span>
+<span class="fc" id="L286">            List&lt;AuthorList&gt; authorLists = book.getAuthorList();</span>
+            //authorLists size should be one
+<span class="pc bpc" id="L288" title="1 of 2 branches missed.">            if (authorLists.size() == 1) {</span>
+<span class="fc bfc" id="L289" title="All 2 branches covered.">                for (AuthorList authorList : authorLists) {</span>
+<span class="fc" id="L290">                    handleAuthors(fields, authorList);</span>
+<span class="fc" id="L291">                }</span>
+            } else {
+<span class="nc" id="L293">                LOGGER.info(String.format(&quot;Size of authorlist was %s&quot;, authorLists.size()));</span>
+            }
+        }
+
+<span class="fc" id="L297">        putIfValueNotNull(fields, FieldName.VOLUME, book.getVolume());</span>
+<span class="fc" id="L298">        putIfValueNotNull(fields, FieldName.EDITION, book.getEdition());</span>
+<span class="fc" id="L299">        putIfValueNotNull(fields, &quot;medium&quot;, book.getMedium());</span>
+<span class="fc" id="L300">        putIfValueNotNull(fields, &quot;reportnumber&quot;, book.getReportNumber());</span>
+
+<span class="pc bpc" id="L302" title="1 of 2 branches missed.">        if (book.getELocationID() != null) {</span>
+<span class="fc bfc" id="L303" title="All 2 branches covered.">            for (ELocationID id : book.getELocationID()) {</span>
+<span class="fc" id="L304">                addElocationID(fields, id);</span>
+<span class="fc" id="L305">            }</span>
+        }
+<span class="pc bpc" id="L307" title="1 of 2 branches missed.">        if (book.getIsbn() != null) {</span>
+<span class="fc" id="L308">            fields.put(FieldName.ISBN, join(book.getIsbn(), &quot;, &quot;));</span>
+        }
+<span class="fc" id="L310">    }</span>
+
+    private void putStringFromSerializableList(Map&lt;String, String&gt; fields, String medlineKey,
+            List&lt;Serializable&gt; contentList) {
+<span class="fc" id="L314">        StringBuilder result = new StringBuilder();</span>
+<span class="fc bfc" id="L315" title="All 2 branches covered.">        for (Serializable content : contentList) {</span>
+<span class="pc bpc" id="L316" title="1 of 2 branches missed.">            if (content instanceof String) {</span>
+<span class="fc" id="L317">                result.append((String) content);</span>
+            }
+<span class="fc" id="L319">        }</span>
+<span class="pc bpc" id="L320" title="1 of 2 branches missed.">        if (result.length() &gt; 0) {</span>
+<span class="fc" id="L321">            fields.put(medlineKey, result.toString());</span>
+        }
+<span class="fc" id="L323">    }</span>
+
+    private void addContributionDate(Map&lt;String, String&gt; fields, ContributionDate contributionDate) {
+<span class="pc bpc" id="L326" title="2 of 4 branches missed.">        if ((contributionDate.getDay() != null) &amp;&amp; (contributionDate.getMonth() != null)</span>
+<span class="pc bpc" id="L327" title="1 of 2 branches missed.">                &amp;&amp; (contributionDate.getYear() != null)) {</span>
+<span class="fc" id="L328">            String result = convertToDateFormat(contributionDate.getYear(), contributionDate.getMonth(),</span>
+<span class="fc" id="L329">                    contributionDate.getDay());</span>
+<span class="fc" id="L330">            fields.put(&quot;contribution&quot;, result);</span>
+        }
+<span class="fc" id="L332">    }</span>
+
+    private String convertToDateFormat(String year, String month, String day) {
+<span class="fc" id="L335">        return String.format(&quot;%s-%s-%s&quot;, year, month, day);</span>
+    }
+
+    private void parseArticle(PubmedArticle article, List&lt;BibEntry&gt; bibItems) {
+<span class="fc" id="L339">        Map&lt;String, String&gt; fields = new HashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L341" title="All 2 branches covered.">        if (article.getPubmedData() != null) {</span>
+<span class="fc bfc" id="L342" title="All 2 branches covered.">            if (article.getMedlineCitation().getDateRevised() != null) {</span>
+<span class="fc" id="L343">                DateRevised dateRevised = article.getMedlineCitation().getDateRevised();</span>
+<span class="fc" id="L344">                addDateRevised(fields, dateRevised);</span>
+<span class="fc" id="L345">                putIfValueNotNull(fields, &quot;pubstatus&quot;, article.getPubmedData().getPublicationStatus());</span>
+<span class="pc bpc" id="L346" title="1 of 2 branches missed.">                if (article.getPubmedData().getArticleIdList() != null) {</span>
+<span class="fc" id="L347">                    ArticleIdList articleIdList = article.getPubmedData().getArticleIdList();</span>
+<span class="fc" id="L348">                    addArticleIdList(fields, articleIdList);</span>
+                }
+            }
+        }
+<span class="fc bfc" id="L352" title="All 2 branches covered.">        if (article.getMedlineCitation() != null) {</span>
+<span class="fc" id="L353">            MedlineCitation medlineCitation = article.getMedlineCitation();</span>
+
+<span class="fc" id="L355">            fields.put(&quot;status&quot;, medlineCitation.getStatus());</span>
+<span class="fc" id="L356">            DateCreated dateCreated = medlineCitation.getDateCreated();</span>
+<span class="pc bpc" id="L357" title="1 of 2 branches missed.">            if (medlineCitation.getDateCreated() != null) {</span>
+<span class="fc" id="L358">                fields.put(&quot;created&quot;,</span>
+<span class="fc" id="L359">                        convertToDateFormat(dateCreated.getYear(), dateCreated.getMonth(), dateCreated.getDay()));</span>
+            }
+<span class="fc" id="L361">            fields.put(&quot;pubmodel&quot;, medlineCitation.getArticle().getPubModel());</span>
+
+<span class="fc bfc" id="L363" title="All 2 branches covered.">            if (medlineCitation.getDateCompleted() != null) {</span>
+<span class="fc" id="L364">                DateCompleted dateCompleted = medlineCitation.getDateCompleted();</span>
+<span class="fc" id="L365">                fields.put(&quot;completed&quot;,</span>
+<span class="fc" id="L366">                        convertToDateFormat(dateCompleted.getYear(), dateCompleted.getMonth(), dateCompleted.getDay()));</span>
+            }
+
+<span class="fc" id="L369">            fields.put(FieldName.PMID, medlineCitation.getPMID().getContent());</span>
+<span class="fc" id="L370">            fields.put(FieldName.OWNER, medlineCitation.getOwner());</span>
+
+<span class="fc" id="L372">            addArticleInformation(fields, medlineCitation.getArticle().getContent());</span>
+
+<span class="fc" id="L374">            MedlineJournalInfo medlineJournalInfo = medlineCitation.getMedlineJournalInfo();</span>
+<span class="fc" id="L375">            putIfValueNotNull(fields, &quot;country&quot;, medlineJournalInfo.getCountry());</span>
+<span class="fc" id="L376">            putIfValueNotNull(fields, &quot;journal-abbreviation&quot;, medlineJournalInfo.getMedlineTA());</span>
+<span class="fc" id="L377">            putIfValueNotNull(fields, &quot;nlm-id&quot;, medlineJournalInfo.getNlmUniqueID());</span>
+<span class="fc" id="L378">            putIfValueNotNull(fields, &quot;issn-linking&quot;, medlineJournalInfo.getISSNLinking());</span>
+<span class="fc bfc" id="L379" title="All 2 branches covered.">            if (medlineCitation.getChemicalList() != null) {</span>
+<span class="pc bpc" id="L380" title="1 of 2 branches missed.">                if (medlineCitation.getChemicalList().getChemical() != null) {</span>
+<span class="fc" id="L381">                    addChemicals(fields, medlineCitation.getChemicalList().getChemical());</span>
+                }
+            }
+<span class="pc bpc" id="L384" title="1 of 2 branches missed.">            if (medlineCitation.getCitationSubset() != null) {</span>
+<span class="fc" id="L385">                fields.put(&quot;citation-subset&quot;, join(medlineCitation.getCitationSubset(), &quot;, &quot;));</span>
+            }
+<span class="fc bfc" id="L387" title="All 2 branches covered.">            if (medlineCitation.getGeneSymbolList() != null) {</span>
+<span class="fc" id="L388">                addGeneSymbols(fields, medlineCitation.getGeneSymbolList());</span>
+            }
+<span class="fc bfc" id="L390" title="All 2 branches covered.">            if (medlineCitation.getMeshHeadingList() != null) {</span>
+<span class="fc" id="L391">                addMeashHeading(fields, medlineCitation.getMeshHeadingList());</span>
+            }
+<span class="fc" id="L393">            putIfValueNotNull(fields, &quot;references&quot;, medlineCitation.getNumberOfReferences());</span>
+<span class="fc bfc" id="L394" title="All 2 branches covered.">            if (medlineCitation.getPersonalNameSubjectList() != null) {</span>
+<span class="fc" id="L395">                addPersonalNames(fields, medlineCitation.getPersonalNameSubjectList());</span>
+            }
+<span class="pc bpc" id="L397" title="1 of 2 branches missed.">            if (medlineCitation.getOtherID() != null) {</span>
+<span class="fc" id="L398">                addOtherId(fields, medlineCitation.getOtherID());</span>
+            }
+<span class="pc bpc" id="L400" title="1 of 2 branches missed.">            if (medlineCitation.getKeywordList() != null) {</span>
+<span class="fc" id="L401">                addKeyWords(fields, medlineCitation.getKeywordList());</span>
+            }
+<span class="pc bpc" id="L403" title="1 of 2 branches missed.">            if (medlineCitation.getSpaceFlightMission() != null) {</span>
+<span class="fc" id="L404">                fields.put(&quot;space-flight-mission&quot;, join(medlineCitation.getSpaceFlightMission(), &quot;, &quot;));</span>
+            }
+<span class="fc bfc" id="L406" title="All 2 branches covered.">            if (medlineCitation.getInvestigatorList() != null) {</span>
+<span class="fc" id="L407">                addInvestigators(fields, medlineCitation.getInvestigatorList());</span>
+            }
+<span class="pc bpc" id="L409" title="1 of 2 branches missed.">            if (medlineCitation.getGeneralNote() != null) {</span>
+<span class="fc" id="L410">                addNotes(fields, medlineCitation.getGeneralNote());</span>
+            }
+        }
+
+<span class="fc" id="L414">        BibEntry entry = new BibEntry(BibtexEntryTypes.ARTICLE);</span>
+<span class="fc" id="L415">        entry.setField(fields);</span>
+
+<span class="fc" id="L417">        bibItems.add(entry);</span>
+<span class="fc" id="L418">    }</span>
+
+    private void addArticleIdList(Map&lt;String, String&gt; fields, ArticleIdList articleIdList) {
+<span class="fc bfc" id="L421" title="All 2 branches covered.">        for (ArticleId id : articleIdList.getArticleId()) {</span>
+<span class="pc bpc" id="L422" title="1 of 2 branches missed.">            if (id.getIdType() != null) {</span>
+<span class="fc bfc" id="L423" title="All 2 branches covered.">                if (&quot;pubmed&quot;.equals(id.getIdType())) {</span>
+<span class="fc" id="L424">                    fields.put(&quot;pmid&quot;, id.getContent());</span>
+                } else {
+<span class="fc" id="L426">                    fields.put(id.getIdType(), id.getContent());</span>
+                }
+            }
+<span class="fc" id="L429">        }</span>
+<span class="fc" id="L430">    }</span>
+
+    private void addNotes(Map&lt;String, String&gt; fields, List&lt;GeneralNote&gt; generalNote) {
+<span class="fc" id="L433">        List&lt;String&gt; notes = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L434" title="All 2 branches covered.">        for (GeneralNote note : generalNote) {</span>
+<span class="pc bpc" id="L435" title="1 of 2 branches missed.">            if (note != null) {</span>
+<span class="fc" id="L436">                notes.add(note.getContent());</span>
+            }
+<span class="fc" id="L438">        }</span>
+<span class="fc" id="L439">        fields.put(FieldName.NOTE, join(notes, &quot;, &quot;));</span>
+<span class="fc" id="L440">    }</span>
+
+    private void addInvestigators(Map&lt;String, String&gt; fields, InvestigatorList investigatorList) {
+<span class="fc" id="L443">        List&lt;String&gt; investigatorNames = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L444">        List&lt;String&gt; affiliationInfos = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L445">        String name = &quot;&quot;;</span>
+        // add the investigators like the authors
+<span class="pc bpc" id="L447" title="1 of 2 branches missed.">        if (investigatorList.getInvestigator() != null) {</span>
+<span class="fc" id="L448">            List&lt;Investigator&gt; investigators = investigatorList.getInvestigator();</span>
+<span class="fc bfc" id="L449" title="All 2 branches covered.">            for (Investigator investigator : investigators) {</span>
+<span class="fc" id="L450">                name = investigator.getLastName();</span>
+<span class="pc bpc" id="L451" title="1 of 2 branches missed.">                if (investigator.getForeName() != null) {</span>
+<span class="fc" id="L452">                    name += &quot;, &quot; + investigator.getForeName();</span>
+                }
+<span class="fc" id="L454">                investigatorNames.add(name);</span>
+
+                //now add the affiliation info
+<span class="pc bpc" id="L457" title="1 of 2 branches missed.">                if (investigator.getAffiliationInfo() != null) {</span>
+<span class="fc bfc" id="L458" title="All 2 branches covered.">                    for (AffiliationInfo info : investigator.getAffiliationInfo()) {</span>
+<span class="fc bfc" id="L459" title="All 2 branches covered.">                        for (Serializable affiliation : info.getAffiliation().getContent()) {</span>
+<span class="pc bpc" id="L460" title="1 of 2 branches missed.">                            if (affiliation instanceof String) {</span>
+<span class="fc" id="L461">                                affiliationInfos.add((String) affiliation);</span>
+                            }
+<span class="fc" id="L463">                        }</span>
+<span class="fc" id="L464">                    }</span>
+<span class="fc" id="L465">                    fields.put(&quot;affiliation&quot;, join(affiliationInfos, &quot;, &quot;));</span>
+                }
+<span class="fc" id="L467">            }</span>
+<span class="fc" id="L468">            fields.put(&quot;investigator&quot;, join(investigatorNames, &quot; and &quot;));</span>
+        }
+<span class="fc" id="L470">    }</span>
+
+    private void addKeyWords(Map&lt;String, String&gt; fields, List&lt;KeywordList&gt; allKeywordLists) {
+<span class="fc" id="L473">        List&lt;String&gt; keywordStrings = new ArrayList&lt;&gt;();</span>
+        //add keywords to the list
+<span class="fc bfc" id="L475" title="All 2 branches covered.">        for (KeywordList keywordList : allKeywordLists) {</span>
+<span class="fc bfc" id="L476" title="All 2 branches covered.">            for (Keyword keyword : keywordList.getKeyword()) {</span>
+<span class="fc bfc" id="L477" title="All 2 branches covered.">                for (Serializable content : keyword.getContent()) {</span>
+<span class="pc bpc" id="L478" title="1 of 2 branches missed.">                    if (content instanceof String) {</span>
+<span class="fc" id="L479">                        keywordStrings.add((String) content);</span>
+                    }
+<span class="fc" id="L481">                }</span>
+<span class="fc" id="L482">            }</span>
+<span class="fc" id="L483">        }</span>
+        //Check whether MeshHeadingList exist or not
+<span class="fc bfc" id="L485" title="All 2 branches covered.">        if (fields.get(FieldName.KEYWORDS) == null) {</span>
+<span class="fc" id="L486">            fields.put(FieldName.KEYWORDS, join(keywordStrings, KEYWORD_SEPARATOR));</span>
+        } else {
+<span class="pc bpc" id="L488" title="1 of 2 branches missed.">            if (keywordStrings.size() &gt; 0) {</span>
+                //if it exists, combine the MeshHeading with the keywords
+<span class="fc" id="L490">                String result = join(keywordStrings, &quot;; &quot;);</span>
+<span class="fc" id="L491">                result = fields.get(FieldName.KEYWORDS) + KEYWORD_SEPARATOR + result;</span>
+<span class="fc" id="L492">                fields.put(FieldName.KEYWORDS, result);</span>
+            }
+        }
+<span class="fc" id="L495">    }</span>
+
+    private void addOtherId(Map&lt;String, String&gt; fields, List&lt;OtherID&gt; otherID) {
+<span class="fc bfc" id="L498" title="All 2 branches covered.">        for (OtherID id : otherID) {</span>
+<span class="pc bpc" id="L499" title="2 of 4 branches missed.">            if ((id.getSource() != null) &amp;&amp; (id.getContent() != null)) {</span>
+<span class="fc" id="L500">                fields.put(id.getSource(), id.getContent());</span>
+            }
+<span class="fc" id="L502">        }</span>
+<span class="fc" id="L503">    }</span>
+
+    private void addPersonalNames(Map&lt;String, String&gt; fields, PersonalNameSubjectList personalNameSubjectList) {
+<span class="fc bfc" id="L506" title="All 2 branches covered.">        if (fields.get(FieldName.AUTHOR) == null) {</span>
+            //if no authors appear, then add the personal names as authors
+<span class="fc" id="L508">            List&lt;String&gt; personalNames = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L509" title="1 of 2 branches missed.">            if (personalNameSubjectList.getPersonalNameSubject() != null) {</span>
+<span class="fc" id="L510">                List&lt;PersonalNameSubject&gt; personalNameSubject = personalNameSubjectList.getPersonalNameSubject();</span>
+<span class="fc bfc" id="L511" title="All 2 branches covered.">                for (PersonalNameSubject personalName : personalNameSubject) {</span>
+<span class="fc" id="L512">                    String name = personalName.getLastName();</span>
+<span class="pc bpc" id="L513" title="1 of 2 branches missed.">                    if (personalName.getForeName() != null) {</span>
+<span class="fc" id="L514">                        name += &quot;, &quot; + personalName.getForeName();</span>
+                    }
+<span class="fc" id="L516">                    personalNames.add(name);</span>
+<span class="fc" id="L517">                }</span>
+<span class="fc" id="L518">                fields.put(FieldName.AUTHOR, join(personalNames, &quot; and &quot;));</span>
+            }
+        }
+<span class="fc" id="L521">    }</span>
+
+    private void addMeashHeading(Map&lt;String, String&gt; fields, MeshHeadingList meshHeadingList) {
+<span class="fc" id="L524">        ArrayList&lt;String&gt; keywords = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L525" title="All 2 branches covered.">        for (MeshHeading keyword : meshHeadingList.getMeshHeading()) {</span>
+<span class="fc" id="L526">            String result = keyword.getDescriptorName().getContent();</span>
+<span class="pc bpc" id="L527" title="1 of 2 branches missed.">            if (keyword.getQualifierName() != null) {</span>
+<span class="fc bfc" id="L528" title="All 2 branches covered.">                for (QualifierName qualifier : keyword.getQualifierName()) {</span>
+<span class="fc" id="L529">                    result += &quot;, &quot; + qualifier.getContent();</span>
+<span class="fc" id="L530">                }</span>
+            }
+<span class="fc" id="L532">            keywords.add(result);</span>
+<span class="fc" id="L533">        }</span>
+<span class="fc" id="L534">        fields.put(FieldName.KEYWORDS, join(keywords, KEYWORD_SEPARATOR));</span>
+<span class="fc" id="L535">    }</span>
+
+    private void addGeneSymbols(Map&lt;String, String&gt; fields, GeneSymbolList geneSymbolList) {
+<span class="fc" id="L538">        List&lt;String&gt; geneSymbols = geneSymbolList.getGeneSymbol();</span>
+<span class="fc" id="L539">        fields.put(&quot;gene-symbols&quot;, join(geneSymbols, &quot;, &quot;));</span>
+<span class="fc" id="L540">    }</span>
+
+    private void addChemicals(Map&lt;String, String&gt; fields, List&lt;Chemical&gt; chemicals) {
+<span class="fc" id="L543">        List&lt;String&gt; chemicalNames = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L544" title="All 2 branches covered.">        for (Chemical chemical : chemicals) {</span>
+<span class="pc bpc" id="L545" title="1 of 2 branches missed.">            if (chemical != null) {</span>
+<span class="fc" id="L546">                chemicalNames.add(chemical.getNameOfSubstance().getContent());</span>
+            }
+<span class="fc" id="L548">        }</span>
+<span class="fc" id="L549">        fields.put(&quot;chemicals&quot;, join(chemicalNames, &quot;, &quot;));</span>
+<span class="fc" id="L550">    }</span>
+
+    private void addArticleInformation(Map&lt;String, String&gt; fields, List&lt;Object&gt; content) {
+<span class="fc bfc" id="L553" title="All 2 branches covered.">        for (Object object : content) {</span>
+<span class="fc bfc" id="L554" title="All 2 branches covered.">            if (object instanceof Journal) {</span>
+<span class="fc" id="L555">                Journal journal = (Journal) object;</span>
+<span class="fc" id="L556">                putIfValueNotNull(fields, FieldName.JOURNAL, journal.getTitle());</span>
+
+<span class="fc" id="L558">                ISSN issn = journal.getISSN();</span>
+<span class="fc bfc" id="L559" title="All 2 branches covered.">                if (issn != null) {</span>
+<span class="fc" id="L560">                    putIfValueNotNull(fields, FieldName.ISSN, issn.getContent());</span>
+                }
+
+<span class="fc" id="L563">                JournalIssue journalIssue = journal.getJournalIssue();</span>
+<span class="fc" id="L564">                putIfValueNotNull(fields, FieldName.VOLUME, journalIssue.getVolume());</span>
+<span class="fc" id="L565">                putIfValueNotNull(fields, FieldName.ISSUE, journalIssue.getIssue());</span>
+
+<span class="fc" id="L567">                addPubDate(fields, journalIssue.getPubDate());</span>
+<span class="fc bfc" id="L568" title="All 2 branches covered.">            } else if (object instanceof ArticleTitle) {</span>
+<span class="fc" id="L569">                ArticleTitle articleTitle = (ArticleTitle) object;</span>
+<span class="fc" id="L570">                fields.put(FieldName.TITLE, StringUtil.stripBrackets(articleTitle.getContent().toString()));</span>
+<span class="fc bfc" id="L571" title="All 2 branches covered.">            } else if (object instanceof Pagination) {</span>
+<span class="fc" id="L572">                Pagination pagination = (Pagination) object;</span>
+<span class="fc" id="L573">                addPagination(fields, pagination);</span>
+<span class="fc bfc" id="L574" title="All 2 branches covered.">            } else if (object instanceof ELocationID) {</span>
+<span class="fc" id="L575">                ELocationID eLocationID = (ELocationID) object;</span>
+<span class="fc" id="L576">                addElocationID(fields, eLocationID);</span>
+<span class="fc bfc" id="L577" title="All 2 branches covered.">            } else if (object instanceof Abstract) {</span>
+<span class="fc" id="L578">                Abstract abs = (Abstract) object;</span>
+<span class="fc" id="L579">                addAbstract(fields, abs);</span>
+<span class="fc bfc" id="L580" title="All 2 branches covered.">            } else if (object instanceof AuthorList) {</span>
+<span class="fc" id="L581">                AuthorList authors = (AuthorList) object;</span>
+<span class="fc" id="L582">                handleAuthors(fields, authors);</span>
+            }
+<span class="fc" id="L584">        }</span>
+<span class="fc" id="L585">    }</span>
+
+    private void addElocationID(Map&lt;String, String&gt; fields, ELocationID eLocationID) {
+<span class="fc bfc" id="L588" title="All 2 branches covered.">        if (FieldName.DOI.equals(eLocationID.getEIdType())) {</span>
+<span class="fc" id="L589">            fields.put(FieldName.DOI, eLocationID.getContent());</span>
+        }
+<span class="fc bfc" id="L591" title="All 2 branches covered.">        if (&quot;pii&quot;.equals(eLocationID.getEIdType())) {</span>
+<span class="fc" id="L592">            fields.put(&quot;pii&quot;, eLocationID.getContent());</span>
+        }
+<span class="fc" id="L594">    }</span>
+
+    private void addPubDate(Map&lt;String, String&gt; fields, PubDate pubDate) {
+<span class="fc bfc" id="L597" title="All 2 branches covered.">        if (pubDate.getYear() == null) {</span>
+            //if year of the pubdate is null, the medlineDate shouldn't be null
+<span class="fc" id="L599">            fields.put(FieldName.YEAR, extractYear(pubDate.getMedlineDate()));</span>
+        } else {
+<span class="fc" id="L601">            fields.put(FieldName.YEAR, pubDate.getYear());</span>
+<span class="fc bfc" id="L602" title="All 2 branches covered.">            if (pubDate.getMonth() != null) {</span>
+<span class="fc" id="L603">                fields.put(FieldName.MONTH, pubDate.getMonth());</span>
+<span class="pc bpc" id="L604" title="1 of 2 branches missed.">            } else if (pubDate.getSeason() != null) {</span>
+<span class="fc" id="L605">                fields.put(&quot;season&quot;, pubDate.getSeason());</span>
+            }
+        }
+<span class="fc" id="L608">    }</span>
+
+    private void addAbstract(Map&lt;String, String&gt; fields, Abstract abs) {
+<span class="fc" id="L611">        putIfValueNotNull(fields, &quot;copyright&quot;, abs.getCopyrightInformation());</span>
+<span class="fc" id="L612">        List&lt;String&gt; abstractText = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L613" title="All 2 branches covered.">        for (AbstractText text : abs.getAbstractText()) {</span>
+<span class="fc bfc" id="L614" title="All 2 branches covered.">            for (Serializable textContent : text.getContent()) {</span>
+<span class="pc bpc" id="L615" title="1 of 2 branches missed.">                if (textContent instanceof String) {</span>
+<span class="fc" id="L616">                    abstractText.add((String) textContent);</span>
+                }
+<span class="fc" id="L618">            }</span>
+<span class="fc" id="L619">        }</span>
+<span class="fc" id="L620">        fields.put(FieldName.ABSTRACT, join(abstractText, &quot; &quot;));</span>
+<span class="fc" id="L621">    }</span>
+
+    private void addPagination(Map&lt;String, String&gt; fields, Pagination pagination) {
+<span class="fc" id="L624">        String startPage = &quot;&quot;;</span>
+<span class="fc" id="L625">        String endPage = &quot;&quot;;</span>
+<span class="fc bfc" id="L626" title="All 2 branches covered.">        for (JAXBElement&lt;String&gt; element : pagination.getContent()) {</span>
+<span class="fc bfc" id="L627" title="All 2 branches covered.">            if (&quot;MedlinePgn&quot;.equals(element.getName().getLocalPart())) {</span>
+<span class="fc" id="L628">                putIfValueNotNull(fields, FieldName.PAGES, fixPageRange(element.getValue()));</span>
+<span class="fc bfc" id="L629" title="All 2 branches covered.">            } else if (&quot;StartPage&quot;.equals(element.getName().getLocalPart())) {</span>
+                //it could happen, that the article has only a start page
+<span class="fc" id="L631">                startPage = element.getValue() + endPage;</span>
+<span class="fc" id="L632">                putIfValueNotNull(fields, FieldName.PAGES, startPage);</span>
+<span class="pc bpc" id="L633" title="1 of 2 branches missed.">            } else if (&quot;EndPage&quot;.equals(element.getName().getLocalPart())) {</span>
+<span class="fc" id="L634">                endPage = element.getValue();</span>
+                //but it should not happen, that a endpage appears without startpage
+<span class="fc" id="L636">                fields.put(FieldName.PAGES, fixPageRange(startPage + &quot;-&quot; + endPage));</span>
+            }
+<span class="fc" id="L638">        }</span>
+<span class="fc" id="L639">    }</span>
+
+    private String extractYear(String medlineDate) {
+        //The year of the medlineDate should be the first 4 digits
+<span class="fc" id="L643">        return medlineDate.substring(0, 4);</span>
+    }
+
+    private void handleAuthors(Map&lt;String, String&gt; fields, AuthorList authors) {
+<span class="fc" id="L647">        List&lt;String&gt; authorNames = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L648" title="All 2 branches covered.">        for (Author author : authors.getAuthor()) {</span>
+<span class="fc bfc" id="L649" title="All 2 branches covered.">            if (author.getCollectiveName() != null) {</span>
+<span class="fc" id="L650">                Text collectiveNames = author.getCollectiveName();</span>
+<span class="fc bfc" id="L651" title="All 2 branches covered.">                for (Serializable content : collectiveNames.getContent()) {</span>
+<span class="pc bpc" id="L652" title="1 of 2 branches missed.">                    if (content instanceof String) {</span>
+<span class="fc" id="L653">                        authorNames.add((String) content);</span>
+                    }
+<span class="fc" id="L655">                }</span>
+<span class="fc" id="L656">            } else {</span>
+<span class="fc" id="L657">                String authorName = author.getLastName();</span>
+<span class="pc bpc" id="L658" title="1 of 2 branches missed.">                if (author.getForeName() != null) {</span>
+<span class="fc" id="L659">                    authorName += &quot;, &quot; + author.getForeName();</span>
+                }
+<span class="fc" id="L661">                authorNames.add(authorName);</span>
+            }
+<span class="fc" id="L663">        }</span>
+<span class="fc" id="L664">        fields.put(FieldName.AUTHOR, join(authorNames, &quot; and &quot;));</span>
+<span class="fc" id="L665">    }</span>
+
+    private void addDateRevised(Map&lt;String, String&gt; fields, DateRevised dateRevised) {
+<span class="pc bpc" id="L668" title="3 of 6 branches missed.">        if ((dateRevised.getDay() != null) &amp;&amp; (dateRevised.getMonth() != null) &amp;&amp; (dateRevised.getYear() != null)) {</span>
+<span class="fc" id="L669">            fields.put(&quot;revised&quot;,</span>
+<span class="fc" id="L670">                    convertToDateFormat(dateRevised.getYear(), dateRevised.getMonth(), dateRevised.getDay()));</span>
+        }
+<span class="fc" id="L672">    }</span>
+
+    private void putIfValueNotNull(Map&lt;String, String&gt; fields, String medlineKey, String value) {
+<span class="fc bfc" id="L675" title="All 2 branches covered.">        if (value != null) {</span>
+<span class="fc" id="L676">            fields.put(medlineKey, value);</span>
+        }
+<span class="fc" id="L678">    }</span>
+
+    /**
+     * Convert medline page ranges from short form to full form.
+     * Medline reports page ranges in a shorthand format.
+     * The last page is reported using only the digits which
+     * differ from the first page.
+     * i.e. 12345-51 refers to the actual range 12345-12351
+     */
+    private String fixPageRange(String pageRange) {
+<span class="fc" id="L688">        int minusPos = pageRange.indexOf('-');</span>
+<span class="fc bfc" id="L689" title="All 2 branches covered.">        if (minusPos &lt; 0) {</span>
+<span class="fc" id="L690">            return pageRange;</span>
+        }
+<span class="fc" id="L692">        String startPage = pageRange.substring(0, minusPos).trim();</span>
+<span class="fc" id="L693">        String endPage = pageRange.substring(minusPos + 1).trim();</span>
+<span class="fc" id="L694">        int lengthOfEndPage = endPage.length();</span>
+<span class="fc" id="L695">        int lengthOfStartPage = startPage.length();</span>
+<span class="fc bfc" id="L696" title="All 2 branches covered.">        if (lengthOfEndPage &lt; lengthOfStartPage) {</span>
+<span class="fc" id="L697">            endPage = startPage.substring(0, lengthOfStartPage - lengthOfEndPage) + endPage;</span>
+        }
+<span class="fc" id="L699">        return startPage + &quot;--&quot; + endPage;</span>
+    }
+
+    @Override
+    public List&lt;BibEntry&gt; parseEntries(InputStream inputStream) throws ParseException {
+        try {
+<span class="nc" id="L705">            return importDatabase(</span>
+<span class="nc" id="L706">                    new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))).getDatabase().getEntries();</span>
+
+<span class="nc" id="L708">        } catch (IOException e) {</span>
+<span class="nc" id="L709">            LOGGER.error(e.getLocalizedMessage(), e);</span>
+        }
+<span class="nc" id="L711">        return Collections.emptyList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

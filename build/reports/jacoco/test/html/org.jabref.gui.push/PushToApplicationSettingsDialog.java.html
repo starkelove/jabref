@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PushToApplicationSettingsDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.push</a> &gt; <span class="el_source">PushToApplicationSettingsDialog.java</span></div><h1>PushToApplicationSettingsDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.push;
+
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.BorderFactory;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
+import org.jabref.Globals;
+import org.jabref.gui.keyboard.KeyBinding;
+import org.jabref.logic.l10n.Localization;
+
+import com.jgoodies.forms.builder.ButtonBarBuilder;
+
+<span class="nc" id="L22">public class PushToApplicationSettingsDialog {</span>
+    public static void showSettingsDialog(JFrame parent, PushToApplicationSettings toApp, int n) {
+<span class="nc" id="L24">        final JDialog diag = new JDialog(parent, Localization.lang(&quot;Settings&quot;), true);</span>
+<span class="nc" id="L25">        JPanel options = toApp.getSettingsPanel(n);</span>
+<span class="nc" id="L26">        options.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));</span>
+<span class="nc" id="L27">        diag.getContentPane().add(options, BorderLayout.CENTER);</span>
+<span class="nc" id="L28">        ButtonBarBuilder bb = new ButtonBarBuilder();</span>
+<span class="nc" id="L29">        JButton ok = new JButton(Localization.lang(&quot;OK&quot;));</span>
+<span class="nc" id="L30">        JButton cancel = new JButton(Localization.lang(&quot;Cancel&quot;));</span>
+<span class="nc" id="L31">        bb.addGlue();</span>
+<span class="nc" id="L32">        bb.addButton(ok);</span>
+<span class="nc" id="L33">        bb.addButton(cancel);</span>
+<span class="nc" id="L34">        bb.addGlue();</span>
+<span class="nc" id="L35">        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));</span>
+<span class="nc" id="L36">        diag.getContentPane().add(bb.getPanel(), BorderLayout.SOUTH);</span>
+<span class="nc" id="L37">        ok.addActionListener(e -&gt; {</span>
+            // If the user pressed Ok, ask the PushToApplication implementation to store its settings:
+<span class="nc" id="L39">            toApp.storeSettings();</span>
+<span class="nc" id="L40">            diag.dispose();</span>
+<span class="nc" id="L41">        });</span>
+<span class="nc" id="L42">        cancel.addActionListener(e -&gt; diag.dispose());</span>
+
+        // Key bindings:
+<span class="nc" id="L45">        ActionMap am = bb.getPanel().getActionMap();</span>
+<span class="nc" id="L46">        InputMap im = bb.getPanel().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);</span>
+<span class="nc" id="L47">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.CLOSE), &quot;close&quot;);</span>
+<span class="nc" id="L48">        am.put(&quot;close&quot;, new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L52">                diag.dispose();</span>
+<span class="nc" id="L53">            }</span>
+        });
+<span class="nc" id="L55">        diag.pack();</span>
+<span class="nc" id="L56">        diag.setLocationRelativeTo(parent);</span>
+
+        // Show the dialog:
+<span class="nc" id="L59">        diag.setVisible(true);</span>
+<span class="nc" id="L60">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

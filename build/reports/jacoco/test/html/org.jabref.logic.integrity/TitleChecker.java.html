@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TitleChecker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.integrity</a> &gt; <span class="el_source">TitleChecker.java</span></div><h1>TitleChecker.java</h1><pre class="source lang-java linenums">package org.jabref.logic.integrity;
+
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.strings.StringUtil;
+
+public class TitleChecker implements ValueChecker {
+
+<span class="fc" id="L14">    private static final Pattern INSIDE_CURLY_BRAKETS = Pattern.compile(&quot;\\{[^}\\{]*\\}&quot;);</span>
+<span class="fc" id="L15">    private static final Predicate&lt;String&gt; HAS_CAPITAL_LETTERS = Pattern.compile(&quot;[\\p{Lu}\\p{Lt}]&quot;).asPredicate();</span>
+
+    private final BibDatabaseContext databaseContext;
+
+<span class="fc" id="L19">    public TitleChecker(BibDatabaseContext databaseContext) {</span>
+<span class="fc" id="L20">        this.databaseContext = databaseContext;</span>
+<span class="fc" id="L21">    }</span>
+
+    /**
+     * Algorithm:
+     * - remove trailing whitespaces
+     * - ignore first letter as this can always be written in caps
+     * - remove everything that is in brackets
+     * - check if at least one capital letter is in the title
+     */
+    @Override
+    public Optional&lt;String&gt; checkValue(String value) {
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        if (StringUtil.isBlank(value)) {</span>
+<span class="nc" id="L33">            return Optional.empty();</span>
+        }
+
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (databaseContext.isBiblatexMode()) {</span>
+<span class="fc" id="L37">            return Optional.empty();</span>
+        }
+
+<span class="fc" id="L40">        String valueTrimmed = value.trim();</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        String valueIgnoringFirstLetter = valueTrimmed.startsWith(&quot;{&quot;) ? valueTrimmed : valueTrimmed.substring(1);</span>
+<span class="fc" id="L42">        String valueOnlySpacesWithinCurlyBraces = valueIgnoringFirstLetter;</span>
+        while (true) {
+<span class="fc" id="L44">            Matcher matcher = INSIDE_CURLY_BRAKETS.matcher(valueOnlySpacesWithinCurlyBraces);</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">            if (!matcher.find()) {</span>
+<span class="fc" id="L46">                break;</span>
+            }
+<span class="fc" id="L48">            valueOnlySpacesWithinCurlyBraces = matcher.replaceAll(&quot;&quot;);</span>
+<span class="fc" id="L49">        }</span>
+
+<span class="fc" id="L51">        boolean hasCapitalLettersThatBibtexWillConvertToSmallerOnes = HAS_CAPITAL_LETTERS</span>
+<span class="fc" id="L52">                .test(valueOnlySpacesWithinCurlyBraces);</span>
+
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (hasCapitalLettersThatBibtexWillConvertToSmallerOnes) {</span>
+<span class="fc" id="L55">            return Optional.of(Localization.lang(&quot;capital letters are not masked using curly brackets {}&quot;));</span>
+        }
+
+<span class="fc" id="L58">        return Optional.empty();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

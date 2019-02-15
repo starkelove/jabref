@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.remote.RemoteCommunicationTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:12" hostname="n184-p67.eduroam.kth.se" time="0.034">
+  <properties/>
+  <testcase name="pingReturnsTrue()" classname="org.jabref.logic.remote.RemoteCommunicationTest" time="0.023"/>
+  <testcase name="commandLineArgumentTwoPassedToServer()" classname="org.jabref.logic.remote.RemoteCommunicationTest" time="0.005"/>
+  <testcase name="commandLineArgumentMultiLinePassedToServer()" classname="org.jabref.logic.remote.RemoteCommunicationTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

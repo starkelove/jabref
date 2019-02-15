@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibDatabaseMode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.database</a> &gt; <span class="el_source">BibDatabaseMode.java</span></div><h1>BibDatabaseMode.java</h1><pre class="source lang-java linenums">package org.jabref.model.database;
+
+import java.util.Locale;
+
+/**
+ * An enum which contains the possible {@link BibDatabase} Modes.
+ * Possible are BibTeX and biblatex.
+ */
+<span class="fc" id="L9">public enum BibDatabaseMode {</span>
+<span class="fc" id="L10">    BIBTEX,</span>
+<span class="fc" id="L11">    BIBLATEX;</span>
+
+    /**
+     * @return the name of the current mode as String
+     */
+    public String getFormattedName() {
+<span class="fc bfc" id="L17" title="All 2 branches covered.">        if (this == BIBTEX) {</span>
+<span class="fc" id="L18">            return &quot;BibTeX&quot;;</span>
+        } else {
+<span class="fc" id="L20">            return &quot;biblatex&quot;;</span>
+        }
+    }
+
+    /**
+     * Returns the opposite mode of the current mode as {@link BibDatabaseMode}.
+     *
+     * @return biblatex if the current mode is BIBTEX, BibTeX else
+     */
+    public BibDatabaseMode getOppositeMode() {
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (this == BIBTEX) {</span>
+<span class="nc" id="L31">            return BIBLATEX;</span>
+        } else {
+<span class="nc" id="L33">            return BIBTEX;</span>
+        }
+    }
+
+    /**
+     * Returns the {@link BibDatabaseMode} that equals the given string. The use of capital and small letters
+     * in the string doesn't matter.If neither &quot;bibtex&quot; nor &quot;biblatex&quot; is the given string, then an
+     * {@link IllegalArgumentException} will be thrown.
+     *
+     * @return  BIBTEX, if the string is bibtex&lt;br&gt;
+     *          BIBLATEX, if the string is biblatex&lt;br&gt;
+     */
+    public static BibDatabaseMode parse(String data) {
+<span class="fc" id="L46">        return BibDatabaseMode.valueOf(data.toUpperCase(Locale.ENGLISH));</span>
+    }
+
+    /**
+     * @return The current mode as String in lowercase
+     */
+    public String getAsString() {
+<span class="fc" id="L53">        return getFormattedName().toLowerCase(Locale.ENGLISH);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

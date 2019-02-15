@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Actions.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.actions</a> &gt; <span class="el_source">Actions.java</span></div><h1>Actions.java</h1><pre class="source lang-java linenums">package org.jabref.gui.actions;
+
+/**
+ * Global String constants for GUI actions
+ */
+<span class="fc" id="L6">public enum Actions {</span>
+
+<span class="fc" id="L8">    ABBREVIATE_ISO,</span>
+<span class="fc" id="L9">    ABBREVIATE_MEDLINE,</span>
+<span class="fc" id="L10">    ADD_FILE_LINK,</span>
+<span class="fc" id="L11">    ADD_TO_GROUP,</span>
+<span class="fc" id="L12">    CLEANUP,</span>
+<span class="fc" id="L13">    COPY,</span>
+<span class="fc" id="L14">    COPY_CITATION_ASCII_DOC,</span>
+<span class="fc" id="L15">    COPY_CITATION_XSLFO,</span>
+<span class="fc" id="L16">    COPY_CITATION_HTML,</span>
+<span class="fc" id="L17">    COPY_CITATION_RTF,</span>
+<span class="fc" id="L18">    COPY_CITATION_TEXT,</span>
+<span class="fc" id="L19">    COPY_KEY,</span>
+<span class="fc" id="L20">    COPY_CITE_KEY,</span>
+<span class="fc" id="L21">    COPY_KEY_AND_TITLE,</span>
+<span class="fc" id="L22">    COPY_KEY_AND_LINK,</span>
+<span class="fc" id="L23">    COPY_TITLE,</span>
+<span class="fc" id="L24">    CUT,</span>
+<span class="fc" id="L25">    DELETE,</span>
+<span class="fc" id="L26">    DOWNLOAD_FULL_TEXT,</span>
+<span class="fc" id="L27">    EDIT,</span>
+<span class="fc" id="L28">    EDIT_PREAMBLE,</span>
+<span class="fc" id="L29">    EDIT_STRINGS,</span>
+<span class="fc" id="L30">    EXPORT_TO_CLIPBOARD,</span>
+<span class="fc" id="L31">    MAKE_KEY,</span>
+<span class="fc" id="L32">    MANAGE_SELECTORS,</span>
+<span class="fc" id="L33">    MERGE_DATABASE,</span>
+<span class="fc" id="L34">    MERGE_ENTRIES,</span>
+<span class="fc" id="L35">    MERGE_WITH_FETCHED_ENTRY,</span>
+<span class="fc" id="L36">    NEXT_PREVIEW_STYLE,</span>
+<span class="fc" id="L37">    MOVE_TO_GROUP,</span>
+<span class="fc" id="L38">    OPEN_CONSOLE,</span>
+<span class="fc" id="L39">    OPEN_EXTERNAL_FILE,</span>
+<span class="fc" id="L40">    OPEN_FOLDER,</span>
+<span class="fc" id="L41">    OPEN_URL,</span>
+<span class="fc" id="L42">    PASTE,</span>
+<span class="fc" id="L43">    PREVIOUS_PREVIEW_STYLE,</span>
+<span class="fc" id="L44">    PULL_CHANGES_FROM_SHARED_DATABASE,</span>
+<span class="fc" id="L45">    REDO,</span>
+<span class="fc" id="L46">    REMOVE_FROM_GROUP,</span>
+<span class="fc" id="L47">    REPLACE_ALL,</span>
+<span class="fc" id="L48">    RESOLVE_DUPLICATE_KEYS,</span>
+<span class="fc" id="L49">    SAVE,</span>
+<span class="fc" id="L50">    SAVE_AS,</span>
+<span class="fc" id="L51">    SAVE_SELECTED_AS_PLAIN,</span>
+<span class="fc" id="L52">    SELECT_ALL,</span>
+<span class="fc" id="L53">    SEND_AS_EMAIL,</span>
+<span class="fc" id="L54">    TOGGLE_GROUPS,</span>
+<span class="fc" id="L55">    TOGGLE_PREVIEW,</span>
+<span class="fc" id="L56">    UNABBREVIATE,</span>
+<span class="fc" id="L57">    UNDO,</span>
+<span class="fc" id="L58">    WRITE_XMP,</span>
+<span class="fc" id="L59">    PRINT_PREVIEW,</span>
+<span class="fc" id="L60">    TOGGLE_PRINTED,</span>
+<span class="fc" id="L61">    CLEAR_PRIORITY,</span>
+<span class="fc" id="L62">    SET_PRIORITY_1,</span>
+<span class="fc" id="L63">    SET_PRIORITY_2,</span>
+<span class="fc" id="L64">    SET_PRIORITY_3,</span>
+<span class="fc" id="L65">    TOGGLE_QUALITY_ASSURED,</span>
+<span class="fc" id="L66">    CLEAR_RANK,</span>
+<span class="fc" id="L67">    SET_RANK_1,</span>
+<span class="fc" id="L68">    SET_RANK_2,</span>
+<span class="fc" id="L69">    SET_RANK_3,</span>
+<span class="fc" id="L70">    SET_RANK_4,</span>
+<span class="fc" id="L71">    SET_RANK_5,</span>
+<span class="fc" id="L72">    CLEAR_READ_STATUS,</span>
+<span class="fc" id="L73">    SET_READ_STATUS_TO_READ,</span>
+<span class="fc" id="L74">    SET_READ_STATUS_TO_SKIMMED,</span>
+<span class="fc" id="L75">    TOGGLE_RELEVANCE</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

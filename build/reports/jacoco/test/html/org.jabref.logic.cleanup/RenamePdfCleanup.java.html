@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RenamePdfCleanup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.cleanup</a> &gt; <span class="el_source">RenamePdfCleanup.java</span></div><h1>RenamePdfCleanup.java</h1><pre class="source lang-java linenums">package org.jabref.logic.cleanup;
+
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.logic.externalfiles.LinkedFileHandler;
+import org.jabref.model.FieldChange;
+import org.jabref.model.cleanup.CleanupJob;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.LinkedFile;
+import org.jabref.model.metadata.FilePreferences;
+import org.jabref.model.util.OptionalUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class RenamePdfCleanup implements CleanupJob {
+<span class="fc" id="L23">    private static final Logger LOGGER = LoggerFactory.getLogger(RenamePdfCleanup.class);</span>
+
+    private final BibDatabaseContext databaseContext;
+    private final boolean onlyRelativePaths;
+    private final FilePreferences filePreferences;
+
+<span class="fc" id="L29">    public RenamePdfCleanup(boolean onlyRelativePaths, BibDatabaseContext databaseContext, FilePreferences filePreferences) {</span>
+<span class="fc" id="L30">        this.databaseContext = Objects.requireNonNull(databaseContext);</span>
+<span class="fc" id="L31">        this.onlyRelativePaths = onlyRelativePaths;</span>
+<span class="fc" id="L32">        this.filePreferences = filePreferences;</span>
+<span class="fc" id="L33">    }</span>
+
+    @Override
+    public List&lt;FieldChange&gt; cleanup(BibEntry entry) {
+<span class="fc" id="L37">        List&lt;LinkedFile&gt; files = entry.getFiles();</span>
+
+<span class="fc" id="L39">        boolean changed = false;</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        for (LinkedFile file : files) {</span>
+<span class="pc bpc" id="L41" title="3 of 4 branches missed.">            if (onlyRelativePaths &amp;&amp; Paths.get(file.getLink()).isAbsolute()) {</span>
+<span class="nc" id="L42">                continue;</span>
+            }
+
+<span class="fc" id="L45">            LinkedFileHandler fileHandler = new LinkedFileHandler(file, entry, databaseContext, filePreferences);</span>
+            try {
+<span class="fc" id="L47">                boolean changedFile = fileHandler.renameToSuggestedName();</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">                if (changedFile) {</span>
+<span class="fc" id="L49">                    changed = true;</span>
+                }
+<span class="nc" id="L51">            } catch (IOException exception) {</span>
+<span class="nc" id="L52">                LOGGER.error(&quot;Error while renaming file {}&quot;, file.getLink(), exception);</span>
+<span class="fc" id="L53">            }</span>
+<span class="fc" id="L54">        }</span>
+
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        if (changed) {</span>
+<span class="fc" id="L57">            Optional&lt;FieldChange&gt; changes = entry.setFiles(files);</span>
+<span class="fc" id="L58">            return OptionalUtil.toList(changes);</span>
+        }
+
+<span class="nc" id="L61">        return Collections.emptyList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

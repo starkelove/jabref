@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ManageKeywordsAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.actions</a> &gt; <span class="el_source">ManageKeywordsAction.java</span></div><h1>ManageKeywordsAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.actions;
+
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
+import javax.swing.DefaultListModel;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JList;
+import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.keyboard.KeyBinding;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableFieldChange;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.specialfields.SpecialFieldsUtils;
+import org.jabref.model.FieldChange;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.Keyword;
+import org.jabref.model.entry.KeywordList;
+import org.jabref.model.strings.StringUtil;
+
+import com.jgoodies.forms.builder.ButtonBarBuilder;
+import com.jgoodies.forms.builder.FormBuilder;
+import com.jgoodies.forms.layout.FormLayout;
+
+/**
+ * An Action for launching keyword managing dialog
+ *
+ */
+<span class="nc bnc" id="L52" title="All 2 branches missed.">public class ManageKeywordsAction extends SimpleCommand {</span>
+
+    private final JabRefFrame frame;
+<span class="nc" id="L55">    private final KeywordList sortedKeywordsOfAllEntriesBeforeUpdateByUser = new KeywordList();</span>
+    private JDialog diag;
+    private DefaultListModel&lt;Keyword&gt; keywordListModel;
+    private JRadioButton intersectKeywords;
+    private JRadioButton mergeKeywords;
+    private boolean canceled;
+
+
+<span class="nc" id="L63">    public ManageKeywordsAction(JabRefFrame frame) {</span>
+<span class="nc" id="L64">        this.frame = frame;</span>
+<span class="nc" id="L65">    }</span>
+
+    private void createDialog() {
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (diag != null) {</span>
+<span class="nc" id="L69">            return;</span>
+        }
+        // keyword to add
+<span class="nc" id="L72">        JTextField keyword = new JTextField();</span>
+
+<span class="nc" id="L74">        keywordListModel = new DefaultListModel&lt;&gt;();</span>
+<span class="nc" id="L75">        JList&lt;Keyword&gt; keywordList = new JList&lt;&gt;(keywordListModel);</span>
+<span class="nc" id="L76">        keywordList.setVisibleRowCount(8);</span>
+<span class="nc" id="L77">        JScrollPane kPane = new JScrollPane(keywordList);</span>
+
+<span class="nc" id="L79">        diag = new JDialog((JFrame) null, Localization.lang(&quot;Manage keywords&quot;), true);</span>
+
+<span class="nc" id="L81">        JButton ok = new JButton(Localization.lang(&quot;OK&quot;));</span>
+<span class="nc" id="L82">        JButton cancel = new JButton(Localization.lang(&quot;Cancel&quot;));</span>
+<span class="nc" id="L83">        JButton add = new JButton(Localization.lang(&quot;Add&quot;));</span>
+<span class="nc" id="L84">        JButton remove = new JButton(Localization.lang(&quot;Remove&quot;));</span>
+<span class="nc" id="L85">        JButton replace = new JButton(Localization.lang(&quot;Replace&quot;));</span>
+<span class="nc" id="L86">        JButton join = new JButton(Localization.lang(&quot;Join&quot;));</span>
+
+<span class="nc" id="L88">        join.setToolTipText(Localization.lang(&quot;Joins selected keywords and deletes selected keywords.&quot;));</span>
+
+<span class="nc" id="L90">        keywordList.setVisibleRowCount(10);</span>
+
+<span class="nc" id="L92">        intersectKeywords = new JRadioButton(Localization.lang(&quot;Display keywords appearing in ALL entries&quot;));</span>
+<span class="nc" id="L93">        mergeKeywords = new JRadioButton(Localization.lang(&quot;Display keywords appearing in ANY entry&quot;));</span>
+<span class="nc" id="L94">        ButtonGroup group = new ButtonGroup();</span>
+<span class="nc" id="L95">        group.add(intersectKeywords);</span>
+<span class="nc" id="L96">        group.add(mergeKeywords);</span>
+<span class="nc" id="L97">        ActionListener stateChanged = e -&gt; fillKeyWordList();</span>
+<span class="nc" id="L98">        intersectKeywords.addActionListener(stateChanged);</span>
+<span class="nc" id="L99">        mergeKeywords.addActionListener(stateChanged);</span>
+<span class="nc" id="L100">        intersectKeywords.setSelected(true);</span>
+
+<span class="nc" id="L102">        FormBuilder builder = FormBuilder.create().layout(new FormLayout(&quot;fill:200dlu:grow, pref, fill:pref&quot;,</span>
+                &quot;pref, 2dlu, pref, 1dlu, pref, 2dlu, fill:100dlu:grow, 4dlu, pref, 4dlu, pref, &quot;));
+
+<span class="nc" id="L105">        builder.addSeparator(Localization.lang(&quot;Keywords of selected entries&quot;)).xyw(1, 1, 3);</span>
+<span class="nc" id="L106">        builder.add(intersectKeywords).xyw(1, 3, 3);</span>
+<span class="nc" id="L107">        builder.add(mergeKeywords).xyw(1, 5, 3);</span>
+<span class="nc" id="L108">        builder.add(kPane).xywh(1, 7, 1, 3);</span>
+<span class="nc" id="L109">        builder.add(join).xy(2,9);</span>
+<span class="nc" id="L110">        builder.add(replace).xy(3, 9);</span>
+<span class="nc" id="L111">        builder.add(keyword).xy(1, 11);</span>
+<span class="nc" id="L112">        builder.add(add).xy(2, 11);</span>
+<span class="nc" id="L113">        builder.add(remove).xy(3, 11);</span>
+
+<span class="nc" id="L115">        ButtonBarBuilder bb = new ButtonBarBuilder();</span>
+<span class="nc" id="L116">        bb.addGlue();</span>
+<span class="nc" id="L117">        bb.addButton(ok);</span>
+<span class="nc" id="L118">        bb.addButton(cancel);</span>
+<span class="nc" id="L119">        bb.addGlue();</span>
+<span class="nc" id="L120">        builder.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));</span>
+<span class="nc" id="L121">        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));</span>
+
+<span class="nc" id="L123">        ok.addActionListener(e -&gt; {</span>
+<span class="nc" id="L124">            canceled = false;</span>
+<span class="nc" id="L125">            diag.dispose();</span>
+<span class="nc" id="L126">        });</span>
+
+<span class="nc" id="L128">        Action cancelAction = new AbstractAction() {</span>
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L131">                canceled = true;</span>
+<span class="nc" id="L132">                diag.dispose();</span>
+<span class="nc" id="L133">            }</span>
+        };
+<span class="nc" id="L135">        cancel.addActionListener(cancelAction);</span>
+
+<span class="nc" id="L137">        final ActionListener addActionListener = arg0 -&gt; addButtonActionListener(keyword);</span>
+
+<span class="nc" id="L139">        add.addActionListener(addActionListener);</span>
+
+<span class="nc" id="L141">        final ActionListener removeActionListener = arg0 -&gt; {</span>
+            // keywordList.getSelectedIndices(); does not work, therefore we operate on the values
+<span class="nc" id="L143">            List&lt;Keyword&gt; values = keywordList.getSelectedValuesList();</span>
+
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            for (Keyword val : values) {</span>
+<span class="nc" id="L146">                keywordListModel.removeElement(val);</span>
+<span class="nc" id="L147">            }</span>
+<span class="nc" id="L148">        };</span>
+
+<span class="nc" id="L150">        remove.addActionListener(removeActionListener);</span>
+
+<span class="nc" id="L152">        final ActionListener joinActionListener = arg0 -&gt; {</span>
+<span class="nc" id="L153">            List&lt;Keyword&gt; values = keywordList.getSelectedValuesList();</span>
+<span class="nc" id="L154">            String joinedKeyword = values.stream().map(currentKeyword -&gt; currentKeyword.get()).collect(Collectors.joining(&quot; &quot;));</span>
+<span class="nc" id="L155">            this.addKeywordToKeywordListModel(joinedKeyword);</span>
+
+<span class="nc bnc" id="L157" title="All 2 branches missed.">            for (Keyword val : values) {</span>
+<span class="nc" id="L158">                this.keywordListModel.removeElement(val);</span>
+<span class="nc" id="L159">            }</span>
+<span class="nc" id="L160">        };</span>
+
+<span class="nc" id="L162">        join.addActionListener(joinActionListener);</span>
+
+<span class="nc" id="L164">        final ActionListener replaceActionListener = arg0 -&gt; {</span>
+<span class="nc" id="L165">            List&lt;Keyword&gt; values = keywordList.getSelectedValuesList();</span>
+
+<span class="nc bnc" id="L167" title="All 2 branches missed.">            for (Keyword val : values) {</span>
+<span class="nc" id="L168">                keywordListModel.removeElement(val);</span>
+<span class="nc" id="L169">            }</span>
+<span class="nc" id="L170">            addButtonActionListener(keyword);</span>
+<span class="nc" id="L171">        };</span>
+
+<span class="nc" id="L173">        replace.addActionListener(replaceActionListener);</span>
+
+        //enable a user to press Delete to delete a keyword
+<span class="nc" id="L176">        keywordList.addKeyListener(new KeyAdapter() {</span>
+
+            @Override
+            public void keyPressed(KeyEvent arg0) {
+<span class="nc bnc" id="L180" title="All 2 branches missed.">                if (arg0.getKeyCode() == KeyEvent.VK_DELETE) {</span>
+<span class="nc" id="L181">                    removeActionListener.actionPerformed(null);</span>
+                }
+<span class="nc" id="L183">            }</span>
+        });
+
+        //enable a user to press Enter to add a keyword
+<span class="nc" id="L187">        keyword.addKeyListener(new KeyAdapter() {</span>
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+<span class="nc bnc" id="L191" title="All 2 branches missed.">                if (e.getKeyCode() == KeyEvent.VK_ENTER) {</span>
+<span class="nc" id="L192">                    addActionListener.actionPerformed(null);</span>
+                }
+<span class="nc" id="L194">            }</span>
+        });
+
+        // Key bindings:
+<span class="nc" id="L198">        ActionMap am = builder.getPanel().getActionMap();</span>
+<span class="nc" id="L199">        InputMap im = builder.getPanel().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);</span>
+<span class="nc" id="L200">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.CLOSE), &quot;close&quot;);</span>
+<span class="nc" id="L201">        am.put(&quot;close&quot;, cancelAction);</span>
+
+<span class="nc" id="L203">        diag.getContentPane().add(builder.getPanel(), BorderLayout.CENTER);</span>
+<span class="nc" id="L204">        diag.getContentPane().add(bb.getPanel(), BorderLayout.SOUTH);</span>
+<span class="nc" id="L205">    }</span>
+
+    private void addButtonActionListener(JTextField keywordTextField) {
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        if (StringUtil.isBlank(keywordTextField.getText())) {</span>
+<span class="nc" id="L209">            return; // nothing to add</span>
+        }
+<span class="nc" id="L211">        addKeywordToKeywordListModel(keywordTextField.getText());</span>
+<span class="nc" id="L212">        keywordTextField.setText(null);</span>
+<span class="nc" id="L213">        keywordTextField.requestFocusInWindow();</span>
+
+<span class="nc" id="L215">    }</span>
+
+    /**
+     * Adds given keyword to the keyword list model
+     */
+    private void addKeywordToKeywordListModel(String keyword) {
+<span class="nc" id="L221">        String keywordToAdd = Objects.requireNonNull(keyword).trim();</span>
+<span class="nc" id="L222">        Keyword newKeyword = new Keyword(keywordToAdd);</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        if (keywordListModel.isEmpty()) {</span>
+<span class="nc" id="L224">            keywordListModel.addElement(newKeyword);</span>
+        } else {
+<span class="nc" id="L226">            int idx = 0;</span>
+<span class="nc" id="L227">            Keyword element = keywordListModel.getElementAt(idx);</span>
+<span class="nc bnc" id="L228" title="All 4 branches missed.">            while ((idx &lt; keywordListModel.size()) &amp;&amp; (element.compareTo(newKeyword) &lt; 0)) {</span>
+<span class="nc" id="L229">                idx++;</span>
+            }
+<span class="nc bnc" id="L231" title="All 2 branches missed.">            if (idx == keywordListModel.size()) {</span>
+                // list is empty or word is greater than last word in list
+<span class="nc" id="L233">                keywordListModel.addElement(newKeyword);</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">            } else if (element.compareTo(newKeyword) == 0) {</span>
+                // nothing to do, word already in table
+            } else {
+<span class="nc" id="L237">                keywordListModel.add(idx, newKeyword);</span>
+            }
+        }
+<span class="nc" id="L240">    }</span>
+
+    @Override
+    public void execute() {
+<span class="nc" id="L244">        BasePanel bp = frame.getCurrentBasePanel();</span>
+<span class="nc bnc" id="L245" title="All 2 branches missed.">        if (bp == null) {</span>
+<span class="nc" id="L246">            return;</span>
+        }
+<span class="nc bnc" id="L248" title="All 2 branches missed.">        if (bp.getSelectedEntries().isEmpty()) {</span>
+<span class="nc" id="L249">            bp.output(Localization.lang(&quot;Select at least one entry to manage keywords.&quot;));</span>
+<span class="nc" id="L250">            return;</span>
+        }
+
+        // Lazy creation of the dialog:
+<span class="nc" id="L254">        createDialog();</span>
+
+<span class="nc" id="L256">        canceled = true;</span>
+
+<span class="nc" id="L258">        fillKeyWordList();</span>
+
+<span class="nc" id="L260">        diag.pack();</span>
+<span class="nc" id="L261">        diag.setVisible(true);</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">        if (canceled) {</span>
+<span class="nc" id="L263">            return;</span>
+        }
+
+<span class="nc" id="L266">        KeywordList keywordsToAdd = new KeywordList();</span>
+<span class="nc" id="L267">        KeywordList userSelectedKeywords = new KeywordList();</span>
+        // build keywordsToAdd and userSelectedKeywords in parallel
+<span class="nc bnc" id="L269" title="All 2 branches missed.">        for (Enumeration&lt;Keyword&gt; keywords = keywordListModel.elements(); keywords.hasMoreElements();) {</span>
+<span class="nc" id="L270">            Keyword keyword = keywords.nextElement();</span>
+<span class="nc" id="L271">            userSelectedKeywords.add(keyword);</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">            if (!sortedKeywordsOfAllEntriesBeforeUpdateByUser.contains(keyword)) {</span>
+<span class="nc" id="L273">                keywordsToAdd.add(keyword);</span>
+            }
+<span class="nc" id="L275">        }</span>
+
+<span class="nc" id="L277">        KeywordList keywordsToRemove = new KeywordList();</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">        for (Keyword kword : sortedKeywordsOfAllEntriesBeforeUpdateByUser) {</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">            if (!userSelectedKeywords.contains(kword)) {</span>
+<span class="nc" id="L280">                keywordsToRemove.add(kword);</span>
+            }
+<span class="nc" id="L282">        }</span>
+
+<span class="nc bnc" id="L284" title="All 4 branches missed.">        if (keywordsToAdd.isEmpty() &amp;&amp; keywordsToRemove.isEmpty()) {</span>
+            // nothing to be done if nothing is new and nothing is obsolete
+<span class="nc" id="L286">            return;</span>
+        }
+
+<span class="nc bnc" id="L289" title="All 4 branches missed.">        if (Globals.prefs.isKeywordSyncEnabled() &amp;&amp; !keywordsToAdd.isEmpty()) {</span>
+<span class="nc" id="L290">            SpecialFieldsUtils.synchronizeSpecialFields(keywordsToAdd, keywordsToRemove);</span>
+        }
+
+<span class="nc" id="L293">        NamedCompound ce = updateKeywords(bp.getSelectedEntries(), keywordsToAdd, keywordsToRemove);</span>
+<span class="nc" id="L294">        bp.getUndoManager().addEdit(ce);</span>
+<span class="nc" id="L295">        bp.markBaseChanged();</span>
+<span class="nc" id="L296">    }</span>
+
+    private NamedCompound updateKeywords(List&lt;BibEntry&gt; entries, KeywordList keywordsToAdd,
+                                         KeywordList keywordsToRemove) {
+<span class="nc" id="L300">        NamedCompound ce = new NamedCompound(Localization.lang(&quot;Update keywords&quot;));</span>
+<span class="nc bnc" id="L301" title="All 2 branches missed.">        for (BibEntry entry : entries) {</span>
+<span class="nc" id="L302">            KeywordList keywords = entry.getKeywords(Globals.prefs.getKeywordDelimiter());</span>
+
+            // update keywords
+<span class="nc" id="L305">            keywords.removeAll(keywordsToRemove);</span>
+<span class="nc" id="L306">            keywords.addAll(keywordsToAdd);</span>
+
+            // put keywords back
+<span class="nc" id="L309">            Optional&lt;FieldChange&gt; change = entry.putKeywords(keywords, Globals.prefs.getKeywordDelimiter());</span>
+<span class="nc bnc" id="L310" title="All 2 branches missed.">            if (change.isPresent()) {</span>
+<span class="nc" id="L311">                ce.addEdit(new UndoableFieldChange(change.get()));</span>
+            }
+
+<span class="nc bnc" id="L314" title="All 2 branches missed.">            if (Globals.prefs.isKeywordSyncEnabled()) {</span>
+<span class="nc" id="L315">                SpecialFieldsUtils.syncSpecialFieldsFromKeywords(entry, Globals.prefs.getKeywordDelimiter());</span>
+            }
+<span class="nc" id="L317">        }</span>
+<span class="nc" id="L318">        ce.end();</span>
+<span class="nc" id="L319">        return ce;</span>
+    }
+
+    private void fillKeyWordList() {
+<span class="nc" id="L323">        BasePanel bp = frame.getCurrentBasePanel();</span>
+<span class="nc" id="L324">        List&lt;BibEntry&gt; entries = bp.getSelectedEntries();</span>
+
+        // fill dialog with values
+<span class="nc" id="L327">        keywordListModel.clear();</span>
+<span class="nc" id="L328">        sortedKeywordsOfAllEntriesBeforeUpdateByUser.clear();</span>
+
+<span class="nc bnc" id="L330" title="All 2 branches missed.">        if (mergeKeywords.isSelected()) {</span>
+<span class="nc bnc" id="L331" title="All 2 branches missed.">            for (BibEntry entry : entries) {</span>
+<span class="nc" id="L332">                KeywordList separatedKeywords = entry.getKeywords(Globals.prefs.getKeywordDelimiter());</span>
+<span class="nc" id="L333">                sortedKeywordsOfAllEntriesBeforeUpdateByUser.addAll(separatedKeywords);</span>
+<span class="nc" id="L334">            }</span>
+        } else {
+<span class="nc bnc" id="L336" title="All 4 branches missed.">            assert intersectKeywords.isSelected();</span>
+
+            // all keywords from first entry have to be added
+<span class="nc" id="L339">            BibEntry firstEntry = entries.get(0);</span>
+<span class="nc" id="L340">            KeywordList separatedKeywords = firstEntry.getKeywords(Globals.prefs.getKeywordDelimiter());</span>
+<span class="nc" id="L341">            sortedKeywordsOfAllEntriesBeforeUpdateByUser.addAll(separatedKeywords);</span>
+
+            // for the remaining entries, intersection has to be used
+            // this approach ensures that one empty keyword list leads to an empty set of common keywords
+<span class="nc bnc" id="L345" title="All 2 branches missed.">            for (int i = 1; i &lt; entries.size(); i++) {</span>
+<span class="nc" id="L346">                BibEntry entry = entries.get(i);</span>
+<span class="nc" id="L347">                separatedKeywords = entry.getKeywords(Globals.prefs.getKeywordDelimiter());</span>
+<span class="nc" id="L348">                sortedKeywordsOfAllEntriesBeforeUpdateByUser.retainAll(separatedKeywords);</span>
+            }
+        }
+<span class="nc bnc" id="L351" title="All 2 branches missed.">        for (Keyword keyword : sortedKeywordsOfAllEntriesBeforeUpdateByUser) {</span>
+<span class="nc" id="L352">            keywordListModel.addElement(keyword);</span>
+<span class="nc" id="L353">        }</span>
+<span class="nc" id="L354">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

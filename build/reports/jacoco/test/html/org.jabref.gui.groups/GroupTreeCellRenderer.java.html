@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupTreeCellRenderer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.groups</a> &gt; <span class="el_source">GroupTreeCellRenderer.java</span></div><h1>GroupTreeCellRenderer.java</h1><pre class="source lang-java linenums">package org.jabref.gui.groups;
+
+import java.awt.Color;
+import java.awt.Component;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.JTree;
+import javax.swing.border.Border;
+import javax.swing.tree.DefaultTreeCellRenderer;
+
+import org.jabref.model.groups.GroupTreeNode;
+
+/**
+ * Renders a GroupTreeNode using its group's getName() method, rather that its toString() method.
+ */
+<span class="nc" id="L20">public class GroupTreeCellRenderer extends DefaultTreeCellRenderer {</span>
+
+    /** The cell over which the user is currently dragging */
+    private Object highlight1Cell;
+<span class="nc" id="L24">    private List&lt;GroupTreeNode&gt; overlappingGroups = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L25">    private List&lt;GroupTreeNode&gt; matchingGroups = new ArrayList&lt;&gt;();</span>
+    private Object highlightBorderCell;
+
+    @Override
+    public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf,
+            int row, boolean tmpHasFocus) {
+        // show as selected
+<span class="nc bnc" id="L32" title="All 4 branches missed.">        selected = (Objects.equals(highlight1Cell, value)) || sel;</span>
+<span class="nc" id="L33">        Component c = super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, tmpHasFocus);</span>
+        // this is sometimes called from deep within somewhere, with a dummy
+        // value (probably for layout etc.), so we've got to check here!
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        if (!(value instanceof GroupTreeNodeViewModel)) {</span>
+<span class="nc" id="L37">            return c;</span>
+        }
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (!(c instanceof JLabel)) {</span>
+<span class="nc" id="L40">            return c; // sanity check</span>
+        }
+
+<span class="nc" id="L43">        GroupTreeNodeViewModel viewModel = (GroupTreeNodeViewModel) value;</span>
+<span class="nc" id="L44">        JLabel label = (JLabel) c;</span>
+
+        Border border;
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        if (Objects.equals(highlightBorderCell, value)) {</span>
+<span class="nc" id="L48">            border = BorderFactory.createLineBorder(Color.BLACK);</span>
+        } else {
+<span class="nc" id="L50">            border = BorderFactory.createEmptyBorder();</span>
+        }
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (label.getBorder() != border) {</span>
+<span class="nc" id="L53">            label.setBorder(border);</span>
+        }
+
+<span class="nc bnc" id="L56" title="All 4 branches missed.">        Boolean red = printInRed(viewModel) &amp;&amp; !selected; // do not print currently selected node in red</span>
+<span class="nc" id="L57">        Boolean underlined = printUnderlined(viewModel);</span>
+<span class="nc" id="L58">        StringBuilder sb = new StringBuilder(60);</span>
+<span class="nc" id="L59">        sb.append(&quot;&lt;html&gt;&quot;);</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (red) {</span>
+<span class="nc" id="L61">            sb.append(&quot;&lt;font color=\&quot;#FF0000\&quot;&gt;&quot;);</span>
+        }
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (underlined) {</span>
+<span class="nc" id="L64">            sb.append(&quot;&lt;u&gt;&quot;);</span>
+        }
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (viewModel.printInItalics()) {</span>
+<span class="nc" id="L67">            sb.append(&quot;&lt;i&gt;&quot;);</span>
+        }
+<span class="nc" id="L69">        sb.append(viewModel.getName());</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        if (viewModel.printInItalics()) {</span>
+<span class="nc" id="L71">            sb.append(&quot;&lt;/i&gt;&quot;);</span>
+        }
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (underlined) {</span>
+<span class="nc" id="L74">            sb.append(&quot;&lt;/u&gt;&quot;);</span>
+        }
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (red) {</span>
+<span class="nc" id="L77">            sb.append(&quot;&lt;/font&gt;&quot;);</span>
+        }
+<span class="nc" id="L79">        sb.append(&quot;&lt;/html&gt;&quot;);</span>
+
+<span class="nc" id="L81">        String text = sb.toString();</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (!label.getText().equals(text)) {</span>
+<span class="nc" id="L83">            label.setText(text);</span>
+        }
+<span class="nc" id="L85">        label.setToolTipText(viewModel.getDescription());</span>
+
+<span class="nc" id="L87">        return c;</span>
+    }
+
+    private boolean printInRed(GroupTreeNodeViewModel viewModel) {
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        if (viewModel.isAllEntriesGroup()) {</span>
+            // Do not print all entries group in red
+<span class="nc" id="L93">            return false;</span>
+        }
+
+<span class="nc" id="L96">        return overlappingGroups.contains(viewModel.getNode());</span>
+    }
+
+    private boolean printUnderlined(GroupTreeNodeViewModel viewModel) {
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        if (viewModel.isAllEntriesGroup()) {</span>
+            // Do not underline all entries group
+<span class="nc" id="L102">            return false;</span>
+        }
+<span class="nc" id="L104">        return matchingGroups.contains(viewModel.getNode());</span>
+    }
+
+    /**
+     * Highlights the specified cells (by drawing a border around it), or disables highlight if highlightBorderCell ==
+     * null.
+     */
+    public void setHighlightBorderCell(Object highlightBorderCell) {
+<span class="nc" id="L112">        this.highlightBorderCell = highlightBorderCell;</span>
+<span class="nc" id="L113">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" tests="24" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:47" hostname="n184-p67.eduroam.kth.se" time="0.03">
+  <properties/>
+  <testcase name="formatDate0DdotMdotYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.002"/>
+  <testcase name="formatDateMYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.004"/>
+  <testcase name="formatDate0Ddot0MdotYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDateMMMDCommaYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDate0MYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.0"/>
+  <testcase name="formatDateDdotMMdotYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDateMYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.002"/>
+  <testcase name="formatDateYYYYM()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDateMMMDDCommaYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDateMMYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.0"/>
+  <testcase name="formatDateMMMCommaYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDateDdot0MdotYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDateYYYYMD()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDateYYYYMM()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatExample()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDateDDdotMMdotYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.002"/>
+  <testcase name="formatDateDDdotMdotYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDateDdotMdotYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDateYYYYM0D()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.0"/>
+  <testcase name="formatDateDDdot0MdotYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDate0MYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDateMMYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.0"/>
+  <testcase name="formatDateYYYYMM0D()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <testcase name="formatDate0DdotMMdotYYYY()" classname="org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatterTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SpecialFieldDropDown.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.specialfields</a> &gt; <span class="el_source">SpecialFieldDropDown.java</span></div><h1>SpecialFieldDropDown.java</h1><pre class="source lang-java linenums">package org.jabref.gui.specialfields;
+
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.actions.Actions;
+import org.jabref.logic.util.OS;
+import org.jabref.model.entry.specialfields.SpecialField;
+import org.jabref.model.entry.specialfields.SpecialFieldValue;
+
+public class SpecialFieldDropDown {
+
+    private SpecialFieldDropDown() {
+    }
+
+    public static JButton generateSpecialFieldButtonWithDropDown(SpecialField field, JabRefFrame frame) {
+<span class="nc" id="L25">        Dimension buttonDim = new Dimension(23, 23);</span>
+<span class="nc" id="L26">        SpecialFieldViewModel viewModel = new SpecialFieldViewModel(field, frame.getUndoManager());</span>
+<span class="nc" id="L27">        JButton button = new JButton(viewModel.getRepresentingIcon());</span>
+<span class="nc" id="L28">        button.setToolTipText(viewModel.getLocalization());</span>
+<span class="nc" id="L29">        button.setPreferredSize(buttonDim);</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (!OS.OS_X) {</span>
+<span class="nc" id="L31">            button.setMargin(new Insets(1, 0, 2, 0));</span>
+        }
+<span class="nc" id="L33">        button.setBorder(null);</span>
+<span class="nc" id="L34">        button.setBorderPainted(false);</span>
+<span class="nc" id="L35">        button.setRolloverEnabled(true);</span>
+<span class="nc" id="L36">        button.setOpaque(false);</span>
+<span class="nc" id="L37">        button.setBounds(0, 0, buttonDim.width, buttonDim.height);</span>
+<span class="nc" id="L38">        button.setSize(buttonDim);</span>
+<span class="nc" id="L39">        button.setMinimumSize(buttonDim);</span>
+<span class="nc" id="L40">        button.setMaximumSize(buttonDim);</span>
+<span class="nc" id="L41">        button.addActionListener(new MenuButtonActionListener(field, frame, button, buttonDim));</span>
+<span class="nc" id="L42">        return button;</span>
+    }
+
+    private static class MenuButtonActionListener implements ActionListener {
+
+        private JPopupMenu popup;
+        private final Dimension dim;
+        private final JabRefFrame frame;
+        private final SpecialField field;
+        private final JButton button;
+
+
+<span class="nc" id="L54">        public MenuButtonActionListener(SpecialField field, JabRefFrame frame, JButton button, Dimension dim) {</span>
+<span class="nc" id="L55">            this.field = field;</span>
+<span class="nc" id="L56">            this.dim = dim;</span>
+<span class="nc" id="L57">            this.frame = frame;</span>
+<span class="nc" id="L58">            this.button = button;</span>
+<span class="nc" id="L59">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc bnc" id="L63" title="All 2 branches missed.">            if (popup == null) {</span>
+<span class="nc" id="L64">                popup = new JPopupMenu();</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">                for (SpecialFieldValue val : field.getValues()) {</span>
+<span class="nc" id="L66">                    SpecialFieldValueViewModel viewModel = new SpecialFieldValueViewModel(val);</span>
+<span class="nc" id="L67">                    JMenuItem item = new JMenuItem(viewModel.getSpecialFieldValueIcon());</span>
+<span class="nc" id="L68">                    item.setText(viewModel.getMenuString());</span>
+<span class="nc" id="L69">                    item.setToolTipText(viewModel.getToolTipText());</span>
+<span class="nc" id="L70">                    item.addActionListener(new PopupitemActionListener(frame.getCurrentBasePanel(), new SpecialFieldValueViewModel(val).getCommand()));</span>
+<span class="nc" id="L71">                    item.setMargin(new Insets(0, 0, 0, 0));</span>
+<span class="nc" id="L72">                    popup.add(item);</span>
+<span class="nc" id="L73">                }</span>
+            }
+<span class="nc" id="L75">            popup.show(button, 0, dim.height);</span>
+<span class="nc" id="L76">        }</span>
+
+        private class PopupitemActionListener implements ActionListener {
+
+            private final BasePanel panel;
+            private final Actions actionName;
+
+<span class="nc" id="L83">            public PopupitemActionListener(BasePanel panel, Actions actionName) {</span>
+<span class="nc" id="L84">                this.panel = panel;</span>
+<span class="nc" id="L85">                this.actionName = actionName;</span>
+<span class="nc" id="L86">            }</span>
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L90">                panel.runCommand(actionName);</span>
+<span class="nc" id="L91">                popup.setVisible(false);</span>
+<span class="nc" id="L92">            }</span>
+
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

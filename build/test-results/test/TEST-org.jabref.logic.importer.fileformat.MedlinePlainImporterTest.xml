@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" tests="21" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:05" hostname="n184-p67.eduroam.kth.se" time="0.114">
+  <properties/>
+  <testcase name="testEmptyFileImport()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.01"/>
+  <testcase name="testGetCLIId()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.0"/>
+  <testcase name="testMultiLineComments()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.005"/>
+  <testcase name="testAllArticleTypes()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.002"/>
+  <testcase name="testWithMultipleEntries()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.011"/>
+  <testcase name="testIsRecognizedFormat(String)[1]" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.001"/>
+  <testcase name="testIsRecognizedFormat(String)[2]" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.0"/>
+  <testcase name="testIsRecognizedFormat(String)[3]" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.0"/>
+  <testcase name="testIsRecognizedFormat(String)[4]" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.001"/>
+  <testcase name="testIsRecognizedFormat(String)[5]" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.001"/>
+  <testcase name="testIsRecognizedFormat(String)[6]" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.001"/>
+  <testcase name="testInvalidFormat()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.001"/>
+  <testcase name="testImportSingleEntriesInSingleFiles()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.033"/>
+  <testcase name="testsGetExtensions()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.001"/>
+  <testcase name="testGetDescription()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.0"/>
+  <testcase name="testNullReader()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.002"/>
+  <testcase name="testKeyWords()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.004"/>
+  <testcase name="doesNotRecognizeEmptyFiles()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.001"/>
+  <testcase name="testImportMultipleEntriesInSingleFile()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.008"/>
+  <testcase name="testWithNbibFile()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.01"/>
+  <testcase name="testGetFormatName()" classname="org.jabref.logic.importer.fileformat.MedlinePlainImporterTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

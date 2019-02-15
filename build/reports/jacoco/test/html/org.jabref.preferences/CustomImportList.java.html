@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomImportList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.preferences</a> &gt; <span class="el_source">CustomImportList.java</span></div><h1>CustomImportList.java</h1><pre class="source lang-java linenums">package org.jabref.preferences;
+
+import java.util.List;
+import java.util.TreeSet;
+
+import org.jabref.Globals;
+import org.jabref.logic.importer.Importer;
+import org.jabref.logic.importer.fileformat.CustomImporter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Collection of user defined custom import formats.
+ *
+ * &lt;p&gt;The collection can be stored and retrieved from Preferences. It is sorted by the default
+ * order of {@link Importer}.&lt;/p&gt;
+ */
+public class CustomImportList extends TreeSet&lt;CustomImporter&gt; {
+
+<span class="nc" id="L21">    private static final Logger LOGGER = LoggerFactory.getLogger(CustomImportList.class);</span>
+
+    private final JabRefPreferences prefs;
+
+
+    public CustomImportList(JabRefPreferences prefs) {
+<span class="nc" id="L27">        super();</span>
+<span class="nc" id="L28">        this.prefs = prefs;</span>
+<span class="nc" id="L29">        readPrefs();</span>
+<span class="nc" id="L30">    }</span>
+
+    private void readPrefs() {
+<span class="nc" id="L33">        int i = 0;</span>
+        List&lt;String&gt; s;
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        while (!((s = prefs.getStringList(JabRefPreferences.CUSTOM_IMPORT_FORMAT + i)).isEmpty())) {</span>
+            try {
+<span class="nc bnc" id="L37" title="All 2 branches missed.">                if (s.size() == 2) {</span>
+                    // New format: basePath, className
+<span class="nc" id="L39">                    super.add(new CustomImporter(s.get(0), s.get(1)));</span>
+                } else {
+                    // Old format: name, cliId, className, basePath
+<span class="nc" id="L42">                    super.add(new CustomImporter(s.get(3), s.get(2)));</span>
+                }
+<span class="nc" id="L44">            } catch (Exception e) {</span>
+<span class="nc" id="L45">                LOGGER.warn(&quot;Could not load &quot; + s.get(0) + &quot; from preferences. Will ignore.&quot;, e);</span>
+<span class="nc" id="L46">            }</span>
+<span class="nc" id="L47">            i++;</span>
+        }
+<span class="nc" id="L49">    }</span>
+
+    private void addImporter(CustomImporter customImporter) {
+<span class="nc" id="L52">        super.add(customImporter);</span>
+<span class="nc" id="L53">    }</span>
+
+    /**
+     * Adds an importer.
+     *
+     * &lt;p&gt;If an old one equal to the new one was contained, the old
+     * one is replaced.&lt;/p&gt;
+     *
+     * @param customImporter new (version of an) importer
+     * @return  if the importer was contained
+     */
+    public boolean replaceImporter(CustomImporter customImporter) {
+<span class="nc" id="L65">        boolean wasContained = this.remove(customImporter);</span>
+<span class="nc" id="L66">        this.addImporter(customImporter);</span>
+<span class="nc" id="L67">        return wasContained;</span>
+    }
+
+    public void store() {
+<span class="nc" id="L71">        purgeAll();</span>
+<span class="nc" id="L72">        CustomImporter[] importers = this.toArray(new CustomImporter[this.size()]);</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        for (int i = 0; i &lt; importers.length; i++) {</span>
+<span class="nc" id="L74">            Globals.prefs.putStringList(JabRefPreferences.CUSTOM_IMPORT_FORMAT + i, importers[i].getAsStringList());</span>
+        }
+<span class="nc" id="L76">    }</span>
+
+    private void purgeAll() {
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        for (int i = 0; !(Globals.prefs.getStringList(JabRefPreferences.CUSTOM_IMPORT_FORMAT + i).isEmpty()); i++) {</span>
+<span class="nc" id="L80">            Globals.prefs.remove(JabRefPreferences.CUSTOM_IMPORT_FORMAT + i);</span>
+        }
+<span class="nc" id="L82">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

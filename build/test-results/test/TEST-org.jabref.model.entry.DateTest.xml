@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.model.entry.DateTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:26" hostname="n184-p67.eduroam.kth.se" time="0.005">
+  <properties/>
+  <testcase name="parseCorrectlyYearDate()" classname="org.jabref.model.entry.DateTest" time="0.001"/>
+  <testcase name="parseCorrectlyDayMonthYearDate()" classname="org.jabref.model.entry.DateTest" time="0.001"/>
+  <testcase name="parseCorrectlyMonthYearDate()" classname="org.jabref.model.entry.DateTest" time="0.001"/>
+  <testcase name="parseDateNull()" classname="org.jabref.model.entry.DateTest" time="0.001"/>
+  <testcase name="parseCorrectlyYearMonthDate()" classname="org.jabref.model.entry.DateTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RtfCharMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util.strings</a> &gt; <span class="el_source">RtfCharMap.java</span></div><h1>RtfCharMap.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util.strings;
+
+import java.util.HashMap;
+
+public class RtfCharMap {
+
+<span class="fc" id="L7">    private HashMap&lt;String, String&gt; rtfMap = new HashMap&lt;&gt;();</span>
+
+<span class="fc" id="L9">    public RtfCharMap () {</span>
+<span class="fc" id="L10">        put(&quot;`a&quot;, &quot;\\'e0&quot;);</span>
+<span class="fc" id="L11">        put(&quot;`e&quot;, &quot;\\'e8&quot;);</span>
+<span class="fc" id="L12">        put(&quot;`i&quot;, &quot;\\'ec&quot;);</span>
+<span class="fc" id="L13">        put(&quot;`o&quot;, &quot;\\'f2&quot;);</span>
+<span class="fc" id="L14">        put(&quot;`u&quot;, &quot;\\'f9&quot;);</span>
+<span class="fc" id="L15">        put(&quot;'a&quot;, &quot;\\'e1&quot;);</span>
+<span class="fc" id="L16">        put(&quot;'e&quot;, &quot;\\'e9&quot;);</span>
+<span class="fc" id="L17">        put(&quot;'i&quot;, &quot;\\'ed&quot;);</span>
+<span class="fc" id="L18">        put(&quot;'o&quot;, &quot;\\'f3&quot;);</span>
+<span class="fc" id="L19">        put(&quot;'u&quot;, &quot;\\'fa&quot;);</span>
+<span class="fc" id="L20">        put(&quot;^a&quot;, &quot;\\'e2&quot;);</span>
+<span class="fc" id="L21">        put(&quot;^e&quot;, &quot;\\'ea&quot;);</span>
+<span class="fc" id="L22">        put(&quot;^i&quot;, &quot;\\'ee&quot;);</span>
+<span class="fc" id="L23">        put(&quot;^o&quot;, &quot;\\'f4&quot;);</span>
+<span class="fc" id="L24">        put(&quot;^u&quot;, &quot;\\'fa&quot;);</span>
+<span class="fc" id="L25">        put(&quot;\&quot;a&quot;, &quot;\\'e4&quot;);</span>
+<span class="fc" id="L26">        put(&quot;\&quot;e&quot;, &quot;\\'eb&quot;);</span>
+<span class="fc" id="L27">        put(&quot;\&quot;i&quot;, &quot;\\'ef&quot;);</span>
+<span class="fc" id="L28">        put(&quot;\&quot;o&quot;, &quot;\\'f6&quot;);</span>
+<span class="fc" id="L29">        put(&quot;\&quot;u&quot;, &quot;\\u252u&quot;);</span>
+<span class="fc" id="L30">        put(&quot;~n&quot;, &quot;\\'f1&quot;);</span>
+<span class="fc" id="L31">        put(&quot;`A&quot;, &quot;\\'c0&quot;);</span>
+<span class="fc" id="L32">        put(&quot;`E&quot;, &quot;\\'c8&quot;);</span>
+<span class="fc" id="L33">        put(&quot;`I&quot;, &quot;\\'cc&quot;);</span>
+<span class="fc" id="L34">        put(&quot;`O&quot;, &quot;\\'d2&quot;);</span>
+<span class="fc" id="L35">        put(&quot;`U&quot;, &quot;\\'d9&quot;);</span>
+<span class="fc" id="L36">        put(&quot;'A&quot;, &quot;\\'c1&quot;);</span>
+<span class="fc" id="L37">        put(&quot;'E&quot;, &quot;\\'c9&quot;);</span>
+<span class="fc" id="L38">        put(&quot;'I&quot;, &quot;\\'cd&quot;);</span>
+<span class="fc" id="L39">        put(&quot;'O&quot;, &quot;\\'d3&quot;);</span>
+<span class="fc" id="L40">        put(&quot;'U&quot;, &quot;\\'da&quot;);</span>
+<span class="fc" id="L41">        put(&quot;^A&quot;, &quot;\\'c2&quot;);</span>
+<span class="fc" id="L42">        put(&quot;^E&quot;, &quot;\\'ca&quot;);</span>
+<span class="fc" id="L43">        put(&quot;^I&quot;, &quot;\\'ce&quot;);</span>
+<span class="fc" id="L44">        put(&quot;^O&quot;, &quot;\\'d4&quot;);</span>
+<span class="fc" id="L45">        put(&quot;^U&quot;, &quot;\\'db&quot;);</span>
+<span class="fc" id="L46">        put(&quot;\&quot;A&quot;, &quot;\\'c4&quot;);</span>
+<span class="fc" id="L47">        put(&quot;\&quot;E&quot;, &quot;\\'cb&quot;);</span>
+<span class="fc" id="L48">        put(&quot;\&quot;I&quot;, &quot;\\'cf&quot;);</span>
+<span class="fc" id="L49">        put(&quot;\&quot;O&quot;, &quot;\\'d6&quot;);</span>
+<span class="fc" id="L50">        put(&quot;\&quot;U&quot;, &quot;\\'dc&quot;);</span>
+
+        // Use UNICODE characters for RTF-Chars which cannot be found in the
+        // standard codepage
+
+<span class="fc" id="L55">        put(&quot;S&quot;, &quot;\\u167S&quot;); // Section sign</span>
+<span class="fc" id="L56">        put(&quot;`!&quot;, &quot;\\u161!&quot;); // Inverted exclamation point</span>
+<span class="fc" id="L57">        put(&quot;pounds&quot;,&quot;\\u163?&quot;); // Pound sign</span>
+<span class="fc" id="L58">        put(&quot;copyright&quot;,&quot;\\u169?&quot;); // Copyright sign</span>
+<span class="fc" id="L59">        put(&quot;P&quot;, &quot;\\u182P&quot;); // Paragraph sign</span>
+<span class="fc" id="L60">        put(&quot;`?&quot;, &quot;\\u191?&quot;); // Inverted question mark</span>
+<span class="fc" id="L61">        put(&quot;~A&quot;, &quot;\\u195A&quot;); // &quot;Atilde&quot;</span>
+<span class="fc" id="L62">        put(&quot;AA&quot;, &quot;\\u197A&quot;); // &quot;Aring&quot;</span>
+        // RTFCHARS.put(&quot;AE&quot;, &quot;{\\uc2\\u198AE}&quot;); // &quot;AElig&quot;
+<span class="fc" id="L64">        put(&quot;AE&quot;, &quot;{\\u198AE}&quot;); // &quot;AElig&quot;</span>
+
+<span class="fc" id="L66">        put(&quot;cC&quot;, &quot;\\u199C&quot;); // &quot;Ccedil&quot;</span>
+
+<span class="fc" id="L68">        put(&quot;DH&quot;, &quot;\\u208D&quot;); // &quot;ETH&quot;</span>
+
+<span class="fc" id="L70">        put(&quot;~N&quot;, &quot;\\u209N&quot;); // &quot;Ntilde&quot;</span>
+
+<span class="fc" id="L72">        put(&quot;~O&quot;, &quot;\\u213O&quot;); // &quot;Otilde&quot;</span>
+        // According to ISO 8859-1 the &quot;\times&quot; symbol should be placed here
+        // (#215).
+        // Omitting this, because it is a mathematical symbol.
+<span class="fc" id="L76">        put(&quot;O&quot;, &quot;\\u216O&quot;); // &quot;Oslash&quot;</span>
+        //  RTFCHARS.put(&quot;O&quot;, &quot;\\'d8&quot;);
+<span class="fc" id="L78">        put(&quot;o&quot;, &quot;\\'f8&quot;);</span>
+
+<span class="fc" id="L80">        put(&quot;'Y&quot;, &quot;\\u221Y&quot;); // &quot;Yacute&quot;</span>
+
+<span class="fc" id="L82">        put(&quot;TH&quot;, &quot;\\u222TH&quot;); // &quot;THORN&quot;</span>
+
+<span class="fc" id="L84">        put(&quot;ss&quot;, &quot;\\u223ss&quot;); // &quot;szlig&quot;</span>
+        //RTFCHARS.put(&quot;ss&quot;, &quot;AFFEN&quot;); // &quot;szlig&quot;
+
+<span class="fc" id="L87">        put(&quot;~a&quot;, &quot;\\u227a&quot;); // &quot;atilde&quot;</span>
+<span class="fc" id="L88">        put(&quot;aa&quot;, &quot;\\u229a&quot;); // &quot;aring&quot;</span>
+        //  RTFCHARS.put(&quot;ae&quot;, &quot;{\\uc2\\u230ae}&quot;); // &quot;aelig&quot; \\u230e6
+<span class="fc" id="L90">        put(&quot;ae&quot;, &quot;{\\u230ae}&quot;); // &quot;aelig&quot; \\u230e6</span>
+
+<span class="fc" id="L92">        put(&quot;cc&quot;, &quot;\\u231c&quot;); // &quot;ccedil&quot;</span>
+
+<span class="fc" id="L94">        put(&quot;dh&quot;, &quot;\\u240d&quot;); // &quot;eth&quot;</span>
+
+<span class="fc" id="L96">        put(&quot;~o&quot;, &quot;\\u245o&quot;); // &quot;otilde&quot;</span>
+        // According to ISO 8859-1 the &quot;\div&quot; symbol should be placed here
+        // (#247).
+        // Omitting this, because it is a mathematical symbol.
+<span class="fc" id="L100">        put(&quot;o&quot;, &quot;\\u248o&quot;); // &quot;oslash&quot;</span>
+
+        // RTFCHARS.put(&quot;\&quot;u&quot;, &quot;\\u252&quot;); // &quot;uuml&quot; exists in standard
+        // codepage
+
+<span class="fc" id="L105">        put(&quot;'y&quot;, &quot;\\u253y&quot;); // &quot;yacute&quot;</span>
+<span class="fc" id="L106">        put(&quot;th&quot;, &quot;\\u254th&quot;); // &quot;thorn&quot;</span>
+<span class="fc" id="L107">        put(&quot;\&quot;y&quot;, &quot;\\u255y&quot;); // &quot;yuml&quot;</span>
+
+<span class="fc" id="L109">        put(&quot;=A&quot;, &quot;\\u256A&quot;); // &quot;Amacr&quot;</span>
+<span class="fc" id="L110">        put(&quot;=a&quot;, &quot;\\u257a&quot;); // &quot;amacr&quot;</span>
+<span class="fc" id="L111">        put(&quot;uA&quot;, &quot;\\u258A&quot;); // &quot;Abreve&quot;</span>
+<span class="fc" id="L112">        put(&quot;ua&quot;, &quot;\\u259a&quot;); // &quot;abreve&quot;</span>
+<span class="fc" id="L113">        put(&quot;kA&quot;, &quot;\\u260A&quot;); // &quot;Aogon&quot;</span>
+<span class="fc" id="L114">        put(&quot;ka&quot;, &quot;\\u261a&quot;); // &quot;aogon&quot;</span>
+
+<span class="fc" id="L116">        put(&quot;'C&quot;, &quot;\\u262C&quot;); // &quot;Cacute&quot;</span>
+<span class="fc" id="L117">        put(&quot;'c&quot;, &quot;\\u263c&quot;); // &quot;cacute&quot;</span>
+<span class="fc" id="L118">        put(&quot;^C&quot;, &quot;\\u264C&quot;); // &quot;Ccirc&quot;</span>
+<span class="fc" id="L119">        put(&quot;^c&quot;, &quot;\\u265c&quot;); // &quot;ccirc&quot;</span>
+<span class="fc" id="L120">        put(&quot;.C&quot;, &quot;\\u266C&quot;); // &quot;Cdot&quot;</span>
+<span class="fc" id="L121">        put(&quot;.c&quot;, &quot;\\u267c&quot;); // &quot;cdot&quot;</span>
+<span class="fc" id="L122">        put(&quot;vC&quot;, &quot;\\u268C&quot;); // &quot;Ccaron&quot;</span>
+<span class="fc" id="L123">        put(&quot;vc&quot;, &quot;\\u269c&quot;); // &quot;ccaron&quot;</span>
+
+<span class="fc" id="L125">        put(&quot;vD&quot;, &quot;\\u270D&quot;); // &quot;Dcaron&quot;</span>
+        // Symbol #271 (d) has no special Latex command
+<span class="fc" id="L127">        put(&quot;DJ&quot;, &quot;\\u272D&quot;); // &quot;Dstrok&quot;</span>
+<span class="fc" id="L128">        put(&quot;dj&quot;, &quot;\\u273d&quot;); // &quot;dstrok&quot;</span>
+
+<span class="fc" id="L130">        put(&quot;=E&quot;, &quot;\\u274E&quot;); // &quot;Emacr&quot;</span>
+<span class="fc" id="L131">        put(&quot;=e&quot;, &quot;\\u275e&quot;); // &quot;emacr&quot;</span>
+<span class="fc" id="L132">        put(&quot;uE&quot;, &quot;\\u276E&quot;); // &quot;Ebreve&quot;</span>
+<span class="fc" id="L133">        put(&quot;ue&quot;, &quot;\\u277e&quot;); // &quot;ebreve&quot;</span>
+<span class="fc" id="L134">        put(&quot;.E&quot;, &quot;\\u278E&quot;); // &quot;Edot&quot;</span>
+<span class="fc" id="L135">        put(&quot;.e&quot;, &quot;\\u279e&quot;); // &quot;edot&quot;</span>
+<span class="fc" id="L136">        put(&quot;kE&quot;, &quot;\\u280E&quot;); // &quot;Eogon&quot;</span>
+<span class="fc" id="L137">        put(&quot;ke&quot;, &quot;\\u281e&quot;); // &quot;eogon&quot;</span>
+<span class="fc" id="L138">        put(&quot;vE&quot;, &quot;\\u282E&quot;); // &quot;Ecaron&quot;</span>
+<span class="fc" id="L139">        put(&quot;ve&quot;, &quot;\\u283e&quot;); // &quot;ecaron&quot;</span>
+
+<span class="fc" id="L141">        put(&quot;^G&quot;, &quot;\\u284G&quot;); // &quot;Gcirc&quot;</span>
+<span class="fc" id="L142">        put(&quot;^g&quot;, &quot;\\u285g&quot;); // &quot;gcirc&quot;</span>
+<span class="fc" id="L143">        put(&quot;uG&quot;, &quot;\\u286G&quot;); // &quot;Gbreve&quot;</span>
+<span class="fc" id="L144">        put(&quot;ug&quot;, &quot;\\u287g&quot;); // &quot;gbreve&quot;</span>
+<span class="fc" id="L145">        put(&quot;.G&quot;, &quot;\\u288G&quot;); // &quot;Gdot&quot;</span>
+<span class="fc" id="L146">        put(&quot;.g&quot;, &quot;\\u289g&quot;); // &quot;gdot&quot;</span>
+<span class="fc" id="L147">        put(&quot;cG&quot;, &quot;\\u290G&quot;); // &quot;Gcedil&quot;</span>
+<span class="fc" id="L148">        put(&quot;'g&quot;, &quot;\\u291g&quot;); // &quot;gacute&quot;</span>
+
+<span class="fc" id="L150">        put(&quot;^H&quot;, &quot;\\u292H&quot;); // &quot;Hcirc&quot;</span>
+<span class="fc" id="L151">        put(&quot;^h&quot;, &quot;\\u293h&quot;); // &quot;hcirc&quot;</span>
+<span class="fc" id="L152">        put(&quot;Hstrok&quot;, &quot;\\u294H&quot;); // &quot;Hstrok&quot;</span>
+<span class="fc" id="L153">        put(&quot;hstrok&quot;, &quot;\\u295h&quot;); // &quot;hstrok&quot;</span>
+
+<span class="fc" id="L155">        put(&quot;~I&quot;, &quot;\\u296I&quot;); // &quot;Itilde&quot;</span>
+<span class="fc" id="L156">        put(&quot;~i&quot;, &quot;\\u297i&quot;); // &quot;itilde&quot;</span>
+<span class="fc" id="L157">        put(&quot;=I&quot;, &quot;\\u298I&quot;); // &quot;Imacr&quot;</span>
+<span class="fc" id="L158">        put(&quot;=i&quot;, &quot;\\u299i&quot;); // &quot;imacr&quot;</span>
+<span class="fc" id="L159">        put(&quot;uI&quot;, &quot;\\u300I&quot;); // &quot;Ibreve&quot;</span>
+<span class="fc" id="L160">        put(&quot;ui&quot;, &quot;\\u301i&quot;); // &quot;ibreve&quot;</span>
+<span class="fc" id="L161">        put(&quot;kI&quot;, &quot;\\u302I&quot;); // &quot;Iogon&quot;</span>
+<span class="fc" id="L162">        put(&quot;ki&quot;, &quot;\\u303i&quot;); // &quot;iogon&quot;</span>
+<span class="fc" id="L163">        put(&quot;.I&quot;, &quot;\\u304I&quot;); // &quot;Idot&quot;</span>
+
+        // Symbol #306 (IJ) has no special Latex command
+        // Symbol #307 (ij) has no special Latex command
+<span class="fc" id="L167">        put(&quot;^J&quot;, &quot;\\u308J&quot;); // &quot;Jcirc&quot;</span>
+<span class="fc" id="L168">        put(&quot;^j&quot;, &quot;\\u309j&quot;); // &quot;jcirc&quot;</span>
+
+<span class="fc" id="L170">        put(&quot;cK&quot;, &quot;\\u310K&quot;); // &quot;Kcedil&quot;</span>
+<span class="fc" id="L171">        put(&quot;ck&quot;, &quot;\\u311k&quot;); // &quot;kcedil&quot;</span>
+
+        // Symbol #312 (k) has no special Latex command
+<span class="fc" id="L174">        put(&quot;'L&quot;, &quot;\\u313L&quot;); // &quot;Lacute&quot;</span>
+<span class="fc" id="L175">        put(&quot;'l&quot;, &quot;\\u314l&quot;); // &quot;lacute&quot;</span>
+<span class="fc" id="L176">        put(&quot;cL&quot;, &quot;\\u315L&quot;); // &quot;Lcedil&quot;</span>
+<span class="fc" id="L177">        put(&quot;cl&quot;, &quot;\\u316l&quot;); // &quot;lcedil&quot;</span>
+        // Symbol #317 (L) has no special Latex command
+        // Symbol #318 (l) has no special Latex command
+<span class="fc" id="L180">        put(&quot;Lmidot&quot;, &quot;\\u319L&quot;); // &quot;Lmidot&quot;</span>
+<span class="fc" id="L181">        put(&quot;lmidot&quot;, &quot;\\u320l&quot;); // &quot;lmidot&quot;</span>
+<span class="fc" id="L182">        put(&quot;L&quot;, &quot;\\u321L&quot;); // &quot;Lstrok&quot;</span>
+<span class="fc" id="L183">        put(&quot;l&quot;, &quot;\\u322l&quot;); // &quot;lstrok&quot;</span>
+
+<span class="fc" id="L185">        put(&quot;'N&quot;, &quot;\\u323N&quot;); // &quot;Nacute&quot;</span>
+<span class="fc" id="L186">        put(&quot;'n&quot;, &quot;\\u324n&quot;); // &quot;nacute&quot;</span>
+<span class="fc" id="L187">        put(&quot;cN&quot;, &quot;\\u325N&quot;); // &quot;Ncedil&quot;</span>
+<span class="fc" id="L188">        put(&quot;cn&quot;, &quot;\\u326n&quot;); // &quot;ncedil&quot;</span>
+<span class="fc" id="L189">        put(&quot;vN&quot;, &quot;\\u327N&quot;); // &quot;Ncaron&quot;</span>
+<span class="fc" id="L190">        put(&quot;vn&quot;, &quot;\\u328n&quot;); // &quot;ncaron&quot;</span>
+
+        // Symbol #329 (n) has no special Latex command
+<span class="fc" id="L193">        put(&quot;NG&quot;, &quot;\\u330G&quot;); // &quot;ENG&quot;</span>
+<span class="fc" id="L194">        put(&quot;ng&quot;, &quot;\\u331g&quot;); // &quot;eng&quot;</span>
+
+<span class="fc" id="L196">        put(&quot;=O&quot;, &quot;\\u332O&quot;); // &quot;Omacr&quot;</span>
+<span class="fc" id="L197">        put(&quot;=o&quot;, &quot;\\u333o&quot;); // &quot;omacr&quot;</span>
+<span class="fc" id="L198">        put(&quot;uO&quot;, &quot;\\u334O&quot;); // &quot;Obreve&quot;</span>
+<span class="fc" id="L199">        put(&quot;uo&quot;, &quot;\\u335o&quot;); // &quot;obreve&quot;</span>
+
+<span class="fc" id="L201">        put(&quot;HO&quot;, &quot;\\u336?&quot;); // &quot;Odblac&quot;</span>
+<span class="fc" id="L202">        put(&quot;Ho&quot;, &quot;\\u337?&quot;); // &quot;odblac&quot;</span>
+
+<span class="fc" id="L204">        put(&quot;OE&quot;, &quot;{\\u338OE}&quot;); // &quot;OElig&quot;</span>
+<span class="fc" id="L205">        put(&quot;oe&quot;, &quot;{\\u339oe}&quot;); // &quot;oelig&quot;</span>
+
+<span class="fc" id="L207">        put(&quot;'R&quot;, &quot;\\u340R&quot;); // &quot;Racute&quot;</span>
+<span class="fc" id="L208">        put(&quot;'r&quot;, &quot;\\u341r&quot;); // &quot;racute&quot;</span>
+<span class="fc" id="L209">        put(&quot;cR&quot;, &quot;\\u342R&quot;); // &quot;Rcedil&quot;</span>
+<span class="fc" id="L210">        put(&quot;cr&quot;, &quot;\\u343r&quot;); // &quot;rcedil&quot;</span>
+<span class="fc" id="L211">        put(&quot;vR&quot;, &quot;\\u344R&quot;); // &quot;Rcaron&quot;</span>
+<span class="fc" id="L212">        put(&quot;vr&quot;, &quot;\\u345r&quot;); // &quot;rcaron&quot;</span>
+
+<span class="fc" id="L214">        put(&quot;'S&quot;, &quot;\\u346S&quot;); // &quot;Sacute&quot;</span>
+<span class="fc" id="L215">        put(&quot;'s&quot;, &quot;\\u347s&quot;); // &quot;sacute&quot;</span>
+<span class="fc" id="L216">        put(&quot;^S&quot;, &quot;\\u348S&quot;); // &quot;Scirc&quot;</span>
+<span class="fc" id="L217">        put(&quot;^s&quot;, &quot;\\u349s&quot;); // &quot;scirc&quot;</span>
+<span class="fc" id="L218">        put(&quot;cS&quot;, &quot;\\u350S&quot;); // &quot;Scedil&quot;</span>
+<span class="fc" id="L219">        put(&quot;cs&quot;, &quot;\\u351s&quot;); // &quot;scedil&quot;</span>
+<span class="fc" id="L220">        put(&quot;vS&quot;, &quot;\\u352S&quot;); // &quot;Scaron&quot;</span>
+<span class="fc" id="L221">        put(&quot;vs&quot;, &quot;\\u353s&quot;); // &quot;scaron&quot;</span>
+
+<span class="fc" id="L223">        put(&quot;cT&quot;, &quot;\\u354T&quot;); // &quot;Tcedil&quot;</span>
+<span class="fc" id="L224">        put(&quot;ct&quot;, &quot;\\u355t&quot;); // &quot;tcedil&quot;</span>
+<span class="fc" id="L225">        put(&quot;vT&quot;, &quot;\\u356T&quot;); // &quot;Tcaron&quot;</span>
+        // Symbol #357 (t) has no special Latex command
+<span class="fc" id="L227">        put(&quot;Tstrok&quot;, &quot;\\u358T&quot;); // &quot;Tstrok&quot;</span>
+<span class="fc" id="L228">        put(&quot;tstrok&quot;, &quot;\\u359t&quot;); // &quot;tstrok&quot;</span>
+
+<span class="fc" id="L230">        put(&quot;~U&quot;, &quot;\\u360U&quot;); // &quot;Utilde&quot;</span>
+<span class="fc" id="L231">        put(&quot;~u&quot;, &quot;\\u361u&quot;); // &quot;utilde&quot;</span>
+<span class="fc" id="L232">        put(&quot;=U&quot;, &quot;\\u362U&quot;); // &quot;Umacr&quot;</span>
+<span class="fc" id="L233">        put(&quot;=u&quot;, &quot;\\u363u&quot;); // &quot;umacr&quot;</span>
+<span class="fc" id="L234">        put(&quot;uU&quot;, &quot;\\u364U&quot;); // &quot;Ubreve&quot;</span>
+<span class="fc" id="L235">        put(&quot;uu&quot;, &quot;\\u365u&quot;); // &quot;ubreve&quot;</span>
+<span class="fc" id="L236">        put(&quot;rU&quot;, &quot;\\u366U&quot;); // &quot;Uring&quot;</span>
+<span class="fc" id="L237">        put(&quot;ru&quot;, &quot;\\u367u&quot;); // &quot;uring&quot;</span>
+
+<span class="fc" id="L239">        put(&quot;HU&quot;, &quot;\\u368?&quot;); // &quot;Odblac&quot;</span>
+<span class="fc" id="L240">        put(&quot;Hu&quot;, &quot;\\u369?&quot;); // &quot;odblac&quot;</span>
+
+<span class="fc" id="L242">        put(&quot;kU&quot;, &quot;\\u370U&quot;); // &quot;Uogon&quot;</span>
+<span class="fc" id="L243">        put(&quot;ku&quot;, &quot;\\u371u&quot;); // &quot;uogon&quot;</span>
+
+<span class="fc" id="L245">        put(&quot;^W&quot;, &quot;\\u372W&quot;); // &quot;Wcirc&quot;</span>
+<span class="fc" id="L246">        put(&quot;^w&quot;, &quot;\\u373w&quot;); // &quot;wcirc&quot;</span>
+
+<span class="fc" id="L248">        put(&quot;^Y&quot;, &quot;\\u374Y&quot;); // &quot;Ycirc&quot;</span>
+<span class="fc" id="L249">        put(&quot;^y&quot;, &quot;\\u375y&quot;); // &quot;ycirc&quot;</span>
+<span class="fc" id="L250">        put(&quot;\&quot;Y&quot;, &quot;\\u376Y&quot;); // &quot;Yuml&quot;</span>
+
+<span class="fc" id="L252">        put(&quot;'Z&quot;, &quot;\\u377Z&quot;); // &quot;Zacute&quot;</span>
+<span class="fc" id="L253">        put(&quot;'z&quot;, &quot;\\u378z&quot;); // &quot;zacute&quot;</span>
+<span class="fc" id="L254">        put(&quot;.Z&quot;, &quot;\\u379Z&quot;); // &quot;Zdot&quot;</span>
+<span class="fc" id="L255">        put(&quot;.z&quot;, &quot;\\u380z&quot;); // &quot;zdot&quot;</span>
+<span class="fc" id="L256">        put(&quot;vZ&quot;, &quot;\\u381Z&quot;); // &quot;Zcaron&quot;</span>
+<span class="fc" id="L257">        put(&quot;vz&quot;, &quot;\\u382z&quot;); // &quot;zcaron&quot;</span>
+        // Symbol #383 (f) has no special Latex command
+<span class="fc" id="L259">    }</span>
+
+    private void put(String key, String value) {
+<span class="fc" id="L262">        rtfMap.put(key, value);</span>
+<span class="fc" id="L263">    }</span>
+
+    public String get(String key) {
+<span class="fc" id="L266">        return rtfMap.get(key);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

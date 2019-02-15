@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupTreeViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.groups</a> &gt; <span class="el_source">GroupTreeViewModel.java</span></div><h1>GroupTreeViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.groups;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleListProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
+import org.jabref.gui.AbstractViewModel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.StateManager;
+import org.jabref.gui.util.CustomLocalDragboard;
+import org.jabref.gui.util.TaskExecutor;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.groups.AbstractGroup;
+import org.jabref.model.groups.ExplicitGroup;
+import org.jabref.model.groups.GroupTreeNode;
+import org.jabref.model.metadata.MetaData;
+
+import org.fxmisc.easybind.EasyBind;
+
+public class GroupTreeViewModel extends AbstractViewModel {
+
+<span class="fc" id="L37">    private final ObjectProperty&lt;GroupNodeViewModel&gt; rootGroup = new SimpleObjectProperty&lt;&gt;();</span>
+<span class="fc" id="L38">    private final ListProperty&lt;GroupNodeViewModel&gt; selectedGroups = new SimpleListProperty&lt;&gt;(FXCollections.observableArrayList());</span>
+    private final StateManager stateManager;
+    private final DialogService dialogService;
+    private final TaskExecutor taskExecutor;
+    private final CustomLocalDragboard localDragboard;
+<span class="fc" id="L43">    private final ObjectProperty&lt;Predicate&lt;GroupNodeViewModel&gt;&gt; filterPredicate = new SimpleObjectProperty&lt;&gt;();</span>
+<span class="fc" id="L44">    private final StringProperty filterText = new SimpleStringProperty();</span>
+<span class="pc" id="L45">    private final Comparator&lt;GroupTreeNode&gt; compAlphabetIgnoreCase = (GroupTreeNode v1, GroupTreeNode v2) -&gt; v1</span>
+<span class="nc" id="L46">            .getName()</span>
+<span class="nc" id="L47">            .compareToIgnoreCase(v2.getName());</span>
+    private Optional&lt;BibDatabaseContext&gt; currentDatabase;
+
+<span class="fc" id="L50">    public GroupTreeViewModel(StateManager stateManager, DialogService dialogService, TaskExecutor taskExecutor, CustomLocalDragboard localDragboard) {</span>
+<span class="fc" id="L51">        this.stateManager = Objects.requireNonNull(stateManager);</span>
+<span class="fc" id="L52">        this.dialogService = Objects.requireNonNull(dialogService);</span>
+<span class="fc" id="L53">        this.taskExecutor = Objects.requireNonNull(taskExecutor);</span>
+<span class="fc" id="L54">        this.localDragboard = Objects.requireNonNull(localDragboard);</span>
+        // Register listener
+<span class="fc" id="L56">        EasyBind.subscribe(stateManager.activeDatabaseProperty(), this::onActiveDatabaseChanged);</span>
+<span class="fc" id="L57">        EasyBind.subscribe(selectedGroups, this::onSelectedGroupChanged);</span>
+
+        // Set-up bindings
+<span class="pc" id="L60">        filterPredicate.bind(Bindings.createObjectBinding(() -&gt; group -&gt; group.isMatchedBy(filterText.get()), filterText));</span>
+
+        // Init
+<span class="fc" id="L63">        refresh();</span>
+<span class="fc" id="L64">    }</span>
+
+    private void refresh() {
+<span class="fc" id="L67">        onActiveDatabaseChanged(stateManager.activeDatabaseProperty().getValue());</span>
+<span class="fc" id="L68">    }</span>
+
+    public ObjectProperty&lt;GroupNodeViewModel&gt; rootGroupProperty() {
+<span class="fc" id="L71">        return rootGroup;</span>
+    }
+
+    public ListProperty&lt;GroupNodeViewModel&gt; selectedGroupsProperty() {
+<span class="nc" id="L75">        return selectedGroups;</span>
+    }
+
+    public ObjectProperty&lt;Predicate&lt;GroupNodeViewModel&gt;&gt; filterPredicateProperty() {
+<span class="nc" id="L79">        return filterPredicate;</span>
+    }
+
+    public StringProperty filterTextProperty() {
+<span class="nc" id="L83">        return filterText;</span>
+    }
+
+    /**
+     * Gets invoked if the user selects a different group.
+     * We need to notify the {@link StateManager} about this change so that the main table gets updated.
+     */
+    private void onSelectedGroupChanged(ObservableList&lt;GroupNodeViewModel&gt; newValue) {
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (!currentDatabase.equals(stateManager.activeDatabaseProperty().getValue())) {</span>
+            // Switch of database occurred -&gt; do nothing
+<span class="nc" id="L93">            return;</span>
+        }
+
+<span class="fc" id="L96">        currentDatabase.ifPresent(database -&gt; {</span>
+<span class="pc bpc" id="L97" title="2 of 4 branches missed.">            if ((newValue == null) || newValue.isEmpty()) {</span>
+<span class="fc" id="L98">                stateManager.clearSelectedGroups(database);</span>
+            } else {
+<span class="nc" id="L100">                stateManager.setSelectedGroups(database, newValue.stream().map(GroupNodeViewModel::getGroupNode).collect(Collectors.toList()));</span>
+            }
+<span class="fc" id="L102">        });</span>
+<span class="fc" id="L103">    }</span>
+
+    /**
+     * Opens &quot;New Group Dialog&quot; and add the resulting group to the root
+     */
+    public void addNewGroupToRoot() {
+<span class="nc" id="L109">        addNewSubgroup(rootGroup.get());</span>
+<span class="nc" id="L110">    }</span>
+
+    /**
+     * Gets invoked if the user changes the active database.
+     * We need to get the new group tree and update the view
+     */
+    private void onActiveDatabaseChanged(Optional&lt;BibDatabaseContext&gt; newDatabase) {
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        if (newDatabase.isPresent()) {</span>
+<span class="fc" id="L118">            GroupNodeViewModel newRoot = newDatabase</span>
+<span class="fc" id="L119">                    .map(BibDatabaseContext::getMetaData)</span>
+<span class="fc" id="L120">                    .flatMap(MetaData::getGroups)</span>
+<span class="pc" id="L121">                    .map(root -&gt; new GroupNodeViewModel(newDatabase.get(), stateManager, taskExecutor, root, localDragboard))</span>
+<span class="fc" id="L122">                    .orElse(GroupNodeViewModel.getAllEntriesGroup(newDatabase.get(), stateManager, taskExecutor, localDragboard));</span>
+
+<span class="fc" id="L124">            rootGroup.setValue(newRoot);</span>
+<span class="fc" id="L125">            this.selectedGroups.setAll(</span>
+<span class="fc" id="L126">                    stateManager.getSelectedGroup(newDatabase.get()).stream()</span>
+<span class="pc" id="L127">                                .map(selectedGroup -&gt; new GroupNodeViewModel(newDatabase.get(), stateManager, taskExecutor, selectedGroup, localDragboard))</span>
+<span class="fc" id="L128">                                .collect(Collectors.toList()));</span>
+<span class="fc" id="L129">        } else {</span>
+<span class="nc" id="L130">            rootGroup.setValue(GroupNodeViewModel.getAllEntriesGroup(new BibDatabaseContext(), stateManager, taskExecutor, localDragboard));</span>
+        }
+
+<span class="fc" id="L133">        currentDatabase = newDatabase;</span>
+<span class="fc" id="L134">    }</span>
+
+    /**
+     * Opens &quot;New Group Dialog&quot; and add the resulting group to the specified group
+     */
+    public void addNewSubgroup(GroupNodeViewModel parent) {
+<span class="nc" id="L140">        Optional&lt;AbstractGroup&gt; newGroup = dialogService.showCustomDialogAndWait(new GroupDialog());</span>
+<span class="nc" id="L141">        newGroup.ifPresent(group -&gt; {</span>
+<span class="nc" id="L142">            parent.addSubgroup(group);</span>
+
+            // TODO: Add undo
+            //UndoableAddOrRemoveGroup undo = new UndoableAddOrRemoveGroup(parent, new GroupTreeNodeViewModel(newGroupNode), UndoableAddOrRemoveGroup.ADD_NODE);
+            //panel.getUndoManager().addEdit(undo);
+
+            // TODO: Expand parent to make new group visible
+            //parent.expand();
+
+<span class="nc" id="L151">            dialogService.notify(Localization.lang(&quot;Added group \&quot;%0\&quot;.&quot;, group.getName()));</span>
+<span class="nc" id="L152">            writeGroupChangesToMetaData();</span>
+<span class="nc" id="L153">        });</span>
+<span class="nc" id="L154">    }</span>
+
+    private void writeGroupChangesToMetaData() {
+<span class="nc" id="L157">        currentDatabase.get().getMetaData().setGroups(rootGroup.get().getGroupNode());</span>
+<span class="nc" id="L158">    }</span>
+
+    /**
+     * Opens &quot;Edit Group Dialog&quot; and changes the given group to the edited one.
+     */
+    public void editGroup(GroupNodeViewModel oldGroup) {
+<span class="nc" id="L164">        Optional&lt;AbstractGroup&gt; newGroup = dialogService</span>
+<span class="nc" id="L165">                .showCustomDialogAndWait(new GroupDialog(oldGroup.getGroupNode().getGroup()));</span>
+<span class="nc" id="L166">        newGroup.ifPresent(group -&gt; {</span>
+            // TODO: Keep assignments
+<span class="nc" id="L168">            boolean keepPreviousAssignments = dialogService.showConfirmationDialogAndWait(</span>
+<span class="nc" id="L169">                    Localization.lang(&quot;Change of Grouping Method&quot;),</span>
+<span class="nc" id="L170">                    Localization.lang(&quot;Assign the original group's entries to this group?&quot;));</span>
+            //        WarnAssignmentSideEffects.warnAssignmentSideEffects(newGroup, panel.frame());
+<span class="nc bnc" id="L172" title="All 4 branches missed.">            boolean removePreviousAssignments = (oldGroup.getGroupNode().getGroup() instanceof ExplicitGroup)</span>
+                    &amp;&amp; (group instanceof ExplicitGroup);
+
+<span class="nc" id="L175">            oldGroup.getGroupNode().setGroup(</span>
+                    group,
+                    keepPreviousAssignments,
+                    removePreviousAssignments,
+<span class="nc" id="L179">                    stateManager.getEntriesInCurrentDatabase());</span>
+
+            // TODO: Add undo
+            // Store undo information.
+            // AbstractUndoableEdit undoAddPreviousEntries = null;
+            // UndoableModifyGroup undo = new UndoableModifyGroup(GroupSelector.this, groupsRoot, node, newGroup);
+            // if (undoAddPreviousEntries == null) {
+            //    panel.getUndoManager().addEdit(undo);
+            //} else {
+            //    NamedCompound nc = new NamedCompound(&quot;Modify Group&quot;);
+            //    nc.addEdit(undo);
+            //    nc.addEdit(undoAddPreviousEntries);
+            //    nc.end();/
+            //      panel.getUndoManager().addEdit(nc);
+            //}
+            //if (!addChange.isEmpty()) {
+            //    undoAddPreviousEntries = UndoableChangeEntriesOfGroup.getUndoableEdit(null, addChange);
+            //}
+
+<span class="nc" id="L198">            dialogService.notify(Localization.lang(&quot;Modified group \&quot;%0\&quot;.&quot;, group.getName()));</span>
+<span class="nc" id="L199">            writeGroupChangesToMetaData();</span>
+
+            // This is ugly but we have no proper update mechanism in place to propagate the changes, so redraw everything
+<span class="nc" id="L202">            refresh();</span>
+<span class="nc" id="L203">        });</span>
+<span class="nc" id="L204">    }</span>
+
+    public void removeSubgroups(GroupNodeViewModel group) {
+<span class="nc" id="L207">        boolean confirmation = dialogService.showConfirmationDialogAndWait(</span>
+<span class="nc" id="L208">                Localization.lang(&quot;Remove subgroups&quot;),</span>
+<span class="nc" id="L209">                Localization.lang(&quot;Remove all subgroups of \&quot;%0\&quot;?&quot;, group.getDisplayName()));</span>
+<span class="nc bnc" id="L210" title="All 2 branches missed.">        if (confirmation) {</span>
+            /// TODO: Add undo
+            //final UndoableModifySubtree undo = new UndoableModifySubtree(getGroupTreeRoot(), node, &quot;Remove subgroups&quot;);
+            //panel.getUndoManager().addEdit(undo);
+<span class="nc" id="L214">            group.getGroupNode().removeAllChildren();</span>
+<span class="nc" id="L215">            dialogService.notify(Localization.lang(&quot;Removed all subgroups of group \&quot;%0\&quot;.&quot;, group.getDisplayName()));</span>
+<span class="nc" id="L216">            writeGroupChangesToMetaData();</span>
+        }
+<span class="nc" id="L218">    }</span>
+
+    public void removeGroupKeepSubgroups(GroupNodeViewModel group) {
+<span class="nc" id="L221">        boolean confirmation = dialogService.showConfirmationDialogAndWait(</span>
+<span class="nc" id="L222">                Localization.lang(&quot;Remove group&quot;),</span>
+<span class="nc" id="L223">                Localization.lang(&quot;Remove group \&quot;%0\&quot;?&quot;, group.getDisplayName()));</span>
+
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        if (confirmation) {</span>
+            // TODO: Add undo
+            //final UndoableAddOrRemoveGroup undo = new UndoableAddOrRemoveGroup(groupsRoot, node, UndoableAddOrRemoveGroup.REMOVE_NODE_KEEP_CHILDREN);
+            //panel.getUndoManager().addEdit(undo);
+<span class="nc" id="L229">            GroupTreeNode groupNode = group.getGroupNode();</span>
+<span class="nc" id="L230">            groupNode.getParent()</span>
+<span class="nc" id="L231">                     .ifPresent(parent -&gt; groupNode.moveAllChildrenTo(parent, parent.getIndexOfChild(groupNode).get()));</span>
+<span class="nc" id="L232">            groupNode.removeFromParent();</span>
+
+<span class="nc" id="L234">            dialogService.notify(Localization.lang(&quot;Removed group \&quot;%0\&quot;.&quot;, group.getDisplayName()));</span>
+<span class="nc" id="L235">            writeGroupChangesToMetaData();</span>
+        }
+<span class="nc" id="L237">    }</span>
+
+    /**
+     * Removes the specified group and its subgroups (after asking for confirmation).
+     */
+    public void removeGroupAndSubgroups(GroupNodeViewModel group) {
+<span class="nc" id="L243">        boolean confirmed = dialogService.showConfirmationDialogAndWait(</span>
+<span class="nc" id="L244">                Localization.lang(&quot;Remove group and subgroups&quot;),</span>
+<span class="nc" id="L245">                Localization.lang(&quot;Remove group \&quot;%0\&quot; and its subgroups?&quot;, group.getDisplayName()),</span>
+<span class="nc" id="L246">                Localization.lang(&quot;Remove&quot;));</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">        if (confirmed) {</span>
+            // TODO: Add undo
+            //final UndoableAddOrRemoveGroup undo = new UndoableAddOrRemoveGroup(groupsRoot, node, UndoableAddOrRemoveGroup.REMOVE_NODE_AND_CHILDREN);
+            //panel.getUndoManager().addEdit(undo);
+
+<span class="nc" id="L252">            removeGroupsAndSubGroupsFromEntries(group);</span>
+
+<span class="nc" id="L254">            group.getGroupNode().removeFromParent();</span>
+
+<span class="nc" id="L256">            dialogService.notify(Localization.lang(&quot;Removed group \&quot;%0\&quot; and its subgroups.&quot;, group.getDisplayName()));</span>
+<span class="nc" id="L257">            writeGroupChangesToMetaData();</span>
+        }
+<span class="nc" id="L259">    }</span>
+
+    void removeGroupsAndSubGroupsFromEntries(GroupNodeViewModel group) {
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">        for (GroupNodeViewModel child : group.getChildren()) {</span>
+<span class="nc" id="L263">            removeGroupsAndSubGroupsFromEntries(child);</span>
+<span class="nc" id="L264">        }</span>
+
+        // only remove explicit groups from the entries, keyword groups should not be deleted
+<span class="fc bfc" id="L267" title="All 2 branches covered.">        if (group.getGroupNode().getGroup() instanceof ExplicitGroup) {</span>
+<span class="fc" id="L268">            List&lt;BibEntry&gt; entriesInGroup = group.getGroupNode().getEntriesInGroup(this.currentDatabase.get().getEntries());</span>
+<span class="fc" id="L269">            group.getGroupNode().removeEntriesFromGroup(entriesInGroup);</span>
+        }
+<span class="fc" id="L271">    }</span>
+
+    public void addSelectedEntries(GroupNodeViewModel group) {
+        // TODO: Warn
+        // if (!WarnAssignmentSideEffects.warnAssignmentSideEffects(node.getNode().getGroup(), panel.frame())) {
+        //    return; // user aborted operation
+
+<span class="nc" id="L278">        group.getGroupNode().addEntriesToGroup(stateManager.getSelectedEntries());</span>
+
+        // TODO: Add undo
+        // NamedCompound undoAll = new NamedCompound(Localization.lang(&quot;change assignment of entries&quot;));
+        // if (!undoAdd.isEmpty()) { undo.addEdit(UndoableChangeEntriesOfGroup.getUndoableEdit(node, undoAdd)); }
+        // panel.getUndoManager().addEdit(undoAll);
+
+        // TODO Display massages
+        //if (undo == null) {
+        //    frame.output(Localization.lang(&quot;The group \&quot;%0\&quot; already contains the selection.&quot;,
+        //            node.getGroup().getName()));
+        //    return;
+        //}
+        // panel.getUndoManager().addEdit(undo);
+        // final String groupName = node.getGroup().getName();
+        // if (assignedEntries == 1) {
+        //    frame.output(Localization.lang(&quot;Assigned 1 entry to group \&quot;%0\&quot;.&quot;, groupName));
+        // } else {
+        //    frame.output(Localization.lang(&quot;Assigned %0 entries to group \&quot;%1\&quot;.&quot;, String.valueOf(assignedEntries),
+        //            groupName));
+        //}
+<span class="nc" id="L299">    }</span>
+
+    public void removeSelectedEntries(GroupNodeViewModel group) {
+        // TODO: warn if assignment has undesired side effects (modifies a field != keywords)
+        // if (!WarnAssignmentSideEffects.warnAssignmentSideEffects(mNode.getNode().getGroup(), mPanel.frame())) {
+        //    return; // user aborted operation
+
+<span class="nc" id="L306">        group.getGroupNode().removeEntriesFromGroup(stateManager.getSelectedEntries());</span>
+
+        // TODO: Add undo
+        // if (!undo.isEmpty()) {
+        //    mPanel.getUndoManager().addEdit(UndoableChangeEntriesOfGroup.getUndoableEdit(mNode, undo));
+<span class="nc" id="L311">    }</span>
+
+    public void sortAlphabeticallyRecursive(GroupNodeViewModel group) {
+<span class="nc" id="L314">        group.getGroupNode().sortChildren(compAlphabetIgnoreCase, true);</span>
+<span class="nc" id="L315">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

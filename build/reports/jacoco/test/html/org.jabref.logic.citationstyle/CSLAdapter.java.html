@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CSLAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.citationstyle</a> &gt; <span class="el_source">CSLAdapter.java</span></div><h1>CSLAdapter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.citationstyle;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
+import org.jabref.logic.formatter.bibtexfields.RemoveNewlinesFormatter;
+import org.jabref.logic.layout.format.HTMLChars;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.Month;
+
+import de.undercouch.citeproc.CSL;
+import de.undercouch.citeproc.ItemDataProvider;
+import de.undercouch.citeproc.bibtex.BibTeXConverter;
+import de.undercouch.citeproc.csl.CSLItemData;
+import de.undercouch.citeproc.output.Bibliography;
+import org.jbibtex.BibTeXEntry;
+import org.jbibtex.DigitStringValue;
+import org.jbibtex.Key;
+
+/**
+ * Provides an adapter class to CSL. It holds a CSL instance under the hood that is only recreated when
+ * the style changes.
+ *
+ * @apiNote The first call to {@link #makeBibliography} is expensive since the
+ * CSL instance will be created. As long as the style stays the same, we can reuse this instance. On style-change, the
+ * engine is re-instantiated. Therefore, the use-case of this class is many calls to {@link #makeBibliography} with the
+ * same style. Changing the output format is cheap.
+ * @implNote The main function {@link #makeBibliography} will enforce
+ * synchronized calling. The main CSL engine under the hood is not thread-safe. Since this class is usually called from
+ * a SwingWorker, the only other option would be to create several CSL instances which is wasting a lot of resources and very slow.
+ * In the current scheme, {@link #makeBibliography} can be called as usual
+ * SwingWorker task and to the best of my knowledge, concurrent calls will pile up and processed sequentially.
+ */
+<span class="fc" id="L38">public class CSLAdapter {</span>
+
+<span class="fc" id="L40">    private static final BibTeXConverter BIBTEX_CONVERTER = new BibTeXConverter();</span>
+<span class="fc" id="L41">    private final JabRefItemDataProvider dataProvider = new JabRefItemDataProvider();</span>
+    private String style;
+    private CitationStyleOutputFormat format;
+    private CSL cslInstance;
+
+    /**
+     * Creates the bibliography of the provided items. This method needs to run synchronized because the underlying
+     * CSL engine is not thread-safe.
+     */
+    public synchronized List&lt;String&gt; makeBibliography(List&lt;BibEntry&gt; bibEntries, String style, CitationStyleOutputFormat outputFormat) throws IOException, IllegalArgumentException {
+<span class="fc" id="L51">        dataProvider.setData(bibEntries);</span>
+<span class="nc" id="L52">        initialize(style, outputFormat);</span>
+<span class="nc" id="L53">        cslInstance.registerCitationItems(dataProvider.getIds());</span>
+<span class="nc" id="L54">        final Bibliography bibliography = cslInstance.makeBibliography();</span>
+<span class="nc" id="L55">        return Arrays.asList(bibliography.getEntries());</span>
+    }
+
+    /**
+     * Initialized the static CSL instance if needed.
+     *
+     * @param newStyle  journal style of the output
+     * @param newFormat usually HTML or RTF.
+     * @throws IOException An error occurred in the underlying JavaScript framework
+     */
+    private void initialize(String newStyle, CitationStyleOutputFormat newFormat) throws IOException {
+<span class="pc bpc" id="L66" title="3 of 4 branches missed.">        if (cslInstance == null || !Objects.equals(newStyle, style)) {</span>
+            // lang and forceLang are set to the default values of other CSL constructors
+<span class="nc" id="L68">            cslInstance = new CSL(dataProvider, new JabRefLocaleProvider(), newStyle, &quot;en-US&quot;, false);</span>
+<span class="nc" id="L69">            style = newStyle;</span>
+        }
+
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (!Objects.equals(newFormat, format)) {</span>
+<span class="nc" id="L73">            cslInstance.setOutputFormat(newFormat.getFormat());</span>
+<span class="nc" id="L74">            format = newFormat;</span>
+        }
+<span class="nc" id="L76">    }</span>
+
+    /**
+     * Custom ItemDataProvider that allows to set the data so that we don't have to instantiate a new CSL object
+     * every time.
+     */
+<span class="fc" id="L82">    private static class JabRefItemDataProvider implements ItemDataProvider {</span>
+
+<span class="fc" id="L84">        private ArrayList&lt;BibEntry&gt; data = new ArrayList&lt;&gt;();</span>
+
+        /**
+         * Converts the {@link BibEntry} into {@link CSLItemData}.
+         */
+        private static CSLItemData bibEntryToCSLItemData(BibEntry bibEntry) {
+<span class="nc" id="L90">            String citeKey = bibEntry.getCiteKeyOptional().orElse(&quot;&quot;);</span>
+<span class="nc" id="L91">            BibTeXEntry bibTeXEntry = new BibTeXEntry(new Key(bibEntry.getType()), new Key(citeKey));</span>
+
+            // Not every field is already generated into latex free fields
+<span class="nc" id="L94">            HTMLChars latexToHtmlConverter = new HTMLChars();</span>
+<span class="nc" id="L95">            RemoveNewlinesFormatter removeNewlinesFormatter = new RemoveNewlinesFormatter();</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            for (String key : bibEntry.getFieldMap().keySet()) {</span>
+<span class="nc" id="L97">                bibEntry.getField(key)</span>
+<span class="nc" id="L98">                        .map(removeNewlinesFormatter::format)</span>
+<span class="nc" id="L99">                        .map(latexToHtmlConverter::format)</span>
+<span class="nc" id="L100">                        .ifPresent(value -&gt; {</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                            if (FieldName.MONTH.equals(key)) {</span>
+                                // Change month from #mon# to mon because CSL does not support the former format
+<span class="nc" id="L103">                                value = bibEntry.getMonth().map(Month::getShortName).orElse(value);</span>
+                            }
+<span class="nc" id="L105">                            bibTeXEntry.addField(new Key(key), new DigitStringValue(value));</span>
+<span class="nc" id="L106">                        });</span>
+<span class="nc" id="L107">            }</span>
+<span class="nc" id="L108">            return BIBTEX_CONVERTER.toItemData(bibTeXEntry);</span>
+        }
+
+        public void setData(List&lt;BibEntry&gt; data) {
+<span class="fc" id="L112">            this.data.clear();</span>
+<span class="fc" id="L113">            this.data.addAll(data);</span>
+<span class="fc" id="L114">        }</span>
+
+        @Override
+        public CSLItemData retrieveItem(String id) {
+<span class="nc" id="L118">            return data.stream()</span>
+<span class="nc" id="L119">                    .filter(entry -&gt; entry.getCiteKeyOptional().orElse(&quot;&quot;).equals(id))</span>
+<span class="nc" id="L120">                    .map(JabRefItemDataProvider::bibEntryToCSLItemData)</span>
+<span class="nc" id="L121">                    .findFirst().orElse(null);</span>
+        }
+
+        @Override
+        public String[] getIds() {
+<span class="nc" id="L126">            return data.stream()</span>
+<span class="nc" id="L127">                    .map(entry -&gt; entry.getCiteKeyOptional().orElse(&quot;&quot;))</span>
+<span class="nc" id="L128">                    .toArray(String[]::new);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

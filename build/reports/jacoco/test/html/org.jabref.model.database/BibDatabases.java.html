@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibDatabases.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.database</a> &gt; <span class="el_source">BibDatabases.java</span></div><h1>BibDatabases.java</h1><pre class="source lang-java linenums">package org.jabref.model.database;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.IdGenerator;
+
+public class BibDatabases {
+
+    private BibDatabases() {
+    }
+
+    /**
+     * Gets a collection of bibentries and sets an ID for every entry. After that
+     * all entries will be inserted into a new BibDatabase.
+     *
+     * @param bibentries a collection that contains {@link BibEntry}
+     * @return BibDatabase that contains the entries
+     */
+    public static BibDatabase createDatabase(Collection&lt;BibEntry&gt; bibentries) {
+<span class="fc" id="L23">        BibDatabase database = new BibDatabase();</span>
+
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        for (BibEntry entry : bibentries) {</span>
+<span class="fc" id="L26">            entry.setId(IdGenerator.next());</span>
+<span class="fc" id="L27">            database.insertEntry(entry);</span>
+<span class="fc" id="L28">        }</span>
+
+<span class="fc" id="L30">        return database;</span>
+    }
+
+    /**
+     * Receives a Collection of BibEntry instances, iterates through them, and
+     * removes all entries that have no fields set. This is useful for rooting out
+     * an unsucessful import (wrong format) that returns a number of empty entries.
+     */
+    public static List&lt;BibEntry&gt; purgeEmptyEntries(Collection&lt;BibEntry&gt; entries) {
+<span class="fc" id="L39">        return entries.stream()</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">                      .filter(entry -&gt; !entry.getFieldNames().isEmpty())</span>
+<span class="fc" id="L41">                      .collect(Collectors.toList());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

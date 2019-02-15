@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibtexKeyPatternPanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.bibtexkeypattern</a> &gt; <span class="el_source">BibtexKeyPatternPanel.java</span></div><h1>BibtexKeyPatternPanel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.bibtexkeypattern;
+
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.help.HelpAction;
+import org.jabref.logic.help.HelpFile;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.EntryTypes;
+import org.jabref.model.bibtexkeypattern.AbstractBibtexKeyPattern;
+import org.jabref.model.bibtexkeypattern.DatabaseBibtexKeyPattern;
+import org.jabref.model.bibtexkeypattern.GlobalBibtexKeyPattern;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.EntryType;
+import org.jabref.preferences.JabRefPreferences;
+
+public class BibtexKeyPatternPanel extends Pane {
+
+    // used by both BibtexKeyPatternPanel and TabLabelPAttern
+<span class="nc" id="L32">    protected final GridBagLayout gbl = new GridBagLayout();</span>
+<span class="nc" id="L33">    protected final GridBagConstraints con = new GridBagConstraints();</span>
+
+    // default pattern
+<span class="nc" id="L36">    protected final TextField defaultPat = new TextField();</span>
+    private final HelpAction help;
+
+<span class="nc" id="L39">    private final int COLUMNS = 2;</span>
+
+    // one field for each type
+<span class="nc" id="L42">    private final Map&lt;String, TextField&gt; textFields = new HashMap&lt;&gt;();</span>
+    private final BasePanel panel;
+<span class="nc" id="L44">    private final GridPane gridPane = new GridPane();</span>
+
+<span class="nc" id="L46">    public BibtexKeyPatternPanel(BasePanel panel) {</span>
+<span class="nc" id="L47">        this.panel = panel;</span>
+<span class="nc" id="L48">        help = new HelpAction(Localization.lang(&quot;Help on key patterns&quot;), HelpFile.BIBTEX_KEY_PATTERN);</span>
+<span class="nc" id="L49">        gridPane.setHgap(10);</span>
+<span class="nc" id="L50">        gridPane.setVgap(5);</span>
+<span class="nc" id="L51">        buildGUI();</span>
+<span class="nc" id="L52">    }</span>
+
+    private void buildGUI() {
+        BibDatabaseMode mode;
+        // check mode of currently used DB
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (panel != null) {</span>
+<span class="nc" id="L58">            mode = panel.getBibDatabaseContext().getMode();</span>
+        } else {
+            // use preferences value if no DB is open
+<span class="nc" id="L61">            mode = Globals.prefs.getDefaultBibDatabaseMode();</span>
+        }
+
+<span class="nc" id="L64">        int rowIndex = 1;</span>
+<span class="nc" id="L65">        int columnIndex = 0;</span>
+        // The header - can be removed
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        for (int i = 0; i &lt; COLUMNS; i++) {</span>
+<span class="nc" id="L68">            Label label = new Label(Localization.lang(&quot;Entry type&quot;));</span>
+<span class="nc" id="L69">            Label keyPattern = new Label(Localization.lang(&quot;Key pattern&quot;));</span>
+<span class="nc" id="L70">            gridPane.add(label, ++columnIndex, rowIndex);</span>
+<span class="nc" id="L71">            gridPane.add(keyPattern, ++columnIndex, rowIndex);</span>
+<span class="nc" id="L72">            ++columnIndex; //3</span>
+        }
+
+<span class="nc" id="L75">        rowIndex++;</span>
+<span class="nc" id="L76">        Label defaultPattern = new Label(Localization.lang(&quot;Default pattern&quot;));</span>
+<span class="nc" id="L77">        Button button = new Button(&quot;Default&quot;);</span>
+<span class="nc" id="L78">        button.setOnAction(e -&gt; defaultPat.setText((String) Globals.prefs.defaults.get(JabRefPreferences.DEFAULT_BIBTEX_KEY_PATTERN)));</span>
+<span class="nc" id="L79">        gridPane.add(defaultPattern, 1, rowIndex);</span>
+<span class="nc" id="L80">        gridPane.add(defaultPat, 2, rowIndex);</span>
+<span class="nc" id="L81">        gridPane.add(button, 3, rowIndex);</span>
+
+<span class="nc" id="L83">        columnIndex = 1;</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        for (EntryType type : EntryTypes.getAllValues(mode)) {</span>
+<span class="nc" id="L85">            Label label1 = new Label(type.getName());</span>
+<span class="nc" id="L86">            TextField textField = new TextField();</span>
+<span class="nc" id="L87">            Button button1 = new Button(&quot;Default&quot;);</span>
+<span class="nc" id="L88">            button1.setOnAction(e1 -&gt; textField.setText((String) Globals.prefs.defaults.get(JabRefPreferences.DEFAULT_BIBTEX_KEY_PATTERN)));</span>
+
+<span class="nc" id="L90">            gridPane.add(label1, 1 + (columnIndex * 3), rowIndex);</span>
+<span class="nc" id="L91">            gridPane.add(textField, 2 + (columnIndex * 3), rowIndex);</span>
+<span class="nc" id="L92">            gridPane.add(button1, 3 + (columnIndex * 3), rowIndex);</span>
+
+<span class="nc" id="L94">            textFields.put(type.getName().toLowerCase(Locale.ROOT), textField);</span>
+
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            if (columnIndex == COLUMNS - 1) {</span>
+<span class="nc" id="L97">                columnIndex = 0;</span>
+<span class="nc" id="L98">                rowIndex++;</span>
+            } else {
+<span class="nc" id="L100">                columnIndex++;</span>
+            }
+<span class="nc" id="L102">        }</span>
+
+<span class="nc" id="L104">        rowIndex++;</span>
+
+<span class="nc" id="L106">        Button help1 = new Button(&quot;?&quot;);</span>
+<span class="nc" id="L107">        help1.setOnAction(e -&gt; new HelpAction(Localization.lang(&quot;Help on key patterns&quot;), HelpFile.BIBTEX_KEY_PATTERN).getHelpButton().doClick());</span>
+<span class="nc" id="L108">        gridPane.add(help1, 1, rowIndex);</span>
+
+<span class="nc" id="L110">        Button btnDefaultAll1 = new Button(Localization.lang(&quot;Reset all&quot;));</span>
+<span class="nc" id="L111">        btnDefaultAll1.setOnAction(e -&gt; {</span>
+            // reset all fields
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            for (TextField field : textFields.values()) {</span>
+<span class="nc" id="L114">                field.setText(&quot;&quot;);</span>
+<span class="nc" id="L115">            }</span>
+<span class="nc" id="L116">            defaultPat.setText((String) Globals.prefs.defaults.get(JabRefPreferences.DEFAULT_BIBTEX_KEY_PATTERN));</span>
+<span class="nc" id="L117">        });</span>
+<span class="nc" id="L118">        gridPane.add(btnDefaultAll1, 2, rowIndex);</span>
+<span class="nc" id="L119">    }</span>
+
+
+    /**
+     * fill the given LabelPattern by values generated from the text fields
+     */
+    private void fillPatternUsingPanelData(AbstractBibtexKeyPattern keypatterns) {
+        // each entry type
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        for (Map.Entry&lt;String, TextField&gt; entry : textFields.entrySet()) {</span>
+<span class="nc" id="L128">            String text = entry.getValue().getText();</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            if (!text.trim().isEmpty()) {</span>
+<span class="nc" id="L130">                keypatterns.addBibtexKeyPattern(entry.getKey(), text);</span>
+            }
+<span class="nc" id="L132">        }</span>
+
+        // default value
+<span class="nc" id="L135">        String text = defaultPat.getText();</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (!text.trim().isEmpty()) { // we do not trim the value at the assignment to enable users to have spaces at the beginning and at the end of the pattern</span>
+<span class="nc" id="L137">            keypatterns.setDefaultValue(text);</span>
+        }
+<span class="nc" id="L139">    }</span>
+
+    protected GlobalBibtexKeyPattern getKeyPatternAsGlobalBibtexKeyPattern() {
+<span class="nc" id="L142">        GlobalBibtexKeyPattern res = GlobalBibtexKeyPattern.fromPattern(</span>
+<span class="nc" id="L143">                JabRefPreferences.getInstance().get(JabRefPreferences.DEFAULT_BIBTEX_KEY_PATTERN)</span>
+        );
+<span class="nc" id="L145">        fillPatternUsingPanelData(res);</span>
+<span class="nc" id="L146">        return res;</span>
+    }
+
+    public DatabaseBibtexKeyPattern getKeyPatternAsDatabaseBibtexKeyPattern() {
+<span class="nc" id="L150">        DatabaseBibtexKeyPattern res = new DatabaseBibtexKeyPattern(Globals.prefs.getKeyPattern());</span>
+<span class="nc" id="L151">        fillPatternUsingPanelData(res);</span>
+<span class="nc" id="L152">        return res;</span>
+    }
+
+    /**
+     * Fills the current values to the text fields
+     *
+     * @param keyPattern the BibtexKeyPattern to use as initial value
+     */
+    public void setValues(AbstractBibtexKeyPattern keyPattern) {
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        for (Map.Entry&lt;String, TextField&gt; entry : textFields.entrySet()) {</span>
+<span class="nc" id="L162">            setValue(entry.getValue(), entry.getKey(), keyPattern);</span>
+<span class="nc" id="L163">        }</span>
+
+<span class="nc bnc" id="L165" title="All 4 branches missed.">        if (keyPattern.getDefaultValue() == null || keyPattern.getDefaultValue().isEmpty()) {</span>
+<span class="nc" id="L166">            defaultPat.setText(&quot;&quot;);</span>
+        } else {
+<span class="nc" id="L168">            defaultPat.setText(keyPattern.getDefaultValue().get(0));</span>
+        }
+<span class="nc" id="L170">    }</span>
+
+    private static void setValue(TextField tf, String fieldName, AbstractBibtexKeyPattern keyPattern) {
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (keyPattern.isDefaultValue(fieldName)) {</span>
+<span class="nc" id="L174">            tf.setText(&quot;&quot;);</span>
+        } else {
+<span class="nc" id="L176">            tf.setText(keyPattern.getValue(fieldName).get(0));</span>
+        }
+<span class="nc" id="L178">    }</span>
+
+    public Node getPanel() {
+<span class="nc" id="L181">        return gridPane;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

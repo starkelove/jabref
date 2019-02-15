@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReadStatusFieldComparator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util.comparator</a> &gt; <span class="el_source">ReadStatusFieldComparator.java</span></div><h1>ReadStatusFieldComparator.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util.comparator;
+
+import java.util.Comparator;
+import java.util.Optional;
+
+import org.jabref.gui.specialfields.SpecialFieldValueViewModel;
+
+<span class="nc" id="L8">public class ReadStatusFieldComparator implements Comparator&lt;Optional&lt;SpecialFieldValueViewModel&gt;&gt; {</span>
+
+    @Override
+    public int compare(Optional&lt;SpecialFieldValueViewModel&gt; val1, Optional&lt;SpecialFieldValueViewModel&gt; val2) {
+<span class="nc bnc" id="L12" title="All 2 branches missed.">        if (val1.isPresent()) {</span>
+<span class="nc bnc" id="L13" title="All 2 branches missed.">            if (val2.isPresent()) {</span>
+<span class="nc" id="L14">                return val1.get().getValue().compareTo(val2.get().getValue());</span>
+            } else {
+<span class="nc" id="L16">                return -1;</span>
+            }
+        } else {
+<span class="nc bnc" id="L19" title="All 2 branches missed.">            if (val2.isPresent()) {</span>
+<span class="nc" id="L20">                return 1;</span>
+            } else {
+<span class="nc" id="L22">                return 0;</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

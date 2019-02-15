@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SpecialFieldUpdateListener.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.specialfields</a> &gt; <span class="el_source">SpecialFieldUpdateListener.java</span></div><h1>SpecialFieldUpdateListener.java</h1><pre class="source lang-java linenums">package org.jabref.gui.specialfields;
+
+import javax.swing.SwingUtilities;
+
+import org.jabref.Globals;
+import org.jabref.JabRefGUI;
+import org.jabref.logic.specialfields.SpecialFieldsUtils;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.event.FieldChangedEvent;
+import org.jabref.model.entry.specialfields.SpecialField;
+
+import com.google.common.eventbus.Subscribe;
+
+/**
+ * Listener triggering
+ *  * an update of keywords if special field has been updated
+ *  * an update of special fields if keywords have been updated
+ */
+<span class="nc" id="L20">public class SpecialFieldUpdateListener {</span>
+
+    private static SpecialFieldUpdateListener INSTANCE;
+
+    @Subscribe
+    public void listen(FieldChangedEvent fieldChangedEvent) {
+        // only sync if keyword sync is enabled
+<span class="nc bnc" id="L27" title="All 2 branches missed.">        if (!Globals.prefs.isKeywordSyncEnabled()) {</span>
+<span class="nc" id="L28">            return;</span>
+        }
+
+<span class="nc" id="L31">        final BibEntry entry = fieldChangedEvent.getBibEntry();</span>
+<span class="nc" id="L32">        final String fieldName = fieldChangedEvent.getFieldName();</span>
+        // Source editor cycles through all entries
+        // if we immediately updated the fields, the entry editor would detect a subsequent change as a user change
+        // and re-fire this event
+        // e.g., &quot;keyword = {prio1}, priority = {prio2}&quot; and a change at keyword to prio3 would not succeed.
+<span class="nc" id="L37">        SwingUtilities.invokeLater(() -&gt; {</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">            if (FieldName.KEYWORDS.equals(fieldName)) {</span>
+<span class="nc" id="L39">                SpecialFieldsUtils.syncSpecialFieldsFromKeywords(entry, Globals.prefs.getKeywordDelimiter());</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">            } else if (SpecialField.isSpecialField(fieldName)) {</span>
+<span class="nc" id="L41">                SpecialFieldsUtils.syncKeywordsFromSpecialFields(entry, Globals.prefs.getKeywordDelimiter());</span>
+            }
+<span class="nc" id="L43">            SwingUtilities.invokeLater(() -&gt; JabRefGUI.getMainFrame().getCurrentBasePanel().updateEntryEditorIfShowing());</span>
+<span class="nc" id="L44">        });</span>
+<span class="nc" id="L45">    }</span>
+
+    public static SpecialFieldUpdateListener getInstance() {
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (SpecialFieldUpdateListener.INSTANCE == null) {</span>
+<span class="nc" id="L49">            SpecialFieldUpdateListener.INSTANCE = new SpecialFieldUpdateListener();</span>
+        }
+<span class="nc" id="L51">        return SpecialFieldUpdateListener.INSTANCE;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

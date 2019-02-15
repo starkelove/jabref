@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TitleCaseFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.formatter.casechanger</a> &gt; <span class="el_source">TitleCaseFormatter.java</span></div><h1>TitleCaseFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.formatter.casechanger;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.cleanup.Formatter;
+
+<span class="fc" id="L6">public class TitleCaseFormatter extends Formatter {</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L10">        return Localization.lang(&quot;Title case&quot;);</span>
+    }
+
+    @Override
+    public String getKey() {
+<span class="fc" id="L15">        return &quot;title_case&quot;;</span>
+    }
+
+    /**
+     * Converts all words to upper case, but converts articles, prepositions, and conjunctions to lower case
+     * Capitalizes first and last word
+     * Does not change words starting with &quot;{&quot;
+     */
+    @Override
+    public String format(String input) {
+<span class="fc" id="L25">        Title title = new Title(input);</span>
+
+<span class="fc" id="L27">        title.getWords().stream().filter(Word::isSmallerWord).forEach(Word::toLowerCase);</span>
+<span class="fc" id="L28">        title.getWords().stream().filter(Word::isLargerWord).forEach(Word::toUpperFirst);</span>
+
+<span class="fc" id="L30">        title.getFirstWord().ifPresent(Word::toUpperFirst);</span>
+<span class="fc" id="L31">        title.getLastWord().ifPresent(Word::toUpperFirst);</span>
+
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        for (int i = 0; i &lt; (title.getWords().size() - 2); i++) {</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">            if (title.getWords().get(i).endsWithColon()) {</span>
+<span class="fc" id="L35">                title.getWords().get(i + 1).toUpperFirst();</span>
+            }
+        }
+
+<span class="fc" id="L39">        return title.toString();</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L44">        return Localization.lang(</span>
+                &quot;Capitalize all words, but converts articles, prepositions, and conjunctions to lower case.&quot;);
+    }
+
+    @Override
+    public String getExampleInput() {
+<span class="fc" id="L50">        return &quot;{BPMN} conformance In open source Engines&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

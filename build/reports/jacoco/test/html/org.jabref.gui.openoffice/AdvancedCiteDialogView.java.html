@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdvancedCiteDialogView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.openoffice</a> &gt; <span class="el_source">AdvancedCiteDialogView.java</span></div><h1>AdvancedCiteDialogView.java</h1><pre class="source lang-java linenums">package org.jabref.gui.openoffice;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
+
+import org.jabref.gui.util.BaseDialog;
+import org.jabref.logic.l10n.Localization;
+
+import com.airhacks.afterburner.views.ViewLoader;
+
+public class AdvancedCiteDialogView extends BaseDialog&lt;AdvancedCiteDialogViewModel&gt; {
+
+    @FXML private TextField pageInfo;
+    @FXML private RadioButton inPar;
+    @FXML private RadioButton inText;
+    @FXML private ToggleGroup citeToggleGroup;
+    private AdvancedCiteDialogViewModel viewModel;
+
+<span class="nc" id="L22">    public AdvancedCiteDialogView() {</span>
+
+<span class="nc" id="L24">        ViewLoader.view(this)</span>
+<span class="nc" id="L25">                  .load()</span>
+<span class="nc" id="L26">                  .setAsDialogPane(this);</span>
+<span class="nc" id="L27">        setResultConverter(btn -&gt; {</span>
+<span class="nc bnc" id="L28" title="All 2 branches missed.">            if (btn == ButtonType.OK) {</span>
+<span class="nc" id="L29">                return viewModel;</span>
+            }
+<span class="nc" id="L31">            return null;</span>
+        });
+
+<span class="nc" id="L34">        setTitle(Localization.lang(&quot;Cite special&quot;));</span>
+<span class="nc" id="L35">    }</span>
+
+    @FXML
+    private void initialize() {
+<span class="nc" id="L39">        viewModel = new AdvancedCiteDialogViewModel();</span>
+
+<span class="nc" id="L41">        inPar.selectedProperty().bindBidirectional(viewModel.citeInParProperty());</span>
+<span class="nc" id="L42">        inText.selectedProperty().bindBidirectional(viewModel.citeInTextProperty());</span>
+<span class="nc" id="L43">        pageInfo.textProperty().bindBidirectional(viewModel.pageInfoProperty());</span>
+<span class="nc" id="L44">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DBLPFetcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fetcher</a> &gt; <span class="el_source">DBLPFetcher.java</span></div><h1>DBLPFetcher.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fetcher;
+
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.logic.cleanup.DoiCleanup;
+import org.jabref.logic.formatter.bibtexfields.ClearFormatter;
+import org.jabref.logic.help.HelpFile;
+import org.jabref.logic.importer.FetcherException;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.Parser;
+import org.jabref.logic.importer.SearchBasedParserFetcher;
+import org.jabref.logic.importer.fileformat.BibtexParser;
+import org.jabref.model.cleanup.FieldFormatterCleanup;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.util.DummyFileUpdateMonitor;
+
+import org.apache.http.client.utils.URIBuilder;
+
+/**
+ * Fetches BibTeX data from DBLP (dblp.org)
+ *
+ * @see &lt;a href=&quot;https://dblp.dagstuhl.de/faq/13501473&quot;&gt;Basic API documentation&lt;/a&gt;
+ */
+public class DBLPFetcher implements SearchBasedParserFetcher {
+
+    private static final String BASIC_SEARCH_URL = &quot;https://dblp.org/search/publ/api&quot;;
+
+    private final ImportFormatPreferences importFormatPreferences;
+
+<span class="fc" id="L35">    public DBLPFetcher(ImportFormatPreferences importFormatPreferences) {</span>
+<span class="fc" id="L36">        Objects.requireNonNull(importFormatPreferences);</span>
+<span class="fc" id="L37">        this.importFormatPreferences = importFormatPreferences;</span>
+<span class="fc" id="L38">    }</span>
+
+    @Override
+    public URL getURLForQuery(String query) throws URISyntaxException, MalformedURLException, FetcherException {
+<span class="nc" id="L42">        URIBuilder uriBuilder = new URIBuilder(BASIC_SEARCH_URL);</span>
+<span class="nc" id="L43">        uriBuilder.addParameter(&quot;q&quot;, query);</span>
+<span class="nc" id="L44">        uriBuilder.addParameter(&quot;h&quot;, String.valueOf(100)); // number of hits</span>
+<span class="nc" id="L45">        uriBuilder.addParameter(&quot;c&quot;, String.valueOf(0)); // no need for auto-completion</span>
+<span class="nc" id="L46">        uriBuilder.addParameter(&quot;f&quot;, String.valueOf(0)); // &quot;from&quot;, index of first hit to download</span>
+<span class="nc" id="L47">        uriBuilder.addParameter(&quot;format&quot;, &quot;bib1&quot;);</span>
+
+<span class="nc" id="L49">        return uriBuilder.build().toURL();</span>
+    }
+
+    @Override
+    public Parser getParser() {
+<span class="nc" id="L54">        return new BibtexParser(importFormatPreferences, new DummyFileUpdateMonitor());</span>
+    }
+
+    @Override
+    public void doPostCleanup(BibEntry entry) {
+<span class="nc" id="L59">        DoiCleanup doiCleaner = new DoiCleanup();</span>
+
+<span class="nc" id="L61">        FieldFormatterCleanup clearTimestampFormatter = new FieldFormatterCleanup(FieldName.TIMESTAMP,</span>
+                new ClearFormatter());
+
+<span class="nc" id="L64">        doiCleaner.cleanup(entry);</span>
+<span class="nc" id="L65">        clearTimestampFormatter.cleanup(entry);</span>
+
+<span class="nc" id="L67">    }</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L71">        return &quot;DBLP&quot;;</span>
+    }
+
+    @Override
+    public Optional&lt;HelpFile&gt; getHelpPage() {
+<span class="nc" id="L76">        return Optional.of(HelpFile.FETCHER_DBLP);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

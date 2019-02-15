@@ -1,0 +1,887 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibEntry.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry</a> &gt; <span class="el_source">BibEntry.java</span></div><h1>BibEntry.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
+
+import javafx.beans.Observable;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.ObjectBinding;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
+
+import org.jabref.model.EntryTypes;
+import org.jabref.model.FieldChange;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.event.EntryEventSource;
+import org.jabref.model.entry.event.FieldAddedOrRemovedEvent;
+import org.jabref.model.entry.event.FieldChangedEvent;
+import org.jabref.model.entry.identifier.DOI;
+import org.jabref.model.strings.LatexToUnicodeAdapter;
+import org.jabref.model.strings.StringUtil;
+
+import com.google.common.base.Strings;
+import com.google.common.eventbus.EventBus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class BibEntry implements Cloneable {
+
+    public static final String TYPE_HEADER = &quot;entrytype&quot;;
+    public static final String OBSOLETE_TYPE_HEADER = &quot;bibtextype&quot;;
+    public static final String KEY_FIELD = &quot;bibtexkey&quot;;
+    public static final String DEFAULT_TYPE = &quot;misc&quot;;
+    protected static final String ID_FIELD = &quot;id&quot;;
+<span class="fc" id="L49">    private static final Logger LOGGER = LoggerFactory.getLogger(BibEntry.class);</span>
+<span class="fc" id="L50">    private static final Pattern REMOVE_TRAILING_WHITESPACE = Pattern.compile(&quot;\\s+$&quot;);</span>
+    private final SharedBibEntryData sharedBibEntryData;
+    /**
+     * Map to store the words in every field
+     */
+<span class="fc" id="L55">    private final Map&lt;String, Set&lt;String&gt;&gt; fieldsAsWords = new HashMap&lt;&gt;();</span>
+    /**
+     * Cache that stores latex free versions of fields.
+     */
+<span class="fc" id="L59">    private final Map&lt;String, String&gt; latexFreeFields = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L60">    private final EventBus eventBus = new EventBus();</span>
+    private String id;
+<span class="fc" id="L62">    private final StringProperty type = new SimpleStringProperty();</span>
+
+<span class="fc" id="L64">    private ObservableMap&lt;String, String&gt; fields = FXCollections.observableMap(new ConcurrentHashMap&lt;&gt;());</span>
+    // Search and grouping status is stored in boolean fields for quick reference:
+    private boolean searchHit;
+    private boolean groupHit;
+<span class="fc" id="L68">    private String parsedSerialization = &quot;&quot;;</span>
+<span class="fc" id="L69">    private String commentsBeforeEntry = &quot;&quot;;</span>
+    /**
+     * Marks whether the complete serialization, which was read from file, should be used.
+     *
+     * Is set to false, if parts of the entry change. This causes the entry to be serialized based on the internal state (and not based on the old serialization)
+     */
+    private boolean changed;
+
+    /**
+     * Constructs a new BibEntry. The internal ID is set to IdGenerator.next()
+     */
+    public BibEntry() {
+<span class="fc" id="L81">        this(IdGenerator.next(), DEFAULT_TYPE);</span>
+
+<span class="fc" id="L83">    }</span>
+
+    /**
+     * Constructs a new BibEntry with the given ID and given type
+     *
+     * @param id   The ID to be used
+     * @param type The type to set. May be null or empty. In that case, DEFAULT_TYPE is used.
+     */
+<span class="fc" id="L91">    private BibEntry(String id, String type) {</span>
+<span class="fc" id="L92">        Objects.requireNonNull(id, &quot;Every BibEntry must have an ID&quot;);</span>
+
+<span class="fc" id="L94">        this.id = id;</span>
+<span class="fc" id="L95">        setType(type);</span>
+<span class="fc" id="L96">        this.sharedBibEntryData = new SharedBibEntryData();</span>
+<span class="fc" id="L97">    }</span>
+
+    /**
+     * Constructs a new BibEntry. The internal ID is set to IdGenerator.next()
+     */
+    public BibEntry(EntryType type) {
+<span class="fc" id="L103">        this(IdGenerator.next(), type.getName());</span>
+<span class="fc" id="L104">    }</span>
+
+    public Optional&lt;FieldChange&gt; setMonth(Month parsedMonth) {
+<span class="fc" id="L107">        return setField(FieldName.MONTH, parsedMonth.getJabRefFormat());</span>
+    }
+
+    /**
+     * Returns the text stored in the given field of the given bibtex entry
+     * which belongs to the given database.
+     * &lt;p&gt;
+     * If a database is given, this function will try to resolve any string
+     * references in the field-value.
+     * Also, if a database is given, this function will try to find values for
+     * unset fields in the entry linked by the &quot;crossref&quot; field, if any.
+     *
+     * @param field    The field to return the value of.
+     * @param database maybenull
+     *                 The database of the bibtex entry.
+     * @return The resolved field value or null if not found.
+     */
+    public Optional&lt;String&gt; getResolvedFieldOrAlias(String field, BibDatabase database) {
+<span class="fc bfc" id="L125" title="All 4 branches covered.">        if (TYPE_HEADER.equals(field) || OBSOLETE_TYPE_HEADER.equals(field)) {</span>
+<span class="fc" id="L126">            Optional&lt;EntryType&gt; entryType = EntryTypes.getType(getType(), BibDatabaseMode.BIBLATEX);</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            if (entryType.isPresent()) {</span>
+<span class="fc" id="L128">                return Optional.of(entryType.get().getName());</span>
+            } else {
+<span class="fc" id="L130">                return Optional.of(StringUtil.capitalizeFirst(getType()));</span>
+            }
+        }
+
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if (KEY_FIELD.equals(field)) {</span>
+<span class="fc" id="L135">            return getCiteKeyOptional();</span>
+        }
+
+<span class="fc" id="L138">        Optional&lt;String&gt; result = getFieldOrAlias(field);</span>
+
+        // If this field is not set, and the entry has a crossref, try to look up the
+        // field in the referred entry: Do not do this for the bibtex key.
+<span class="fc bfc" id="L142" title="All 4 branches covered.">        if (!result.isPresent() &amp;&amp; (database != null)) {</span>
+<span class="fc" id="L143">            Optional&lt;BibEntry&gt; referred = database.getReferencedEntry(this);</span>
+<span class="fc" id="L144">            result = referred.flatMap(entry -&gt; entry.getFieldOrAlias(field));</span>
+        }
+<span class="fc" id="L146">        return result.map(resultText -&gt; BibDatabase.getText(resultText, database));</span>
+    }
+
+    /**
+     * Returns this entry's ID.
+     */
+    public String getId() {
+<span class="fc" id="L153">        return id;</span>
+    }
+
+    /**
+     * Sets this entry's ID, provided the database containing it
+     * doesn't veto the change.
+     *
+     * @param id The ID to be used
+     */
+    public void setId(String id) {
+<span class="fc" id="L163">        Objects.requireNonNull(id, &quot;Every BibEntry must have an ID&quot;);</span>
+
+<span class="fc" id="L165">        String oldId = this.id;</span>
+
+<span class="fc" id="L167">        eventBus.post(new FieldChangedEvent(this, BibEntry.ID_FIELD, id, oldId));</span>
+<span class="fc" id="L168">        this.id = id;</span>
+<span class="fc" id="L169">        changed = true;</span>
+<span class="fc" id="L170">    }</span>
+
+    /**
+     * Returns the cite key AKA citation key AKA BibTeX key, or null if it is not set.
+     * Note: this is &lt;emph&gt;not&lt;/emph&gt; the internal Id of this entry. The internal Id is always present, whereas the BibTeX key might not be present.
+     */
+    @Deprecated
+    public String getCiteKey() {
+<span class="fc" id="L178">        return fields.get(KEY_FIELD);</span>
+    }
+
+    /**
+     * Sets the cite key AKA citation key AKA BibTeX key. Note: This is &lt;emph&gt;not&lt;/emph&gt; the internal Id of this entry.
+     * The internal Id is always present, whereas the BibTeX key might not be present.
+     *
+     * @param newCiteKey The cite key to set. Must not be null; use {@link #clearCiteKey()} to remove the cite key.
+     */
+    public Optional&lt;FieldChange&gt; setCiteKey(String newCiteKey) {
+<span class="fc" id="L188">        return setField(KEY_FIELD, newCiteKey);</span>
+    }
+
+    public Optional&lt;String&gt; getCiteKeyOptional() {
+<span class="fc" id="L192">        return Optional.ofNullable(fields.get(KEY_FIELD));</span>
+    }
+
+    public boolean hasCiteKey() {
+<span class="fc bfc" id="L196" title="All 2 branches covered.">        return !Strings.isNullOrEmpty(getCiteKey());</span>
+    }
+
+    /**
+     * Returns this entry's type.
+     */
+    public String getType() {
+<span class="fc" id="L203">        return type.getValue();</span>
+    }
+
+    public StringProperty typeProperty() {
+<span class="nc" id="L207">        return type;</span>
+    }
+
+    /**
+     * Sets this entry's type.
+     */
+    public Optional&lt;FieldChange&gt; setType(EntryType type) {
+<span class="fc" id="L214">        return this.setType(type.getName());</span>
+    }
+
+    /**
+     * Sets this entry's type.
+     */
+    public Optional&lt;FieldChange&gt; setType(String type) {
+<span class="fc" id="L221">        return setType(type, EntryEventSource.LOCAL);</span>
+    }
+
+    /**
+     * Sets this entry's type.
+     */
+    public Optional&lt;FieldChange&gt; setType(String type, EntryEventSource eventSource) {
+        String newType;
+<span class="fc bfc" id="L229" title="All 2 branches covered.">        if (Strings.isNullOrEmpty(type)) {</span>
+<span class="fc" id="L230">            newType = DEFAULT_TYPE;</span>
+        } else {
+<span class="fc" id="L232">            newType = type;</span>
+        }
+<span class="fc" id="L234">        String oldType = getField(TYPE_HEADER).orElse(null);</span>
+<span class="pc bpc" id="L235" title="1 of 2 branches missed.">        if (newType.equals(oldType)) {</span>
+<span class="nc" id="L236">            return Optional.empty();</span>
+        }
+
+<span class="fc" id="L239">        this.type.setValue(newType.toLowerCase(Locale.ENGLISH));</span>
+<span class="fc" id="L240">        changed = true;</span>
+
+<span class="fc" id="L242">        FieldChange change = new FieldChange(this, TYPE_HEADER, oldType, newType);</span>
+<span class="fc" id="L243">        eventBus.post(new FieldChangedEvent(change, eventSource));</span>
+<span class="fc" id="L244">        return Optional.of(change);</span>
+    }
+
+    /**
+     * Returns an set containing the names of all fields that are
+     * set for this particular entry.
+     *
+     * @return a set of existing field names
+     */
+    public Set&lt;String&gt; getFieldNames() {
+<span class="fc" id="L254">        return new TreeSet&lt;&gt;(fields.keySet());</span>
+    }
+
+    /**
+     * Returns the contents of the given field as an Optional.
+     */
+    public Optional&lt;String&gt; getField(String name) {
+<span class="fc" id="L261">        return Optional.ofNullable(fields.get(toLowerCase(name)));</span>
+    }
+
+    /**
+     * Returns true if the entry has the given field, or false if it is not set.
+     */
+    public boolean hasField(String name) {
+<span class="fc" id="L268">        return fields.containsKey(toLowerCase(name));</span>
+    }
+
+    private String toLowerCase(String fieldName) {
+<span class="fc" id="L272">        Objects.requireNonNull(fieldName, &quot;field name must not be null&quot;);</span>
+
+<span class="fc" id="L274">        return fieldName.toLowerCase(Locale.ENGLISH);</span>
+    }
+
+    /**
+     * Internal method used to get the content of a field (or its alias)
+     *
+     * Used by {@link #getFieldOrAlias(String)} and {@link #getFieldOrAliasLatexFree(String)}
+     *
+     * @param name name of the field
+     * @param getFieldInterface
+     *
+     * @return determined field value
+     */
+    private Optional&lt;String&gt; genericGetFieldOrAlias(String name, GetFieldInterface getFieldInterface) {
+<span class="fc" id="L288">        Optional&lt;String&gt; fieldValue = getFieldInterface.getValueForField(toLowerCase(name));</span>
+
+<span class="pc bpc" id="L290" title="1 of 4 branches missed.">        if (fieldValue.isPresent() &amp;&amp; !fieldValue.get().isEmpty()) {</span>
+<span class="fc" id="L291">            return fieldValue;</span>
+        }
+
+        // No value of this field found, so look at the alias
+<span class="fc" id="L295">        String aliasForField = EntryConverter.FIELD_ALIASES.get(name);</span>
+
+<span class="fc bfc" id="L297" title="All 2 branches covered.">        if (aliasForField != null) {</span>
+<span class="fc" id="L298">            return getFieldInterface.getValueForField(aliasForField);</span>
+        }
+
+        // Finally, handle dates
+<span class="fc bfc" id="L302" title="All 2 branches covered.">        if (FieldName.DATE.equals(name)) {</span>
+<span class="fc" id="L303">            Optional&lt;Date&gt; date = Date.parse(</span>
+<span class="fc" id="L304">                    getFieldInterface.getValueForField(FieldName.YEAR),</span>
+<span class="fc" id="L305">                    getFieldInterface.getValueForField(FieldName.MONTH),</span>
+<span class="fc" id="L306">                    getFieldInterface.getValueForField(FieldName.DAY));</span>
+
+<span class="fc" id="L308">            return date.map(Date::getNormalized);</span>
+        }
+
+<span class="fc bfc" id="L311" title="All 6 branches covered.">        if (FieldName.YEAR.equals(name) || FieldName.MONTH.equals(name) || FieldName.DAY.equals(name)) {</span>
+<span class="fc" id="L312">            Optional&lt;String&gt; date = getFieldInterface.getValueForField(FieldName.DATE);</span>
+<span class="fc bfc" id="L313" title="All 2 branches covered.">            if (!date.isPresent()) {</span>
+<span class="fc" id="L314">                return Optional.empty();</span>
+            }
+
+<span class="fc" id="L317">            Optional&lt;Date&gt; parsedDate = Date.parse(date.get());</span>
+<span class="pc bpc" id="L318" title="1 of 2 branches missed.">            if (parsedDate.isPresent()) {</span>
+<span class="fc bfc" id="L319" title="All 2 branches covered.">                if (FieldName.YEAR.equals(name)) {</span>
+<span class="fc" id="L320">                    return parsedDate.get().getYear().map(Object::toString);</span>
+                }
+<span class="fc bfc" id="L322" title="All 2 branches covered.">                if (FieldName.MONTH.equals(name)) {</span>
+<span class="fc" id="L323">                    return parsedDate.get().getMonth().map(Month::getJabRefFormat);</span>
+                }
+<span class="pc bpc" id="L325" title="1 of 2 branches missed.">                if (FieldName.DAY.equals(name)) {</span>
+<span class="fc" id="L326">                    return parsedDate.get().getDay().map(Object::toString);</span>
+                }
+            } else {
+                // Date field not in valid format
+<span class="nc" id="L330">                LOGGER.debug(&quot;Could not parse date &quot; + date.get());</span>
+<span class="nc" id="L331">                return Optional.empty();</span>
+            }
+        }
+<span class="fc" id="L334">        return Optional.empty();</span>
+    }
+
+    public Optional&lt;DOI&gt; getDOI() {
+<span class="nc" id="L338">        return getField(FieldName.DOI).flatMap(DOI::parse);</span>
+    }
+
+    /**
+     * Return the LaTeX-free contents of the given field or its alias an an Optional
+     *
+     * For details see also {@link #getFieldOrAlias(String)}
+     *
+     * @param name the name of the field
+     * @return  the stored latex-free content of the field (or its alias)
+     */
+    public Optional&lt;String&gt; getFieldOrAliasLatexFree(String name) {
+<span class="fc" id="L350">        return genericGetFieldOrAlias(name, this::getLatexFreeField);</span>
+    }
+
+    /**
+     * Returns the contents of the given field or its alias as an Optional
+     * &lt;p&gt;
+     * The following aliases are considered (old bibtex &lt;-&gt; new biblatex) based
+     * on the biblatex documentation, chapter 2.2.5:&lt;br&gt;
+     * address        &lt;-&gt; location &lt;br&gt;
+     * annote         &lt;-&gt; annotation &lt;br&gt;
+     * archiveprefix  &lt;-&gt; eprinttype &lt;br&gt;
+     * journal        &lt;-&gt; journaltitle &lt;br&gt;
+     * key            &lt;-&gt; sortkey &lt;br&gt;
+     * pdf            &lt;-&gt; file &lt;br
+     * primaryclass   &lt;-&gt; eprintclass &lt;br&gt;
+     * school         &lt;-&gt; institution &lt;br&gt;
+     * These work bidirectional. &lt;br&gt;
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;
+     * Special attention is paid to dates: (see the biblatex documentation,
+     * chapter 2.3.8)
+     * The fields 'year' and 'month' are used if the 'date'
+     * field is empty. Conversely, getFieldOrAlias(&quot;year&quot;) also tries to
+     * extract the year from the 'date' field (analogously for 'month').
+     * &lt;/p&gt;
+     */
+    public Optional&lt;String&gt; getFieldOrAlias(String name) {
+<span class="fc" id="L378">        return genericGetFieldOrAlias(name, this::getField);</span>
+    }
+
+    /**
+     * Sets a number of fields simultaneously. The given HashMap contains field
+     * names as keys, each mapped to the value to set.
+     */
+    public void setField(Map&lt;String, String&gt; fields) {
+<span class="fc" id="L386">        Objects.requireNonNull(fields, &quot;fields must not be null&quot;);</span>
+
+<span class="fc" id="L388">        fields.forEach(this::setField);</span>
+<span class="fc" id="L389">    }</span>
+
+    /**
+     * Set a field, and notify listeners about the change.
+     *
+     * @param name        The field to set
+     * @param value       The value to set
+     * @param eventSource Source the event is sent from
+     */
+    public Optional&lt;FieldChange&gt; setField(String name, String value, EntryEventSource eventSource) {
+<span class="fc" id="L399">        Objects.requireNonNull(name, &quot;field name must not be null&quot;);</span>
+<span class="fc" id="L400">        Objects.requireNonNull(value, &quot;field value must not be null&quot;);</span>
+
+<span class="fc" id="L402">        String fieldName = toLowerCase(name);</span>
+
+<span class="fc bfc" id="L404" title="All 2 branches covered.">        if (value.isEmpty()) {</span>
+<span class="fc" id="L405">            return clearField(fieldName);</span>
+        }
+
+<span class="fc" id="L408">        String oldValue = getField(fieldName).orElse(null);</span>
+<span class="fc bfc" id="L409" title="All 2 branches covered.">        boolean isNewField = oldValue == null;</span>
+<span class="fc bfc" id="L410" title="All 2 branches covered.">        if (value.equals(oldValue)) {</span>
+<span class="fc" id="L411">            return Optional.empty();</span>
+        }
+
+<span class="fc bfc" id="L414" title="All 2 branches covered.">        if (BibEntry.ID_FIELD.equals(fieldName)) {</span>
+<span class="fc" id="L415">            throw new IllegalArgumentException(&quot;The field name '&quot; + name + &quot;' is reserved&quot;);</span>
+        }
+
+<span class="fc" id="L418">        changed = true;</span>
+
+<span class="fc" id="L420">        fields.put(fieldName, value.intern());</span>
+<span class="fc" id="L421">        invalidateFieldCache(fieldName);</span>
+
+<span class="fc" id="L423">        FieldChange change = new FieldChange(this, fieldName, oldValue, value);</span>
+<span class="fc bfc" id="L424" title="All 2 branches covered.">        if (isNewField) {</span>
+<span class="fc" id="L425">            eventBus.post(new FieldAddedOrRemovedEvent(change, eventSource));</span>
+        } else {
+<span class="fc" id="L427">            eventBus.post(new FieldChangedEvent(change, eventSource));</span>
+        }
+<span class="fc" id="L429">        return Optional.of(change);</span>
+    }
+
+    public Optional&lt;FieldChange&gt; setField(String name, Optional&lt;String&gt; value, EntryEventSource eventSource) {
+<span class="nc bnc" id="L433" title="All 2 branches missed.">        if (value.isPresent()) {</span>
+<span class="nc" id="L434">            return setField(name, value.get(), eventSource);</span>
+        }
+<span class="nc" id="L436">        return Optional.empty();</span>
+    }
+
+    /**
+     * Set a field, and notify listeners about the change.
+     *
+     * @param name  The field to set.
+     * @param value The value to set.
+     */
+    public Optional&lt;FieldChange&gt; setField(String name, String value) {
+<span class="fc" id="L446">        return setField(name, value, EntryEventSource.LOCAL);</span>
+    }
+
+    /**
+     * Remove the mapping for the field name, and notify listeners about
+     * the change.
+     *
+     * @param name The field to clear.
+     */
+    public Optional&lt;FieldChange&gt; clearField(String name) {
+<span class="fc" id="L456">        return clearField(name, EntryEventSource.LOCAL);</span>
+    }
+
+    /**
+     * Remove the mapping for the field name, and notify listeners about
+     * the change including the {@link EntryEventSource}.
+     *
+     * @param name        The field to clear.
+     * @param eventSource the source a new {@link FieldChangedEvent} should be posten from.
+     */
+    public Optional&lt;FieldChange&gt; clearField(String name, EntryEventSource eventSource) {
+<span class="fc" id="L467">        String fieldName = toLowerCase(name);</span>
+
+<span class="fc bfc" id="L469" title="All 2 branches covered.">        if (BibEntry.ID_FIELD.equals(fieldName)) {</span>
+<span class="fc" id="L470">            throw new IllegalArgumentException(&quot;The field name '&quot; + name + &quot;' is reserved&quot;);</span>
+        }
+
+<span class="fc" id="L473">        Optional&lt;String&gt; oldValue = getField(fieldName);</span>
+<span class="fc bfc" id="L474" title="All 2 branches covered.">        if (!oldValue.isPresent()) {</span>
+<span class="fc" id="L475">            return Optional.empty();</span>
+        }
+
+<span class="fc" id="L478">        changed = true;</span>
+
+<span class="fc" id="L480">        fields.remove(fieldName);</span>
+<span class="fc" id="L481">        invalidateFieldCache(fieldName);</span>
+
+<span class="fc" id="L483">        FieldChange change = new FieldChange(this, fieldName, oldValue.get(), null);</span>
+<span class="fc" id="L484">        eventBus.post(new FieldAddedOrRemovedEvent(change, eventSource));</span>
+<span class="fc" id="L485">        return Optional.of(change);</span>
+    }
+
+    /**
+     * Determines whether this entry has all the given fields present. If a non-null
+     * database argument is given, this method will try to look up missing fields in
+     * entries linked by the &quot;crossref&quot; field, if any.
+     *
+     * @param allFields An array of field names to be checked.
+     * @param database  The database in which to look up crossref'd entries, if any. This
+     *                  argument can be null, meaning that no attempt will be made to follow crossrefs.
+     * @return true if all fields are set or could be resolved, false otherwise.
+     */
+    public boolean allFieldsPresent(Collection&lt;String&gt; allFields, BibDatabase database) {
+
+<span class="fc bfc" id="L500" title="All 2 branches covered.">        for (String field : allFields) {</span>
+<span class="fc" id="L501">            String fieldName = toLowerCase(field);</span>
+            // OR fields
+<span class="fc bfc" id="L503" title="All 2 branches covered.">            if (fieldName.contains(FieldName.FIELD_SEPARATOR)) {</span>
+<span class="fc" id="L504">                String[] altFields = field.split(FieldName.FIELD_SEPARATOR);</span>
+
+<span class="fc bfc" id="L506" title="All 2 branches covered.">                if (!atLeastOnePresent(altFields, database)) {</span>
+<span class="fc" id="L507">                    return false;</span>
+                }
+<span class="fc" id="L509">            } else {</span>
+<span class="fc bfc" id="L510" title="All 2 branches covered.">                if (!this.getResolvedFieldOrAlias(fieldName, database).isPresent()) {</span>
+<span class="fc" id="L511">                    return false;</span>
+                }
+            }
+<span class="fc" id="L514">        }</span>
+<span class="fc" id="L515">        return true;</span>
+    }
+
+    private boolean atLeastOnePresent(String[] fieldsToCheck, BibDatabase database) {
+<span class="fc bfc" id="L519" title="All 2 branches covered.">        for (String field : fieldsToCheck) {</span>
+<span class="fc" id="L520">            String fieldName = toLowerCase(field);</span>
+
+<span class="fc" id="L522">            Optional&lt;String&gt; value = this.getResolvedFieldOrAlias(fieldName, database);</span>
+<span class="pc bpc" id="L523" title="1 of 4 branches missed.">            if ((value.isPresent()) &amp;&amp; !value.get().isEmpty()) {</span>
+<span class="fc" id="L524">                return true;</span>
+            }
+        }
+<span class="fc" id="L527">        return false;</span>
+    }
+
+    /**
+     * Returns a clone of this entry. Useful for copying.
+     * This will set a new ID for the cloned entry to be able to distinguish both copies.
+     */
+    @Override
+    public Object clone() {
+<span class="fc" id="L536">        BibEntry clone = new BibEntry(IdGenerator.next(), type.getValue());</span>
+<span class="fc" id="L537">        clone.fields = FXCollections.observableMap(new ConcurrentHashMap&lt;&gt;(fields));</span>
+<span class="fc" id="L538">        return clone;</span>
+    }
+
+    /**
+     * This returns a canonical BibTeX serialization. Special characters such as &quot;{&quot; or &quot;&amp;&quot; are NOT escaped, but written
+     * as is
+     * &lt;p&gt;
+     * Serializes all fields, even the JabRef internal ones. Does NOT serialize &quot;KEY_FIELD&quot; as field, but as key
+     */
+    @Override
+    public String toString() {
+<span class="nc" id="L549">        return CanonicalBibtexEntry.getCanonicalRepresentation(this);</span>
+    }
+
+    public boolean isSearchHit() {
+<span class="fc" id="L553">        return searchHit;</span>
+    }
+
+    public void setSearchHit(boolean searchHit) {
+<span class="fc" id="L557">        this.searchHit = searchHit;</span>
+<span class="fc" id="L558">    }</span>
+
+    public boolean isGroupHit() {
+<span class="fc" id="L561">        return groupHit;</span>
+    }
+
+    public void setGroupHit(boolean groupHit) {
+<span class="fc" id="L565">        this.groupHit = groupHit;</span>
+<span class="fc" id="L566">    }</span>
+
+    /**
+     * @param maxCharacters The maximum number of characters (additional
+     *                      characters are replaced with &quot;...&quot;). Set to 0 to disable truncation.
+     * @return A short textual description of the entry in the format:
+     * Author1, Author2: Title (Year)
+     */
+    public String getAuthorTitleYear(int maxCharacters) {
+<span class="fc" id="L575">        String[] s = new String[] {getField(FieldName.AUTHOR).orElse(&quot;N/A&quot;), getField(FieldName.TITLE).orElse(&quot;N/A&quot;),</span>
+<span class="fc" id="L576">            getField(FieldName.YEAR).orElse(&quot;N/A&quot;)};</span>
+
+<span class="fc" id="L578">        String text = s[0] + &quot;: \&quot;&quot; + s[1] + &quot;\&quot; (&quot; + s[2] + ')';</span>
+<span class="pc bpc" id="L579" title="2 of 4 branches missed.">        if ((maxCharacters &lt;= 0) || (text.length() &lt;= maxCharacters)) {</span>
+<span class="nc" id="L580">            return text;</span>
+        }
+<span class="fc" id="L582">        return text.substring(0, maxCharacters + 1) + &quot;...&quot;;</span>
+    }
+
+    /**
+     * Returns the title of the given BibTeX entry as an Optional.
+     *
+     * @return an Optional containing the title of a BibTeX entry in case it exists, otherwise return an empty Optional.
+     */
+    public Optional&lt;String&gt; getTitle() {
+<span class="nc" id="L591">        return getField(FieldName.TITLE);</span>
+    }
+
+    /**
+     * Will return the publication date of the given bibtex entry conforming to ISO 8601, i.e. either YYYY or YYYY-MM.
+     *
+     * @return will return the publication date of the entry or null if no year was found.
+     */
+    public Optional&lt;Date&gt; getPublicationDate() {
+<span class="fc" id="L600">        return getFieldOrAlias(FieldName.DATE).flatMap(Date::parse);</span>
+    }
+
+    public String getParsedSerialization() {
+<span class="fc" id="L604">        return parsedSerialization;</span>
+    }
+
+    public void setParsedSerialization(String parsedSerialization) {
+<span class="fc" id="L608">        changed = false;</span>
+<span class="fc" id="L609">        this.parsedSerialization = parsedSerialization;</span>
+<span class="fc" id="L610">    }</span>
+
+    public void setCommentsBeforeEntry(String parsedComments) {
+        // delete trailing whitespaces (between entry and text)
+<span class="fc" id="L614">        this.commentsBeforeEntry = REMOVE_TRAILING_WHITESPACE.matcher(parsedComments).replaceFirst(&quot;&quot;);</span>
+<span class="fc" id="L615">    }</span>
+
+    public boolean hasChanged() {
+<span class="fc" id="L618">        return changed;</span>
+    }
+
+    public void setChanged(boolean changed) {
+<span class="fc" id="L622">        this.changed = changed;</span>
+<span class="fc" id="L623">    }</span>
+
+    public Optional&lt;FieldChange&gt; putKeywords(List&lt;String&gt; keywords, Character delimiter) {
+<span class="fc" id="L626">        Objects.requireNonNull(delimiter);</span>
+<span class="fc" id="L627">        return putKeywords(new KeywordList(keywords), delimiter);</span>
+    }
+
+    public Optional&lt;FieldChange&gt; putKeywords(KeywordList keywords, Character delimiter) {
+<span class="fc" id="L631">        Objects.requireNonNull(keywords);</span>
+<span class="fc" id="L632">        Optional&lt;String&gt; oldValue = this.getField(FieldName.KEYWORDS);</span>
+
+<span class="fc bfc" id="L634" title="All 2 branches covered.">        if (keywords.isEmpty()) {</span>
+            // Clear keyword field
+<span class="fc bfc" id="L636" title="All 2 branches covered.">            if (oldValue.isPresent()) {</span>
+<span class="fc" id="L637">                return this.clearField(FieldName.KEYWORDS);</span>
+            } else {
+<span class="fc" id="L639">                return Optional.empty();</span>
+            }
+        }
+
+        // Set new keyword field
+<span class="fc" id="L644">        String newValue = keywords.getAsString(delimiter);</span>
+<span class="fc" id="L645">        return this.setField(FieldName.KEYWORDS, newValue);</span>
+    }
+
+    /**
+     * Check if a keyword already exists (case insensitive), if not: add it
+     *
+     * @param keyword Keyword to add
+     */
+    public void addKeyword(String keyword, Character delimiter) {
+<span class="fc" id="L654">        Objects.requireNonNull(keyword, &quot;keyword must not be null&quot;);</span>
+
+<span class="fc bfc" id="L656" title="All 2 branches covered.">        if (keyword.isEmpty()) {</span>
+<span class="fc" id="L657">            return;</span>
+        }
+
+<span class="fc" id="L660">        addKeyword(new Keyword(keyword), delimiter);</span>
+<span class="fc" id="L661">    }</span>
+
+    public void addKeyword(Keyword keyword, Character delimiter) {
+<span class="fc" id="L664">        KeywordList keywords = this.getKeywords(delimiter);</span>
+<span class="fc" id="L665">        keywords.add(keyword);</span>
+<span class="fc" id="L666">        this.putKeywords(keywords, delimiter);</span>
+<span class="fc" id="L667">    }</span>
+
+    /**
+     * Add multiple keywords to entry
+     *
+     * @param keywords Keywords to add
+     */
+    public void addKeywords(Collection&lt;String&gt; keywords, Character delimiter) {
+<span class="fc" id="L675">        Objects.requireNonNull(keywords);</span>
+<span class="fc" id="L676">        keywords.forEach(keyword -&gt; addKeyword(keyword, delimiter));</span>
+<span class="fc" id="L677">    }</span>
+
+    public KeywordList getKeywords(Character delimiter) {
+<span class="fc" id="L680">        Optional&lt;String&gt; keywordsContent = getField(FieldName.KEYWORDS);</span>
+<span class="fc" id="L681">        return keywordsContent.map(content -&gt; KeywordList.parse(content, delimiter)).orElse(new KeywordList());</span>
+    }
+
+    public KeywordList getResolvedKeywords(Character delimiter, BibDatabase database) {
+<span class="fc" id="L685">        Optional&lt;String&gt; keywordsContent = getResolvedFieldOrAlias(FieldName.KEYWORDS, database);</span>
+<span class="fc" id="L686">        return keywordsContent.map(content -&gt; KeywordList.parse(content, delimiter)).orElse(new KeywordList());</span>
+    }
+
+    public Optional&lt;FieldChange&gt; removeKeywords(KeywordList keywordsToRemove, Character keywordDelimiter) {
+<span class="fc" id="L690">        KeywordList keywordList = getKeywords(keywordDelimiter);</span>
+<span class="fc" id="L691">        keywordList.removeAll(keywordsToRemove);</span>
+<span class="fc" id="L692">        return putKeywords(keywordList, keywordDelimiter);</span>
+    }
+
+    public Optional&lt;FieldChange&gt; replaceKeywords(KeywordList keywordsToReplace, Keyword newValue,
+            Character keywordDelimiter) {
+<span class="fc" id="L697">        KeywordList keywordList = getKeywords(keywordDelimiter);</span>
+<span class="fc" id="L698">        keywordList.replaceAll(keywordsToReplace, newValue);</span>
+
+<span class="fc" id="L700">        return putKeywords(keywordList, keywordDelimiter);</span>
+    }
+
+    public Collection&lt;String&gt; getFieldValues() {
+<span class="fc" id="L704">        return fields.values();</span>
+    }
+
+    public Map&lt;String, String&gt; getFieldMap() {
+<span class="fc" id="L708">        return fields;</span>
+    }
+
+    public SharedBibEntryData getSharedBibEntryData() {
+<span class="nc" id="L712">        return sharedBibEntryData;</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="fc bfc" id="L717" title="All 2 branches covered.">        if (this == o) {</span>
+<span class="fc" id="L718">            return true;</span>
+        }
+<span class="fc bfc" id="L720" title="All 4 branches covered.">        if ((o == null) || (getClass() != o.getClass())) {</span>
+<span class="fc" id="L721">            return false;</span>
+        }
+<span class="fc" id="L723">        BibEntry entry = (BibEntry) o;</span>
+<span class="pc bpc" id="L724" title="1 of 2 branches missed.">        return Objects.equals(type.getValue(), entry.type.getValue())</span>
+<span class="fc bfc" id="L725" title="All 2 branches covered.">                &amp;&amp; Objects.equals(fields, entry.fields)</span>
+<span class="pc bpc" id="L726" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(commentsBeforeEntry, entry.commentsBeforeEntry);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L731">        return Objects.hash(type.getValue(), fields);</span>
+    }
+
+    public void registerListener(Object object) {
+<span class="fc" id="L735">        this.eventBus.register(object);</span>
+<span class="fc" id="L736">    }</span>
+
+    public void unregisterListener(Object object) {
+        try {
+<span class="nc" id="L740">            this.eventBus.unregister(object);</span>
+<span class="nc" id="L741">        } catch (IllegalArgumentException e) {</span>
+            // occurs if the event source has not been registered, should not prevent shutdown
+<span class="nc" id="L743">            LOGGER.debug(&quot;Problem unregistering&quot;, e);</span>
+<span class="nc" id="L744">        }</span>
+<span class="nc" id="L745">    }</span>
+
+    public BibEntry withField(String field, String value) {
+<span class="fc" id="L748">        setField(field, value);</span>
+<span class="fc" id="L749">        return this;</span>
+    }
+
+    /*
+    * Returns user comments (arbitrary text before the entry), if they exist. If not, returns the empty String
+     */
+    public String getUserComments() {
+<span class="fc" id="L756">        return commentsBeforeEntry;</span>
+    }
+
+    public List&lt;ParsedEntryLink&gt; getEntryLinkList(String fieldName, BibDatabase database) {
+<span class="nc" id="L760">        return getField(fieldName).map(fieldValue -&gt; EntryLinkList.parse(fieldValue, database))</span>
+<span class="nc" id="L761">                .orElse(Collections.emptyList());</span>
+    }
+
+    public Optional&lt;FieldChange&gt; setEntryLinkList(String fieldName, List&lt;ParsedEntryLink&gt; list) {
+<span class="nc" id="L765">        return setField(fieldName, EntryLinkList.serialize(list));</span>
+    }
+
+    public Set&lt;String&gt; getFieldAsWords(String field) {
+<span class="fc" id="L769">        String fieldName = toLowerCase(field);</span>
+<span class="fc" id="L770">        Set&lt;String&gt; storedList = fieldsAsWords.get(fieldName);</span>
+<span class="fc bfc" id="L771" title="All 2 branches covered.">        if (storedList != null) {</span>
+<span class="fc" id="L772">            return storedList;</span>
+        } else {
+<span class="fc" id="L774">            String fieldValue = fields.get(fieldName);</span>
+<span class="fc bfc" id="L775" title="All 2 branches covered.">            if (fieldValue == null) {</span>
+<span class="fc" id="L776">                return Collections.emptySet();</span>
+            } else {
+<span class="fc" id="L778">                HashSet&lt;String&gt; words = new HashSet&lt;&gt;(StringUtil.getStringAsWords(fieldValue));</span>
+<span class="fc" id="L779">                fieldsAsWords.put(fieldName, words);</span>
+<span class="fc" id="L780">                return words;</span>
+            }
+        }
+    }
+
+    public Optional&lt;FieldChange&gt; clearCiteKey() {
+<span class="nc" id="L786">        return clearField(KEY_FIELD);</span>
+    }
+
+    private void invalidateFieldCache(String fieldName) {
+<span class="fc" id="L790">        latexFreeFields.remove(fieldName);</span>
+<span class="fc" id="L791">        fieldsAsWords.remove(fieldName);</span>
+<span class="fc" id="L792">    }</span>
+
+    public Optional&lt;String&gt; getLatexFreeField(String name) {
+<span class="pc bpc" id="L795" title="1 of 4 branches missed.">        if (!hasField(name) &amp;&amp; !TYPE_HEADER.equals(name)) {</span>
+<span class="fc" id="L796">            return Optional.empty();</span>
+<span class="fc bfc" id="L797" title="All 2 branches covered.">        } else if (latexFreeFields.containsKey(name)) {</span>
+<span class="fc" id="L798">            return Optional.ofNullable(latexFreeFields.get(toLowerCase(name)));</span>
+<span class="fc bfc" id="L799" title="All 2 branches covered.">        } else if (KEY_FIELD.equals(name)) {</span>
+            // the key field should not be converted
+<span class="fc" id="L801">            Optional&lt;String&gt; citeKey = getCiteKeyOptional();</span>
+<span class="fc" id="L802">            latexFreeFields.put(name, citeKey.get());</span>
+<span class="fc" id="L803">            return citeKey;</span>
+<span class="pc bpc" id="L804" title="1 of 2 branches missed.">        } else if (TYPE_HEADER.equals(name)) {</span>
+<span class="nc" id="L805">            Optional&lt;EntryType&gt; entryType = EntryTypes.getType(getType(), BibDatabaseMode.BIBLATEX);</span>
+<span class="nc bnc" id="L806" title="All 2 branches missed.">            if (entryType.isPresent()) {</span>
+<span class="nc" id="L807">                String entryName = entryType.get().getName();</span>
+<span class="nc" id="L808">                latexFreeFields.put(name, entryName);</span>
+<span class="nc" id="L809">                return Optional.of(entryName);</span>
+            } else {
+<span class="nc" id="L811">                return Optional.of(StringUtil.capitalizeFirst(getType()));</span>
+            }
+        } else {
+<span class="fc" id="L814">            String latexFreeField = LatexToUnicodeAdapter.format(getField(name).get()).intern();</span>
+<span class="fc" id="L815">            latexFreeFields.put(name, latexFreeField);</span>
+<span class="fc" id="L816">            return Optional.of(latexFreeField);</span>
+        }
+    }
+
+    public Optional&lt;FieldChange&gt; setFiles(List&lt;LinkedFile&gt; files) {
+<span class="fc" id="L821">        Optional&lt;String&gt; oldValue = this.getField(FieldName.FILE);</span>
+<span class="fc" id="L822">        String newValue = FileFieldWriter.getStringRepresentation(files);</span>
+
+<span class="pc bpc" id="L824" title="1 of 4 branches missed.">        if (oldValue.isPresent() &amp;&amp; oldValue.get().equals(newValue)) {</span>
+<span class="nc" id="L825">            return Optional.empty();</span>
+        }
+
+<span class="fc" id="L828">        return this.setField(FieldName.FILE, newValue);</span>
+    }
+
+    /**
+     * Gets a list of linked files.
+     *
+     * @return the list of linked files, is never null but can be empty.
+     * Changes to the underlying list will have no effect on the entry itself. Use {@link #addFile(LinkedFile)}
+     */
+    public List&lt;LinkedFile&gt; getFiles() {
+        //Extract the path
+<span class="fc" id="L839">        Optional&lt;String&gt; oldValue = getField(FieldName.FILE);</span>
+<span class="fc bfc" id="L840" title="All 2 branches covered.">        if (!oldValue.isPresent()) {</span>
+<span class="fc" id="L841">            return new ArrayList&lt;&gt;(); //Return new ArrayList because emptyList is immutable</span>
+        }
+
+<span class="fc" id="L844">        return FileFieldParser.parse(oldValue.get());</span>
+    }
+
+    public void setDate(Date date) {
+<span class="fc" id="L848">        date.getYear().ifPresent(year -&gt; setField(FieldName.YEAR, year.toString()));</span>
+<span class="fc" id="L849">        date.getMonth().ifPresent(this::setMonth);</span>
+<span class="fc" id="L850">        date.getDay().ifPresent(day -&gt; setField(FieldName.DAY, day.toString()));</span>
+<span class="fc" id="L851">    }</span>
+
+    public Optional&lt;Month&gt; getMonth() {
+<span class="fc" id="L854">        return getFieldOrAlias(FieldName.MONTH).flatMap(Month::parse);</span>
+    }
+
+    public ObjectBinding&lt;String&gt; getFieldBinding(String fieldName) {
+<span class="nc" id="L858">        return Bindings.valueAt(fields, fieldName);</span>
+    }
+
+    public ObjectBinding&lt;String&gt; getCiteKeyBinding() {
+<span class="nc" id="L862">        return getFieldBinding(KEY_FIELD);</span>
+    }
+
+    public Optional&lt;FieldChange&gt; addFile(LinkedFile file) {
+<span class="fc" id="L866">        List&lt;LinkedFile&gt; linkedFiles = getFiles();</span>
+<span class="fc" id="L867">        linkedFiles.add(file);</span>
+<span class="fc" id="L868">        return setFiles(linkedFiles);</span>
+    }
+
+    public ObservableMap&lt;String, String&gt; getFieldsObservable() {
+<span class="fc" id="L872">        return fields;</span>
+    }
+
+    /**
+     * Returns a list of observables that represent the data of the entry.
+     */
+    public Observable[] getObservables() {
+<span class="fc" id="L879">        return new Observable[] {fields};</span>
+    }
+
+    private interface GetFieldInterface {
+        Optional&lt;String&gt; getValueForField(String fieldName);
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

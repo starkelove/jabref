@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PreferencesDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.preferences</a> &gt; <span class="el_source">PreferencesDialog.java</span></div><h1>PreferencesDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.preferences;
+
+import java.util.List;
+import java.util.prefs.BackingStoreException;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar.ButtonData;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+
+import org.jabref.Globals;
+import org.jabref.JabRefException;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.GUIGlobals;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.gui.util.BaseDialog;
+import org.jabref.gui.util.ControlHelper;
+import org.jabref.gui.util.FileDialogConfiguration;
+import org.jabref.gui.util.TaskExecutor;
+import org.jabref.gui.util.ViewModelListCellFactory;
+import org.jabref.logic.exporter.ExporterFactory;
+import org.jabref.logic.exporter.SavePreferences;
+import org.jabref.logic.exporter.TemplateExporter;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.layout.LayoutFormatterPreferences;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.logic.xmp.XmpPreferences;
+import org.jabref.preferences.JabRefPreferences;
+import org.jabref.preferences.JabRefPreferencesFilter;
+
+import org.fxmisc.easybind.EasyBind;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Preferences dialog. Contains a TabbedPane, and tabs will be defined in separate classes. Tabs MUST implement the
+ * PrefsTab interface, since this dialog will call the storeSettings() method of all tabs when the user presses ok.
+ *
+ * With this design, it should be very easy to add new tabs later.
+ */
+public class PreferencesDialog extends BaseDialog&lt;Void&gt; {
+
+<span class="nc" id="L52">    private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesDialog.class);</span>
+
+    private final BorderPane container;
+
+    private final DialogService dialogService;
+    private final JabRefFrame frame;
+    private final JabRefPreferences prefs;
+    private final ObservableList&lt;PrefsTab&gt; preferenceTabs;
+
+<span class="nc" id="L61">    public PreferencesDialog(JabRefFrame parent, TaskExecutor taskExecutor) {</span>
+<span class="nc" id="L62">        setTitle(Localization.lang(&quot;JabRef preferences&quot;));</span>
+<span class="nc" id="L63">        getDialogPane().getScene().getStylesheets().add(this.getClass().getResource(&quot;PreferencesDialog.css&quot;).toExternalForm());</span>
+
+<span class="nc" id="L65">        ButtonType save = new ButtonType(Localization.lang(&quot;Save&quot;), ButtonData.OK_DONE);</span>
+<span class="nc" id="L66">        getDialogPane().getButtonTypes().addAll(save, ButtonType.CANCEL);</span>
+<span class="nc" id="L67">        ControlHelper.setAction(save, getDialogPane(), event -&gt; {</span>
+<span class="nc" id="L68">            storeAllSettings();</span>
+<span class="nc" id="L69">            close();</span>
+<span class="nc" id="L70">        });</span>
+
+<span class="nc" id="L72">        prefs = Globals.prefs;</span>
+<span class="nc" id="L73">        frame = parent;</span>
+<span class="nc" id="L74">        dialogService = frame.getDialogService();</span>
+
+<span class="nc" id="L76">        preferenceTabs = FXCollections.observableArrayList();</span>
+<span class="nc" id="L77">        preferenceTabs.add(new GeneralTab(dialogService, prefs));</span>
+<span class="nc" id="L78">        preferenceTabs.add(new FileTab(dialogService, prefs));</span>
+<span class="nc" id="L79">        preferenceTabs.add(new TablePrefsTab(prefs));</span>
+<span class="nc" id="L80">        preferenceTabs.add(new TableColumnsTab(prefs, frame));</span>
+<span class="nc" id="L81">        preferenceTabs.add(new PreviewPrefsTab(dialogService, ExternalFileTypes.getInstance(), taskExecutor));</span>
+<span class="nc" id="L82">        preferenceTabs.add(new ExternalTab(frame, this, prefs));</span>
+<span class="nc" id="L83">        preferenceTabs.add(new GroupsPrefsTab(prefs));</span>
+<span class="nc" id="L84">        preferenceTabs.add(new EntryEditorPrefsTab(prefs));</span>
+<span class="nc" id="L85">        preferenceTabs.add(new BibtexKeyPatternPrefTab(prefs, frame.getCurrentBasePanel()));</span>
+<span class="nc" id="L86">        preferenceTabs.add(new ImportSettingsTab(prefs));</span>
+<span class="nc" id="L87">        preferenceTabs.add(new ExportSortingPrefsTab(prefs));</span>
+<span class="nc" id="L88">        preferenceTabs.add(new NameFormatterTab(prefs));</span>
+<span class="nc" id="L89">        preferenceTabs.add(new XmpPrefsTab(prefs));</span>
+<span class="nc" id="L90">        preferenceTabs.add(new NetworkTab(dialogService, prefs));</span>
+<span class="nc" id="L91">        preferenceTabs.add(new AdvancedTab(dialogService, prefs));</span>
+<span class="nc" id="L92">        preferenceTabs.add(new AppearancePrefsTab(dialogService, prefs));</span>
+
+<span class="nc" id="L94">        container = new BorderPane();</span>
+<span class="nc" id="L95">        getDialogPane().setContent(container);</span>
+<span class="nc" id="L96">        construct();</span>
+<span class="nc" id="L97">    }</span>
+
+    private void construct() {
+<span class="nc" id="L100">        VBox vBox = new VBox();</span>
+<span class="nc" id="L101">        vBox.setPrefWidth(160);</span>
+
+<span class="nc" id="L103">        ListView&lt;PrefsTab&gt; tabsList = new ListView&lt;&gt;();</span>
+<span class="nc" id="L104">        tabsList.setId(&quot;sideMenu&quot;);</span>
+<span class="nc" id="L105">        tabsList.itemsProperty().setValue(preferenceTabs);</span>
+<span class="nc" id="L106">        EasyBind.subscribe(tabsList.getSelectionModel().selectedItemProperty(), tab -&gt; {</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">            if (tab != null) {</span>
+<span class="nc" id="L108">                ScrollPane preferencePaneContainer = new ScrollPane(tab.getBuilder());</span>
+<span class="nc" id="L109">                preferencePaneContainer.getStyleClass().add(&quot;preferencePaneContainer&quot;);</span>
+<span class="nc" id="L110">                container.setCenter(preferencePaneContainer);</span>
+            }
+<span class="nc" id="L112">        });</span>
+<span class="nc" id="L113">        tabsList.getSelectionModel().selectFirst();</span>
+<span class="nc" id="L114">        new ViewModelListCellFactory&lt;PrefsTab&gt;()</span>
+<span class="nc" id="L115">                .withText(PrefsTab::getTabName)</span>
+<span class="nc" id="L116">                .install(tabsList);</span>
+
+<span class="nc" id="L118">        VBox buttonContainer = new VBox();</span>
+<span class="nc" id="L119">        buttonContainer.setAlignment(Pos.BOTTOM_LEFT);</span>
+<span class="nc" id="L120">        buttonContainer.setSpacing(3.0);</span>
+<span class="nc" id="L121">        Button importPreferences = new Button(Localization.lang(&quot;Import preferences&quot;));</span>
+<span class="nc" id="L122">        importPreferences.setTooltip(new Tooltip(Localization.lang(&quot;Import preferences from file&quot;)));</span>
+<span class="nc" id="L123">        importPreferences.setOnAction(e -&gt; importPreferences());</span>
+<span class="nc" id="L124">        importPreferences.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L125">        Button exportPreferences = new Button(Localization.lang(&quot;Export preferences&quot;));</span>
+<span class="nc" id="L126">        exportPreferences.setTooltip(new Tooltip(Localization.lang(&quot;Export preferences to file&quot;)));</span>
+<span class="nc" id="L127">        exportPreferences.setOnAction(e -&gt; exportPreferences());</span>
+<span class="nc" id="L128">        exportPreferences.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L129">        Button showPreferences = new Button(Localization.lang(&quot;Show preferences&quot;));</span>
+<span class="nc" id="L130">        showPreferences.setOnAction(e -&gt; new PreferencesFilterDialog(new JabRefPreferencesFilter(prefs)).showAndWait());</span>
+<span class="nc" id="L131">        showPreferences.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L132">        Button resetPreferences = new Button(Localization.lang(&quot;Reset preferences&quot;));</span>
+<span class="nc" id="L133">        resetPreferences.setOnAction(e -&gt; resetPreferences());</span>
+<span class="nc" id="L134">        resetPreferences.setMaxWidth(Double.MAX_VALUE);</span>
+<span class="nc" id="L135">        buttonContainer.getChildren().addAll(</span>
+                importPreferences,
+                exportPreferences,
+                showPreferences,
+                resetPreferences);
+
+<span class="nc" id="L141">        VBox spacer = new VBox();</span>
+<span class="nc" id="L142">        spacer.setPrefHeight(10.0);</span>
+<span class="nc" id="L143">        VBox.setVgrow(tabsList, Priority.ALWAYS);</span>
+<span class="nc" id="L144">        VBox.setVgrow(spacer, Priority.SOMETIMES);</span>
+<span class="nc" id="L145">        vBox.getChildren().addAll(</span>
+                tabsList,
+                spacer,
+                buttonContainer);
+
+<span class="nc" id="L150">        container.setLeft(vBox);</span>
+
+<span class="nc" id="L152">        setValues();</span>
+<span class="nc" id="L153">    }</span>
+
+    private void resetPreferences() {
+<span class="nc" id="L156">        boolean resetPreferencesConfirmed = dialogService.showConfirmationDialogAndWait(</span>
+<span class="nc" id="L157">                Localization.lang(&quot;Reset preferences&quot;),</span>
+<span class="nc" id="L158">                Localization.lang(&quot;Are you sure you want to reset all settings to default values?&quot;),</span>
+<span class="nc" id="L159">                Localization.lang(&quot;Reset preferences&quot;),</span>
+<span class="nc" id="L160">                Localization.lang(&quot;Cancel&quot;));</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        if (resetPreferencesConfirmed) {</span>
+            try {
+<span class="nc" id="L163">                prefs.clear();</span>
+
+<span class="nc" id="L165">                dialogService.showWarningDialogAndWait(Localization.lang(&quot;Reset preferences&quot;),</span>
+<span class="nc" id="L166">                        Localization.lang(&quot;You must restart JabRef for this to come into effect.&quot;));</span>
+<span class="nc" id="L167">            } catch (BackingStoreException ex) {</span>
+<span class="nc" id="L168">                LOGGER.error(&quot;Error while resetting preferences&quot;, ex);</span>
+<span class="nc" id="L169">                dialogService.showErrorDialogAndWait(Localization.lang(&quot;Reset preferences&quot;), ex);</span>
+<span class="nc" id="L170">            }</span>
+<span class="nc" id="L171">            updateAfterPreferenceChanges();</span>
+        }
+<span class="nc" id="L173">    }</span>
+
+    private void importPreferences() {
+<span class="nc" id="L176">        FileDialogConfiguration fileDialogConfiguration = new FileDialogConfiguration.Builder()</span>
+<span class="nc" id="L177">                .addExtensionFilter(StandardFileType.XML)</span>
+<span class="nc" id="L178">                .withDefaultExtension(StandardFileType.XML)</span>
+<span class="nc" id="L179">                .withInitialDirectory(prefs.setLastPreferencesExportPath()).build();</span>
+
+<span class="nc" id="L181">        dialogService.showFileOpenDialog(fileDialogConfiguration).ifPresent(file -&gt; {</span>
+            try {
+<span class="nc" id="L183">                prefs.importPreferences(file);</span>
+<span class="nc" id="L184">                updateAfterPreferenceChanges();</span>
+
+<span class="nc" id="L186">                dialogService.showWarningDialogAndWait(Localization.lang(&quot;Import preferences&quot;),</span>
+<span class="nc" id="L187">                        Localization.lang(&quot;You must restart JabRef for this to come into effect.&quot;));</span>
+<span class="nc" id="L188">            } catch (JabRefException ex) {</span>
+<span class="nc" id="L189">                LOGGER.error(&quot;Error while importing preferences&quot;, ex);</span>
+<span class="nc" id="L190">                dialogService.showErrorDialogAndWait(Localization.lang(&quot;Import preferences&quot;), ex);</span>
+<span class="nc" id="L191">            }</span>
+<span class="nc" id="L192">        });</span>
+<span class="nc" id="L193">    }</span>
+
+    private void updateAfterPreferenceChanges() {
+<span class="nc" id="L196">        setValues();</span>
+<span class="nc" id="L197">        List&lt;TemplateExporter&gt; customExporters = prefs.getCustomExportFormats(Globals.journalAbbreviationLoader);</span>
+<span class="nc" id="L198">        LayoutFormatterPreferences layoutPreferences = prefs.getLayoutFormatterPreferences(Globals.journalAbbreviationLoader);</span>
+<span class="nc" id="L199">        SavePreferences savePreferences = prefs.loadForExportFromPreferences();</span>
+<span class="nc" id="L200">        XmpPreferences xmpPreferences = prefs.getXMPPreferences();</span>
+<span class="nc" id="L201">        Globals.exportFactory = ExporterFactory.create(customExporters, layoutPreferences, savePreferences, xmpPreferences);</span>
+<span class="nc" id="L202">        prefs.updateEntryEditorTabList();</span>
+<span class="nc" id="L203">    }</span>
+
+    private void storeAllSettings() {
+        // First check that all tabs are ready to close:
+<span class="nc bnc" id="L207" title="All 2 branches missed.">        for (PrefsTab tab : preferenceTabs) {</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">            if (!tab.validateSettings()) {</span>
+<span class="nc" id="L209">                return; // If not, break off.</span>
+            }
+<span class="nc" id="L211">        }</span>
+        // Then store settings and close:
+<span class="nc bnc" id="L213" title="All 2 branches missed.">        for (PrefsTab tab : preferenceTabs) {</span>
+<span class="nc" id="L214">            tab.storeSettings();</span>
+<span class="nc" id="L215">        }</span>
+<span class="nc" id="L216">        prefs.flush();</span>
+
+<span class="nc" id="L218">        GUIGlobals.updateEntryEditorColors();</span>
+<span class="nc" id="L219">        frame.setupAllTables();</span>
+<span class="nc" id="L220">        frame.output(Localization.lang(&quot;Preferences recorded.&quot;));</span>
+<span class="nc" id="L221">    }</span>
+
+    public void setValues() {
+        // Update all field values in the tabs:
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        for (PrefsTab prefsTab : preferenceTabs) {</span>
+<span class="nc" id="L226">            prefsTab.setValues();</span>
+<span class="nc" id="L227">        }</span>
+<span class="nc" id="L228">    }</span>
+
+    private void exportPreferences() {
+<span class="nc" id="L231">        FileDialogConfiguration fileDialogConfiguration = new FileDialogConfiguration.Builder()</span>
+<span class="nc" id="L232">                .addExtensionFilter(StandardFileType.XML)</span>
+<span class="nc" id="L233">                .withDefaultExtension(StandardFileType.XML)</span>
+<span class="nc" id="L234">                .withInitialDirectory(prefs.setLastPreferencesExportPath())</span>
+<span class="nc" id="L235">                .build();</span>
+
+<span class="nc" id="L237">        dialogService.showFileSaveDialog(fileDialogConfiguration)</span>
+<span class="nc" id="L238">                     .ifPresent(exportFile -&gt; {</span>
+                         try {
+<span class="nc" id="L240">                             storeAllSettings();</span>
+<span class="nc" id="L241">                             prefs.exportPreferences(exportFile);</span>
+<span class="nc" id="L242">                             prefs.setLastPreferencesExportPath(exportFile);</span>
+<span class="nc" id="L243">                         } catch (JabRefException ex) {</span>
+<span class="nc" id="L244">                             LOGGER.warn(ex.getMessage(), ex);</span>
+<span class="nc" id="L245">                             dialogService.showErrorDialogAndWait(Localization.lang(&quot;Export preferences&quot;), ex);</span>
+<span class="nc" id="L246">                         }</span>
+<span class="nc" id="L247">                     });</span>
+<span class="nc" id="L248">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

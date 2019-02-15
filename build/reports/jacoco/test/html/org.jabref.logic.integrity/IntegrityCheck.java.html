@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IntegrityCheck.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.integrity</a> &gt; <span class="el_source">IntegrityCheck.java</span></div><h1>IntegrityCheck.java</h1><pre class="source lang-java linenums">package org.jabref.logic.integrity;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import org.jabref.logic.bibtexkeypattern.BibtexKeyPatternPreferences;
+import org.jabref.logic.journals.JournalAbbreviationRepository;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.metadata.FilePreferences;
+
+public class IntegrityCheck {
+
+    private final BibDatabaseContext bibDatabaseContext;
+    private final FilePreferences filePreferences;
+    private final BibtexKeyPatternPreferences bibtexKeyPatternPreferences;
+    private final JournalAbbreviationRepository journalAbbreviationRepository;
+    private final boolean enforceLegalKey;
+
+    public IntegrityCheck(BibDatabaseContext bibDatabaseContext,
+                          FilePreferences filePreferences,
+                          BibtexKeyPatternPreferences bibtexKeyPatternPreferences,
+                          JournalAbbreviationRepository journalAbbreviationRepository,
+<span class="fc" id="L26">                          boolean enforceLegalKey) {</span>
+<span class="fc" id="L27">        this.bibDatabaseContext = Objects.requireNonNull(bibDatabaseContext);</span>
+<span class="fc" id="L28">        this.filePreferences = Objects.requireNonNull(filePreferences);</span>
+<span class="fc" id="L29">        this.bibtexKeyPatternPreferences = Objects.requireNonNull(bibtexKeyPatternPreferences);</span>
+<span class="fc" id="L30">        this.journalAbbreviationRepository = Objects.requireNonNull(journalAbbreviationRepository);</span>
+<span class="fc" id="L31">        this.enforceLegalKey = enforceLegalKey;</span>
+<span class="fc" id="L32">    }</span>
+
+    public List&lt;IntegrityMessage&gt; checkBibtexDatabase() {
+<span class="fc" id="L35">        List&lt;IntegrityMessage&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        for (BibEntry entry : bibDatabaseContext.getDatabase().getEntries()) {</span>
+<span class="fc" id="L38">            result.addAll(checkBibtexEntry(entry));</span>
+<span class="fc" id="L39">        }</span>
+
+<span class="fc" id="L41">        return result;</span>
+    }
+
+    public List&lt;IntegrityMessage&gt; checkBibtexEntry(BibEntry entry) {
+<span class="fc" id="L45">        List&lt;IntegrityMessage&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        if (entry == null) {</span>
+<span class="nc" id="L48">            return result;</span>
+        }
+
+<span class="fc" id="L51">        FieldCheckers fieldCheckers = new FieldCheckers(bibDatabaseContext, filePreferences, journalAbbreviationRepository, enforceLegalKey);</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        for (FieldChecker checker : fieldCheckers.getAll()) {</span>
+<span class="fc" id="L53">            result.addAll(checker.check(entry));</span>
+<span class="fc" id="L54">        }</span>
+
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (!bibDatabaseContext.isBiblatexMode()) {</span>
+            // BibTeX only checkers
+<span class="fc" id="L58">            result.addAll(new ASCIICharacterChecker().check(entry));</span>
+<span class="fc" id="L59">            result.addAll(new NoBibtexFieldChecker().check(entry));</span>
+<span class="fc" id="L60">            result.addAll(new BibTeXEntryTypeChecker().check(entry));</span>
+<span class="fc" id="L61">            result.addAll(new JournalInAbbreviationListChecker(FieldName.JOURNAL, journalAbbreviationRepository).check(entry));</span>
+        } else {
+<span class="fc" id="L63">            result.addAll(new JournalInAbbreviationListChecker(FieldName.JOURNALTITLE, journalAbbreviationRepository).check(entry));</span>
+        }
+
+<span class="fc" id="L66">        result.addAll(new BibtexKeyChecker().check(entry));</span>
+<span class="fc" id="L67">        result.addAll(new TypeChecker().check(entry));</span>
+<span class="fc" id="L68">        result.addAll(new BibStringChecker().check(entry));</span>
+<span class="fc" id="L69">        result.addAll(new HTMLCharacterChecker().check(entry));</span>
+<span class="fc" id="L70">        result.addAll(new EntryLinkChecker(bibDatabaseContext.getDatabase()).check(entry));</span>
+<span class="fc" id="L71">        result.addAll(new BibtexkeyDeviationChecker(bibDatabaseContext, bibtexKeyPatternPreferences).check(entry));</span>
+<span class="fc" id="L72">        result.addAll(new BibtexKeyDuplicationChecker(bibDatabaseContext.getDatabase()).check(entry));</span>
+
+<span class="fc" id="L74">        return result;</span>
+    }
+
+    @FunctionalInterface
+    public interface Checker {
+        List&lt;IntegrityMessage&gt; check(BibEntry entry);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

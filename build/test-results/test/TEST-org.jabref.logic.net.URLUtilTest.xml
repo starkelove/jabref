@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.net.URLUtilTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:23:50" hostname="n184-p67.eduroam.kth.se" time="0.008">
+  <properties/>
+  <testcase name="appendSlash()" classname="org.jabref.logic.net.URLUtilTest" time="0.001"/>
+  <testcase name="cleanGoogleSearchURL()" classname="org.jabref.logic.net.URLUtilTest" time="0.003"/>
+  <testcase name="appendSingleWord()" classname="org.jabref.logic.net.URLUtilTest" time="0.001"/>
+  <testcase name="isURLshouldAcceptValidURL()" classname="org.jabref.logic.net.URLUtilTest" time="0.0"/>
+  <testcase name="isURLshouldRejectInvalidURL()" classname="org.jabref.logic.net.URLUtilTest" time="0.0"/>
+  <testcase name="appendSingleWordWithSlash()" classname="org.jabref.logic.net.URLUtilTest" time="0.0"/>
+  <testcase name="appendTwoWords()" classname="org.jabref.logic.net.URLUtilTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

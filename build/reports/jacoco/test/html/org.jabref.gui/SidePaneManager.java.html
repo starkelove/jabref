@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SidePaneManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui</a> &gt; <span class="el_source">SidePaneManager.java</span></div><h1>SidePaneManager.java</h1><pre class="source lang-java linenums">package org.jabref.gui;
+
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import org.jabref.Globals;
+import org.jabref.gui.collab.FileUpdatePanel;
+import org.jabref.gui.groups.GroupSidePane;
+import org.jabref.gui.importer.fetcher.WebSearchPane;
+import org.jabref.gui.openoffice.OpenOfficeSidePanel;
+import org.jabref.logic.openoffice.OpenOfficePreferences;
+import org.jabref.preferences.JabRefPreferences;
+
+/**
+ * Manages which {@link SidePaneComponent}s are shown.
+ */
+public class SidePaneManager {
+
+    private final SidePane sidePane;
+<span class="nc" id="L24">    private final Map&lt;SidePaneType, SidePaneComponent&gt; components = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc" id="L25">    private final List&lt;SidePaneComponent&gt; visibleComponents = new LinkedList&lt;&gt;();</span>
+    private final JabRefPreferences preferences;
+
+<span class="nc" id="L28">    public SidePaneManager(JabRefPreferences preferences, JabRefFrame frame) {</span>
+<span class="nc" id="L29">        this.preferences = preferences;</span>
+<span class="nc" id="L30">        this.sidePane = new SidePane();</span>
+
+<span class="nc" id="L32">        OpenOfficePreferences openOfficePreferences = preferences.getOpenOfficePreferences();</span>
+<span class="nc" id="L33">        Stream.of(</span>
+                new FileUpdatePanel(this),
+<span class="nc" id="L35">                new GroupSidePane(this, preferences, frame.getDialogService()),</span>
+                new WebSearchPane(this, preferences, frame),
+                new OpenOfficeSidePanel(this, preferences, frame))
+<span class="nc" id="L38">              .forEach(pane -&gt; components.put(pane.getType(), pane));</span>
+
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        if (preferences.getBoolean(JabRefPreferences.GROUP_SIDEPANE_VISIBLE)) {</span>
+<span class="nc" id="L41">            show(SidePaneType.GROUPS);</span>
+        }
+
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        if (openOfficePreferences.getShowPanel()) {</span>
+<span class="nc" id="L45">            show(SidePaneType.OPEN_OFFICE);</span>
+        }
+
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (preferences.getBoolean(JabRefPreferences.WEB_SEARCH_VISIBLE)) {</span>
+<span class="nc" id="L49">            show(SidePaneType.WEB_SEARCH);</span>
+        }
+
+<span class="nc" id="L52">        updateView();</span>
+<span class="nc" id="L53">    }</span>
+
+    public SidePane getPane() {
+<span class="nc" id="L56">        return sidePane;</span>
+    }
+
+    public boolean isComponentVisible(SidePaneType type) {
+<span class="nc" id="L60">        return visibleComponents.contains(getComponent(type));</span>
+    }
+
+    public SidePaneComponent getComponent(SidePaneType type) {
+<span class="nc" id="L64">        SidePaneComponent component = components.get(type);</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if (component == null) {</span>
+<span class="nc" id="L66">            throw new IllegalStateException(&quot;Side component &quot; + type + &quot; not registered.&quot;);</span>
+        } else {
+<span class="nc" id="L68">            return component;</span>
+        }
+    }
+
+    /**
+     * If the given component is visible it will be hidden and the other way around.
+     */
+    public void toggle(SidePaneType type) {
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (isComponentVisible(type)) {</span>
+<span class="nc" id="L77">            hide(type);</span>
+        } else {
+<span class="nc" id="L79">            show(type);</span>
+        }
+<span class="nc" id="L81">    }</span>
+
+    /**
+     * Makes sure that the given component is visible.
+     */
+    public void show(SidePaneType type) {
+<span class="nc" id="L87">        SidePaneComponent component = getComponent(type);</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (!visibleComponents.contains(component)) {</span>
+            // Add the new component
+<span class="nc" id="L90">            visibleComponents.add(component);</span>
+
+            // Sort the visible components by their preferred position
+<span class="nc" id="L93">            visibleComponents.sort(new PreferredIndexSort());</span>
+
+<span class="nc" id="L95">            updateView();</span>
+
+<span class="nc" id="L97">            component.afterOpening();</span>
+        }
+<span class="nc" id="L99">    }</span>
+
+    /**
+     * Makes sure that the given component is not visible.
+     */
+    public void hide(SidePaneType type) {
+<span class="nc" id="L105">        SidePaneComponent component = getComponent(type);</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (visibleComponents.contains(component)) {</span>
+<span class="nc" id="L107">            component.beforeClosing();</span>
+
+<span class="nc" id="L109">            visibleComponents.remove(component);</span>
+
+<span class="nc" id="L111">            updateView();</span>
+        }
+<span class="nc" id="L113">    }</span>
+
+    /**
+     * Stores the current configuration of visible components in the preferences,
+     * so that we show components at the preferred position next time.
+     */
+    private void updatePreferredPositions() {
+<span class="nc" id="L120">        Map&lt;SidePaneType, Integer&gt; preferredPositions = preferences.getSidePanePreferredPositions();</span>
+
+        // Use the currently shown positions of all visible components
+<span class="nc" id="L123">        int index = 0;</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        for (SidePaneComponent comp : visibleComponents) {</span>
+<span class="nc" id="L125">            preferredPositions.put(comp.getType(), index);</span>
+<span class="nc" id="L126">            index++;</span>
+<span class="nc" id="L127">        }</span>
+<span class="nc" id="L128">        preferences.storeSidePanePreferredPositions(preferredPositions);</span>
+<span class="nc" id="L129">    }</span>
+
+    /**
+     * Moves the given component up.
+     */
+    public void moveUp(SidePaneComponent component) {
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        if (visibleComponents.contains(component)) {</span>
+<span class="nc" id="L136">            int currentPosition = visibleComponents.indexOf(component);</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">            if (currentPosition &gt; 0) {</span>
+<span class="nc" id="L138">                int newPosition = currentPosition - 1;</span>
+<span class="nc" id="L139">                visibleComponents.remove(currentPosition);</span>
+<span class="nc" id="L140">                visibleComponents.add(newPosition, component);</span>
+
+<span class="nc" id="L142">                updatePreferredPositions();</span>
+<span class="nc" id="L143">                updateView();</span>
+            }
+        }
+<span class="nc" id="L146">    }</span>
+
+    /**
+     * Moves the given component down.
+     */
+    public void moveDown(SidePaneComponent comp) {
+<span class="nc bnc" id="L152" title="All 2 branches missed.">        if (visibleComponents.contains(comp)) {</span>
+<span class="nc" id="L153">            int currentPosition = visibleComponents.indexOf(comp);</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">            if (currentPosition &lt; (visibleComponents.size() - 1)) {</span>
+<span class="nc" id="L155">                int newPosition = currentPosition + 1;</span>
+<span class="nc" id="L156">                visibleComponents.remove(currentPosition);</span>
+<span class="nc" id="L157">                visibleComponents.add(newPosition, comp);</span>
+
+<span class="nc" id="L159">                updatePreferredPositions();</span>
+<span class="nc" id="L160">                updateView();</span>
+            }
+        }
+<span class="nc" id="L163">    }</span>
+
+    /**
+     * Updates the view to reflect changes to visible components.
+     */
+    private void updateView() {
+<span class="nc" id="L169">        sidePane.setComponents(visibleComponents);</span>
+
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (visibleComponents.isEmpty()) {</span>
+<span class="nc" id="L172">            sidePane.setVisible(false);</span>
+        } else {
+<span class="nc" id="L174">            sidePane.setVisible(true);</span>
+        }
+<span class="nc" id="L176">    }</span>
+
+    /**
+     * Helper class for sorting visible components based on their preferred position.
+     */
+    private class PreferredIndexSort implements Comparator&lt;SidePaneComponent&gt; {
+
+        private final Map&lt;SidePaneType, Integer&gt; preferredPositions;
+
+<span class="nc" id="L185">        public PreferredIndexSort() {</span>
+<span class="nc" id="L186">            preferredPositions = Globals.prefs.getSidePanePreferredPositions();</span>
+<span class="nc" id="L187">        }</span>
+
+        @Override
+        public int compare(SidePaneComponent comp1, SidePaneComponent comp2) {
+<span class="nc" id="L191">            int pos1 = preferredPositions.getOrDefault(comp1.getType(), 0);</span>
+<span class="nc" id="L192">            int pos2 = preferredPositions.getOrDefault(comp2.getType(), 0);</span>
+<span class="nc" id="L193">            return Integer.compare(pos1, pos2);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

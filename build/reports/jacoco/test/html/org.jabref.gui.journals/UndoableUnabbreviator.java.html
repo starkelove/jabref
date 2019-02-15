@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UndoableUnabbreviator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.journals</a> &gt; <span class="el_source">UndoableUnabbreviator.java</span></div><h1>UndoableUnabbreviator.java</h1><pre class="source lang-java linenums">package org.jabref.gui.journals;
+
+import javax.swing.undo.CompoundEdit;
+
+import org.jabref.gui.undo.UndoableFieldChange;
+import org.jabref.logic.journals.Abbreviation;
+import org.jabref.logic.journals.JournalAbbreviationRepository;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+
+public class UndoableUnabbreviator {
+
+    private final JournalAbbreviationRepository journalAbbreviationRepository;
+
+
+<span class="nc" id="L16">    public UndoableUnabbreviator(JournalAbbreviationRepository journalAbbreviationRepository) {</span>
+<span class="nc" id="L17">        this.journalAbbreviationRepository = journalAbbreviationRepository;</span>
+<span class="nc" id="L18">    }</span>
+
+    /**
+     * Unabbreviate the journal name of the given entry.
+     *
+     * @param entry     The entry to be treated.
+     * @param fieldName The field name (e.g. &quot;journal&quot;)
+     * @param ce        If the entry is changed, add an edit to this compound.
+     * @return true if the entry was changed, false otherwise.
+     */
+    public boolean unabbreviate(BibDatabase database, BibEntry entry, String fieldName, CompoundEdit ce) {
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        if (!entry.hasField(fieldName)) {</span>
+<span class="nc" id="L30">            return false;</span>
+        }
+<span class="nc" id="L32">        String text = entry.getField(fieldName).get();</span>
+<span class="nc" id="L33">        String origText = text;</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (database != null) {</span>
+<span class="nc" id="L35">            text = database.resolveForStrings(text);</span>
+        }
+
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        if (!journalAbbreviationRepository.isKnownName(text)) {</span>
+<span class="nc" id="L39">            return false; // cannot do anything if it is not known</span>
+        }
+
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (!journalAbbreviationRepository.isAbbreviatedName(text)) {</span>
+<span class="nc" id="L43">            return false; // cannot unabbreviate unabbreviated name.</span>
+        }
+
+<span class="nc" id="L46">        Abbreviation abbreviation = journalAbbreviationRepository.getAbbreviation(text).get(); // must be here</span>
+<span class="nc" id="L47">        String newText = abbreviation.getName();</span>
+<span class="nc" id="L48">        entry.setField(fieldName, newText);</span>
+<span class="nc" id="L49">        ce.addEdit(new UndoableFieldChange(entry, fieldName, origText, newText));</span>
+<span class="nc" id="L50">        return true;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

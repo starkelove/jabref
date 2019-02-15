@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IsiImporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fileformat</a> &gt; <span class="el_source">IsiImporter.java</span></div><h1>IsiImporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fileformat;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.formatter.casechanger.TitleCaseFormatter;
+import org.jabref.logic.importer.Importer;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BibtexEntryTypes;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.Month;
+
+/**
+ * Importer for the ISI Web of Science, INSPEC and Medline format.
+ * &lt;p&gt;
+ * Documentation about ISI WOS format:
+ * &lt;p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;https://web.archive.org/web/20131031052339/http://wos.isitrial.com/help/helpprn.html&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;Deal with capitalization correctly&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+<span class="fc" id="L37">public class IsiImporter extends Importer {</span>
+
+<span class="fc" id="L39">    private static final Pattern SUB_SUP_PATTERN = Pattern.compile(&quot;/(sub|sup)\\s+(.*?)\\s*/&quot;);</span>
+
+    // 2006.09.05: Modified pattern to avoid false positives for other files due to an
+    // extra | at the end:
+<span class="fc" id="L43">    private static final Pattern ISI_PATTERN = Pattern.compile(&quot;FN ISI Export Format|VR 1.|PY \\d{4}&quot;);</span>
+
+    private static final String EOL = &quot;EOLEOL&quot;;
+<span class="fc" id="L46">    private static final Pattern EOL_PATTERN = Pattern.compile(EOL);</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L50">        return &quot;ISI&quot;;</span>
+    }
+
+    @Override
+    public StandardFileType getFileType() {
+<span class="fc" id="L55">        return StandardFileType.ISI;</span>
+    }
+
+    @Override
+    public String getId() {
+<span class="fc" id="L60">        return &quot;isi&quot;;</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L65">        return &quot;Importer for the ISI Web of Science, INSPEC and Medline format.&quot;;</span>
+    }
+
+    @Override
+    public boolean isRecognizedFormat(BufferedReader reader) throws IOException {
+        String str;
+<span class="fc" id="L71">        int i = 0;</span>
+<span class="fc bfc" id="L72" title="All 4 branches covered.">        while (((str = reader.readLine()) != null) &amp;&amp; (i &lt; 50)) {</span>
+
+            /**
+             * The following line gives false positives for RIS files, so it
+             * should not be uncommented. The hypen is a characteristic of the
+             * RIS format.
+             *
+             * str = str.replace(&quot; - &quot;, &quot;&quot;)
+             */
+<span class="fc bfc" id="L81" title="All 2 branches covered.">            if (IsiImporter.ISI_PATTERN.matcher(str).find()) {</span>
+<span class="fc" id="L82">                return true;</span>
+            }
+
+<span class="fc" id="L85">            i++;</span>
+        }
+<span class="fc" id="L87">        return false;</span>
+    }
+
+    public static void processSubSup(Map&lt;String, String&gt; map) {
+
+<span class="fc" id="L92">        String[] subsup = {FieldName.TITLE, FieldName.ABSTRACT, FieldName.REVIEW, &quot;notes&quot;};</span>
+
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        for (String aSubsup : subsup) {</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">            if (map.containsKey(aSubsup)) {</span>
+
+<span class="fc" id="L97">                Matcher m = IsiImporter.SUB_SUP_PATTERN.matcher(map.get(aSubsup));</span>
+<span class="fc" id="L98">                StringBuffer sb = new StringBuffer();</span>
+
+<span class="fc bfc" id="L100" title="All 2 branches covered.">                while (m.find()) {</span>
+
+<span class="fc" id="L102">                    String group2 = m.group(2);</span>
+<span class="fc" id="L103">                    group2 = group2.replaceAll(&quot;\\$&quot;, &quot;\\\\\\\\\\\\\\$&quot;); // Escaping</span>
+                    // insanity!
+                    // :-)
+<span class="fc bfc" id="L106" title="All 2 branches covered.">                    if (group2.length() &gt; 1) {</span>
+<span class="fc" id="L107">                        group2 = &quot;{&quot; + group2 + &quot;}&quot;;</span>
+                    }
+<span class="fc bfc" id="L109" title="All 2 branches covered.">                    if (&quot;sub&quot;.equals(m.group(1))) {</span>
+<span class="fc" id="L110">                        m.appendReplacement(sb, &quot;\\$_&quot; + group2 + &quot;\\$&quot;);</span>
+                    } else {
+<span class="fc" id="L112">                        m.appendReplacement(sb, &quot;\\$^&quot; + group2 + &quot;\\$&quot;);</span>
+                    }
+<span class="fc" id="L114">                }</span>
+<span class="fc" id="L115">                m.appendTail(sb);</span>
+<span class="fc" id="L116">                map.put(aSubsup, sb.toString());</span>
+            }
+        }
+<span class="fc" id="L119">    }</span>
+
+    private static void processCapitalization(Map&lt;String, String&gt; map) {
+
+<span class="fc" id="L123">        String[] subsup = {FieldName.TITLE, FieldName.JOURNAL, FieldName.PUBLISHER};</span>
+
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        for (String aSubsup : subsup) {</span>
+
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            if (map.containsKey(aSubsup)) {</span>
+
+<span class="fc" id="L129">                String s = map.get(aSubsup);</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                if (s.toUpperCase(Locale.ROOT).equals(s)) {</span>
+<span class="fc" id="L131">                    s = new TitleCaseFormatter().format(s);</span>
+<span class="fc" id="L132">                    map.put(aSubsup, s);</span>
+                }
+            }
+        }
+<span class="fc" id="L136">    }</span>
+
+    @Override
+    public ParserResult importDatabase(BufferedReader reader) throws IOException {
+<span class="fc" id="L140">        Objects.requireNonNull(reader);</span>
+
+<span class="fc" id="L142">        List&lt;BibEntry&gt; bibitems = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L143">        StringBuilder sb = new StringBuilder();</span>
+
+        // Pattern fieldPattern = Pattern.compile(&quot;^AU |^TI |^SO |^DT |^C1 |^AB
+        // |^ID |^BP |^PY |^SE |^PY |^VL |^IS &quot;);
+        String str;
+
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        while ((str = reader.readLine()) != null) {</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">            if (str.length() &lt; 3) {</span>
+<span class="fc" id="L151">                continue;</span>
+            }
+
+            // beginning of a new item
+<span class="fc bfc" id="L155" title="All 2 branches covered.">            if (&quot;PT &quot;.equals(str.substring(0, 3))) {</span>
+<span class="fc" id="L156">                sb.append(&quot;::&quot;).append(str);</span>
+            } else {
+<span class="fc" id="L158">                String beg = str.substring(0, 3).trim();</span>
+
+                // I could have used the fieldPattern regular expression instead
+                // however this seems to be
+                // quick and dirty and it works!
+<span class="fc bfc" id="L163" title="All 2 branches covered.">                if (beg.length() == 2) {</span>
+<span class="fc" id="L164">                    sb.append(&quot; ## &quot;); // mark the beginning of each field</span>
+<span class="fc" id="L165">                    sb.append(str);</span>
+                } else {
+<span class="fc" id="L167">                    sb.append(EOL); // mark the end of each line</span>
+<span class="fc" id="L168">                    sb.append(str.trim()); // remove the initial spaces</span>
+                }
+<span class="fc" id="L170">            }</span>
+        }
+
+<span class="fc" id="L173">        String[] entries = sb.toString().split(&quot;::&quot;);</span>
+
+<span class="fc" id="L175">        Map&lt;String, String&gt; hm = new HashMap&lt;&gt;();</span>
+
+        // skip the first entry as it is either empty or has document header
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        for (String entry : entries) {</span>
+<span class="fc" id="L179">            String[] fields = entry.split(&quot; ## &quot;);</span>
+
+<span class="fc bfc" id="L181" title="All 2 branches covered.">            if (fields.length == 0) {</span>
+<span class="fc" id="L182">                fields = entry.split(&quot;\n&quot;);</span>
+            }
+
+<span class="fc" id="L185">            String Type = &quot;&quot;;</span>
+<span class="fc" id="L186">            String PT = &quot;&quot;;</span>
+<span class="fc" id="L187">            String pages = &quot;&quot;;</span>
+<span class="fc" id="L188">            hm.clear();</span>
+
+<span class="fc bfc" id="L190" title="All 2 branches covered.">            for (String field : fields) {</span>
+                // empty field don't do anything
+<span class="fc bfc" id="L192" title="All 2 branches covered.">                if (field.length() &lt;= 2) {</span>
+<span class="fc" id="L193">                    continue;</span>
+                }
+
+<span class="fc" id="L196">                String beg = field.substring(0, 2);</span>
+<span class="fc" id="L197">                String value = field.substring(3);</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">                if (value.startsWith(&quot; - &quot;)) {</span>
+<span class="fc" id="L199">                    value = value.substring(3);</span>
+                }
+<span class="fc" id="L201">                value = value.trim();</span>
+
+<span class="fc bfc" id="L203" title="All 2 branches covered.">                if (&quot;PT&quot;.equals(beg)) {</span>
+<span class="fc bfc" id="L204" title="All 2 branches covered.">                    if (value.startsWith(&quot;J&quot;)) {</span>
+<span class="fc" id="L205">                        PT = &quot;article&quot;;</span>
+                    } else {
+<span class="fc" id="L207">                        PT = value;</span>
+                    }
+<span class="fc" id="L209">                    Type = &quot;article&quot;; // make all of them PT?</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">                } else if (&quot;TY&quot;.equals(beg)) {</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">                    if (&quot;JOUR&quot;.equals(value)) {</span>
+<span class="fc" id="L212">                        Type = &quot;article&quot;;</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">                    } else if (&quot;CONF&quot;.equals(value)) {</span>
+<span class="fc" id="L214">                        Type = &quot;inproceedings&quot;;</span>
+                    }
+<span class="fc bfc" id="L216" title="All 2 branches covered.">                } else if (&quot;JO&quot;.equals(beg)) {</span>
+<span class="fc" id="L217">                    hm.put(FieldName.BOOKTITLE, value);</span>
+<span class="fc bfc" id="L218" title="All 2 branches covered.">                } else if (&quot;AU&quot;.equals(beg)) {</span>
+<span class="fc" id="L219">                    String author = IsiImporter.isiAuthorsConvert(EOL_PATTERN.matcher(value).replaceAll(&quot; and &quot;));</span>
+
+                    // if there is already someone there then append with &quot;and&quot;
+<span class="fc bfc" id="L222" title="All 2 branches covered.">                    if (hm.get(FieldName.AUTHOR) != null) {</span>
+<span class="fc" id="L223">                        author = hm.get(FieldName.AUTHOR) + &quot; and &quot; + author;</span>
+                    }
+
+<span class="fc" id="L226">                    hm.put(FieldName.AUTHOR, author);</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">                } else if (&quot;TI&quot;.equals(beg)) {</span>
+<span class="fc" id="L228">                    hm.put(FieldName.TITLE, EOL_PATTERN.matcher(value).replaceAll(&quot; &quot;));</span>
+<span class="fc bfc" id="L229" title="All 4 branches covered.">                } else if (&quot;SO&quot;.equals(beg) || &quot;JA&quot;.equals(beg)) {</span>
+<span class="fc" id="L230">                    hm.put(FieldName.JOURNAL, EOL_PATTERN.matcher(value).replaceAll(&quot; &quot;));</span>
+<span class="fc bfc" id="L231" title="All 4 branches covered.">                } else if (&quot;ID&quot;.equals(beg) || &quot;KW&quot;.equals(beg)) {</span>
+
+<span class="fc" id="L233">                    value = EOL_PATTERN.matcher(value).replaceAll(&quot; &quot;);</span>
+<span class="fc" id="L234">                    String existingKeywords = hm.get(FieldName.KEYWORDS);</span>
+<span class="fc bfc" id="L235" title="All 4 branches covered.">                    if ((existingKeywords == null) || existingKeywords.contains(value)) {</span>
+<span class="fc" id="L236">                        existingKeywords = value;</span>
+                    } else {
+<span class="fc" id="L238">                        existingKeywords += &quot;, &quot; + value;</span>
+                    }
+<span class="fc" id="L240">                    hm.put(FieldName.KEYWORDS, existingKeywords);</span>
+
+<span class="fc bfc" id="L242" title="All 2 branches covered.">                } else if (&quot;AB&quot;.equals(beg)) {</span>
+<span class="fc" id="L243">                    hm.put(FieldName.ABSTRACT, EOL_PATTERN.matcher(value).replaceAll(&quot; &quot;));</span>
+<span class="fc bfc" id="L244" title="All 6 branches covered.">                } else if (&quot;BP&quot;.equals(beg) || &quot;BR&quot;.equals(beg) || &quot;SP&quot;.equals(beg)) {</span>
+<span class="fc" id="L245">                    pages = value;</span>
+<span class="fc bfc" id="L246" title="All 2 branches covered.">                } else if (&quot;EP&quot;.equals(beg)) {</span>
+<span class="fc" id="L247">                    int detpos = value.indexOf(' ');</span>
+
+                    // tweak for IEEE Explore
+<span class="pc bpc" id="L250" title="1 of 4 branches missed.">                    if ((detpos != -1) &amp;&amp; !value.substring(0, detpos).trim().isEmpty()) {</span>
+<span class="fc" id="L251">                        value = value.substring(0, detpos);</span>
+                    }
+
+<span class="fc" id="L254">                    pages = pages + &quot;--&quot; + value;</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">                } else if (&quot;PS&quot;.equals(beg)) {</span>
+<span class="fc" id="L256">                    pages = IsiImporter.parsePages(value);</span>
+<span class="fc bfc" id="L257" title="All 2 branches covered.">                } else if (&quot;AR&quot;.equals(beg)) {</span>
+<span class="fc" id="L258">                    pages = value;</span>
+<span class="fc bfc" id="L259" title="All 2 branches covered.">                } else if (&quot;IS&quot;.equals(beg)) {</span>
+<span class="fc" id="L260">                    hm.put(FieldName.NUMBER, value);</span>
+<span class="fc bfc" id="L261" title="All 2 branches covered.">                } else if (&quot;PY&quot;.equals(beg)) {</span>
+<span class="fc" id="L262">                    hm.put(FieldName.YEAR, value);</span>
+<span class="fc bfc" id="L263" title="All 2 branches covered.">                } else if (&quot;VL&quot;.equals(beg)) {</span>
+<span class="fc" id="L264">                    hm.put(FieldName.VOLUME, value);</span>
+<span class="fc bfc" id="L265" title="All 2 branches covered.">                } else if (&quot;PU&quot;.equals(beg)) {</span>
+<span class="fc" id="L266">                    hm.put(FieldName.PUBLISHER, value);</span>
+<span class="fc bfc" id="L267" title="All 2 branches covered.">                } else if (&quot;DI&quot;.equals(beg)) {</span>
+<span class="fc" id="L268">                    hm.put(FieldName.DOI, value);</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">                } else if (&quot;PD&quot;.equals(beg)) {</span>
+
+<span class="fc" id="L271">                    String month = IsiImporter.parseMonth(value);</span>
+<span class="fc bfc" id="L272" title="All 2 branches covered.">                    if (month != null) {</span>
+<span class="fc" id="L273">                        hm.put(FieldName.MONTH, month);</span>
+                    }
+
+<span class="fc bfc" id="L276" title="All 2 branches covered.">                } else if (&quot;DT&quot;.equals(beg)) {</span>
+<span class="fc" id="L277">                    Type = value;</span>
+<span class="fc bfc" id="L278" title="All 2 branches covered.">                    if (&quot;Review&quot;.equals(Type)) {</span>
+<span class="fc" id="L279">                        Type = &quot;article&quot;; // set &quot;Review&quot; in Note/Comment?</span>
+<span class="fc bfc" id="L280" title="All 6 branches covered.">                    } else if (Type.startsWith(&quot;Article&quot;) || Type.startsWith(&quot;Journal&quot;) || &quot;article&quot;.equals(PT)) {</span>
+<span class="fc" id="L281">                        Type = &quot;article&quot;;</span>
+                    } else {
+<span class="fc" id="L283">                        Type = BibEntry.DEFAULT_TYPE;</span>
+                    }
+<span class="fc bfc" id="L285" title="All 2 branches covered.">                } else if (&quot;CR&quot;.equals(beg)) {</span>
+<span class="fc" id="L286">                    hm.put(&quot;CitedReferences&quot;, EOL_PATTERN.matcher(value).replaceAll(&quot; ; &quot;).trim());</span>
+                } else {
+                    // Preserve all other entries except
+<span class="pc bpc" id="L289" title="1 of 8 branches missed.">                    if (&quot;ER&quot;.equals(beg) || &quot;EF&quot;.equals(beg) || &quot;VR&quot;.equals(beg) || &quot;FN&quot;.equals(beg)) {</span>
+<span class="fc" id="L290">                        continue;</span>
+                    }
+<span class="fc" id="L292">                    hm.put(beg.toLowerCase(Locale.ROOT), value);</span>
+                }
+            }
+
+<span class="fc bfc" id="L296" title="All 2 branches covered.">            if (!&quot;&quot;.equals(pages)) {</span>
+<span class="fc" id="L297">                hm.put(FieldName.PAGES, pages);</span>
+            }
+
+            // Skip empty entries
+<span class="fc bfc" id="L301" title="All 2 branches covered.">            if (hm.isEmpty()) {</span>
+<span class="fc" id="L302">                continue;</span>
+            }
+
+<span class="fc" id="L305">            BibEntry b = new BibEntry(BibtexEntryTypes.getTypeOrDefault(Type));</span>
+            // id assumes an existing database so don't
+
+            // Remove empty fields:
+<span class="fc" id="L309">            List&lt;Object&gt; toRemove = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L310" title="All 2 branches covered.">            for (Map.Entry&lt;String, String&gt; field : hm.entrySet()) {</span>
+<span class="fc" id="L311">                String content = field.getValue();</span>
+<span class="pc bpc" id="L312" title="1 of 4 branches missed.">                if ((content == null) || content.trim().isEmpty()) {</span>
+<span class="fc" id="L313">                    toRemove.add(field.getKey());</span>
+                }
+<span class="fc" id="L315">            }</span>
+<span class="fc bfc" id="L316" title="All 2 branches covered.">            for (Object aToRemove : toRemove) {</span>
+<span class="fc" id="L317">                hm.remove(aToRemove);</span>
+
+<span class="fc" id="L319">            }</span>
+
+            // Polish entries
+<span class="fc" id="L322">            IsiImporter.processSubSup(hm);</span>
+<span class="fc" id="L323">            IsiImporter.processCapitalization(hm);</span>
+
+<span class="fc" id="L325">            b.setField(hm);</span>
+
+<span class="fc" id="L327">            bibitems.add(b);</span>
+        }
+<span class="fc" id="L329">        return new ParserResult(bibitems);</span>
+    }
+
+    private static String parsePages(String value) {
+<span class="fc" id="L333">        return value.replace(&quot;-&quot;, &quot;--&quot;);</span>
+    }
+
+    public static String parseMonth(String value) {
+
+<span class="fc" id="L338">        String[] parts = value.split(&quot;\\s|\\-&quot;);</span>
+<span class="fc bfc" id="L339" title="All 2 branches covered.">        for (String part1 : parts) {</span>
+<span class="fc" id="L340">            Optional&lt;Month&gt; month = Month.getMonthByShortName(part1.toLowerCase(Locale.ROOT));</span>
+<span class="fc bfc" id="L341" title="All 2 branches covered.">            if (month.isPresent()) {</span>
+<span class="fc" id="L342">                return month.get().getJabRefFormat();</span>
+            }
+        }
+
+        // Try two digit month
+<span class="fc bfc" id="L347" title="All 2 branches covered.">        for (String part : parts) {</span>
+            try {
+<span class="fc" id="L349">                int number = Integer.parseInt(part);</span>
+<span class="fc" id="L350">                Optional&lt;Month&gt;  month = Month.getMonthByNumber(number);</span>
+<span class="fc bfc" id="L351" title="All 2 branches covered.">                if (month.isPresent()) {</span>
+<span class="fc" id="L352">                    return month.get().getJabRefFormat();</span>
+                }
+<span class="fc" id="L354">            } catch (NumberFormatException ignored) {</span>
+                // Ignored
+<span class="fc" id="L356">            }</span>
+        }
+<span class="fc" id="L358">        return null;</span>
+    }
+
+    /**
+     * Will expand ISI first names.
+     * &lt;p&gt;
+     * Fixed bug from:
+     * http://sourceforge.net/tracker/index.php?func=detail&amp;aid=1542552&amp;group_id=92314&amp;atid=600306
+     */
+    public static String isiAuthorConvert(String author) {
+
+<span class="fc" id="L369">        String[] s = author.split(&quot;,&quot;);</span>
+<span class="fc bfc" id="L370" title="All 2 branches covered.">        if (s.length != 2) {</span>
+<span class="fc" id="L371">            return author;</span>
+        }
+
+<span class="fc" id="L374">        StringBuilder sb = new StringBuilder();</span>
+
+<span class="fc" id="L376">        String last = s[0].trim();</span>
+<span class="fc" id="L377">        sb.append(last).append(&quot;, &quot;);</span>
+
+<span class="fc" id="L379">        String first = s[1].trim();</span>
+
+<span class="fc" id="L381">        String[] firstParts = first.split(&quot;\\s+&quot;);</span>
+
+<span class="fc bfc" id="L383" title="All 2 branches covered.">        for (int i = 0; i &lt; firstParts.length; i++) {</span>
+
+<span class="fc" id="L385">            first = firstParts[i];</span>
+
+            // Do we have only uppercase chars?
+<span class="fc bfc" id="L388" title="All 2 branches covered.">            if (first.toUpperCase(Locale.ROOT).equals(first)) {</span>
+<span class="fc" id="L389">                first = first.replace(&quot;.&quot;, &quot;&quot;);</span>
+<span class="fc bfc" id="L390" title="All 2 branches covered.">                for (int j = 0; j &lt; first.length(); j++) {</span>
+<span class="fc" id="L391">                    sb.append(first.charAt(j)).append('.');</span>
+
+<span class="fc bfc" id="L393" title="All 2 branches covered.">                    if (j &lt; (first.length() - 1)) {</span>
+<span class="fc" id="L394">                        sb.append(' ');</span>
+                    }
+                }
+            } else {
+<span class="fc" id="L398">                sb.append(first);</span>
+            }
+<span class="fc bfc" id="L400" title="All 2 branches covered.">            if (i &lt; (firstParts.length - 1)) {</span>
+<span class="fc" id="L401">                sb.append(' ');</span>
+            }
+        }
+<span class="fc" id="L404">        return sb.toString();</span>
+
+    }
+
+    private static String[] isiAuthorsConvert(String[] authors) {
+
+<span class="fc" id="L410">        String[] result = new String[authors.length];</span>
+<span class="fc bfc" id="L411" title="All 2 branches covered.">        for (int i = 0; i &lt; result.length; i++) {</span>
+<span class="fc" id="L412">            result[i] = IsiImporter.isiAuthorConvert(authors[i]);</span>
+        }
+<span class="fc" id="L414">        return result;</span>
+    }
+
+    public static String isiAuthorsConvert(String authors) {
+<span class="fc" id="L418">        String[] s = IsiImporter.isiAuthorsConvert(authors.split(&quot; and |;&quot;));</span>
+<span class="fc" id="L419">        return String.join(&quot; and &quot;, s);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

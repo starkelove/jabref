@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileUpdatePanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.collab</a> &gt; <span class="el_source">FileUpdatePanel.java</span></div><h1>FileUpdatePanel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.collab;
+
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+
+import javafx.embed.swing.SwingNode;
+import javafx.scene.Node;
+import javafx.scene.layout.Priority;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.SidePaneComponent;
+import org.jabref.gui.SidePaneManager;
+import org.jabref.gui.SidePaneType;
+import org.jabref.gui.actions.Action;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.logic.l10n.Localization;
+
+public class FileUpdatePanel extends SidePaneComponent implements ActionListener, ChangeScanner.DisplayResultCallback {
+
+    private final SidePaneManager manager;
+    private ChangeScanner scanner;
+    private File file;
+    private BasePanel panel;
+
+    public FileUpdatePanel(SidePaneManager manager) {
+<span class="nc" id="L35">        super(manager, IconTheme.JabRefIcons.SAVE, Localization.lang(&quot;File changed&quot;));</span>
+
+<span class="nc" id="L37">        this.manager = manager;</span>
+<span class="nc" id="L38">    }</span>
+
+    public void showForFile(BasePanel panel, File file, ChangeScanner scanner) {
+<span class="nc" id="L41">        this.file = file;</span>
+<span class="nc" id="L42">        this.panel = panel;</span>
+<span class="nc" id="L43">        this.scanner = scanner;</span>
+
+<span class="nc" id="L45">        this.show();</span>
+<span class="nc" id="L46">    }</span>
+
+    /**
+     * We include a getter for the BasePanel this component refers to, because this
+     * component needs to be closed if the BasePanel is closed.
+     * @return the base panel this component refers to.
+     */
+    public BasePanel getPanel() {
+<span class="nc" id="L54">        return panel;</span>
+    }
+
+    @Override
+    public Priority getResizePolicy() {
+<span class="nc" id="L59">        return Priority.NEVER;</span>
+    }
+
+    @Override
+    public ToggleCommand getToggleCommand() {
+<span class="nc" id="L64">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public Action getToggleAction() {
+<span class="nc" id="L69">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    protected Node createContentPane() {
+<span class="nc" id="L74">        JPanel main = new JPanel();</span>
+<span class="nc" id="L75">        main.setLayout(new BorderLayout());</span>
+
+<span class="nc" id="L77">        JLabel message = new JLabel(&quot;&lt;html&gt;&lt;center&gt;&quot;</span>
+<span class="nc" id="L78">                + Localization.lang(&quot;The file&lt;BR&gt;'%0'&lt;BR&gt;has been modified&lt;BR&gt;externally!&quot;, file.getName())</span>
+                + &quot;&lt;/center&gt;&lt;/html&gt;&quot;, SwingConstants.CENTER);
+
+<span class="nc" id="L81">        main.add(message, BorderLayout.CENTER);</span>
+<span class="nc" id="L82">        JButton reviewChanges = new JButton(Localization.lang(&quot;Review changes&quot;));</span>
+<span class="nc" id="L83">        reviewChanges.addActionListener(this);</span>
+<span class="nc" id="L84">        main.add(reviewChanges, BorderLayout.SOUTH);</span>
+<span class="nc" id="L85">        main.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));</span>
+
+<span class="nc" id="L87">        SwingNode swingNode = new SwingNode();</span>
+<span class="nc" id="L88">        SwingUtilities.invokeLater(() -&gt; swingNode.setContent(main));</span>
+<span class="nc" id="L89">        return swingNode;</span>
+    }
+
+    @Override
+    public SidePaneType getType() {
+<span class="nc" id="L94">        return SidePaneType.FILE_UPDATE_NOTIFICATION;</span>
+    }
+
+    /**
+     * actionPerformed
+     *
+     * @param e
+     *            ActionEvent
+     */
+    @Override
+    public void actionPerformed(ActionEvent e) {
+
+        // ChangeScanner scanner = new ChangeScanner(frame, panel); //,
+        // panel.database(), panel.metaData());
+        // try {
+<span class="nc" id="L109">        scanner.displayResult(this);</span>
+        // scanner.changeScan(panel.file());
+
+        // } catch (IOException ex) {
+        // ex.printStackTrace();
+        // }
+<span class="nc" id="L115">    }</span>
+
+    /**
+     * Callback method for signalling that the change scanner has displayed the
+     * scan results to the user.
+     * @param resolved true if there were no changes, or if the user has resolved them.
+     */
+    @Override
+    public void scanResultsResolved(boolean resolved) {
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (resolved) {</span>
+<span class="nc" id="L125">            manager.hide(this.getType());</span>
+<span class="nc" id="L126">            panel.markExternalChangesAsResolved();</span>
+        }
+<span class="nc" id="L128">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

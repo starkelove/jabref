@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupNodeViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.groups</a> &gt; <span class="el_source">GroupNodeViewModel.java</span></div><h1>GroupNodeViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.groups;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import javafx.scene.input.Dragboard;
+import javafx.scene.paint.Color;
+
+import org.jabref.gui.DragAndDropDataFormats;
+import org.jabref.gui.StateManager;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.icon.InternalMaterialDesignIcon;
+import org.jabref.gui.icon.JabRefIcon;
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.gui.util.BindingsHelper;
+import org.jabref.gui.util.CustomLocalDragboard;
+import org.jabref.gui.util.TaskExecutor;
+import org.jabref.logic.groups.DefaultGroupsFactory;
+import org.jabref.logic.layout.format.LatexToUnicodeFormatter;
+import org.jabref.model.FieldChange;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.groups.AbstractGroup;
+import org.jabref.model.groups.AutomaticGroup;
+import org.jabref.model.groups.GroupEntryChanger;
+import org.jabref.model.groups.GroupTreeNode;
+import org.jabref.model.strings.StringUtil;
+
+import com.google.common.base.Enums;
+import de.jensd.fx.glyphs.materialdesignicons.MaterialDesignIcon;
+import org.fxmisc.easybind.EasyBind;
+
+public class GroupNodeViewModel {
+
+    private final String displayName;
+    private final boolean isRoot;
+    private final ObservableList&lt;GroupNodeViewModel&gt; children;
+    private final BibDatabaseContext databaseContext;
+    private final StateManager stateManager;
+    private final GroupTreeNode groupNode;
+    private final SimpleIntegerProperty hits;
+    private final SimpleBooleanProperty hasChildren;
+<span class="fc" id="L53">    private final SimpleBooleanProperty expandedProperty = new SimpleBooleanProperty();</span>
+    private final BooleanBinding anySelectedEntriesMatched;
+    private final BooleanBinding allSelectedEntriesMatched;
+    private final TaskExecutor taskExecutor;
+    private final CustomLocalDragboard localDragBoard;
+
+<span class="fc" id="L59">    public GroupNodeViewModel(BibDatabaseContext databaseContext, StateManager stateManager, TaskExecutor taskExecutor, GroupTreeNode groupNode, CustomLocalDragboard localDragBoard) {</span>
+<span class="fc" id="L60">        this.databaseContext = Objects.requireNonNull(databaseContext);</span>
+<span class="fc" id="L61">        this.taskExecutor = Objects.requireNonNull(taskExecutor);</span>
+<span class="fc" id="L62">        this.stateManager = Objects.requireNonNull(stateManager);</span>
+<span class="fc" id="L63">        this.groupNode = Objects.requireNonNull(groupNode);</span>
+<span class="fc" id="L64">        this.localDragBoard = Objects.requireNonNull(localDragBoard);</span>
+
+<span class="fc" id="L66">        displayName = new LatexToUnicodeFormatter().format(groupNode.getName());</span>
+<span class="fc" id="L67">        isRoot = groupNode.isRoot();</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (groupNode.getGroup() instanceof AutomaticGroup) {</span>
+<span class="fc" id="L69">            AutomaticGroup automaticGroup = (AutomaticGroup) groupNode.getGroup();</span>
+
+<span class="fc" id="L71">            children = automaticGroup.createSubgroups(this.databaseContext.getDatabase().getEntries())</span>
+<span class="fc" id="L72">                                     .stream()</span>
+<span class="fc" id="L73">                                     .map(this::toViewModel)</span>
+<span class="fc" id="L74">                                     .sorted((group1, group2) -&gt; group1.getDisplayName().compareToIgnoreCase(group2.getDisplayName()))</span>
+<span class="fc" id="L75">                                     .collect(Collectors.toCollection(FXCollections::observableArrayList));</span>
+<span class="fc" id="L76">        } else {</span>
+<span class="fc" id="L77">            children = BindingsHelper.mapBacked(groupNode.getChildren(), this::toViewModel);</span>
+        }
+<span class="fc" id="L79">        hasChildren = new SimpleBooleanProperty();</span>
+<span class="fc" id="L80">        hasChildren.bind(Bindings.isNotEmpty(children));</span>
+<span class="fc" id="L81">        hits = new SimpleIntegerProperty(0);</span>
+<span class="fc" id="L82">        calculateNumberOfMatches();</span>
+<span class="fc" id="L83">        expandedProperty.set(groupNode.getGroup().isExpanded());</span>
+<span class="pc" id="L84">        expandedProperty.addListener((observable, oldValue, newValue) -&gt; groupNode.getGroup().setExpanded(newValue));</span>
+
+        // Register listener
+<span class="fc" id="L87">        databaseContext.getDatabase().getEntries().addListener(this::onDatabaseChanged);</span>
+
+<span class="fc" id="L89">        ObservableList&lt;Boolean&gt; selectedEntriesMatchStatus = EasyBind.map(stateManager.getSelectedEntries(), groupNode::matches);</span>
+<span class="pc" id="L90">        anySelectedEntriesMatched = BindingsHelper.any(selectedEntriesMatchStatus, matched -&gt; matched);</span>
+<span class="pc" id="L91">        allSelectedEntriesMatched = BindingsHelper.all(selectedEntriesMatchStatus, matched -&gt; matched);</span>
+<span class="fc" id="L92">    }</span>
+
+    public GroupNodeViewModel(BibDatabaseContext databaseContext, StateManager stateManager, TaskExecutor taskExecutor, AbstractGroup group, CustomLocalDragboard localDragboard) {
+<span class="fc" id="L95">        this(databaseContext, stateManager, taskExecutor, new GroupTreeNode(group), localDragboard);</span>
+<span class="fc" id="L96">    }</span>
+
+    static GroupNodeViewModel getAllEntriesGroup(BibDatabaseContext newDatabase, StateManager stateManager, TaskExecutor taskExecutor, CustomLocalDragboard localDragBoard) {
+<span class="fc" id="L99">        return new GroupNodeViewModel(newDatabase, stateManager, taskExecutor, DefaultGroupsFactory.getAllEntriesGroup(), localDragBoard);</span>
+    }
+
+    private GroupNodeViewModel toViewModel(GroupTreeNode child) {
+<span class="fc" id="L103">        return new GroupNodeViewModel(databaseContext, stateManager, taskExecutor, child, localDragBoard);</span>
+    }
+
+    public List&lt;FieldChange&gt; addEntriesToGroup(List&lt;BibEntry&gt; entries) {
+        // TODO: warn if assignment has undesired side effects (modifies a field != keywords)
+        //if (!WarnAssignmentSideEffects.warnAssignmentSideEffects(group, groupSelector.frame))
+        //{
+        //    return; // user aborted operation
+        //}
+
+<span class="fc" id="L113">        return groupNode.addEntriesToGroup(entries);</span>
+
+        // TODO: Store undo
+        // if (!undo.isEmpty()) {
+        // groupSelector.concludeAssignment(UndoableChangeEntriesOfGroup.getUndoableEdit(target, undo), target.getNode(), assignedEntries);
+    }
+
+    public SimpleBooleanProperty expandedProperty() {
+<span class="nc" id="L121">        return expandedProperty;</span>
+    }
+
+    public BooleanBinding anySelectedEntriesMatchedProperty() {
+<span class="nc" id="L125">        return anySelectedEntriesMatched;</span>
+    }
+
+    public BooleanBinding allSelectedEntriesMatchedProperty() {
+<span class="nc" id="L129">        return allSelectedEntriesMatched;</span>
+    }
+
+    public SimpleBooleanProperty hasChildrenProperty() {
+<span class="nc" id="L133">        return hasChildren;</span>
+    }
+
+    public String getDisplayName() {
+<span class="fc" id="L137">        return displayName;</span>
+    }
+
+    public boolean isRoot() {
+<span class="nc" id="L141">        return isRoot;</span>
+    }
+
+    public String getDescription() {
+<span class="nc" id="L145">        return groupNode.getGroup().getDescription().orElse(&quot;&quot;);</span>
+    }
+
+    public SimpleIntegerProperty getHits() {
+<span class="nc" id="L149">        return hits;</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L155">            return true;</span>
+        }
+<span class="pc bpc" id="L157" title="2 of 4 branches missed.">        if ((o == null) || (getClass() != o.getClass())) {</span>
+<span class="nc" id="L158">            return false;</span>
+        }
+
+<span class="fc" id="L161">        GroupNodeViewModel that = (GroupNodeViewModel) o;</span>
+
+<span class="fc" id="L163">        return groupNode.equals(that.groupNode);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L168">        return &quot;GroupNodeViewModel{&quot; +</span>
+                &quot;displayName='&quot; + displayName + '\'' +
+                &quot;, isRoot=&quot; + isRoot +
+<span class="nc" id="L171">                &quot;, icon='&quot; + getIcon() + '\'' +</span>
+                &quot;, children=&quot; + children +
+                &quot;, databaseContext=&quot; + databaseContext +
+                &quot;, groupNode=&quot; + groupNode +
+                &quot;, hits=&quot; + hits +
+                '}';
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L181">        return groupNode.hashCode();</span>
+    }
+
+    public JabRefIcon getIcon() {
+<span class="nc" id="L185">        Optional&lt;String&gt; iconName = groupNode.getGroup().getIconName();</span>
+<span class="nc" id="L186">        return iconName.flatMap(this::parseIcon)</span>
+<span class="nc" id="L187">                       .orElseGet(this::createDefaultIcon);</span>
+    }
+
+    private JabRefIcon createDefaultIcon() {
+<span class="nc" id="L191">        Optional&lt;Color&gt; color = groupNode.getGroup().getColor();</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        if (color.isPresent()) {</span>
+<span class="nc" id="L193">            return IconTheme.JabRefIcons.DEFAULT_GROUP_ICON_COLORED.withColor(color.get());</span>
+        } else {
+<span class="nc" id="L195">            return IconTheme.JabRefIcons.DEFAULT_GROUP_ICON_COLORED.withColor(Color.web(&quot;#8a8a8a&quot;));</span>
+        }
+    }
+
+    private Optional&lt;JabRefIcon&gt; parseIcon(String iconCode) {
+<span class="nc" id="L200">        return Enums.getIfPresent(MaterialDesignIcon.class, iconCode.toUpperCase(Locale.ENGLISH))</span>
+<span class="nc" id="L201">                    .toJavaUtil()</span>
+<span class="nc" id="L202">                    .map(icon -&gt; new InternalMaterialDesignIcon(getColor(), icon));</span>
+    }
+
+    public ObservableList&lt;GroupNodeViewModel&gt; getChildren() {
+<span class="fc" id="L206">        return children;</span>
+    }
+
+    public GroupTreeNode getGroupNode() {
+<span class="fc" id="L210">        return groupNode;</span>
+    }
+
+    /**
+     * Gets invoked if an entry in the current database changes.
+     */
+    private void onDatabaseChanged(ListChangeListener.Change&lt;? extends BibEntry&gt; change) {
+<span class="fc" id="L217">        calculateNumberOfMatches();</span>
+<span class="fc" id="L218">    }</span>
+
+    private void calculateNumberOfMatches() {
+        // We calculate the new hit value
+        // We could be more intelligent and try to figure out the new number of hits based on the entry change
+        // for example, a previously matched entry gets removed -&gt; hits = hits - 1
+<span class="fc" id="L224">        BackgroundTask</span>
+<span class="fc" id="L225">                .wrap(() -&gt; groupNode.calculateNumberOfMatches(databaseContext.getDatabase()))</span>
+<span class="fc" id="L226">                .onSuccess(hits::setValue)</span>
+<span class="fc" id="L227">                .executeWith(taskExecutor);</span>
+<span class="fc" id="L228">    }</span>
+
+    public GroupTreeNode addSubgroup(AbstractGroup subgroup) {
+<span class="fc" id="L231">        return groupNode.addSubgroup(subgroup);</span>
+    }
+
+    void toggleExpansion() {
+<span class="nc bnc" id="L235" title="All 2 branches missed.">        expandedProperty().set(!expandedProperty().get());</span>
+<span class="nc" id="L236">    }</span>
+
+    boolean isMatchedBy(String searchString) {
+<span class="pc bpc" id="L239" title="1 of 4 branches missed.">        return StringUtil.isBlank(searchString) || StringUtil.containsIgnoreCase(getDisplayName(), searchString);</span>
+    }
+
+    public Color getColor() {
+<span class="nc" id="L243">        return groupNode.getGroup().getColor().orElse(IconTheme.getDefaultColor());</span>
+    }
+
+    public String getPath() {
+<span class="nc" id="L247">        return groupNode.getPath();</span>
+    }
+
+    public Optional&lt;GroupNodeViewModel&gt; getChildByPath(String pathToSource) {
+<span class="nc" id="L251">        return groupNode.getChildByPath(pathToSource).map(this::toViewModel);</span>
+    }
+
+    /**
+     * Decides if the content stored in the given {@link Dragboard} can be droped on the given target row.
+     * Currently, the following sources are allowed:
+     *  - another group (will be added as subgroup on drop)
+     *  - entries if the group implements {@link GroupEntryChanger} (will be assigned to group on drop)
+     */
+    public boolean acceptableDrop(Dragboard dragboard) {
+        // TODO: we should also check isNodeDescendant
+<span class="nc" id="L262">        boolean canDropOtherGroup = dragboard.hasContent(DragAndDropDataFormats.GROUP);</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">        boolean canDropEntries = localDragBoard.hasType(DragAndDropDataFormats.BIBENTRY_LIST_CLASS)</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">                &amp;&amp; (groupNode.getGroup() instanceof GroupEntryChanger);</span>
+<span class="nc bnc" id="L265" title="All 4 branches missed.">        return canDropOtherGroup || canDropEntries;</span>
+    }
+
+    public void moveTo(GroupNodeViewModel target) {
+        // TODO: Add undo and display message
+        //MoveGroupChange undo = new MoveGroupChange(((GroupTreeNodeViewModel)source.getParent()).getNode(),
+        //        source.getNode().getPositionInParent(), target.getNode(), target.getChildCount());
+
+<span class="nc" id="L273">        getGroupNode().moveTo(target.getGroupNode());</span>
+        //panel.getUndoManager().addEdit(new UndoableMoveGroup(this.groupsRoot, moveChange));
+        //panel.markBaseChanged();
+        //frame.output(Localization.lang(&quot;Moved group \&quot;%0\&quot;.&quot;, node.getNode().getGroup().getName()));
+<span class="nc" id="L277">    }</span>
+
+    public void moveTo(GroupTreeNode target, int targetIndex) {
+<span class="fc" id="L280">        getGroupNode().moveTo(target, targetIndex);</span>
+<span class="fc" id="L281">    }</span>
+
+    public Optional&lt;GroupTreeNode&gt; getParent() {
+<span class="fc" id="L284">        return groupNode.getParent();</span>
+    }
+
+    public void draggedOn(GroupNodeViewModel target, DroppingMouseLocation mouseLocation) {
+<span class="fc" id="L288">        Optional&lt;GroupTreeNode&gt; targetParent = target.getParent();</span>
+<span class="pc bpc" id="L289" title="1 of 2 branches missed.">        if (targetParent.isPresent()) {</span>
+<span class="fc" id="L290">            int targetIndex = target.getPositionInParent();</span>
+
+            // In case we want to move an item in the same parent
+            // and the item is moved down, we need to adjust the target index
+<span class="pc bpc" id="L294" title="1 of 2 branches missed.">            if (targetParent.equals(getParent())) {</span>
+<span class="fc" id="L295">                int sourceIndex = this.getPositionInParent();</span>
+<span class="fc bfc" id="L296" title="All 2 branches covered.">                if (sourceIndex &lt; targetIndex) {</span>
+<span class="fc" id="L297">                    targetIndex--;</span>
+                }
+            }
+
+            // Different actions depending on where the user releases the drop in the target row
+            // Bottom + top -&gt; insert source row before / after this row
+            // Center -&gt; add as child
+<span class="pc bpc" id="L304" title="2 of 4 branches missed.">            switch (mouseLocation) {</span>
+            case BOTTOM:
+<span class="fc" id="L306">                this.moveTo(targetParent.get(), targetIndex + 1);</span>
+<span class="fc" id="L307">                break;</span>
+            case CENTER:
+<span class="nc" id="L309">                this.moveTo(target);</span>
+<span class="nc" id="L310">                break;</span>
+            case TOP:
+<span class="fc" id="L312">                this.moveTo(targetParent.get(), targetIndex);</span>
+                break;
+            }
+<span class="fc" id="L315">        } else {</span>
+            // No parent = root -&gt; just add
+<span class="nc" id="L317">            this.moveTo(target);</span>
+        }
+<span class="fc" id="L319">    }</span>
+
+    private int getPositionInParent() {
+<span class="fc" id="L322">        return groupNode.getPositionInParent();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

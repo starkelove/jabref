@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Ordinal.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.layout.format</a> &gt; <span class="el_source">Ordinal.java</span></div><h1>Ordinal.java</h1><pre class="source lang-java linenums">package org.jabref.logic.layout.format;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.layout.LayoutFormatter;
+
+/**
+ * Converts number to ordinal
+ */
+<span class="fc" id="L11">public class Ordinal implements LayoutFormatter {</span>
+
+    // Detect last digit in number not directly followed by a letter plus the number 11
+<span class="fc" id="L14">    private static final Pattern NUMBER_PATTERN = Pattern.compile(&quot;(1?\\d\\b)&quot;);</span>
+
+    @Override
+    public String format(String fieldText) {
+<span class="fc bfc" id="L18" title="All 2 branches covered.">        if (fieldText == null) {</span>
+<span class="fc" id="L19">            return null;</span>
+        }
+<span class="fc" id="L21">        Matcher m = NUMBER_PATTERN.matcher(fieldText);</span>
+<span class="fc" id="L22">        StringBuffer sb = new StringBuffer();</span>
+<span class="fc bfc" id="L23" title="All 2 branches covered.">        while (m.find()) {</span>
+<span class="fc" id="L24">            String result = m.group(1);</span>
+<span class="fc" id="L25">            int value = Integer.parseInt(result);</span>
+            String ordinalString;
+<span class="fc bfc" id="L27" title="All 4 branches covered.">            switch (value) {</span>
+            case 1:
+<span class="fc" id="L29">                ordinalString = &quot;st&quot;;</span>
+<span class="fc" id="L30">                break;</span>
+            case 2:
+<span class="fc" id="L32">                ordinalString = &quot;nd&quot;;</span>
+<span class="fc" id="L33">                break;</span>
+            case 3:
+<span class="fc" id="L35">                ordinalString = &quot;rd&quot;;</span>
+<span class="fc" id="L36">                break;</span>
+            default:
+<span class="fc" id="L38">                ordinalString = &quot;th&quot;;</span>
+                break;
+            }
+<span class="fc" id="L41">            m.appendReplacement(sb, result + ordinalString);</span>
+<span class="fc" id="L42">        }</span>
+<span class="fc" id="L43">        m.appendTail(sb);</span>
+<span class="fc" id="L44">        return sb.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

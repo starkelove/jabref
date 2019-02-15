@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UrlEditorViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.fieldeditors</a> &gt; <span class="el_source">UrlEditorViewModel.java</span></div><h1>UrlEditorViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.fieldeditors;
+
+import java.io.IOException;
+
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+
+import org.jabref.gui.DialogService;
+import org.jabref.gui.autocompleter.AutoCompleteSuggestionProvider;
+import org.jabref.gui.desktop.JabRefDesktop;
+import org.jabref.logic.integrity.FieldCheckers;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.net.URLUtil;
+import org.jabref.model.strings.StringUtil;
+
+import org.fxmisc.easybind.EasyBind;
+
+public class UrlEditorViewModel extends AbstractEditorViewModel {
+    private DialogService dialogService;
+<span class="nc" id="L20">    private BooleanProperty validUrlIsNotPresent = new SimpleBooleanProperty(true);</span>
+
+    public UrlEditorViewModel(String fieldName, AutoCompleteSuggestionProvider&lt;?&gt; suggestionProvider, DialogService dialogService, FieldCheckers fieldCheckers) {
+<span class="nc" id="L23">        super(fieldName, suggestionProvider, fieldCheckers);</span>
+<span class="nc" id="L24">        this.dialogService = dialogService;</span>
+
+<span class="nc" id="L26">        validUrlIsNotPresent.bind(</span>
+<span class="nc bnc" id="L27" title="All 4 branches missed.">                EasyBind.map(text, input -&gt; StringUtil.isBlank(input) || !URLUtil.isURL(input))</span>
+        );
+<span class="nc" id="L29">    }</span>
+
+    public boolean isValidUrlIsNotPresent() {
+<span class="nc" id="L32">        return validUrlIsNotPresent.get();</span>
+    }
+
+    public BooleanProperty validUrlIsNotPresentProperty() {
+<span class="nc" id="L36">        return validUrlIsNotPresent;</span>
+    }
+
+    public void openExternalLink() {
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        if (StringUtil.isBlank(text.get())) {</span>
+<span class="nc" id="L41">            return;</span>
+        }
+
+        try {
+<span class="nc" id="L45">            JabRefDesktop.openBrowser(text.get());</span>
+<span class="nc" id="L46">        } catch (IOException ex) {</span>
+<span class="nc" id="L47">            dialogService.notify(Localization.lang(&quot;Unable to open link.&quot;));</span>
+<span class="nc" id="L48">        }</span>
+<span class="nc" id="L49">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

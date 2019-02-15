@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>URLDownload.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.net</a> &gt; <span class="el_source">URLDownload.java</span></div><h1>URLDownload.java</h1><pre class="source lang-java linenums">package org.jabref.logic.net;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
+import java.net.HttpCookie;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import org.jabref.logic.util.io.FileUtil;
+import org.jabref.model.util.FileHelper;
+
+import com.mashape.unirest.http.Unirest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * URL download to a string.
+ * &lt;p&gt;
+ * Example:
+ * URLDownload dl = new URLDownload(URL);
+ * String content = dl.asString(ENCODING);
+ * dl.toFile(Path); // available in FILE
+ * String contentType = dl.getMimeType();
+ *
+ * Each call to a public method creates a new HTTP connection. Nothing is cached.
+ */
+public class URLDownload {
+
+    public static final String USER_AGENT = &quot;Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:56.0) Gecko/20100101 Firefox/56.0&quot;;
+
+<span class="fc" id="L63">    private static final Logger LOGGER = LoggerFactory.getLogger(URLDownload.class);</span>
+    private final URL source;
+<span class="fc" id="L65">    private final Map&lt;String, String&gt; parameters = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L66">    private String postData = &quot;&quot;;</span>
+
+    /**
+     * @param source the URL to download from
+     * @throws MalformedURLException if no protocol is specified in the source, or an unknown protocol is found
+     */
+    public URLDownload(String source) throws MalformedURLException {
+<span class="fc" id="L73">        this(new URL(source));</span>
+<span class="fc" id="L74">    }</span>
+
+    /**
+     * @param source The URL to download.
+     */
+<span class="fc" id="L79">    public URLDownload(URL source) {</span>
+<span class="fc" id="L80">        this.source = source;</span>
+<span class="fc" id="L81">        this.addHeader(&quot;User-Agent&quot;, URLDownload.USER_AGENT);</span>
+<span class="fc" id="L82">    }</span>
+
+    /**
+     * Older java VMs does not automatically trust the zbMATH certificate. In this case the following exception is
+     * thrown: sun.security.validator.ValidatorException: PKIX path building failed:
+     * sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested
+     * target JM &gt; 8u101 may trust the certificate by default according to http://stackoverflow.com/a/34111150/873661
+     *
+     * We will fix this issue by accepting all (!) certificates. This is ugly; but as JabRef does not rely on
+     * security-relevant information this is kind of OK (no, actually it is not...).
+     *
+     * Taken from http://stackoverflow.com/a/6055903/873661 and https://stackoverflow.com/a/19542614/873661
+     */
+    public static void bypassSSLVerification() {
+<span class="nc" id="L96">        LOGGER.warn(&quot;Fix SSL exceptions by accepting ALL certificates&quot;);</span>
+
+        // Create a trust manager that does not validate certificate chains
+<span class="nc" id="L99">        TrustManager[] trustAllCerts = {new X509TrustManager() {</span>
+
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {
+<span class="nc" id="L103">            }</span>
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {
+<span class="nc" id="L107">            }</span>
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+<span class="nc" id="L111">                return new X509Certificate[0];</span>
+            }
+        }};
+
+        try {
+            // Install all-trusting trust manager
+<span class="nc" id="L117">            SSLContext context = SSLContext.getInstance(&quot;TLS&quot;);</span>
+<span class="nc" id="L118">            context.init(null, trustAllCerts, new SecureRandom());</span>
+<span class="nc" id="L119">            HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());</span>
+
+            // Install all-trusting host verifier
+<span class="nc" id="L122">            HostnameVerifier allHostsValid = (hostname, session) -&gt; true;</span>
+<span class="nc" id="L123">            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);</span>
+<span class="nc" id="L124">        } catch (Exception e) {</span>
+<span class="nc" id="L125">            LOGGER.error(&quot;A problem occurred when bypassing SSL verification&quot;, e);</span>
+<span class="nc" id="L126">        }</span>
+<span class="nc" id="L127">    }</span>
+
+    public URL getSource() {
+<span class="nc" id="L130">        return source;</span>
+    }
+
+    public String getMimeType() {
+<span class="fc" id="L134">        Unirest.setDefaultHeader(&quot;User-Agent&quot;, &quot;Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6&quot;);</span>
+
+        String contentType;
+        // Try to use HEAD request to avoid downloading the whole file
+        try {
+<span class="fc" id="L139">            contentType = Unirest.head(source.toString()).asString().getHeaders().get(&quot;Content-Type&quot;).get(0);</span>
+<span class="pc bpc" id="L140" title="2 of 4 branches missed.">            if ((contentType != null) &amp;&amp; !contentType.isEmpty()) {</span>
+<span class="fc" id="L141">                return contentType;</span>
+            }
+<span class="fc" id="L143">        } catch (Exception e) {</span>
+<span class="fc" id="L144">            LOGGER.debug(&quot;Error getting MIME type of URL via HEAD request&quot;, e);</span>
+<span class="nc" id="L145">        }</span>
+
+        // Use GET request as alternative if no HEAD request is available
+        try {
+<span class="fc" id="L149">            contentType = Unirest.get(source.toString()).asString().getHeaders().get(&quot;Content-Type&quot;).get(0);</span>
+<span class="pc bpc" id="L150" title="2 of 4 branches missed.">            if ((contentType != null) &amp;&amp; !contentType.isEmpty()) {</span>
+<span class="fc" id="L151">                return contentType;</span>
+            }
+<span class="fc" id="L153">        } catch (Exception e) {</span>
+<span class="fc" id="L154">            LOGGER.debug(&quot;Error getting MIME type of URL via GET request&quot;, e);</span>
+<span class="nc" id="L155">        }</span>
+
+        // Try to resolve local URIs
+        try {
+<span class="fc" id="L159">            URLConnection connection = new URL(source.toString()).openConnection();</span>
+
+<span class="fc" id="L161">            contentType = connection.getContentType();</span>
+<span class="pc bpc" id="L162" title="1 of 4 branches missed.">            if ((contentType != null) &amp;&amp; !contentType.isEmpty()) {</span>
+<span class="fc" id="L163">                return contentType;</span>
+            }
+<span class="nc" id="L165">        } catch (IOException e) {</span>
+<span class="nc" id="L166">            LOGGER.debug(&quot;Error trying to get MIME type of local URI&quot;, e);</span>
+<span class="fc" id="L167">        }</span>
+
+<span class="fc" id="L169">        return &quot;&quot;;</span>
+    }
+
+    public boolean isMimeType(String type) {
+<span class="fc" id="L173">        String mime = getMimeType();</span>
+
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        if (mime.isEmpty()) {</span>
+<span class="fc" id="L176">            return false;</span>
+        }
+
+<span class="fc" id="L179">        return mime.startsWith(type);</span>
+    }
+
+    public boolean isPdf() {
+<span class="fc" id="L183">        return isMimeType(&quot;application/pdf&quot;);</span>
+    }
+
+    public void addHeader(String key, String value) {
+<span class="fc" id="L187">        this.parameters.put(key, value);</span>
+<span class="fc" id="L188">    }</span>
+
+    public void setPostData(String postData) {
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        if (postData != null) {</span>
+<span class="nc" id="L192">            this.postData = postData;</span>
+        }
+<span class="nc" id="L194">    }</span>
+
+    /**
+     * Downloads the web resource to a String.
+     *
+     * @param encoding the desired String encoding
+     * @return the downloaded string
+     */
+    public String asString(Charset encoding) throws IOException {
+<span class="fc" id="L203">        try (InputStream input = new BufferedInputStream(this.openConnection().getInputStream());</span>
+<span class="fc" id="L204">             Writer output = new StringWriter()) {</span>
+<span class="fc" id="L205">            copy(input, output, encoding);</span>
+<span class="fc" id="L206">            return output.toString();</span>
+<span class="fc" id="L207">        }</span>
+    }
+
+    /**
+     * Downloads the web resource to a String.
+     * Uses UTF-8 as encoding.
+     *
+     * @return the downloaded string
+     */
+    public String asString() throws IOException {
+<span class="fc" id="L217">        return asString(StandardCharsets.UTF_8);</span>
+    }
+
+    public List&lt;HttpCookie&gt; getCookieFromUrl() throws IOException {
+<span class="nc" id="L221">        CookieManager cookieManager = new CookieManager();</span>
+<span class="nc" id="L222">        CookieHandler.setDefault(cookieManager);</span>
+<span class="nc" id="L223">        cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);</span>
+
+<span class="nc" id="L225">        URLConnection con = this.openConnection();</span>
+<span class="nc" id="L226">        con.getHeaderFields(); // must be read to store the cookie</span>
+
+        try {
+<span class="nc" id="L229">            return cookieManager.getCookieStore().get(this.source.toURI());</span>
+<span class="nc" id="L230">        } catch (URISyntaxException e) {</span>
+<span class="nc" id="L231">            LOGGER.error(&quot;Unable to convert download URL to URI&quot;, e);</span>
+<span class="nc" id="L232">            return Collections.emptyList();</span>
+        }
+    }
+
+    /**
+     * Downloads the web resource to a file.
+     *
+     * @param destination the destination file path.
+     */
+    public void toFile(Path destination) throws IOException {
+<span class="fc" id="L242">        try (InputStream input = new BufferedInputStream(this.openConnection().getInputStream())) {</span>
+<span class="fc" id="L243">            Files.copy(input, destination, StandardCopyOption.REPLACE_EXISTING);</span>
+<span class="nc" id="L244">        } catch (IOException e) {</span>
+<span class="nc" id="L245">            LOGGER.warn(&quot;Could not copy input&quot;, e);</span>
+<span class="nc" id="L246">            throw e;</span>
+<span class="fc" id="L247">        }</span>
+<span class="fc" id="L248">    }</span>
+
+    /**
+     * Takes the web resource as the source for a monitored input stream.
+     */
+    public ProgressInputStream asInputStream() throws IOException {
+<span class="nc" id="L254">        HttpURLConnection urlConnection = (HttpURLConnection) this.openConnection();</span>
+
+<span class="nc bnc" id="L256" title="All 4 branches missed.">        if ((urlConnection.getResponseCode() == HttpURLConnection.HTTP_NOT_FOUND) || (urlConnection.getResponseCode() == HttpURLConnection.HTTP_BAD_REQUEST))</span>
+        {
+<span class="nc" id="L258">            LOGGER.error(&quot;Response message {} returned for url {}&quot;, urlConnection.getResponseMessage(), urlConnection.getURL());</span>
+<span class="nc" id="L259">            return new ProgressInputStream(new ByteArrayInputStream(new byte[0]), 0);</span>
+        }
+<span class="nc" id="L261">        long fileSize = urlConnection.getContentLengthLong();</span>
+<span class="nc" id="L262">        return new ProgressInputStream(new BufferedInputStream(urlConnection.getInputStream()), fileSize);</span>
+    }
+
+    /**
+     * Downloads the web resource to a temporary file.
+     *
+     * @return the path of the temporary file.
+     */
+    public Path toTemporaryFile() throws IOException {
+        // Determine file name and extension from source url
+<span class="fc" id="L272">        String sourcePath = source.getPath();</span>
+
+        // Take everything after the last '/' as name + extension
+<span class="fc" id="L275">        String fileNameWithExtension = sourcePath.substring(sourcePath.lastIndexOf('/') + 1);</span>
+<span class="fc" id="L276">        String fileName = FileUtil.getBaseName(fileNameWithExtension);</span>
+<span class="fc" id="L277">        String extension = &quot;.&quot; + FileHelper.getFileExtension(fileNameWithExtension).orElse(&quot;tmp&quot;);</span>
+
+        // Create temporary file and download to it
+<span class="fc" id="L280">        Path file = Files.createTempFile(fileName, extension);</span>
+<span class="fc" id="L281">        toFile(file);</span>
+
+<span class="fc" id="L283">        return file;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L288">        return &quot;URLDownload{&quot; + &quot;source=&quot; + this.source + '}';</span>
+    }
+
+    private void copy(InputStream in, Writer out, Charset encoding) throws IOException {
+<span class="fc" id="L292">        InputStream monitoredInputStream = in;</span>
+<span class="fc" id="L293">        Reader r = new InputStreamReader(monitoredInputStream, encoding);</span>
+<span class="fc" id="L294">        try (BufferedReader read = new BufferedReader(r)) {</span>
+
+            String line;
+<span class="fc bfc" id="L297" title="All 2 branches covered.">            while ((line = read.readLine()) != null) {</span>
+<span class="fc" id="L298">                out.write(line);</span>
+<span class="fc" id="L299">                out.write(&quot;\n&quot;);</span>
+            }
+        }
+<span class="fc" id="L302">    }</span>
+
+    private URLConnection openConnection() throws IOException {
+<span class="fc" id="L305">        URLConnection connection = this.source.openConnection();</span>
+<span class="fc bfc" id="L306" title="All 2 branches covered.">        for (Entry&lt;String, String&gt; entry : this.parameters.entrySet()) {</span>
+<span class="fc" id="L307">            connection.setRequestProperty(entry.getKey(), entry.getValue());</span>
+<span class="fc" id="L308">        }</span>
+<span class="pc bpc" id="L309" title="1 of 2 branches missed.">        if (!this.postData.isEmpty()) {</span>
+<span class="nc" id="L310">            connection.setDoOutput(true);</span>
+<span class="nc" id="L311">            try (DataOutputStream wr = new DataOutputStream(connection.getOutputStream())) {</span>
+<span class="nc" id="L312">                wr.writeBytes(this.postData);</span>
+            }
+
+        }
+
+<span class="fc bfc" id="L317" title="All 2 branches covered.">        if (connection instanceof HttpURLConnection) {</span>
+            // normally, 3xx is redirect
+<span class="fc" id="L319">            int status = ((HttpURLConnection) connection).getResponseCode();</span>
+<span class="fc bfc" id="L320" title="All 2 branches covered.">            if (status != HttpURLConnection.HTTP_OK) {</span>
+<span class="pc bpc" id="L321" title="5 of 6 branches missed.">                if ((status == HttpURLConnection.HTTP_MOVED_TEMP)</span>
+                    || (status == HttpURLConnection.HTTP_MOVED_PERM)
+                    || (status == HttpURLConnection.HTTP_SEE_OTHER)) {
+                    // get redirect url from &quot;location&quot; header field
+<span class="fc" id="L325">                    String newUrl = connection.getHeaderField(&quot;Location&quot;);</span>
+                    // open the new connnection again
+<span class="fc" id="L327">                    connection = new URLDownload(newUrl).openConnection();</span>
+                }
+            }
+        }
+
+        // this does network i/o: GET + read returned headers
+<span class="fc" id="L333">        connection.connect();</span>
+
+<span class="fc" id="L335">        return connection;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

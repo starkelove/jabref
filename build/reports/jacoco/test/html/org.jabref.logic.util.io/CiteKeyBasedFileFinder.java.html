@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CiteKeyBasedFileFinder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util.io</a> &gt; <span class="el_source">CiteKeyBasedFileFinder.java</span></div><h1>CiteKeyBasedFileFinder.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util.io;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.jabref.logic.bibtexkeypattern.BibtexKeyGenerator;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.strings.StringUtil;
+import org.jabref.model.util.FileHelper;
+
+class CiteKeyBasedFileFinder implements FileFinder {
+
+    private final boolean exactKeyOnly;
+
+<span class="fc" id="L28">    CiteKeyBasedFileFinder(boolean exactKeyOnly) {</span>
+<span class="fc" id="L29">        this.exactKeyOnly = exactKeyOnly;</span>
+<span class="fc" id="L30">    }</span>
+
+    @Override
+    public List&lt;Path&gt; findAssociatedFiles(BibEntry entry, List&lt;Path&gt; directories, List&lt;String&gt; extensions) throws IOException {
+<span class="fc" id="L34">        Objects.requireNonNull(directories);</span>
+<span class="fc" id="L35">        Objects.requireNonNull(entry);</span>
+
+<span class="fc" id="L37">        Optional&lt;String&gt; citeKeyOptional = entry.getCiteKeyOptional();</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if (StringUtil.isBlank(citeKeyOptional)) {</span>
+<span class="nc" id="L39">            return Collections.emptyList();</span>
+        }
+<span class="fc" id="L41">        String citeKey = citeKeyOptional.get();</span>
+
+<span class="fc" id="L43">        List&lt;Path&gt; result = new ArrayList&lt;&gt;();</span>
+
+        // First scan directories
+<span class="fc" id="L46">        Set&lt;Path&gt; filesWithExtension = findFilesByExtension(directories, extensions);</span>
+
+        // Now look for keys
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        for (Path file : filesWithExtension) {</span>
+<span class="fc" id="L50">            String name = file.getFileName().toString();</span>
+<span class="fc" id="L51">            String nameWithoutExtension = FileUtil.getBaseName(name);</span>
+
+            // First, look for exact matches
+<span class="fc bfc" id="L54" title="All 2 branches covered.">            if (nameWithoutExtension.equals(citeKey)) {</span>
+<span class="fc" id="L55">                result.add(file);</span>
+<span class="fc" id="L56">                continue;</span>
+            }
+            // If we get here, we did not find any exact matches. If non-exact matches are allowed, try to find one
+<span class="pc bpc" id="L59" title="1 of 4 branches missed.">            if (!exactKeyOnly &amp;&amp; matches(name, citeKey)) {</span>
+<span class="fc" id="L60">                result.add(file);</span>
+            }
+<span class="fc" id="L62">        }</span>
+
+<span class="fc" id="L64">        return result.stream().sorted().collect(Collectors.toList());</span>
+    }
+
+    private boolean matches(String filename, String citeKey) {
+<span class="fc" id="L68">        boolean startsWithKey = filename.startsWith(citeKey);</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if (startsWithKey) {</span>
+            // The file name starts with the key, that's already a good start
+            // However, we do not want to match &quot;JabRefa&quot; for &quot;JabRef&quot; since this is probably a file belonging to another entry published in the same time / same name
+<span class="fc" id="L72">            char charAfterKey = filename.charAt(citeKey.length());</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">            return !BibtexKeyGenerator.APPENDIX_CHARACTERS.contains(Character.toString(charAfterKey));</span>
+        }
+<span class="nc" id="L75">        return false;</span>
+    }
+
+    /**
+     * Returns a list of all files in the given directories which have one of the given extension.
+     */
+    private Set&lt;Path&gt; findFilesByExtension(List&lt;Path&gt; directories, List&lt;String&gt; extensions) throws IOException {
+<span class="fc" id="L82">        Objects.requireNonNull(extensions, &quot;Extensions must not be null!&quot;);</span>
+
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        BiPredicate&lt;Path, BasicFileAttributes&gt; isFileWithCorrectExtension = (path, attributes) -&gt; !Files.isDirectory(path)</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">                &amp;&amp; extensions.contains(FileHelper.getFileExtension(path).orElse(&quot;&quot;));</span>
+
+<span class="fc" id="L87">        Set&lt;Path&gt; result = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        for (Path directory : directories) {</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">            if (Files.exists(directory)) {</span>
+<span class="fc" id="L90">                try (Stream&lt;Path&gt; pathStream = Files.find(directory, Integer.MAX_VALUE, isFileWithCorrectExtension)) {</span>
+<span class="fc" id="L91">                    result.addAll(pathStream.collect(Collectors.toSet()));</span>
+<span class="nc" id="L92">                } catch (UncheckedIOException e) {</span>
+<span class="nc" id="L93">                    throw new IOException(&quot;Problem in finding files&quot;, e);</span>
+<span class="fc" id="L94">                }</span>
+            }
+<span class="fc" id="L96">        }</span>
+<span class="fc" id="L97">        return result;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

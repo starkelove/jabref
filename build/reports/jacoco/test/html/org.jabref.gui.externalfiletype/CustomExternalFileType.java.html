@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomExternalFileType.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.externalfiletype</a> &gt; <span class="el_source">CustomExternalFileType.java</span></div><h1>CustomExternalFileType.java</h1><pre class="source lang-java linenums">package org.jabref.gui.externalfiletype;
+
+import java.util.Objects;
+
+import javax.swing.JLabel;
+
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.icon.JabRefIcon;
+
+/**
+ * This class defines a type of external files that can be linked to from JabRef.
+ * The class contains enough information to provide an icon, a standard extension
+ * and a link to which application handles files of this type.
+ */
+public class CustomExternalFileType implements ExternalFileType {
+
+<span class="nc" id="L17">    private final JLabel label = new JLabel();</span>
+    private String name;
+    private String extension;
+    private String openWith;
+    private String iconName;
+    private String mimeType;
+    private JabRefIcon icon;
+
+    public CustomExternalFileType(String name, String extension, String mimeType,
+<span class="nc" id="L26">                                  String openWith, String iconName, JabRefIcon icon) {</span>
+<span class="nc" id="L27">        label.setText(null);</span>
+<span class="nc" id="L28">        this.name = name;</span>
+<span class="nc" id="L29">        label.setToolTipText(this.name);</span>
+<span class="nc" id="L30">        this.extension = extension;</span>
+<span class="nc" id="L31">        this.mimeType = mimeType;</span>
+<span class="nc" id="L32">        this.openWith = openWith;</span>
+
+<span class="nc" id="L34">        setIconName(iconName);</span>
+<span class="nc" id="L35">        setIcon(icon);</span>
+<span class="nc" id="L36">    }</span>
+
+    public CustomExternalFileType(ExternalFileType type) {
+<span class="nc" id="L39">        this(type.getName(), type.getExtension(), type.getMimeType(), type.getOpenWithApplication(), &quot;&quot;, type.getIcon());</span>
+<span class="nc" id="L40">    }</span>
+
+    /**
+     * Construct an ExternalFileType from a String array. This is used when
+     * reading file type definitions from Preferences, where the available data types are
+     * limited. We assume that the array contains the same values as the main constructor,
+     * in the same order.
+     *
+     * @param val arguments.
+     */
+    public static ExternalFileType buildFromArgs(String[] val) {
+<span class="nc bnc" id="L51" title="All 6 branches missed.">        if ((val == null) || (val.length &lt; 4) || (val.length &gt; 5)) {</span>
+<span class="nc" id="L52">            throw new IllegalArgumentException(&quot;Cannot construct ExternalFileType without four elements in String[] argument.&quot;);</span>
+        }
+<span class="nc" id="L54">        String name = val[0];</span>
+<span class="nc" id="L55">        String extension = val[1];</span>
+        String openWith;
+        String mimeType;
+        String iconName;
+
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (val.length == 4) {</span>
+            // Up to version 2.4b the mime type is not included:
+<span class="nc" id="L62">            mimeType = &quot;&quot;;</span>
+<span class="nc" id="L63">            openWith = val[2];</span>
+<span class="nc" id="L64">            iconName = val[3];</span>
+        } else {
+            // When mime type is included, the array length should be 5:
+<span class="nc" id="L67">            mimeType = val[2];</span>
+<span class="nc" id="L68">            openWith = val[3];</span>
+<span class="nc" id="L69">            iconName = val[4];</span>
+        }
+
+        // set icon to default first
+<span class="nc" id="L73">        JabRefIcon icon = IconTheme.JabRefIcons.FILE;</span>
+
+        // check whether there is another icon defined for this file type
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        for (ExternalFileType fileType : ExternalFileTypes.getDefaultExternalFileTypes()) {</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            if (fileType.getName().equals(name)) {</span>
+<span class="nc" id="L78">                icon = fileType.getIcon();</span>
+<span class="nc" id="L79">                break;</span>
+            }
+<span class="nc" id="L81">        }</span>
+
+<span class="nc" id="L83">        return new CustomExternalFileType(name, extension, mimeType, openWith, iconName, icon);</span>
+    }
+
+    @Override
+    public String getName() {
+<span class="nc" id="L88">        return name;</span>
+    }
+
+    public void setName(String name) {
+<span class="nc" id="L92">        this.name = name;</span>
+<span class="nc" id="L93">        label.setToolTipText(this.name);</span>
+<span class="nc" id="L94">    }</span>
+
+    @Override
+    public String getExtension() {
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (extension == null) {</span>
+<span class="nc" id="L99">            return &quot;&quot;;</span>
+        }
+<span class="nc" id="L101">        return extension;</span>
+    }
+
+    public void setExtension(String extension) {
+<span class="nc" id="L105">        this.extension = extension;</span>
+<span class="nc" id="L106">    }</span>
+
+    @Override
+    public String getMimeType() {
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (mimeType == null) {</span>
+<span class="nc" id="L111">            return &quot;&quot;;</span>
+        }
+<span class="nc" id="L113">        return mimeType;</span>
+    }
+
+    public void setMimeType(String mimeType) {
+<span class="nc" id="L117">        this.mimeType = mimeType;</span>
+<span class="nc" id="L118">    }</span>
+
+    @Override
+    public String getOpenWithApplication() {
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (openWith == null) {</span>
+<span class="nc" id="L123">            return &quot;&quot;;</span>
+        }
+<span class="nc" id="L125">        return openWith;</span>
+    }
+
+    public void setOpenWith(String openWith) {
+<span class="nc" id="L129">        this.openWith = openWith;</span>
+<span class="nc" id="L130">    }</span>
+
+    /**
+     * Obtain a JLabel instance set with this file type's icon. The same JLabel
+     * is returned from each call of this method.
+     *
+     * @return the label.
+     */
+    public JLabel getIconLabel() {
+<span class="nc" id="L139">        return label;</span>
+    }
+
+    /**
+     * Get the string associated with this file type's icon.
+     *
+     * @return The icon name.
+     */
+    public String getIconName() {
+<span class="nc" id="L148">        return iconName;</span>
+    }
+
+    /**
+     * Set the string associated with this file type's icon.
+     *
+     * @param name The icon name to use.
+     */
+    public void setIconName(String name) {
+<span class="nc" id="L157">        this.iconName = name;</span>
+<span class="nc" id="L158">    }</span>
+
+    @Override
+    public JabRefIcon getIcon() {
+<span class="nc" id="L162">        return icon;</span>
+    }
+
+    public void setIcon(JabRefIcon icon) {
+<span class="nc" id="L166">        Objects.requireNonNull(icon);</span>
+<span class="nc" id="L167">        this.icon = icon;</span>
+<span class="nc" id="L168">        label.setIcon(this.icon.getSmallIcon());</span>
+<span class="nc" id="L169">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L173">        return getName();</span>
+    }
+
+    public ExternalFileType copy() {
+<span class="nc" id="L177">        return new CustomExternalFileType(name, extension, mimeType, openWith, iconName, icon);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L182">        return Objects.hash(name, extension, mimeType, openWith, iconName);</span>
+    }
+
+    /**
+     * We define two file type objects as equal if their name, extension, openWith and
+     * iconName are equal.
+     *
+     * @param object The file type to compare with.
+     * @return true if the file types are equal.
+     */
+    @Override
+    public boolean equals(Object object) {
+<span class="nc bnc" id="L194" title="All 2 branches missed.">        if (this == object) {</span>
+<span class="nc" id="L195">            return true;</span>
+        }
+
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        if (object instanceof CustomExternalFileType) {</span>
+<span class="nc" id="L199">            CustomExternalFileType other = (CustomExternalFileType) object;</span>
+<span class="nc bnc" id="L200" title="All 4 branches missed.">            return Objects.equals(name, other.name) &amp;&amp; Objects.equals(extension, other.extension) &amp;&amp;</span>
+<span class="nc bnc" id="L201" title="All 6 branches missed.">                    Objects.equals(mimeType, other.mimeType) &amp;&amp; Objects.equals(openWith, other.openWith) &amp;&amp; Objects.equals(iconName, other.iconName);</span>
+        }
+<span class="nc" id="L203">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

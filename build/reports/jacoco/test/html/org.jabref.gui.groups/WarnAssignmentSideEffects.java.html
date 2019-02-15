@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WarnAssignmentSideEffects.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.groups</a> &gt; <span class="el_source">WarnAssignmentSideEffects.java</span></div><h1>WarnAssignmentSideEffects.java</h1><pre class="source lang-java linenums">package org.jabref.gui.groups;
+
+import java.awt.Component;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
+import javax.swing.JOptionPane;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.InternalBibtexFields;
+import org.jabref.model.groups.AbstractGroup;
+import org.jabref.model.groups.KeywordGroup;
+
+public class WarnAssignmentSideEffects {
+
+    private WarnAssignmentSideEffects() {
+    }
+
+    /**
+     * Warns the user of undesired side effects of an explicit assignment/removal of entries to/from this group.
+     * Currently there are four types of groups: AllEntriesGroup, SearchGroup - do not support explicit assignment.
+     * ExplicitGroup and KeywordGroup - this modifies entries upon assignment/removal.
+     * Modifications are acceptable unless they affect a standard field (such as &quot;author&quot;) besides the &quot;keywords&quot; or &quot;groups' field.
+     *
+     * @param parent The Component used as a parent when displaying a confirmation dialog.
+     * @return true if the assignment has no undesired side effects, or the user chose to perform it anyway. false
+     * otherwise (this indicates that the user has aborted the assignment).
+     */
+    public static boolean warnAssignmentSideEffects(List&lt;AbstractGroup&gt; groups, Component parent) {
+<span class="nc" id="L33">        List&lt;String&gt; affectedFields = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        for (AbstractGroup group : groups) {</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">            if (group instanceof KeywordGroup) {</span>
+<span class="nc" id="L36">                KeywordGroup keywordGroup = (KeywordGroup) group;</span>
+<span class="nc" id="L37">                String field = keywordGroup.getSearchField().toLowerCase(Locale.ROOT);</span>
+<span class="nc bnc" id="L38" title="All 4 branches missed.">                if (FieldName.KEYWORDS.equals(field) || FieldName.GROUPS.equals(field)) {</span>
+<span class="nc" id="L39">                    continue; // this is not undesired</span>
+                }
+<span class="nc bnc" id="L41" title="All 2 branches missed.">                for (String fieldName : InternalBibtexFields.getAllPublicFieldNames()) {</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">                    if (field.equals(fieldName)) {</span>
+<span class="nc" id="L43">                        affectedFields.add(field);</span>
+<span class="nc" id="L44">                        break;</span>
+                    }
+<span class="nc" id="L46">                }</span>
+            }
+<span class="nc" id="L48">        }</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        if (affectedFields.isEmpty()) {</span>
+<span class="nc" id="L50">            return true; // no side effects</span>
+        }
+
+        // show a warning, then return
+<span class="nc" id="L54">        StringBuilder message = new StringBuilder(</span>
+<span class="nc" id="L55">                Localization.lang(&quot;This action will modify the following field(s) in at least one entry each:&quot;))</span>
+<span class="nc" id="L56">                        .append('\n');</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        for (String affectedField : affectedFields) {</span>
+<span class="nc" id="L58">            message.append(affectedField).append('\n');</span>
+<span class="nc" id="L59">        }</span>
+<span class="nc" id="L60">        message.append(Localization.lang(&quot;This could cause undesired changes to your entries.&quot;)).append('\n')</span>
+<span class="nc" id="L61">                .append(&quot;It is recommended that you change the grouping field in your group definition to \&quot;keywords\&quot; or a non-standard name.&quot;)</span>
+<span class="nc" id="L62">                .append(&quot;\n\n&quot;).append(Localization.lang(&quot;Do you still want to continue?&quot;));</span>
+<span class="nc" id="L63">        int choice = JOptionPane.showConfirmDialog(parent, message, Localization.lang(&quot;Warning&quot;),</span>
+                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        return choice != JOptionPane.NO_OPTION;</span>
+
+        // if (groups instanceof KeywordGroup) {
+        // KeywordGroup kg = (KeywordGroup) groups;
+        // String field = kg.getSearchField().toLowerCase(Locale.ROOT);
+        // if (field.equals(&quot;keywords&quot;))
+        // return true; // this is not undesired
+        // for (int i = 0; i &lt; GUIGlobals.ALL_FIELDS.length; ++i) {
+        // if (field.equals(GUIGlobals.ALL_FIELDS[i])) {
+        // // show a warning, then return
+        // String message = Globals ...
+        // .lang(
+        // &quot;This action will modify the \&quot;%0\&quot; field &quot;
+        // + &quot;of your entries.\nThis could cause undesired changes to &quot;
+        // + &quot;your entries, so it is\nrecommended that you change the grouping
+        // field &quot;
+        // + &quot;in your group\ndefinition to \&quot;keywords\&quot; or a non-standard name.&quot;
+        // + &quot;\n\nDo you still want to continue?&quot;,
+        // field);
+        // int choice = JOptionPane.showConfirmDialog(parent, message,
+        // Globals.lang(&quot;Warning&quot;), JOptionPane.YES_NO_OPTION,
+        // JOptionPane.WARNING_MESSAGE);
+        // return choice != JOptionPane.NO_OPTION;
+        // }
+        // }
+        // }
+        // return true; // found no side effects
+    }
+
+    public static boolean warnAssignmentSideEffects(AbstractGroup group, Component parent) {
+<span class="nc" id="L95">        return warnAssignmentSideEffects(Collections.singletonList(group), parent);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

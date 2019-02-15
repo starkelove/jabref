@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OracleProcessor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.shared</a> &gt; <span class="el_source">OracleProcessor.java</span></div><h1>OracleProcessor.java</h1><pre class="source lang-java linenums">package org.jabref.logic.shared;
+
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Properties;
+
+import org.jabref.logic.shared.listener.OracleNotificationListener;
+import org.jabref.model.database.shared.DatabaseConnection;
+
+import oracle.jdbc.OracleConnection;
+import oracle.jdbc.OracleStatement;
+import oracle.jdbc.dcn.DatabaseChangeRegistration;
+
+/**
+ * Processes all incoming or outgoing bib data to Oracle database and manages its structure.
+ */
+public class OracleProcessor extends DBMSProcessor {
+
+    private OracleConnection oracleConnection;
+
+    private OracleNotificationListener listener;
+
+    private DatabaseChangeRegistration databaseChangeRegistration;
+
+
+    public OracleProcessor(DatabaseConnection connection) {
+<span class="nc" id="L27">        super(connection);</span>
+<span class="nc" id="L28">    }</span>
+
+    /**
+     * Creates and sets up the needed tables and columns according to the database type.
+     *
+     * @throws SQLException
+     */
+    @Override
+    public void setUp() throws SQLException {
+<span class="nc" id="L37">        connection.createStatement().executeUpdate(</span>
+                &quot;CREATE TABLE \&quot;ENTRY\&quot; (&quot; +
+                &quot;\&quot;SHARED_ID\&quot; NUMBER NOT NULL, &quot; +
+                &quot;\&quot;TYPE\&quot; VARCHAR2(255) NULL, &quot; +
+                &quot;\&quot;VERSION\&quot; NUMBER DEFAULT 1, &quot; +
+                &quot;CONSTRAINT \&quot;ENTRY_PK\&quot; PRIMARY KEY (\&quot;SHARED_ID\&quot;))&quot;);
+
+<span class="nc" id="L44">        connection.createStatement().executeUpdate(&quot;CREATE SEQUENCE \&quot;ENTRY_SEQ\&quot;&quot;);</span>
+
+<span class="nc" id="L46">        connection.createStatement().executeUpdate(&quot;CREATE TRIGGER \&quot;ENTRY_T\&quot; BEFORE INSERT ON \&quot;ENTRY\&quot; &quot; +</span>
+                &quot;FOR EACH ROW BEGIN SELECT \&quot;ENTRY_SEQ\&quot;.NEXTVAL INTO :NEW.shared_id FROM DUAL; END;&quot;);
+
+<span class="nc" id="L49">        connection.createStatement().executeUpdate(</span>
+                &quot;CREATE TABLE \&quot;FIELD\&quot; (&quot; +
+                &quot;\&quot;ENTRY_SHARED_ID\&quot; NUMBER NOT NULL, &quot; +
+                &quot;\&quot;NAME\&quot; VARCHAR2(255) NOT NULL, &quot; +
+                &quot;\&quot;VALUE\&quot; CLOB NULL, &quot; +
+                &quot;CONSTRAINT \&quot;ENTRY_SHARED_ID_FK\&quot; FOREIGN KEY (\&quot;ENTRY_SHARED_ID\&quot;) &quot; +
+                &quot;REFERENCES \&quot;ENTRY\&quot;(\&quot;SHARED_ID\&quot;) ON DELETE CASCADE)&quot;);
+
+<span class="nc" id="L57">        connection.createStatement().executeUpdate(</span>
+                &quot;CREATE TABLE \&quot;METADATA\&quot; (&quot; +
+                &quot;\&quot;KEY\&quot;  VARCHAR2(255) NULL,&quot; +
+                &quot;\&quot;VALUE\&quot;  CLOB NOT NULL)&quot;);
+<span class="nc" id="L61">    }</span>
+
+    @Override
+    String escape(String expression) {
+<span class="nc" id="L65">        return &quot;\&quot;&quot; + expression + &quot;\&quot;&quot;;</span>
+    }
+
+    @Override
+    public void startNotificationListener(DBMSSynchronizer dbmsSynchronizer) {
+
+<span class="nc" id="L71">        this.listener = new OracleNotificationListener(dbmsSynchronizer);</span>
+
+        try {
+<span class="nc" id="L74">            oracleConnection = (OracleConnection) connection;</span>
+
+<span class="nc" id="L76">            Properties properties = new Properties();</span>
+<span class="nc" id="L77">            properties.setProperty(OracleConnection.DCN_NOTIFY_ROWIDS, &quot;true&quot;);</span>
+<span class="nc" id="L78">            properties.setProperty(OracleConnection.DCN_QUERY_CHANGE_NOTIFICATION, &quot;true&quot;);</span>
+
+<span class="nc" id="L80">            databaseChangeRegistration = oracleConnection.registerDatabaseChangeNotification(properties);</span>
+<span class="nc" id="L81">            databaseChangeRegistration.addListener(listener);</span>
+
+<span class="nc" id="L83">            try (Statement statement = oracleConnection.createStatement()) {</span>
+<span class="nc" id="L84">                ((OracleStatement) statement).setDatabaseChangeRegistration(databaseChangeRegistration);</span>
+<span class="nc" id="L85">                StringBuilder selectQuery = new StringBuilder()</span>
+<span class="nc" id="L86">                        .append(&quot;SELECT 1 FROM &quot;)</span>
+<span class="nc" id="L87">                        .append(escape(&quot;ENTRY&quot;))</span>
+<span class="nc" id="L88">                        .append(&quot;, &quot;)</span>
+<span class="nc" id="L89">                        .append(escape(&quot;METADATA&quot;));</span>
+                // this execution registers all tables mentioned in selectQuery
+<span class="nc" id="L91">                statement.executeQuery(selectQuery.toString());</span>
+            }
+
+<span class="nc" id="L94">        } catch (SQLException e) {</span>
+<span class="nc" id="L95">            LOGGER.error(&quot;SQL Error: &quot;, e);</span>
+<span class="nc" id="L96">        }</span>
+
+<span class="nc" id="L98">    }</span>
+
+    @Override
+    public void stopNotificationListener() {
+        try {
+<span class="nc" id="L103">            oracleConnection.unregisterDatabaseChangeNotification(databaseChangeRegistration);</span>
+<span class="nc" id="L104">            oracleConnection.close();</span>
+<span class="nc" id="L105">        } catch (SQLException e) {</span>
+<span class="nc" id="L106">            LOGGER.error(&quot;SQL Error: &quot;, e);</span>
+<span class="nc" id="L107">        }</span>
+<span class="nc" id="L108">    }</span>
+
+    @Override
+    public void notifyClients() {
+        // Do nothing because Oracle triggers notifications automatically.
+<span class="nc" id="L113">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

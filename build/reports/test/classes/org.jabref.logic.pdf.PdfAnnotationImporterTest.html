@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - PdfAnnotationImporterTest</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<h1>PdfAnnotationImporterTest</h1>
+<div class="breadcrumbs">
+<a href="../index.html">all</a> &gt; 
+<a href="../packages/org.jabref.logic.pdf.html">org.jabref.logic.pdf</a> &gt; PdfAnnotationImporterTest</div>
+<div id="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox" id="tests">
+<div class="counter">16</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="failures">
+<div class="counter">0</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="ignored">
+<div class="counter">0</div>
+<p>ignored</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="duration">
+<div class="counter">0.223s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox success" id="successRate">
+<div class="percent">100%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="tabs">
+<ul class="tabLinks">
+<li>
+<a href="#tab0">Tests</a>
+</li>
+<li>
+<a href="#tab1">Standard output</a>
+</li>
+</ul>
+<div id="tab0" class="tab">
+<h2>Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Duration</th>
+<th>Result</th>
+</tr>
+</thead>
+<tr>
+<td class="success">highlightMinimalFoxit()</td>
+<td class="success">0.015s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">highlightNoNoteMinimal()</td>
+<td class="success">0.013s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">highlightWithNoteMinimal()</td>
+<td class="success">0.011s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">inlineNoteMinimal()</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">invalidDirectory()</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">invalidDocumentType()</td>
+<td class="success">0s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">invalidPath()</td>
+<td class="success">0.001s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">noAnnotationsEncrypted()</td>
+<td class="success">0.009s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">noAnnotationsMinimal()</td>
+<td class="success">0.003s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">noAnnotationsWriteProtected()</td>
+<td class="success">0.024s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">polygonNoNoteMinimal()</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">popupNoteMinimal()</td>
+<td class="success">0.005s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">squigglyWithNoteMinimal()</td>
+<td class="success">0.015s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">strikeoutWithNoteMinimal()</td>
+<td class="success">0.017s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">twoAnnotationsThesisExample()</td>
+<td class="success">0.081s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">underlineWithNoteMinimal()</td>
+<td class="success">0.018s</td>
+<td class="success">passed</td>
+</tr>
+</table>
+</div>
+<div id="tab1" class="tab">
+<h2>Standard output</h2>
+<span class="code">
+<pre>15:24:25.784 [Test worker] WARN  org.jabref.logic.pdf.PdfAnnotationImporter - File 'src/test/resources/pdfs' does not end with .pdf! -  
+15:24:25.896 [Test worker] WARN  org.jabref.logic.pdf.PdfAnnotationImporter - File '/asdf/does/not/exist.pdf' does not exist! -  
+15:24:25.897 [Test worker] WARN  org.jabref.logic.pdf.PdfAnnotationImporter - File 'src/test/resources/pdfs/write-protected.docx' does not end with .pdf! -  
+15:24:25.916 [Test worker] ERROR org.jabref.logic.pdf.PdfAnnotationImporter - Failed to read file 'src/test/resources/pdfs/encrypted.pdf'. - org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException: Cannot decrypt PDF, the password is incorrect
+	at org.apache.pdfbox.pdmodel.encryption.StandardSecurityHandler.prepareForDecryption(StandardSecurityHandler.java:256)
+	at org.apache.pdfbox.pdfparser.COSParser.prepareDecryption(COSParser.java:2904)
+	at org.apache.pdfbox.pdfparser.COSParser.retrieveTrailer(COSParser.java:284)
+	at org.apache.pdfbox.pdfparser.PDFParser.initialParse(PDFParser.java:173) 
+</pre>
+</span>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="http://www.gradle.org">Gradle 4.10.2</a> at 2019-feb-15 15:25:27</p>
+</div>
+</div>
+</body>
+</html>

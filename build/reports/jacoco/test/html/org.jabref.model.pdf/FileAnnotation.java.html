@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileAnnotation.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.pdf</a> &gt; <span class="el_source">FileAnnotation.java</span></div><h1>FileAnnotation.java</h1><pre class="source lang-java linenums">package org.jabref.model.pdf;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class FileAnnotation {
+<span class="fc" id="L15">    private static final Logger LOGGER = LoggerFactory.getLogger(FileAnnotation.class);</span>
+
+    private final static int ABBREVIATED_ANNOTATION_NAME_LENGTH = 45;
+    private static final String DATE_TIME_STRING = &quot;^D:\\d{14}$&quot;;
+    private static final String DATE_TIME_STRING_WITH_TIME_ZONE = &quot;^D:\\d{14}.+&quot;;
+    private static final String ANNOTATION_DATE_FORMAT = &quot;yyyyMMddHHmmss&quot;;
+
+    private final String author;
+    private final LocalDateTime timeModified;
+    private final int page;
+    private final String content;
+    private final FileAnnotationType annotationType;
+    private final Optional&lt;FileAnnotation&gt; linkedFileAnnotation;
+
+    /**
+     * A flexible constructor, mainly used as dummy if there is actually no annotation.
+     *
+     * @param author         The authors of the annotation
+     * @param timeModified   The last time this annotation was modified
+     * @param pageNumber     The page of the pdf where the annotation occurs
+     * @param content        the actual content of the annotation
+     * @param annotationType the type of the annotation
+     */
+    public FileAnnotation(final String author, final LocalDateTime timeModified, final int pageNumber,
+<span class="fc" id="L39">                          final String content, final FileAnnotationType annotationType, final Optional&lt;FileAnnotation&gt; linkedFileAnnotation) {</span>
+<span class="fc" id="L40">        this.author = author;</span>
+<span class="fc" id="L41">        this.timeModified = timeModified;</span>
+<span class="fc" id="L42">        this.page = pageNumber;</span>
+<span class="fc" id="L43">        this.content = parseContent(content);</span>
+<span class="fc" id="L44">        this.annotationType = annotationType;</span>
+<span class="fc" id="L45">        this.linkedFileAnnotation = linkedFileAnnotation;</span>
+<span class="fc" id="L46">    }</span>
+
+    /**
+     * Creating a normal FileAnnotation from a PDAnnotation.
+     *
+     * @param annotation The actual annotation that holds the information
+     * @param pageNumber The page of the pdf where the annotation occurs
+     */
+    public FileAnnotation(final PDAnnotation annotation, final int pageNumber) {
+<span class="fc" id="L55">        this(annotation.getCOSObject().getString(COSName.T),</span>
+<span class="fc" id="L56">                extractModifiedTime(annotation.getModifiedDate()),</span>
+<span class="fc" id="L57">                pageNumber, annotation.getContents(), FileAnnotationType.parse(annotation), Optional.empty());</span>
+<span class="fc" id="L58">    }</span>
+
+    /**
+     * For creating a FileAnnotation that has a connection to another FileAnnotation. Needed when creating a text
+     * highlighted or underlined annotation with a sticky note.
+     *
+     * @param annotation           The actual annotation that holds the information
+     * @param pageNumber           The page of the pdf where the annotation occurs
+     * @param linkedFileAnnotation The corresponding note of a marked text area.
+     */
+    public FileAnnotation(final PDAnnotation annotation, final int pageNumber, FileAnnotation linkedFileAnnotation) {
+<span class="fc" id="L69">        this(annotation.getCOSObject().getString(COSName.T), extractModifiedTime(annotation.getModifiedDate()),</span>
+<span class="fc" id="L70">                pageNumber, annotation.getContents(), FileAnnotationType.parse(annotation), Optional.of(linkedFileAnnotation));</span>
+<span class="fc" id="L71">    }</span>
+
+    /**
+     * Parses a String into a LocalDateTime.
+     *
+     * @param dateTimeString In this case of format yyyyMMddHHmmss.
+     * @return a LocalDateTime parsed from the dateTimeString
+     */
+    public static LocalDateTime extractModifiedTime(String dateTimeString) {
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        if (dateTimeString == null) {</span>
+<span class="nc" id="L81">            return LocalDateTime.now();</span>
+        }
+
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (dateTimeString.matches(DATE_TIME_STRING_WITH_TIME_ZONE)) {</span>
+<span class="fc" id="L85">            dateTimeString = dateTimeString.substring(2, 16);</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        } else if (dateTimeString.matches(DATE_TIME_STRING)) {</span>
+<span class="fc" id="L87">            dateTimeString = dateTimeString.substring(2);</span>
+        }
+
+        try {
+<span class="fc" id="L91">            return LocalDateTime.parse(dateTimeString, DateTimeFormatter.ofPattern(ANNOTATION_DATE_FORMAT));</span>
+<span class="fc" id="L92">        } catch (DateTimeParseException e) {</span>
+<span class="fc" id="L93">            LOGGER.info(String.format(&quot;Expected a parseable date string! However, this text could not be parsed: '%s'&quot;, dateTimeString));</span>
+<span class="fc" id="L94">            return LocalDateTime.now();</span>
+        }
+    }
+
+    private String parseContent(final String content) {
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        if (content == null) {</span>
+<span class="fc" id="L100">            return &quot;&quot;;</span>
+        }
+
+<span class="fc" id="L103">        final String unreadableContent = &quot;þÿ&quot;;</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        if (content.trim().equals(unreadableContent)) {</span>
+<span class="nc" id="L105">            return &quot;&quot;;</span>
+        }
+
+<span class="fc" id="L108">        return content.trim();</span>
+    }
+
+    /**
+     * Abbreviate annotation names when they are longer than {@code ABBREVIATED_ANNOTATION_NAME_LENGTH} chars
+     *
+     * @param annotationName annotation to be shortened
+     * @return the abbreviated name
+     */
+    private String abbreviateAnnotationName(final String annotationName) {
+<span class="nc bnc" id="L118" title="All 2 branches missed.">        if (annotationName.length() &gt; ABBREVIATED_ANNOTATION_NAME_LENGTH) {</span>
+<span class="nc" id="L119">            return annotationName.subSequence(0, ABBREVIATED_ANNOTATION_NAME_LENGTH).toString() + &quot;...&quot;;</span>
+        }
+<span class="nc" id="L121">        return annotationName;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L126">        return abbreviateAnnotationName(content);</span>
+    }
+
+    @Override
+    public boolean equals(Object other) {
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">        if (this == other) {</span>
+<span class="nc" id="L132">            return true;</span>
+        }
+<span class="pc bpc" id="L134" title="2 of 4 branches missed.">        if ((other == null) || (getClass() != other.getClass())) {</span>
+<span class="nc" id="L135">            return false;</span>
+        }
+
+<span class="fc" id="L138">        FileAnnotation that = (FileAnnotation) other;</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        return Objects.equals(this.annotationType, that.annotationType)</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(this.author, that.author)</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(this.content, that.content)</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(this.page, that.page)</span>
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(this.linkedFileAnnotation, that.linkedFileAnnotation)</span>
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(this.timeModified, that.timeModified);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L149">        return Objects.hash(annotationType, author, content, page, linkedFileAnnotation, timeModified);</span>
+    }
+
+    public String getAuthor() {
+<span class="fc" id="L153">        return author;</span>
+    }
+
+    public LocalDateTime getTimeModified() {
+<span class="fc" id="L157">        return timeModified;</span>
+    }
+
+    public int getPage() {
+<span class="fc" id="L161">        return page;</span>
+    }
+
+    public String getContent() {
+<span class="fc" id="L165">        return content;</span>
+    }
+
+    public FileAnnotationType getAnnotationType() {
+<span class="fc" id="L169">        return annotationType;</span>
+    }
+
+    public boolean hasLinkedAnnotation() {
+<span class="fc" id="L173">        return this.linkedFileAnnotation.isPresent();</span>
+    }
+
+    /**
+     * Before this getter is called the presence of the linked annotation must be checked via hasLinkedAnnotation()!
+     *
+     * @return the note attached to the annotation
+     */
+    public FileAnnotation getLinkedFileAnnotation() {
+<span class="fc" id="L182">        return linkedFileAnnotation.get();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

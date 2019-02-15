@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.layout.format.RisKeywordsTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:25" hostname="n184-p67.eduroam.kth.se" time="0.002">
+  <properties/>
+  <testcase name="testEmpty()" classname="org.jabref.logic.layout.format.RisKeywordsTest" time="0.001"/>
+  <testcase name="testNull()" classname="org.jabref.logic.layout.format.RisKeywordsTest" time="0.0"/>
+  <testcase name="testSingleKeyword()" classname="org.jabref.logic.layout.format.RisKeywordsTest" time="0.0"/>
+  <testcase name="testMultipleKeywords()" classname="org.jabref.logic.layout.format.RisKeywordsTest" time="0.0"/>
+  <testcase name="testTwoKeywords()" classname="org.jabref.logic.layout.format.RisKeywordsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

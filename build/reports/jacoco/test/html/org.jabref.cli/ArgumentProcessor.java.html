@@ -1,0 +1,576 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArgumentProcessor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.cli</a> &gt; <span class="el_source">ArgumentProcessor.java</span></div><h1>ArgumentProcessor.java</h1><pre class="source lang-java linenums">package org.jabref.cli;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.prefs.BackingStoreException;
+
+import org.jabref.Globals;
+import org.jabref.JabRefException;
+import org.jabref.gui.externalfiles.AutoSetLinks;
+import org.jabref.logic.bibtexkeypattern.BibtexKeyGenerator;
+import org.jabref.logic.exporter.AtomicFileWriter;
+import org.jabref.logic.exporter.BibDatabaseWriter;
+import org.jabref.logic.exporter.BibtexDatabaseWriter;
+import org.jabref.logic.exporter.Exporter;
+import org.jabref.logic.exporter.ExporterFactory;
+import org.jabref.logic.exporter.SavePreferences;
+import org.jabref.logic.exporter.TemplateExporter;
+import org.jabref.logic.importer.FetcherException;
+import org.jabref.logic.importer.ImportException;
+import org.jabref.logic.importer.ImportFormatReader;
+import org.jabref.logic.importer.OpenDatabase;
+import org.jabref.logic.importer.OutputPrinter;
+import org.jabref.logic.importer.ParseException;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.importer.SearchBasedFetcher;
+import org.jabref.logic.importer.WebFetchers;
+import org.jabref.logic.importer.fileformat.BibtexParser;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.layout.LayoutFormatterPreferences;
+import org.jabref.logic.logging.JabRefLogger;
+import org.jabref.logic.net.URLDownload;
+import org.jabref.logic.search.DatabaseSearcher;
+import org.jabref.logic.search.SearchQuery;
+import org.jabref.logic.shared.prefs.SharedDatabasePreferences;
+import org.jabref.logic.util.OS;
+import org.jabref.logic.xmp.XmpPreferences;
+import org.jabref.model.Defaults;
+import org.jabref.model.EntryTypes;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.strings.StringUtil;
+import org.jabref.preferences.SearchPreferences;
+
+import com.google.common.base.Throwables;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class ArgumentProcessor {
+
+<span class="nc" id="L59">    private static final Logger LOGGER = LoggerFactory.getLogger(ArgumentProcessor.class);</span>
+    private final JabRefCLI cli;
+    private final List&lt;ParserResult&gt; parserResults;
+    private final Mode startupMode;
+    private boolean noGUINeeded;
+
+<span class="nc" id="L65">    public ArgumentProcessor(String[] args, Mode startupMode) {</span>
+<span class="nc" id="L66">        cli = new JabRefCLI(args);</span>
+<span class="nc" id="L67">        this.startupMode = startupMode;</span>
+<span class="nc" id="L68">        parserResults = processArguments();</span>
+<span class="nc" id="L69">    }</span>
+
+    /**
+     * Will open a file (like importFile), but will also request JabRef to focus on this database
+     *
+     * @param argument See importFile.
+     * @return ParserResult with setToOpenTab(true)
+     */
+    private static Optional&lt;ParserResult&gt; importToOpenBase(String argument) {
+<span class="nc" id="L78">        Optional&lt;ParserResult&gt; result = importFile(argument);</span>
+
+<span class="nc" id="L80">        result.ifPresent(ParserResult::setToOpenTab);</span>
+
+<span class="nc" id="L82">        return result;</span>
+    }
+
+    private static Optional&lt;ParserResult&gt; importBibtexToOpenBase(String argument) {
+<span class="nc" id="L86">        BibtexParser parser = new BibtexParser(Globals.prefs.getImportFormatPreferences(), Globals.getFileUpdateMonitor());</span>
+        try {
+<span class="nc" id="L88">            List&lt;BibEntry&gt; entries = parser.parseEntries(argument);</span>
+<span class="nc" id="L89">            ParserResult result = new ParserResult(entries);</span>
+<span class="nc" id="L90">            result.setToOpenTab();</span>
+<span class="nc" id="L91">            return Optional.of(result);</span>
+<span class="nc" id="L92">        } catch (ParseException e) {</span>
+<span class="nc" id="L93">            System.err.println(Localization.lang(&quot;Error occurred when parsing entry&quot;) + &quot;: &quot; + e.getLocalizedMessage());</span>
+<span class="nc" id="L94">            return Optional.empty();</span>
+        }
+    }
+
+    private static Optional&lt;ParserResult&gt; importFile(String argument) {
+<span class="nc" id="L99">        String[] data = argument.split(&quot;,&quot;);</span>
+
+<span class="nc" id="L101">        String address = data[0];</span>
+        Path file;
+<span class="nc bnc" id="L103" title="All 6 branches missed.">        if (address.startsWith(&quot;http://&quot;) || address.startsWith(&quot;https://&quot;) || address.startsWith(&quot;ftp://&quot;)) {</span>
+            // Download web resource to temporary file
+            try {
+<span class="nc" id="L106">                file = new URLDownload(address).toTemporaryFile();</span>
+<span class="nc" id="L107">            } catch (IOException e) {</span>
+<span class="nc" id="L108">                System.err.println(Localization.lang(&quot;Problem downloading from %1&quot;, address) + e.getLocalizedMessage());</span>
+<span class="nc" id="L109">                return Optional.empty();</span>
+<span class="nc" id="L110">            }</span>
+        } else {
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            if (OS.WINDOWS) {</span>
+<span class="nc" id="L113">                file = Paths.get(address);</span>
+            } else {
+<span class="nc" id="L115">                file = Paths.get(address.replace(&quot;~&quot;, System.getProperty(&quot;user.home&quot;)));</span>
+            }
+        }
+
+        String importFormat;
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (data.length &gt; 1) {</span>
+<span class="nc" id="L121">            importFormat = data[1];</span>
+        } else {
+<span class="nc" id="L123">            importFormat = &quot;*&quot;;</span>
+        }
+
+<span class="nc" id="L126">        Optional&lt;ParserResult&gt; importResult = importFile(file, importFormat);</span>
+<span class="nc" id="L127">        importResult.ifPresent(result -&gt; {</span>
+<span class="nc" id="L128">            OutputPrinter printer = new SystemOutputPrinter();</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            if (result.hasWarnings()) {</span>
+<span class="nc" id="L130">                printer.showMessage(result.getErrorMessage());</span>
+            }
+<span class="nc" id="L132">        });</span>
+<span class="nc" id="L133">        return importResult;</span>
+    }
+
+    private static Optional&lt;ParserResult&gt; importFile(Path file, String importFormat) {
+        try {
+<span class="nc bnc" id="L138" title="All 2 branches missed.">            if (!&quot;*&quot;.equals(importFormat)) {</span>
+<span class="nc" id="L139">                System.out.println(Localization.lang(&quot;Importing&quot;) + &quot;: &quot; + file);</span>
+<span class="nc" id="L140">                ParserResult result = Globals.IMPORT_FORMAT_READER.importFromFile(importFormat, file);</span>
+<span class="nc" id="L141">                return Optional.of(result);</span>
+            } else {
+                // * means &quot;guess the format&quot;:
+<span class="nc" id="L144">                System.out.println(Localization.lang(&quot;Importing in unknown format&quot;) + &quot;: &quot; + file);</span>
+
+<span class="nc" id="L146">                ImportFormatReader.UnknownFormatImport importResult = Globals.IMPORT_FORMAT_READER.importUnknownFormat(file, Globals.getFileUpdateMonitor());</span>
+
+<span class="nc" id="L148">                System.out.println(Localization.lang(&quot;Format used&quot;) + &quot;: &quot; + importResult.format);</span>
+<span class="nc" id="L149">                return Optional.of(importResult.parserResult);</span>
+            }
+<span class="nc" id="L151">        } catch (ImportException ex) {</span>
+<span class="nc" id="L152">            System.err</span>
+<span class="nc" id="L153">                    .println(Localization.lang(&quot;Error opening file&quot;) + &quot; '&quot; + file + &quot;': &quot; + ex.getLocalizedMessage());</span>
+<span class="nc" id="L154">            return Optional.empty();</span>
+        }
+    }
+
+    public List&lt;ParserResult&gt; getParserResults() {
+<span class="nc" id="L159">        return parserResults;</span>
+    }
+
+    public boolean hasParserResults() {
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        return !parserResults.isEmpty();</span>
+    }
+
+    private List&lt;ParserResult&gt; processArguments() {
+
+<span class="nc bnc" id="L168" title="All 4 branches missed.">        if (!cli.isBlank() &amp;&amp; cli.isDebugLogging()) {</span>
+<span class="nc" id="L169">            JabRefLogger.setDebug();</span>
+        }
+
+<span class="nc bnc" id="L172" title="All 4 branches missed.">        if ((startupMode == Mode.INITIAL_START) &amp;&amp; cli.isShowVersion()) {</span>
+<span class="nc" id="L173">            cli.displayVersion();</span>
+        }
+
+<span class="nc bnc" id="L176" title="All 4 branches missed.">        if ((startupMode == Mode.INITIAL_START) &amp;&amp; cli.isHelp()) {</span>
+<span class="nc" id="L177">            cli.printUsage();</span>
+<span class="nc" id="L178">            noGUINeeded = true;</span>
+<span class="nc" id="L179">            return Collections.emptyList();</span>
+        }
+
+        // Check if we should reset all preferences to default values:
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        if (cli.isPreferencesReset()) {</span>
+<span class="nc" id="L184">            resetPreferences(cli.getPreferencesReset());</span>
+        }
+
+        // Check if we should import preferences from a file:
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        if (cli.isPreferencesImport()) {</span>
+<span class="nc" id="L189">            importPreferences();</span>
+        }
+
+        // List to put imported/loaded database(s) in.
+<span class="nc" id="L193">        List&lt;ParserResult&gt; loaded = importAndOpenFiles();</span>
+
+<span class="nc bnc" id="L195" title="All 4 branches missed.">        if (!cli.isBlank() &amp;&amp; cli.isFetcherEngine()) {</span>
+<span class="nc" id="L196">            fetch(cli.getFetcherEngine()).ifPresent(loaded::add);</span>
+        }
+
+<span class="nc bnc" id="L199" title="All 2 branches missed.">        if (cli.isExportMatches()) {</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">            if (!loaded.isEmpty()) {</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">                if (!exportMatches(loaded)) {</span>
+<span class="nc" id="L202">                    return Collections.emptyList();</span>
+                }
+            } else {
+<span class="nc" id="L205">                System.err.println(Localization.lang(&quot;The output option depends on a valid input option.&quot;));</span>
+            }
+        }
+
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (cli.isGenerateBibtexKeys()) {</span>
+<span class="nc" id="L210">            regenerateBibtexKeys(loaded);</span>
+        }
+
+<span class="nc bnc" id="L213" title="All 2 branches missed.">        if (cli.isAutomaticallySetFileLinks()) {</span>
+<span class="nc" id="L214">            automaticallySetFileLinks(loaded);</span>
+        }
+
+<span class="nc bnc" id="L217" title="All 2 branches missed.">        if (cli.isFileExport()) {</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            if (!loaded.isEmpty()) {</span>
+<span class="nc" id="L219">                exportFile(loaded, cli.getFileExport().split(&quot;,&quot;));</span>
+<span class="nc" id="L220">                LOGGER.debug(&quot;Finished export&quot;);</span>
+            } else {
+<span class="nc" id="L222">                System.err.println(Localization.lang(&quot;The output option depends on a valid import option.&quot;));</span>
+            }
+        }
+
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        if (cli.isPreferencesExport()) {</span>
+            try {
+<span class="nc" id="L228">                Globals.prefs.exportPreferences(cli.getPreferencesExport());</span>
+<span class="nc" id="L229">            } catch (JabRefException ex) {</span>
+<span class="nc" id="L230">                LOGGER.error(&quot;Cannot export preferences&quot;, ex);</span>
+<span class="nc" id="L231">            }</span>
+        }
+
+<span class="nc bnc" id="L234" title="All 4 branches missed.">        if (!cli.isBlank() &amp;&amp; cli.isAuxImport()) {</span>
+<span class="nc" id="L235">            doAuxImport(loaded);</span>
+        }
+
+<span class="nc" id="L238">        return loaded;</span>
+    }
+
+    private boolean exportMatches(List&lt;ParserResult&gt; loaded) {
+<span class="nc" id="L242">        String[] data = cli.getExportMatches().split(&quot;,&quot;);</span>
+<span class="nc" id="L243">        String searchTerm = data[0].replace(&quot;\\$&quot;, &quot; &quot;); //enables blanks within the search term:</span>
+        //$ stands for a blank
+<span class="nc" id="L245">        ParserResult pr = loaded.get(loaded.size() - 1);</span>
+<span class="nc" id="L246">        BibDatabaseContext databaseContext = pr.getDatabaseContext();</span>
+<span class="nc" id="L247">        BibDatabase dataBase = pr.getDatabase();</span>
+
+<span class="nc" id="L249">        SearchPreferences searchPreferences = new SearchPreferences(Globals.prefs);</span>
+<span class="nc" id="L250">        SearchQuery query = new SearchQuery(searchTerm, searchPreferences.isCaseSensitive(),</span>
+<span class="nc" id="L251">                searchPreferences.isRegularExpression());</span>
+<span class="nc" id="L252">        List&lt;BibEntry&gt; matches = new DatabaseSearcher(query, dataBase).getMatches();</span>
+
+        //export matches
+<span class="nc bnc" id="L255" title="All 2 branches missed.">        if (!matches.isEmpty()) {</span>
+            String formatName;
+
+            //read in the export format, take default format if no format entered
+<span class="nc bnc" id="L259" title="All 3 branches missed.">            switch (data.length) {</span>
+                case 3:
+<span class="nc" id="L261">                    formatName = data[2];</span>
+<span class="nc" id="L262">                    break;</span>
+                case 2:
+                    //default exporter: HTML table (with Abstract &amp; BibTeX)
+<span class="nc" id="L265">                    formatName = &quot;tablerefsabsbib&quot;;</span>
+<span class="nc" id="L266">                    break;</span>
+                default:
+<span class="nc" id="L268">                    System.err.println(Localization.lang(&quot;Output file missing&quot;).concat(&quot;. \n \t &quot;)</span>
+<span class="nc" id="L269">                            .concat(Localization.lang(&quot;Usage&quot;)).concat(&quot;: &quot;) + JabRefCLI.getExportMatchesSyntax());</span>
+<span class="nc" id="L270">                    noGUINeeded = true;</span>
+<span class="nc" id="L271">                    return false;</span>
+            }
+
+            //export new database
+<span class="nc" id="L275">            Optional&lt;Exporter&gt; exporter = Globals.exportFactory.getExporterByName(formatName);</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">            if (!exporter.isPresent()) {</span>
+<span class="nc" id="L277">                System.err.println(Localization.lang(&quot;Unknown export format&quot;) + &quot;: &quot; + formatName);</span>
+            } else {
+                // We have an TemplateExporter instance:
+                try {
+<span class="nc" id="L281">                    System.out.println(Localization.lang(&quot;Exporting&quot;) + &quot;: &quot; + data[1]);</span>
+<span class="nc" id="L282">                    exporter.get().export(databaseContext, Paths.get(data[1]),</span>
+<span class="nc" id="L283">                            databaseContext.getMetaData().getEncoding().orElse(Globals.prefs.getDefaultEncoding()),</span>
+                            matches);
+<span class="nc" id="L285">                } catch (Exception ex) {</span>
+<span class="nc" id="L286">                    System.err.println(Localization.lang(&quot;Could not export file&quot;) + &quot; '&quot; + data[1] + &quot;': &quot;</span>
+<span class="nc" id="L287">                            + Throwables.getStackTraceAsString(ex));</span>
+<span class="nc" id="L288">                }</span>
+            }
+<span class="nc" id="L290">        } else {</span>
+<span class="nc" id="L291">            System.err.println(Localization.lang(&quot;No search matches.&quot;));</span>
+        }
+<span class="nc" id="L293">        return true;</span>
+    }
+
+    private void doAuxImport(List&lt;ParserResult&gt; loaded) {
+        boolean usageMsg;
+
+<span class="nc bnc" id="L299" title="All 2 branches missed.">        if (!loaded.isEmpty()) {</span>
+<span class="nc" id="L300">            usageMsg = generateAux(loaded, cli.getAuxImport().split(&quot;,&quot;));</span>
+        } else {
+<span class="nc" id="L302">            usageMsg = true;</span>
+        }
+
+<span class="nc bnc" id="L305" title="All 2 branches missed.">        if (usageMsg) {</span>
+<span class="nc" id="L306">            System.out.println(Localization.lang(&quot;no base-BibTeX-file specified&quot;) + &quot;!&quot;);</span>
+<span class="nc" id="L307">            System.out.println(Localization.lang(&quot;usage&quot;) + &quot; :&quot;);</span>
+<span class="nc" id="L308">            System.out.println(&quot;jabref --aux infile[.aux],outfile[.bib] base-BibTeX-file&quot;);</span>
+        }
+<span class="nc" id="L310">    }</span>
+
+    private List&lt;ParserResult&gt; importAndOpenFiles() {
+<span class="nc" id="L313">        List&lt;ParserResult&gt; loaded = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L314">        List&lt;String&gt; toImport = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L315" title="All 4 branches missed.">        if (!cli.isBlank() &amp;&amp; (!cli.getLeftOver().isEmpty())) {</span>
+<span class="nc bnc" id="L316" title="All 2 branches missed.">            for (String aLeftOver : cli.getLeftOver()) {</span>
+                // Leftover arguments that have a &quot;bib&quot; extension are interpreted as
+                // BIB files to open. Other files, and files that could not be opened
+                // as bib, we try to import instead.
+<span class="nc" id="L320">                boolean bibExtension = aLeftOver.toLowerCase(Locale.ENGLISH).endsWith(&quot;bib&quot;);</span>
+<span class="nc" id="L321">                ParserResult pr = new ParserResult();</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">                if (bibExtension) {</span>
+<span class="nc" id="L323">                    pr = OpenDatabase.loadDatabase(aLeftOver, Globals.prefs.getImportFormatPreferences(), Globals.getFileUpdateMonitor());</span>
+                }
+
+<span class="nc bnc" id="L326" title="All 4 branches missed.">                if (!bibExtension || (pr.isEmpty())) {</span>
+                    // We will try to import this file. Normally we
+                    // will import it into a new tab, but if this import has
+                    // been initiated by another instance through the remote
+                    // listener, we will instead import it into the current library.
+                    // This will enable easy integration with web browsers that can
+                    // open a reference file in JabRef.
+<span class="nc bnc" id="L333" title="All 2 branches missed.">                    if (startupMode == Mode.INITIAL_START) {</span>
+<span class="nc" id="L334">                        toImport.add(aLeftOver);</span>
+                    } else {
+<span class="nc" id="L336">                        loaded.add(importToOpenBase(aLeftOver).orElse(new ParserResult()));</span>
+                    }
+                } else {
+<span class="nc" id="L339">                    loaded.add(pr);</span>
+                }
+<span class="nc" id="L341">            }</span>
+        }
+
+<span class="nc bnc" id="L344" title="All 4 branches missed.">        if (!cli.isBlank() &amp;&amp; cli.isFileImport()) {</span>
+<span class="nc" id="L345">            toImport.add(cli.getFileImport());</span>
+        }
+
+<span class="nc bnc" id="L348" title="All 2 branches missed.">        for (String filenameString : toImport) {</span>
+<span class="nc" id="L349">            importFile(filenameString).ifPresent(loaded::add);</span>
+<span class="nc" id="L350">        }</span>
+
+<span class="nc bnc" id="L352" title="All 4 branches missed.">        if (!cli.isBlank() &amp;&amp; cli.isImportToOpenBase()) {</span>
+<span class="nc" id="L353">            importToOpenBase(cli.getImportToOpenBase()).ifPresent(loaded::add);</span>
+        }
+
+<span class="nc bnc" id="L356" title="All 4 branches missed.">        if (!cli.isBlank() &amp;&amp; cli.isBibtexImport()) {</span>
+<span class="nc" id="L357">            importBibtexToOpenBase(cli.getBibtexImport()).ifPresent(loaded::add);</span>
+        }
+
+<span class="nc" id="L360">        return loaded;</span>
+    }
+
+    private boolean generateAux(List&lt;ParserResult&gt; loaded, String[] data) {
+<span class="nc bnc" id="L364" title="All 2 branches missed.">        if (data.length == 2) {</span>
+<span class="nc" id="L365">            ParserResult pr = loaded.get(0);</span>
+<span class="nc" id="L366">            AuxCommandLine acl = new AuxCommandLine(data[0], pr.getDatabase());</span>
+<span class="nc" id="L367">            BibDatabase newBase = acl.perform();</span>
+
+<span class="nc" id="L369">            boolean notSavedMsg = false;</span>
+
+            // write an output, if something could be resolved
+<span class="nc bnc" id="L372" title="All 4 branches missed.">            if ((newBase != null) &amp;&amp; newBase.hasEntries()) {</span>
+<span class="nc" id="L373">                String subName = StringUtil.getCorrectFileName(data[1], &quot;bib&quot;);</span>
+<span class="nc" id="L374">                saveDatabase(newBase, subName);</span>
+<span class="nc" id="L375">                notSavedMsg = true;</span>
+            }
+
+<span class="nc bnc" id="L378" title="All 2 branches missed.">            if (!notSavedMsg) {</span>
+<span class="nc" id="L379">                System.out.println(Localization.lang(&quot;no library generated&quot;));</span>
+            }
+<span class="nc" id="L381">            return false;</span>
+        } else {
+<span class="nc" id="L383">            return true;</span>
+        }
+    }
+
+    private void saveDatabase(BibDatabase newBase, String subName) {
+        try {
+<span class="nc" id="L389">            System.out.println(Localization.lang(&quot;Saving&quot;) + &quot;: &quot; + subName);</span>
+<span class="nc" id="L390">            SavePreferences prefs = Globals.prefs.loadForSaveFromPreferences();</span>
+<span class="nc" id="L391">            AtomicFileWriter fileWriter = new AtomicFileWriter(Paths.get(subName), prefs.getEncoding());</span>
+<span class="nc" id="L392">            BibDatabaseWriter databaseWriter = new BibtexDatabaseWriter(fileWriter, prefs);</span>
+<span class="nc" id="L393">            Defaults defaults = new Defaults(Globals.prefs.getDefaultBibDatabaseMode());</span>
+<span class="nc" id="L394">            databaseWriter.saveDatabase(new BibDatabaseContext(newBase, defaults));</span>
+
+            // Show just a warning message if encoding did not work for all characters:
+<span class="nc bnc" id="L397" title="All 2 branches missed.">            if (fileWriter.hasEncodingProblems()) {</span>
+<span class="nc" id="L398">                System.err.println(Localization.lang(&quot;Warning&quot;) + &quot;: &quot;</span>
+<span class="nc" id="L399">                        + Localization.lang(</span>
+                        &quot;The chosen encoding '%0' could not encode the following characters:&quot;,
+<span class="nc" id="L401">                        prefs.getEncoding().displayName())</span>
+<span class="nc" id="L402">                        + &quot; &quot; + fileWriter.getEncodingProblems());</span>
+            }
+<span class="nc" id="L404">        } catch (IOException ex) {</span>
+<span class="nc" id="L405">            System.err.println(Localization.lang(&quot;Could not save file.&quot;) + &quot;\n&quot; + ex.getLocalizedMessage());</span>
+<span class="nc" id="L406">        }</span>
+<span class="nc" id="L407">    }</span>
+
+    private void exportFile(List&lt;ParserResult&gt; loaded, String[] data) {
+<span class="nc bnc" id="L410" title="All 2 branches missed.">        if (data.length == 1) {</span>
+            // This signals that the latest import should be stored in BibTeX
+            // format to the given file.
+<span class="nc bnc" id="L413" title="All 2 branches missed.">            if (!loaded.isEmpty()) {</span>
+<span class="nc" id="L414">                ParserResult pr = loaded.get(loaded.size() - 1);</span>
+<span class="nc bnc" id="L415" title="All 2 branches missed.">                if (!pr.isInvalid()) {</span>
+<span class="nc" id="L416">                    saveDatabase(pr.getDatabase(), data[0]);</span>
+                }
+<span class="nc" id="L418">            } else {</span>
+<span class="nc" id="L419">                System.err.println(Localization.lang(&quot;The output option depends on a valid import option.&quot;));</span>
+            }
+<span class="nc bnc" id="L421" title="All 2 branches missed.">        } else if (data.length == 2) {</span>
+            // This signals that the latest import should be stored in the given
+            // format to the given file.
+<span class="nc" id="L424">            ParserResult pr = loaded.get(loaded.size() - 1);</span>
+
+            // Set the global variable for this database's file directory before exporting,
+            // so formatters can resolve linked files correctly.
+            // (This is an ugly hack!)
+<span class="nc" id="L429">            File theFile = pr.getFile().get();</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">            if (!theFile.isAbsolute()) {</span>
+<span class="nc" id="L431">                theFile = theFile.getAbsoluteFile();</span>
+            }
+<span class="nc" id="L433">            BibDatabaseContext databaseContext = pr.getDatabaseContext();</span>
+<span class="nc" id="L434">            databaseContext.setDatabaseFile(theFile);</span>
+<span class="nc" id="L435">            Globals.prefs.fileDirForDatabase = databaseContext</span>
+<span class="nc" id="L436">                    .getFileDirectories(Globals.prefs.getFilePreferences());</span>
+<span class="nc" id="L437">            System.out.println(Localization.lang(&quot;Exporting&quot;) + &quot;: &quot; + data[0]);</span>
+<span class="nc" id="L438">            Optional&lt;Exporter&gt; exporter = Globals.exportFactory.getExporterByName(data[1]);</span>
+<span class="nc bnc" id="L439" title="All 2 branches missed.">            if (!exporter.isPresent()) {</span>
+<span class="nc" id="L440">                System.err.println(Localization.lang(&quot;Unknown export format&quot;) + &quot;: &quot; + data[1]);</span>
+            } else {
+                // We have an exporter:
+                try {
+<span class="nc" id="L444">                    exporter.get().export(pr.getDatabaseContext(), Paths.get(data[0]),</span>
+<span class="nc" id="L445">                            pr.getDatabaseContext().getMetaData().getEncoding()</span>
+<span class="nc" id="L446">                                    .orElse(Globals.prefs.getDefaultEncoding()),</span>
+<span class="nc" id="L447">                            pr.getDatabaseContext().getDatabase().getEntries());</span>
+<span class="nc" id="L448">                } catch (Exception ex) {</span>
+<span class="nc" id="L449">                    System.err.println(Localization.lang(&quot;Could not export file&quot;) + &quot; '&quot; + data[0] + &quot;': &quot;</span>
+<span class="nc" id="L450">                            + Throwables.getStackTraceAsString(ex));</span>
+<span class="nc" id="L451">                }</span>
+            }
+        }
+<span class="nc" id="L454">    }</span>
+
+    private void importPreferences() {
+        try {
+<span class="nc" id="L458">            Globals.prefs.importPreferences(cli.getPreferencesImport());</span>
+<span class="nc" id="L459">            EntryTypes.loadCustomEntryTypes(Globals.prefs.loadCustomEntryTypes(BibDatabaseMode.BIBTEX),</span>
+<span class="nc" id="L460">                    Globals.prefs.loadCustomEntryTypes(BibDatabaseMode.BIBLATEX));</span>
+<span class="nc" id="L461">            List&lt;TemplateExporter&gt; customExporters = Globals.prefs.getCustomExportFormats(Globals.journalAbbreviationLoader);</span>
+<span class="nc" id="L462">            LayoutFormatterPreferences layoutPreferences = Globals.prefs</span>
+<span class="nc" id="L463">                    .getLayoutFormatterPreferences(Globals.journalAbbreviationLoader);</span>
+<span class="nc" id="L464">            SavePreferences savePreferences = Globals.prefs.loadForExportFromPreferences();</span>
+<span class="nc" id="L465">            XmpPreferences xmpPreferences = Globals.prefs.getXMPPreferences();</span>
+<span class="nc" id="L466">            Globals.exportFactory = ExporterFactory.create(customExporters, layoutPreferences, savePreferences, xmpPreferences);</span>
+<span class="nc" id="L467">        } catch (JabRefException ex) {</span>
+<span class="nc" id="L468">            LOGGER.error(&quot;Cannot import preferences&quot;, ex);</span>
+<span class="nc" id="L469">        }</span>
+<span class="nc" id="L470">    }</span>
+
+    private void resetPreferences(String value) {
+<span class="nc bnc" id="L473" title="All 2 branches missed.">        if (&quot;all&quot;.equals(value.trim())) {</span>
+            try {
+<span class="nc" id="L475">                System.out.println(Localization.lang(&quot;Setting all preferences to default values.&quot;));</span>
+<span class="nc" id="L476">                Globals.prefs.clear();</span>
+<span class="nc" id="L477">                new SharedDatabasePreferences().clear();</span>
+<span class="nc" id="L478">            } catch (BackingStoreException e) {</span>
+<span class="nc" id="L479">                System.err.println(Localization.lang(&quot;Unable to clear preferences.&quot;));</span>
+<span class="nc" id="L480">                LOGGER.error(&quot;Unable to clear preferences&quot;, e);</span>
+<span class="nc" id="L481">            }</span>
+        } else {
+<span class="nc" id="L483">            String[] keys = value.split(&quot;,&quot;);</span>
+<span class="nc bnc" id="L484" title="All 2 branches missed.">            for (String key : keys) {</span>
+<span class="nc bnc" id="L485" title="All 2 branches missed.">                if (Globals.prefs.hasKey(key.trim())) {</span>
+<span class="nc" id="L486">                    System.out.println(Localization.lang(&quot;Resetting preference key '%0'&quot;, key.trim()));</span>
+<span class="nc" id="L487">                    Globals.prefs.clear(key.trim());</span>
+                } else {
+<span class="nc" id="L489">                    System.out.println(Localization.lang(&quot;Unknown preference key '%0'&quot;, key.trim()));</span>
+                }
+            }
+        }
+<span class="nc" id="L493">    }</span>
+
+    private void automaticallySetFileLinks(List&lt;ParserResult&gt; loaded) {
+<span class="nc bnc" id="L496" title="All 2 branches missed.">        for (ParserResult parserResult : loaded) {</span>
+<span class="nc" id="L497">            BibDatabase database = parserResult.getDatabase();</span>
+<span class="nc" id="L498">            LOGGER.info(Localization.lang(&quot;Automatically setting file links&quot;));</span>
+<span class="nc" id="L499">            AutoSetLinks.autoSetLinks(database.getEntries(), parserResult.getDatabaseContext());</span>
+<span class="nc" id="L500">        }</span>
+<span class="nc" id="L501">    }</span>
+
+    private void regenerateBibtexKeys(List&lt;ParserResult&gt; loaded) {
+<span class="nc bnc" id="L504" title="All 2 branches missed.">        for (ParserResult parserResult : loaded) {</span>
+<span class="nc" id="L505">            BibDatabase database = parserResult.getDatabase();</span>
+
+<span class="nc" id="L507">            LOGGER.info(Localization.lang(&quot;Regenerating BibTeX keys according to metadata&quot;));</span>
+
+<span class="nc" id="L509">            BibtexKeyGenerator keyGenerator = new BibtexKeyGenerator(parserResult.getDatabaseContext(), Globals.prefs.getBibtexKeyPatternPreferences());</span>
+<span class="nc bnc" id="L510" title="All 2 branches missed.">            for (BibEntry entry : database.getEntries()) {</span>
+<span class="nc" id="L511">                keyGenerator.generateAndSetKey(entry);</span>
+<span class="nc" id="L512">            }</span>
+<span class="nc" id="L513">        }</span>
+<span class="nc" id="L514">    }</span>
+
+    /**
+     * Run an entry fetcher from the command line.
+     *
+     * @param fetchCommand A string containing both the name of the fetcher to use and
+     *                     the search query, separated by a :
+     * @return A parser result containing the entries fetched or null if an error occurred.
+     */
+    private Optional&lt;ParserResult&gt; fetch(String fetchCommand) {
+<span class="nc bnc" id="L524" title="All 6 branches missed.">        if ((fetchCommand == null) || !fetchCommand.contains(&quot;:&quot;) || (fetchCommand.split(&quot;:&quot;).length != 2)) {</span>
+<span class="nc" id="L525">            System.out.println(Localization.lang(&quot;Expected syntax for --fetch='&lt;name of fetcher&gt;:&lt;query&gt;'&quot;));</span>
+<span class="nc" id="L526">            System.out.println(Localization.lang(&quot;The following fetchers are available:&quot;));</span>
+<span class="nc" id="L527">            return Optional.empty();</span>
+        }
+
+<span class="nc" id="L530">        String[] split = fetchCommand.split(&quot;:&quot;);</span>
+<span class="nc" id="L531">        String engine = split[0];</span>
+<span class="nc" id="L532">        String query = split[1];</span>
+
+<span class="nc" id="L534">        List&lt;SearchBasedFetcher&gt; fetchers = WebFetchers.getSearchBasedFetchers(Globals.prefs.getImportFormatPreferences());</span>
+<span class="nc" id="L535">        Optional&lt;SearchBasedFetcher&gt; selectedFetcher = fetchers.stream()</span>
+<span class="nc" id="L536">                                                               .filter(fetcher -&gt; fetcher.getName().equalsIgnoreCase(engine))</span>
+<span class="nc" id="L537">                                                               .findFirst();</span>
+<span class="nc bnc" id="L538" title="All 2 branches missed.">        if (!selectedFetcher.isPresent()) {</span>
+<span class="nc" id="L539">            System.out.println(Localization.lang(&quot;Could not find fetcher '%0'&quot;, engine));</span>
+
+<span class="nc" id="L541">            System.out.println(Localization.lang(&quot;The following fetchers are available:&quot;));</span>
+<span class="nc" id="L542">            fetchers.forEach(fetcher -&gt; System.out.println(&quot;  &quot; + fetcher.getName()));</span>
+
+<span class="nc" id="L544">            return Optional.empty();</span>
+        } else {
+<span class="nc" id="L546">            System.out.println(Localization.lang(&quot;Running query '%0' with fetcher '%1'.&quot;, query, engine));</span>
+<span class="nc" id="L547">            System.out.print(Localization.lang(&quot;Please wait...&quot;));</span>
+            try {
+<span class="nc" id="L549">                List&lt;BibEntry&gt; matches = selectedFetcher.get().performSearch(query);</span>
+<span class="nc bnc" id="L550" title="All 2 branches missed.">                if (matches.isEmpty()) {</span>
+<span class="nc" id="L551">                    System.out.println(&quot;\r&quot; + Localization.lang(&quot;No results found.&quot;));</span>
+<span class="nc" id="L552">                    return Optional.empty();</span>
+                } else {
+<span class="nc" id="L554">                    System.out.println(&quot;\r&quot; + Localization.lang(&quot;Found %0 results.&quot;, String.valueOf(matches.size())));</span>
+<span class="nc" id="L555">                    return Optional.of(new ParserResult(matches));</span>
+                }
+<span class="nc" id="L557">            } catch (FetcherException e) {</span>
+<span class="nc" id="L558">                LOGGER.error(&quot;Error while fetching&quot;, e);</span>
+<span class="nc" id="L559">                return Optional.empty();</span>
+            }
+        }
+    }
+
+    public boolean isBlank() {
+<span class="nc" id="L565">        return cli.isBlank();</span>
+    }
+
+    public boolean shouldShutDown() {
+<span class="nc bnc" id="L569" title="All 6 branches missed.">        return cli.isDisableGui() || cli.isShowVersion() || noGUINeeded;</span>
+    }
+
+<span class="nc" id="L572">    public enum Mode {</span>
+<span class="nc" id="L573">        INITIAL_START, REMOTE_START</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

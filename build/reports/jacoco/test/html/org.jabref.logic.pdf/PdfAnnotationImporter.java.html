@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PdfAnnotationImporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.pdf</a> &gt; <span class="el_source">PdfAnnotationImporter.java</span></div><h1>PdfAnnotationImporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.pdf;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.model.pdf.FileAnnotation;
+import org.jabref.model.pdf.FileAnnotationType;
+
+import org.apache.pdfbox.cos.COSArray;
+import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageTree;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+<span class="fc" id="L26">public class PdfAnnotationImporter implements AnnotationImporter {</span>
+
+<span class="fc" id="L28">    private static final Logger LOGGER = LoggerFactory.getLogger(PdfAnnotationImporter.class);</span>
+
+    /**
+     * Imports the comments from a pdf specified by its path
+     *
+     * @param path a path to a pdf
+     * @return a list with the all the annotations found in the file of the path
+     */
+    @Override
+    public List&lt;FileAnnotation&gt; importAnnotations(final Path path) {
+
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (!validatePath(path)) {</span>
+            // Path could not be validated, return default result
+<span class="fc" id="L41">            return Collections.emptyList();</span>
+        }
+
+<span class="fc" id="L44">        List&lt;FileAnnotation&gt; annotationsList = new LinkedList&lt;&gt;();</span>
+<span class="fc" id="L45">        try (PDDocument document = PDDocument.load(path.toFile())) {</span>
+<span class="fc" id="L46">            PDPageTree pdfPages = document.getDocumentCatalog().getPages();</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">            for (int pageIndex = 0; pageIndex &lt; pdfPages.getCount(); pageIndex++) {</span>
+<span class="fc" id="L48">                PDPage page = pdfPages.get(pageIndex);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">                for (PDAnnotation annotation : page.getAnnotations()) {</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">                    if (!isSupportedAnnotationType(annotation)) {</span>
+<span class="fc" id="L51">                        continue;</span>
+                    }
+
+<span class="fc bfc" id="L54" title="All 2 branches covered.">                    if (FileAnnotationType.isMarkedFileAnnotationType(annotation.getSubtype())) {</span>
+<span class="fc" id="L55">                        annotationsList.add(createMarkedAnnotations(pageIndex, page, annotation));</span>
+                    } else {
+<span class="fc" id="L57">                        FileAnnotation fileAnnotation = new FileAnnotation(annotation, pageIndex + 1);</span>
+<span class="pc bpc" id="L58" title="1 of 4 branches missed.">                        if ((fileAnnotation.getContent() != null) &amp;&amp; !fileAnnotation.getContent().isEmpty()) {</span>
+<span class="fc" id="L59">                            annotationsList.add(fileAnnotation);</span>
+                        }
+                    }
+<span class="fc" id="L62">                }</span>
+            }
+<span class="fc" id="L64">        } catch (IOException e) {</span>
+<span class="fc" id="L65">            LOGGER.error(String.format(&quot;Failed to read file '%s'.&quot;, path), e);</span>
+<span class="fc" id="L66">        }</span>
+<span class="fc" id="L67">        return annotationsList;</span>
+    }
+
+    private boolean isSupportedAnnotationType(PDAnnotation annotation) {
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (annotation.getSubtype() == null) {</span>
+<span class="nc" id="L72">            return false;</span>
+        }
+<span class="pc bpc" id="L74" title="1 of 4 branches missed.">        if (&quot;Link&quot;.equals(annotation.getSubtype()) || &quot;Widget&quot;.equals(annotation.getSubtype())) {</span>
+<span class="fc" id="L75">            LOGGER.debug(annotation.getSubtype() + &quot; is excluded from the supported file annotations&quot;);</span>
+<span class="fc" id="L76">            return false;</span>
+        }
+        try {
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            if (!Arrays.asList(FileAnnotationType.values()).contains(FileAnnotationType.valueOf(annotation.getSubtype()))) {</span>
+<span class="nc" id="L80">                return false;</span>
+            }
+<span class="fc" id="L82">        } catch (IllegalArgumentException e) {</span>
+<span class="fc" id="L83">            LOGGER.debug(String.format(&quot;Could not parse the FileAnnotation %s into any known FileAnnotationType. It was %s!&quot;, annotation, annotation.getSubtype()));</span>
+<span class="nc" id="L84">        }</span>
+<span class="fc" id="L85">        return true;</span>
+    }
+
+    private FileAnnotation createMarkedAnnotations(int pageIndex, PDPage page, PDAnnotation annotation) {
+<span class="fc" id="L89">        FileAnnotation annotationBelongingToMarking = new FileAnnotation(</span>
+<span class="fc" id="L90">                annotation.getCOSObject().getString(COSName.T), FileAnnotation.extractModifiedTime(annotation.getModifiedDate()),</span>
+<span class="fc" id="L91">                pageIndex + 1, annotation.getContents(), FileAnnotationType.valueOf(annotation.getSubtype().toUpperCase(Locale.ROOT)), Optional.empty());</span>
+
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        if (annotationBelongingToMarking.getAnnotationType().isLinkedFileAnnotationType()) {</span>
+            try {
+<span class="fc" id="L95">                COSArray boundingBoxes = (COSArray) annotation.getCOSObject().getDictionaryObject(COSName.getPDFName(&quot;QuadPoints&quot;));</span>
+<span class="fc" id="L96">                annotation.setContents(new TextExtractor(page, boundingBoxes).extractMarkedText());</span>
+<span class="nc" id="L97">            } catch (IOException e) {</span>
+<span class="nc" id="L98">                annotation.setContents(&quot;JabRef: Could not extract any marked text!&quot;);</span>
+<span class="fc" id="L99">            }</span>
+        }
+
+        //Marked text that has a sticky note on it should be linked to the sticky note
+<span class="fc" id="L103">        return new FileAnnotation(annotation, pageIndex + 1, annotationBelongingToMarking);</span>
+    }
+
+    private boolean validatePath(Path path) {
+<span class="fc" id="L107">        Objects.requireNonNull(path);</span>
+
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (!path.toString().toLowerCase(Locale.ROOT).endsWith(&quot;.pdf&quot;)) {</span>
+<span class="fc" id="L110">            LOGGER.warn(String.format(&quot;File '%s' does not end with .pdf!&quot;, path));</span>
+<span class="fc" id="L111">            return false;</span>
+        }
+
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (!Files.exists(path)) {</span>
+<span class="fc" id="L115">            LOGGER.warn(String.format(&quot;File '%s' does not exist!&quot;, path));</span>
+<span class="fc" id="L116">            return false;</span>
+        }
+
+<span class="pc bpc" id="L119" title="2 of 4 branches missed.">        if (!Files.isRegularFile(path) || !Files.isReadable(path)) {</span>
+<span class="nc" id="L120">            LOGGER.warn(String.format(&quot;File '%s' is not readable!&quot;, path));</span>
+<span class="nc" id="L121">            return false;</span>
+        }
+
+<span class="fc" id="L124">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

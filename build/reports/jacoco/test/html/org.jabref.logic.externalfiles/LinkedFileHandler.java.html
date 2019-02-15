@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LinkedFileHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.externalfiles</a> &gt; <span class="el_source">LinkedFileHandler.java</span></div><h1>LinkedFileHandler.java</h1><pre class="source lang-java linenums">package org.jabref.logic.externalfiles;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import org.jabref.logic.util.io.FileUtil;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.LinkedFile;
+import org.jabref.model.metadata.FilePreferences;
+import org.jabref.model.util.FileHelper;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class LinkedFileHandler {
+<span class="fc" id="L22">    private static final Logger LOGGER = LoggerFactory.getLogger(LinkedFileHandler.class);</span>
+
+    private final BibDatabaseContext databaseContext;
+    private final FilePreferences filePreferences;
+    private final BibEntry entry;
+
+    private final LinkedFile fileEntry;
+
+<span class="fc" id="L30">    public LinkedFileHandler(LinkedFile fileEntry, BibEntry entry, BibDatabaseContext databaseContext, FilePreferences filePreferences) {</span>
+<span class="fc" id="L31">        this.fileEntry = fileEntry;</span>
+<span class="fc" id="L32">        this.entry = entry;</span>
+<span class="fc" id="L33">        this.databaseContext = Objects.requireNonNull(databaseContext);</span>
+<span class="fc" id="L34">        this.filePreferences = Objects.requireNonNull(filePreferences);</span>
+<span class="fc" id="L35">    }</span>
+
+    public boolean moveToDefaultDirectory() throws IOException {
+<span class="fc" id="L38">        Optional&lt;Path&gt; targetDirectory = databaseContext.getFirstExistingFileDir(filePreferences);</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        if (!targetDirectory.isPresent()) {</span>
+<span class="nc" id="L40">            return false;</span>
+        }
+
+<span class="fc" id="L43">        Optional&lt;Path&gt; oldFile = fileEntry.findIn(databaseContext, filePreferences);</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (!oldFile.isPresent()) {</span>
+            // Could not find file
+<span class="fc" id="L46">            return false;</span>
+        }
+
+<span class="fc" id="L49">        String targetDirName = &quot;&quot;;</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (!filePreferences.getFileDirPattern().isEmpty()) {</span>
+<span class="fc" id="L51">            targetDirName = FileUtil.createDirNameFromPattern(databaseContext.getDatabase(), entry, filePreferences.getFileDirPattern());</span>
+        }
+
+<span class="fc" id="L54">        Path targetPath = targetDirectory.get().resolve(targetDirName).resolve(oldFile.get().getFileName());</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">        if (Files.exists(targetPath)) {</span>
+            // We do not overwrite already existing files
+<span class="nc" id="L57">            LOGGER.debug(&quot;The file {} would have been moved to {}. However, there exists already a file with that name so we do nothing.&quot;, oldFile.get(), targetPath);</span>
+<span class="nc" id="L58">            return false;</span>
+        } else {
+            // Make sure sub-directories exist
+<span class="fc" id="L61">            Files.createDirectories(targetPath.getParent());</span>
+        }
+
+        // Move
+<span class="fc" id="L65">        Files.move(oldFile.get(), targetPath);</span>
+
+        // Update path
+<span class="fc" id="L68">        fileEntry.setLink(relativize(targetPath));</span>
+<span class="fc" id="L69">        return true;</span>
+    }
+
+    public boolean renameToSuggestedName() throws IOException {
+<span class="fc" id="L73">        Optional&lt;Path&gt; oldFile = fileEntry.findIn(databaseContext, filePreferences);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (!oldFile.isPresent()) {</span>
+            // Could not find file
+<span class="fc" id="L76">            return false;</span>
+        }
+
+<span class="fc" id="L79">        String targetFileName = getSuggestedFileName();</span>
+<span class="fc" id="L80">        Path newPath = oldFile.get().resolveSibling(targetFileName);</span>
+
+<span class="fc" id="L82">        String expandedOldFilePath = oldFile.get().toString();</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        boolean pathsDifferOnlyByCase = newPath.toString().equalsIgnoreCase(expandedOldFilePath)</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">                &amp;&amp; !newPath.toString().equals(expandedOldFilePath);</span>
+
+<span class="pc bpc" id="L86" title="1 of 4 branches missed.">        if (Files.exists(newPath) &amp;&amp; !pathsDifferOnlyByCase) {</span>
+            // We do not overwrite files
+            // Since Files.exists is sometimes not case-sensitive, the check pathsDifferOnlyByCase ensures that we
+            // nonetheless rename files to a new name which just differs by case.
+<span class="nc" id="L90">            LOGGER.debug(&quot;The file {} would have been moved to {}. However, there exists already a file with that name so we do nothing.&quot;, oldFile.get(), newPath);</span>
+<span class="nc" id="L91">            return false;</span>
+        } else {
+<span class="fc" id="L93">            Files.createDirectories(newPath.getParent());</span>
+        }
+
+        // Rename
+<span class="fc" id="L97">        Files.move(oldFile.get(), newPath);</span>
+
+        // Update path
+<span class="fc" id="L100">        fileEntry.setLink(relativize(newPath));</span>
+
+<span class="fc" id="L102">        return true;</span>
+    }
+
+    private String relativize(Path path) {
+<span class="fc" id="L106">        List&lt;Path&gt; fileDirectories = databaseContext.getFileDirectoriesAsPaths(filePreferences);</span>
+<span class="fc" id="L107">        return FileUtil.relativize(path, fileDirectories).toString();</span>
+    }
+
+    public String getSuggestedFileName() {
+<span class="fc" id="L111">        String oldFileName = fileEntry.getLink();</span>
+
+<span class="fc" id="L113">        String targetFileName = FileUtil.createFileNameFromPattern(databaseContext.getDatabase(), entry, filePreferences.getFileNamePattern()).trim()</span>
+                + '.'
+<span class="fc" id="L115">                + FileHelper.getFileExtension(oldFileName).orElse(fileEntry.getFileType());</span>
+
+        // Only create valid file names
+<span class="fc" id="L118">        return FileUtil.getValidFileName(targetFileName);</span>
+    }
+
+    /**
+     * Check to see if a file already exists in the target directory.  Search is not case sensitive.
+     *
+     * @return First identified path that matches an existing file.  This name can be used in subsequent calls to
+     * override the existing file.
+     */
+    public Optional&lt;Path&gt; findExistingFile(LinkedFile flEntry, BibEntry entry) {
+<span class="nc" id="L128">        String targetFileName = getSuggestedFileName();</span>
+        // The .get() is legal without check because the method will always return a value.
+<span class="nc" id="L130">        Path targetFilePath = flEntry.findIn(databaseContext, filePreferences)</span>
+<span class="nc" id="L131">                                     .get().getParent().resolve(targetFileName);</span>
+<span class="nc" id="L132">        Path oldFilePath = flEntry.findIn(databaseContext, filePreferences).get();</span>
+        //Check if file already exists in directory with different case.
+        //This is necessary because other entries may have such a file.
+<span class="nc" id="L135">        Optional&lt;Path&gt; matchedByDiffCase = Optional.empty();</span>
+<span class="nc" id="L136">        try (Stream&lt;Path&gt; stream = Files.list(oldFilePath.getParent())) {</span>
+<span class="nc" id="L137">            matchedByDiffCase = stream.filter(name -&gt; name.toString().equalsIgnoreCase(targetFilePath.toString()))</span>
+<span class="nc" id="L138">                                      .findFirst();</span>
+<span class="nc" id="L139">        } catch (IOException e) {</span>
+<span class="nc" id="L140">            LOGGER.error(&quot;Could not get the list of files in target directory&quot;, e);</span>
+<span class="nc" id="L141">        }</span>
+<span class="nc" id="L142">        return matchedByDiffCase;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

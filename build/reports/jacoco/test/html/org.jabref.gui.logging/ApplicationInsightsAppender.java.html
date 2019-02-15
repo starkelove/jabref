@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ApplicationInsightsAppender.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.logging</a> &gt; <span class="el_source">ApplicationInsightsAppender.java</span></div><h1>ApplicationInsightsAppender.java</h1><pre class="source lang-java linenums">package org.jabref.gui.logging;
+
+import org.jabref.Globals;
+import org.jabref.logic.logging.LogMessages;
+
+import com.microsoft.applicationinsights.log4j.v2.internal.ApplicationInsightsLogEvent;
+import com.microsoft.applicationinsights.telemetry.ExceptionTelemetry;
+import com.microsoft.applicationinsights.telemetry.Telemetry;
+import com.microsoft.applicationinsights.telemetry.TraceTelemetry;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
+import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
+import org.apache.logging.log4j.core.config.plugins.PluginElement;
+import org.apache.logging.log4j.core.config.plugins.PluginFactory;
+
+@Plugin(name = &quot;OurApplicationInsightsAppender&quot;, category = &quot;Core&quot;, elementType = &quot;appender&quot;, printObject = true)
+@SuppressWarnings(&quot;unused&quot;) // class is indirectly constructed by log4j
+public class ApplicationInsightsAppender extends AbstractAppender {
+
+    private ApplicationInsightsAppender(String name, Filter filter) {
+<span class="nc" id="L23">        super(name, filter, null);</span>
+<span class="nc" id="L24">    }</span>
+
+    @PluginFactory
+    public static ApplicationInsightsAppender createAppender(@PluginAttribute(&quot;name&quot;) String name,
+                                                             @PluginElement(&quot;Filters&quot;) Filter filter) {
+<span class="nc" id="L29">        return new ApplicationInsightsAppender(name, filter);</span>
+    }
+
+    /**
+     * The log event will be forwarded to the {@link LogMessages} archive.
+     */
+    @Override
+    public void append(LogEvent rawEvent) {
+<span class="nc" id="L37">        ApplicationInsightsLogEvent event = new ApplicationInsightsLogEvent(rawEvent);</span>
+
+        Telemetry telemetry;
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        if (event.isException()) {</span>
+<span class="nc" id="L41">            ExceptionTelemetry exceptionTelemetry = new ExceptionTelemetry(event.getException());</span>
+<span class="nc" id="L42">            exceptionTelemetry.getProperties().put(&quot;Message&quot;, rawEvent.getMessage().getFormattedMessage());</span>
+<span class="nc" id="L43">            exceptionTelemetry.setSeverityLevel(event.getNormalizedSeverityLevel());</span>
+<span class="nc" id="L44">            telemetry = exceptionTelemetry;</span>
+<span class="nc" id="L45">        } else {</span>
+<span class="nc" id="L46">            TraceTelemetry traceTelemetry = new TraceTelemetry(event.getMessage());</span>
+<span class="nc" id="L47">            traceTelemetry.setSeverityLevel(event.getNormalizedSeverityLevel());</span>
+<span class="nc" id="L48">            telemetry = traceTelemetry;</span>
+        }
+<span class="nc" id="L50">        telemetry.getContext().getProperties().putAll(event.getCustomParameters());</span>
+
+<span class="nc" id="L52">        Globals.getTelemetryClient().ifPresent(client -&gt; client.track(telemetry));</span>
+<span class="nc" id="L53">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

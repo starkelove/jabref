@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MetaDataSerializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.exporter</a> &gt; <span class="el_source">MetaDataSerializer.java</span></div><h1>MetaDataSerializer.java</h1><pre class="source lang-java linenums">package org.jabref.logic.exporter;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.jabref.logic.util.OS;
+import org.jabref.model.bibtexkeypattern.AbstractBibtexKeyPattern;
+import org.jabref.model.bibtexkeypattern.GlobalBibtexKeyPattern;
+import org.jabref.model.cleanup.FieldFormatterCleanups;
+import org.jabref.model.groups.GroupTreeNode;
+import org.jabref.model.metadata.ContentSelector;
+import org.jabref.model.metadata.MetaData;
+import org.jabref.model.strings.StringUtil;
+
+public class MetaDataSerializer {
+
+    private MetaDataSerializer() {
+    }
+
+    /**
+     * Writes all data in the format &lt;key, serialized data&gt;.
+     */
+    public static Map&lt;String, String&gt; getSerializedStringMap(MetaData metaData,
+            GlobalBibtexKeyPattern globalCiteKeyPattern) {
+
+        // First write all meta data except groups
+<span class="fc" id="L31">        Map&lt;String, List&lt;String&gt;&gt; stringyMetaData = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L32">        metaData.getSaveOrderConfig().ifPresent(</span>
+<span class="fc" id="L33">                saveOrderConfig -&gt; stringyMetaData.put(MetaData.SAVE_ORDER_CONFIG, saveOrderConfig.getAsStringList()));</span>
+<span class="fc" id="L34">        metaData.getSaveActions().ifPresent(</span>
+<span class="fc" id="L35">                saveActions -&gt; stringyMetaData.put(MetaData.SAVE_ACTIONS, saveActions.getAsStringList(OS.NEWLINE)));</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (metaData.isProtected()) {</span>
+<span class="fc" id="L37">            stringyMetaData.put(MetaData.PROTECTED_FLAG_META, Collections.singletonList(&quot;true&quot;));</span>
+        }
+<span class="fc" id="L39">        stringyMetaData.putAll(serializeCiteKeyPattern(metaData, globalCiteKeyPattern));</span>
+<span class="fc" id="L40">        metaData.getMode().ifPresent(</span>
+<span class="fc" id="L41">                mode -&gt; stringyMetaData.put(MetaData.DATABASE_TYPE, Collections.singletonList(mode.getAsString())));</span>
+<span class="fc" id="L42">        metaData.getDefaultFileDirectory().ifPresent(</span>
+<span class="fc" id="L43">                path -&gt; stringyMetaData.put(MetaData.FILE_DIRECTORY, Collections.singletonList(path.trim())));</span>
+<span class="fc" id="L44">        metaData.getUserFileDirectories().forEach((user, path) -&gt; stringyMetaData</span>
+<span class="fc" id="L45">                .put(MetaData.FILE_DIRECTORY + '-' + user, Collections.singletonList(path.trim())));</span>
+
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        for (ContentSelector selector: metaData.getContentSelectorList()) {</span>
+<span class="fc" id="L48">                stringyMetaData.put(MetaData.SELECTOR_META_PREFIX + selector.getFieldName(), selector.getValues());</span>
+
+<span class="fc" id="L50">        }</span>
+
+<span class="fc" id="L52">        Map&lt;String, String&gt; serializedMetaData = serializeMetaData(stringyMetaData);</span>
+
+        // Write groups if present.
+        // Skip this if only the root node exists (which is always the AllEntriesGroup).
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        metaData.getGroups().filter(root -&gt; root.getNumberOfChildren() &gt; 0).ifPresent(</span>
+<span class="fc" id="L57">                root -&gt; serializedMetaData.put(MetaData.GROUPSTREE, serializeGroups(root)));</span>
+
+        // finally add all unknown meta data items to the serialization map
+<span class="fc" id="L60">        Map&lt;String, List&lt;String&gt;&gt; unknownMetaData = metaData.getUnknownMetaData();</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        for (Map.Entry&lt;String, List&lt;String&gt;&gt; entry : unknownMetaData.entrySet()) {</span>
+<span class="fc" id="L62">            StringBuilder value = new StringBuilder();</span>
+<span class="fc" id="L63">            value.append(OS.NEWLINE);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            for (String line: entry.getValue()) {</span>
+<span class="fc" id="L65">                value.append(line.replaceAll(&quot;;&quot;, &quot;\\\\;&quot;) + MetaData.SEPARATOR_STRING + OS.NEWLINE);</span>
+<span class="fc" id="L66">            }</span>
+<span class="fc" id="L67">            serializedMetaData.put(entry.getKey(), value.toString());</span>
+<span class="fc" id="L68">        }</span>
+
+<span class="fc" id="L70">        return serializedMetaData;</span>
+    }
+
+    private static Map&lt;String, String&gt; serializeMetaData(Map&lt;String, List&lt;String&gt;&gt; stringyMetaData) {
+<span class="fc" id="L74">        Map&lt;String, String&gt; serializedMetaData = new TreeMap&lt;&gt;();</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        for (Map.Entry&lt;String, List&lt;String&gt;&gt; metaItem : stringyMetaData.entrySet()) {</span>
+<span class="fc" id="L76">            StringBuilder stringBuilder = new StringBuilder();</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            for (String dataItem : metaItem.getValue()) {</span>
+<span class="fc" id="L78">                stringBuilder.append(StringUtil.quote(dataItem, MetaData.SEPARATOR_STRING, MetaData.ESCAPE_CHARACTER)).append(MetaData.SEPARATOR_STRING);</span>
+
+                //in case of save actions, add an additional newline after the enabled flag
+<span class="fc bfc" id="L81" title="All 2 branches covered.">                if (metaItem.getKey().equals(MetaData.SAVE_ACTIONS)</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">                        &amp;&amp; (FieldFormatterCleanups.ENABLED.equals(dataItem)</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">                                || FieldFormatterCleanups.DISABLED.equals(dataItem))) {</span>
+<span class="fc" id="L84">                    stringBuilder.append(OS.NEWLINE);</span>
+                }
+<span class="fc" id="L86">            }</span>
+
+<span class="fc" id="L88">            String serializedItem = stringBuilder.toString();</span>
+            // Only add non-empty values
+<span class="pc bpc" id="L90" title="2 of 4 branches missed.">            if (!serializedItem.isEmpty() &amp;&amp; !MetaData.SEPARATOR_STRING.equals(serializedItem)) {</span>
+<span class="fc" id="L91">                serializedMetaData.put(metaItem.getKey(), serializedItem);</span>
+            }
+<span class="fc" id="L93">        }</span>
+<span class="fc" id="L94">        return serializedMetaData;</span>
+    }
+
+    private static Map&lt;String, List&lt;String&gt;&gt; serializeCiteKeyPattern(MetaData metaData, GlobalBibtexKeyPattern globalCiteKeyPattern) {
+<span class="fc" id="L98">        Map&lt;String, List&lt;String&gt;&gt; stringyPattern = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L99">        AbstractBibtexKeyPattern citeKeyPattern = metaData.getCiteKeyPattern(globalCiteKeyPattern);</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        for (String key : citeKeyPattern.getAllKeys()) {</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">            if (!citeKeyPattern.isDefaultValue(key)) {</span>
+<span class="fc" id="L102">                List&lt;String&gt; data = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L103">                data.add(citeKeyPattern.getValue(key).get(0));</span>
+<span class="fc" id="L104">                String metaDataKey = MetaData.PREFIX_KEYPATTERN + key;</span>
+<span class="fc" id="L105">                stringyPattern.put(metaDataKey, data);</span>
+            }
+<span class="fc" id="L107">        }</span>
+<span class="pc bpc" id="L108" title="1 of 4 branches missed.">        if ((citeKeyPattern.getDefaultValue() != null) &amp;&amp; !citeKeyPattern.getDefaultValue().isEmpty()) {</span>
+<span class="fc" id="L109">            List&lt;String&gt; data = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L110">            data.add(citeKeyPattern.getDefaultValue().get(0));</span>
+<span class="fc" id="L111">            stringyPattern.put(MetaData.KEYPATTERNDEFAULT, data);</span>
+        }
+<span class="fc" id="L113">        return stringyPattern;</span>
+    }
+
+    private static String serializeGroups(GroupTreeNode root) {
+<span class="fc" id="L117">        StringBuilder stringBuilder = new StringBuilder();</span>
+<span class="fc" id="L118">        stringBuilder.append(OS.NEWLINE);</span>
+
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        for (String groupNode : new GroupSerializer().serializeTree(root)) {</span>
+<span class="fc" id="L121">            stringBuilder.append(StringUtil.quote(groupNode, MetaData.SEPARATOR_STRING, MetaData.ESCAPE_CHARACTER));</span>
+<span class="fc" id="L122">            stringBuilder.append(MetaData.SEPARATOR_STRING);</span>
+<span class="fc" id="L123">            stringBuilder.append(OS.NEWLINE);</span>
+<span class="fc" id="L124">        }</span>
+<span class="fc" id="L125">        return stringBuilder.toString();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

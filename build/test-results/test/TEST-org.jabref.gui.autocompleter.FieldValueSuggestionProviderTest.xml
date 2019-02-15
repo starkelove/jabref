@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:16" hostname="n184-p67.eduroam.kth.se" time="0.008">
+  <properties/>
+  <testcase name="completeValueReturnsValue()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.001"/>
+  <testcase name="completeLowercaseValueReturnsValue()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.001"/>
+  <testcase name="completeBeginnigOfSecondWordReturnsWholeFieldValue()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.0"/>
+  <testcase name="completeAfterAddingNullReturnsNothing()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.0"/>
+  <testcase name="initAutoCompleterWithNullFieldThrowsException()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.0"/>
+  <testcase name="completeAfterAddingEntryWithoutFieldReturnsNothing()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.0"/>
+  <testcase name="completeReturnsWholeFieldValue()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.0"/>
+  <testcase name="completeShortStringReturnsFieldValue()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.0"/>
+  <testcase name="completeAfterAddingEmptyEntryReturnsNothing()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.0"/>
+  <testcase name="completeWithoutAddingAnythingReturnsNothing()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.0"/>
+  <testcase name="completeReturnsMultipleResults()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.0"/>
+  <testcase name="completeNullThrowsException()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.001"/>
+  <testcase name="completeEmptyStringReturnsNothing()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.0"/>
+  <testcase name="completeBeginnigOfValueReturnsValue()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.0"/>
+  <testcase name="completePartOfWordReturnsWholeFieldValue()" classname="org.jabref.gui.autocompleter.FieldValueSuggestionProviderTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

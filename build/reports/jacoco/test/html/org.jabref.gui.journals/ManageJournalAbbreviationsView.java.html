@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ManageJournalAbbreviationsView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.journals</a> &gt; <span class="el_source">ManageJournalAbbreviationsView.java</span></div><h1>ManageJournalAbbreviationsView.java</h1><pre class="source lang-java linenums">package org.jabref.gui.journals;
+
+import javax.inject.Inject;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+
+import org.jabref.gui.DialogService;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.util.BaseDialog;
+import org.jabref.gui.util.ControlHelper;
+import org.jabref.gui.util.TaskExecutor;
+import org.jabref.gui.util.ValueTableCellFactory;
+import org.jabref.logic.journals.JournalAbbreviationLoader;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.preferences.PreferencesService;
+
+import com.airhacks.afterburner.views.ViewLoader;
+
+/**
+ * This class controls the user interface of the journal abbreviations dialog.
+ * The ui elements and their layout are defined in the fxml file.
+ */
+public class ManageJournalAbbreviationsView extends BaseDialog&lt;Void&gt; {
+
+    @FXML public Label loadingLabel;
+    @FXML public ProgressIndicator progressIndicator;
+    @FXML private ButtonType saveButton;
+    @FXML private TableView&lt;AbbreviationViewModel&gt; journalAbbreviationsTable;
+    @FXML private TableColumn&lt;AbbreviationViewModel, String&gt; journalTableNameColumn;
+    @FXML private TableColumn&lt;AbbreviationViewModel, String&gt; journalTableAbbreviationColumn;
+    @FXML private TableColumn&lt;AbbreviationViewModel, Boolean&gt; journalTableEditColumn;
+    @FXML private TableColumn&lt;AbbreviationViewModel, Boolean&gt; journalTableDeleteColumn;
+    @FXML private ComboBox&lt;AbbreviationsFileViewModel&gt; journalFilesBox;
+    @FXML private Button addJournalFileButton;
+    @FXML private Button addNewJournalFileButton;
+    @FXML private Button removeJournalAbbreviationsButton;
+    @Inject private PreferencesService preferences;
+    @Inject private DialogService dialogService;
+    @Inject private TaskExecutor taskExecutor;
+    @Inject private JournalAbbreviationLoader journalAbbreviationLoader;
+    private ManageJournalAbbreviationsViewModel viewModel;
+
+<span class="nc" id="L53">    public ManageJournalAbbreviationsView() {</span>
+<span class="nc" id="L54">        this.setTitle(Localization.lang(&quot;Journal abbreviations&quot;));</span>
+
+<span class="nc" id="L56">        ViewLoader.view(this)</span>
+<span class="nc" id="L57">                  .load()</span>
+<span class="nc" id="L58">                  .setAsDialogPane(this);</span>
+
+<span class="nc" id="L60">        ControlHelper.setAction(saveButton, getDialogPane(), event -&gt; saveAbbreviationsAndCloseDialog());</span>
+<span class="nc" id="L61">    }</span>
+
+    @FXML
+    private void initialize() {
+<span class="nc" id="L65">        viewModel = new ManageJournalAbbreviationsViewModel(preferences, dialogService, taskExecutor, journalAbbreviationLoader);</span>
+
+<span class="nc" id="L67">        setUpTable();</span>
+<span class="nc" id="L68">        setBindings();</span>
+<span class="nc" id="L69">        setButtonStyles();</span>
+<span class="nc" id="L70">        viewModel.init();</span>
+<span class="nc" id="L71">    }</span>
+
+    private void setButtonStyles() {
+<span class="nc" id="L74">        addJournalFileButton.setGraphic(IconTheme.JabRefIcons.OPEN.getGraphicNode());</span>
+<span class="nc" id="L75">        addNewJournalFileButton.setGraphic(IconTheme.JabRefIcons.NEW.getGraphicNode());</span>
+<span class="nc" id="L76">        removeJournalAbbreviationsButton.setGraphic(IconTheme.JabRefIcons.CLOSE.getGraphicNode());</span>
+<span class="nc" id="L77">    }</span>
+
+    private void setUpTable() {
+<span class="nc" id="L80">        journalAbbreviationsTable.setOnKeyPressed(event -&gt; {</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (event.getCode() == KeyCode.DELETE) {</span>
+<span class="nc" id="L82">                viewModel.deleteAbbreviation();</span>
+            }
+<span class="nc" id="L84">        });</span>
+<span class="nc" id="L85">        journalTableNameColumn.setCellValueFactory(cellData -&gt; cellData.getValue().nameProperty());</span>
+<span class="nc" id="L86">        journalTableNameColumn.setCellFactory(cell -&gt; new JournalAbbreviationsNameTableEditingCell());</span>
+<span class="nc" id="L87">        journalTableAbbreviationColumn.setCellValueFactory(cellData -&gt; cellData.getValue().abbreviationProperty());</span>
+<span class="nc" id="L88">        journalTableAbbreviationColumn.setCellFactory(cell -&gt; new JournalAbbreviationsAbbreviationTableEditingCell());</span>
+<span class="nc" id="L89">        journalTableEditColumn.setCellValueFactory(cellData -&gt; cellData.getValue().isPseudoAbbreviationProperty());</span>
+<span class="nc" id="L90">        journalTableDeleteColumn.setCellValueFactory(cellData -&gt; cellData.getValue().isPseudoAbbreviationProperty());</span>
+<span class="nc" id="L91">        journalTableEditColumn.setCellFactory(new ValueTableCellFactory&lt;AbbreviationViewModel, Boolean&gt;().</span>
+<span class="nc" id="L92">                withGraphic(isPseudoAbbreviation -&gt; {</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">                    if (isPseudoAbbreviation) {</span>
+<span class="nc" id="L94">                        return IconTheme.JabRefIcons.ADD.getGraphicNode();</span>
+                    } else {
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                        return viewModel.isAbbreviationEditableAndRemovable() ?</span>
+<span class="nc" id="L97">                                IconTheme.JabRefIcons.EDIT.getGraphicNode() : null;</span>
+                    }
+                }).
+<span class="nc" id="L100">                withOnMouseClickedEvent(isPseudoAbbreviation -&gt; {</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                    if (isPseudoAbbreviation) {</span>
+<span class="nc" id="L102">                        return evt -&gt; addAbbreviation();</span>
+                    } else {
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                        return viewModel.isAbbreviationEditableAndRemovable() ?</span>
+<span class="nc" id="L105">                                evt -&gt; editAbbreviation() : evt -&gt; {</span>
+<span class="nc" id="L106">                        };</span>
+                    }
+                })
+        );
+
+<span class="nc" id="L111">        journalTableDeleteColumn.setCellFactory(new ValueTableCellFactory&lt;AbbreviationViewModel, Boolean&gt;().</span>
+<span class="nc" id="L112">                withGraphic(isPseudoAbbreviation -&gt; {</span>
+<span class="nc bnc" id="L113" title="All 4 branches missed.">                    if (!isPseudoAbbreviation &amp;&amp; viewModel.isAbbreviationEditableAndRemovable()) {</span>
+<span class="nc" id="L114">                        return IconTheme.JabRefIcons.DELETE_ENTRY.getGraphicNode();</span>
+                    } else {
+<span class="nc" id="L116">                        return null;</span>
+                    }
+                }).
+<span class="nc" id="L119">                withOnMouseClickedEvent(isPseudoAbbreviation -&gt; {</span>
+<span class="nc bnc" id="L120" title="All 4 branches missed.">                    if (!isPseudoAbbreviation &amp;&amp; viewModel.isAbbreviationEditableAndRemovable()) {</span>
+<span class="nc" id="L121">                        return evt -&gt; removeAbbreviation();</span>
+                    } else {
+<span class="nc" id="L123">                        return evt -&gt; {</span>
+<span class="nc" id="L124">                        };</span>
+                    }
+                })
+        );
+<span class="nc" id="L128">    }</span>
+
+    private void setBindings() {
+<span class="nc" id="L131">        journalAbbreviationsTable.itemsProperty().bindBidirectional(viewModel.abbreviationsProperty());</span>
+<span class="nc" id="L132">        journalFilesBox.itemsProperty().bindBidirectional(viewModel.journalFilesProperty());</span>
+<span class="nc" id="L133">        journalFilesBox.valueProperty().bindBidirectional(viewModel.currentFileProperty());</span>
+
+<span class="nc" id="L135">        viewModel.currentAbbreviationProperty().addListener((observable, oldvalue, newvalue) -&gt;</span>
+<span class="nc" id="L136">                journalAbbreviationsTable.getSelectionModel().select(newvalue));</span>
+<span class="nc" id="L137">        journalAbbreviationsTable.getSelectionModel().selectedItemProperty()</span>
+<span class="nc" id="L138">                .addListener((observable, oldvalue, newvalue) -&gt; viewModel.currentAbbreviationProperty().set(newvalue));</span>
+
+<span class="nc" id="L140">        removeJournalAbbreviationsButton.disableProperty().bind(viewModel.isFileRemovableProperty().not());</span>
+
+<span class="nc" id="L142">        loadingLabel.visibleProperty().bind(viewModel.isLoadingProperty());</span>
+<span class="nc" id="L143">        progressIndicator.visibleProperty().bind(viewModel.isLoadingProperty());</span>
+<span class="nc" id="L144">    }</span>
+
+    @FXML
+    private void addNewFile() {
+<span class="nc" id="L148">        viewModel.addNewFile();</span>
+<span class="nc" id="L149">    }</span>
+
+    @FXML
+    private void openFile() {
+<span class="nc" id="L153">        viewModel.openFile();</span>
+<span class="nc" id="L154">    }</span>
+
+    @FXML
+    private void removeList() {
+<span class="nc" id="L158">        viewModel.removeCurrentFile();</span>
+<span class="nc" id="L159">    }</span>
+
+    @FXML
+    private void addAbbreviation() {
+<span class="nc" id="L163">        viewModel.addAbbreviation();</span>
+<span class="nc" id="L164">        selectNewAbbreviation();</span>
+<span class="nc" id="L165">    }</span>
+
+    @FXML
+    private void editAbbreviation() {
+<span class="nc" id="L169">        journalAbbreviationsTable.edit(journalAbbreviationsTable.getSelectionModel().getSelectedIndex(),</span>
+                journalTableNameColumn);
+<span class="nc" id="L171">    }</span>
+
+    private void selectNewAbbreviation() {
+<span class="nc" id="L174">        int lastRow = viewModel.abbreviationsCountProperty().get() - 1;</span>
+<span class="nc" id="L175">        journalAbbreviationsTable.scrollTo(lastRow);</span>
+<span class="nc" id="L176">        journalAbbreviationsTable.getSelectionModel().select(lastRow);</span>
+<span class="nc" id="L177">        journalAbbreviationsTable.getFocusModel().focus(lastRow);</span>
+<span class="nc" id="L178">    }</span>
+
+    @FXML
+    private void removeAbbreviation() {
+<span class="nc" id="L182">        viewModel.deleteAbbreviation();</span>
+<span class="nc" id="L183">    }</span>
+
+    @FXML
+    private void saveAbbreviationsAndCloseDialog() {
+<span class="nc" id="L187">        viewModel.saveEverythingAndUpdateAutoCompleter();</span>
+<span class="nc" id="L188">        close();</span>
+<span class="nc" id="L189">    }</span>
+
+
+    /**
+     * This class provides a editable text field that is used as table cell.
+     * It handles the editing of the name column.
+     */
+<span class="nc" id="L196">    public class JournalAbbreviationsNameTableEditingCell extends TableCell&lt;AbbreviationViewModel, String&gt; {</span>
+
+        private TextField textField;
+        private String oldName;
+        private int editingIndex;
+
+        @Override
+        public void startEdit() {
+<span class="nc bnc" id="L204" title="All 4 branches missed.">            if (!isEmpty() &amp;&amp; viewModel.isAbbreviationEditableAndRemovableProperty().get()) {</span>
+<span class="nc" id="L205">                oldName = viewModel.currentAbbreviationProperty().get().getName();</span>
+<span class="nc" id="L206">                super.startEdit();</span>
+<span class="nc" id="L207">                createTextField();</span>
+<span class="nc" id="L208">                setText(null);</span>
+<span class="nc" id="L209">                setGraphic(textField);</span>
+<span class="nc" id="L210">                editingIndex = journalAbbreviationsTable.getSelectionModel().getSelectedIndex();</span>
+<span class="nc" id="L211">                textField.requestFocus();</span>
+<span class="nc" id="L212">                textField.selectAll();</span>
+            }
+<span class="nc" id="L214">        }</span>
+
+        @Override
+        public void cancelEdit() {
+<span class="nc" id="L218">            super.cancelEdit();</span>
+<span class="nc" id="L219">            setText(getItem());</span>
+<span class="nc" id="L220">            setGraphic(null);</span>
+<span class="nc" id="L221">            journalAbbreviationsTable.itemsProperty().get().get(editingIndex).setName(oldName);</span>
+<span class="nc" id="L222">        }</span>
+
+        @Override
+        public void updateItem(String item, boolean empty) {
+<span class="nc" id="L226">            super.updateItem(item, empty);</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">            if (empty) {</span>
+<span class="nc" id="L228">                setText(null);</span>
+<span class="nc" id="L229">                setGraphic(null);</span>
+            } else {
+<span class="nc bnc" id="L231" title="All 2 branches missed.">                if (isEditing()) {</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">                    if (textField != null) {</span>
+<span class="nc" id="L233">                        textField.setText(getString());</span>
+                    }
+<span class="nc" id="L235">                    setText(null);</span>
+<span class="nc" id="L236">                    setGraphic(textField);</span>
+                } else {
+<span class="nc" id="L238">                    setText(getString());</span>
+<span class="nc" id="L239">                    setGraphic(null);</span>
+                }
+            }
+<span class="nc" id="L242">        }</span>
+
+        @Override
+        public void commitEdit(String name) {
+<span class="nc" id="L246">            journalAbbreviationsTable.getSelectionModel().select(editingIndex);</span>
+<span class="nc" id="L247">            AbbreviationViewModel current = viewModel.currentAbbreviationProperty().get();</span>
+<span class="nc" id="L248">            super.commitEdit(name);</span>
+<span class="nc" id="L249">            current.setName(oldName);</span>
+<span class="nc" id="L250">            viewModel.editAbbreviation(name, current.getAbbreviation());</span>
+<span class="nc" id="L251">        }</span>
+
+        private void createTextField() {
+<span class="nc" id="L254">            textField = new TextField(getString());</span>
+<span class="nc" id="L255">            textField.setMinWidth(this.getWidth() - (this.getGraphicTextGap() * 2));</span>
+<span class="nc" id="L256">            textField.focusedProperty().addListener((observable, oldValue, newValue) -&gt; {</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">                if (!newValue) {</span>
+<span class="nc" id="L258">                    commitEdit(textField.getText());</span>
+                }
+<span class="nc" id="L260">            });</span>
+<span class="nc" id="L261">            textField.setOnKeyPressed(t -&gt; {</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">                if (t.getCode() == KeyCode.ENTER) {</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">                    if (isEditing()) {</span>
+<span class="nc" id="L264">                        journalAbbreviationsTable.requestFocus();</span>
+                    } else {
+<span class="nc" id="L266">                        startEdit();</span>
+                    }
+<span class="nc bnc" id="L268" title="All 2 branches missed.">                } else if (t.getCode() == KeyCode.ESCAPE) {</span>
+<span class="nc" id="L269">                    cancelEdit();</span>
+                }
+<span class="nc" id="L271">            });</span>
+<span class="nc" id="L272">        }</span>
+
+        private String getString() {
+<span class="nc bnc" id="L275" title="All 2 branches missed.">            return getItem() == null ? &quot;&quot; : getItem();</span>
+        }
+    }
+
+    /**
+     * This class provides a editable text field that is used as table cell.
+     * It handles the editing of the abbreviation column.
+     */
+<span class="nc" id="L283">    public class JournalAbbreviationsAbbreviationTableEditingCell extends TableCell&lt;AbbreviationViewModel, String&gt; {</span>
+
+        private TextField textField;
+        private String oldAbbreviation;
+        private int editingIndex;
+
+        @Override
+        public void startEdit() {
+<span class="nc bnc" id="L291" title="All 4 branches missed.">            if (!isEmpty() &amp;&amp; viewModel.isAbbreviationEditableAndRemovableProperty().get()) {</span>
+<span class="nc" id="L292">                oldAbbreviation = viewModel.currentAbbreviationProperty().get().getAbbreviation();</span>
+<span class="nc" id="L293">                super.startEdit();</span>
+<span class="nc" id="L294">                createTextField();</span>
+<span class="nc" id="L295">                setText(null);</span>
+<span class="nc" id="L296">                setGraphic(textField);</span>
+<span class="nc" id="L297">                editingIndex = journalAbbreviationsTable.getSelectionModel().getSelectedIndex();</span>
+<span class="nc" id="L298">                textField.requestFocus();</span>
+<span class="nc" id="L299">                textField.selectAll();</span>
+            }
+<span class="nc" id="L301">        }</span>
+
+        @Override
+        public void cancelEdit() {
+<span class="nc" id="L305">            super.cancelEdit();</span>
+<span class="nc" id="L306">            setText(getItem());</span>
+<span class="nc" id="L307">            setGraphic(null);</span>
+<span class="nc" id="L308">            journalAbbreviationsTable.itemsProperty().get().get(editingIndex).setAbbreviation(oldAbbreviation);</span>
+<span class="nc" id="L309">        }</span>
+
+        @Override
+        public void updateItem(String item, boolean empty) {
+<span class="nc" id="L313">            super.updateItem(item, empty);</span>
+<span class="nc bnc" id="L314" title="All 2 branches missed.">            if (empty) {</span>
+<span class="nc" id="L315">                setText(null);</span>
+<span class="nc" id="L316">                setGraphic(null);</span>
+            } else {
+<span class="nc bnc" id="L318" title="All 2 branches missed.">                if (isEditing()) {</span>
+<span class="nc bnc" id="L319" title="All 2 branches missed.">                    if (textField != null) {</span>
+<span class="nc" id="L320">                        textField.setText(getString());</span>
+                    }
+<span class="nc" id="L322">                    setText(null);</span>
+<span class="nc" id="L323">                    setGraphic(textField);</span>
+                } else {
+<span class="nc" id="L325">                    setText(getString());</span>
+<span class="nc" id="L326">                    setGraphic(null);</span>
+                }
+            }
+<span class="nc" id="L329">        }</span>
+
+        @Override
+        public void commitEdit(String abbreviation) {
+<span class="nc" id="L333">            journalAbbreviationsTable.getSelectionModel().select(editingIndex);</span>
+<span class="nc" id="L334">            AbbreviationViewModel current = viewModel.currentAbbreviationProperty().get();</span>
+<span class="nc" id="L335">            super.commitEdit(abbreviation);</span>
+<span class="nc" id="L336">            current.setAbbreviation(oldAbbreviation);</span>
+<span class="nc" id="L337">            viewModel.editAbbreviation(current.getName(), abbreviation);</span>
+<span class="nc" id="L338">        }</span>
+
+        private void createTextField() {
+<span class="nc" id="L341">            textField = new TextField(getString());</span>
+<span class="nc" id="L342">            textField.setMinWidth(this.getWidth() - (this.getGraphicTextGap() * 2));</span>
+<span class="nc" id="L343">            textField.focusedProperty().addListener((observable, oldValue, newValue) -&gt; {</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">                if (!newValue) {</span>
+<span class="nc" id="L345">                    commitEdit(textField.getText());</span>
+                }
+<span class="nc" id="L347">            });</span>
+<span class="nc" id="L348">            textField.setOnKeyPressed(t -&gt; {</span>
+<span class="nc bnc" id="L349" title="All 2 branches missed.">                if (t.getCode() == KeyCode.ENTER) {</span>
+<span class="nc bnc" id="L350" title="All 2 branches missed.">                    if (isEditing()) {</span>
+<span class="nc" id="L351">                        journalAbbreviationsTable.requestFocus();</span>
+                    } else {
+<span class="nc" id="L353">                        startEdit();</span>
+                    }
+<span class="nc bnc" id="L355" title="All 2 branches missed.">                } else if (t.getCode() == KeyCode.ESCAPE) {</span>
+<span class="nc" id="L356">                    cancelEdit();</span>
+                }
+<span class="nc" id="L358">            });</span>
+<span class="nc" id="L359">        }</span>
+
+        private String getString() {
+<span class="nc bnc" id="L362" title="All 2 branches missed.">            return getItem() == null ? &quot;&quot; : getItem();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

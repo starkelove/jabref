@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChangeCaseFunction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.bst</a> &gt; <span class="el_source">ChangeCaseFunction.java</span></div><h1>ChangeCaseFunction.java</h1><pre class="source lang-java linenums">package org.jabref.logic.bst;
+
+import java.util.Locale;
+import java.util.Stack;
+
+import org.jabref.logic.bst.BibtexCaseChanger.FORMAT_MODE;
+import org.jabref.logic.bst.VM.BstEntry;
+import org.jabref.logic.bst.VM.BstFunction;
+
+/**
+ * From the Bibtex manual:
+ *
+ * Pops the top two (string) literals; it changes the case of the second
+ * according to the specifications of the first, as follows. (Note: The word
+ * `letters' in the next sentence refers only to those at brace-level 0, the
+ * top-most brace level; no other characters are changed, except perhaps for
+ * \special characters&quot;, described in Section 4.) If the first literal is the
+ * string `t', it converts to lower case all letters except the very first
+ * character in the string, which it leaves alone, and except the first
+ * character following any colon and then nonnull white space, which it also
+ * leaves alone; if it's the string `l', it converts all letters to lower case;
+ * and if it's the string `u', it converts all letters to upper case. It then
+ * pushes this resulting string. If either type is incorrect, it complains and
+ * pushes the null string; however, if both types are correct but the
+ * specification string (i.e., the first string) isn't one of the legal ones, it
+ * merely pushes the second back onto the stack, after complaining. (Another
+ * note: It ignores case differences in the specification string; for example,
+ * the strings t and T are equivalent for the purposes of this built-in
+ * function.)
+ *
+ * Christopher: I think this should be another grammar! This parser is horrible.
+ *
+ */
+public class ChangeCaseFunction implements BstFunction {
+
+    private final VM vm;
+
+
+<span class="fc" id="L39">    public ChangeCaseFunction(VM vm) {</span>
+<span class="fc" id="L40">        this.vm = vm;</span>
+<span class="fc" id="L41">    }</span>
+
+    @Override
+    public void execute(BstEntry context) {
+<span class="fc" id="L45">        Stack&lt;Object&gt; stack = vm.getStack();</span>
+
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        if (stack.size() &lt; 2) {</span>
+<span class="nc" id="L48">            throw new VMException(&quot;Not enough operands on stack for operation change.case$&quot;);</span>
+        }
+
+<span class="fc" id="L51">        Object o1 = stack.pop();</span>
+<span class="pc bpc" id="L52" title="2 of 4 branches missed.">        if (!((o1 instanceof String) &amp;&amp; (((String) o1).length() == 1))) {</span>
+<span class="nc" id="L53">            throw new VMException(&quot;A format string of length 1 is needed for change.case$&quot;);</span>
+        }
+
+<span class="fc" id="L56">        Object o2 = stack.pop();</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (!(o2 instanceof String)) {</span>
+<span class="nc" id="L58">            throw new VMException(&quot;A string is needed as second parameter for change.case$&quot;);</span>
+        }
+
+<span class="fc" id="L61">        char format = ((String) o1).toLowerCase(Locale.ROOT).charAt(0);</span>
+<span class="fc" id="L62">        String s = (String) o2;</span>
+
+<span class="fc" id="L64">        stack.push(BibtexCaseChanger.changeCase(s, FORMAT_MODE.getFormatModeForBSTFormat(format)));</span>
+<span class="fc" id="L65">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.layout.format.WrapFileLinksTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:25" hostname="n184-p67.eduroam.kth.se" time="0.01">
+  <properties/>
+  <testcase name="testFileExtensionNoExtension()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.002"/>
+  <testcase name="testDescriptionNoDescription()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.001"/>
+  <testcase name="testEmpty()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.0"/>
+  <testcase name="testNull()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.0"/>
+  <testcase name="testPath()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.002"/>
+  <testcase name="testType()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.0"/>
+  <testcase name="testPathFallBackToGeneratedDir()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.0"/>
+  <testcase name="testPlainTextString()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.0"/>
+  <testcase name="testIteratorTwoItems()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.001"/>
+  <testcase name="testEndingBracket()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.0"/>
+  <testcase name="testFileExtension()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.0"/>
+  <testcase name="testPathReturnsRelativePathIfNotFound()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.001"/>
+  <testcase name="testRelativePath()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.0"/>
+  <testcase name="testIterator()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.0"/>
+  <testcase name="testDescription()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.0"/>
+  <testcase name="testTypeNoType()" classname="org.jabref.logic.layout.format.WrapFileLinksTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

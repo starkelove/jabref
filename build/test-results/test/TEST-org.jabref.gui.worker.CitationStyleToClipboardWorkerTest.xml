@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.gui.worker.CitationStyleToClipboardWorkerTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:20" hostname="n184-p67.eduroam.kth.se" time="0.008">
+  <properties/>
+  <testcase name="processText()" classname="org.jabref.gui.worker.CitationStyleToClipboardWorkerTest" time="0.005"/>
+  <testcase name="processRtf()" classname="org.jabref.gui.worker.CitationStyleToClipboardWorkerTest" time="0.001"/>
+  <testcase name="processPreviewHtml()" classname="org.jabref.gui.worker.CitationStyleToClipboardWorkerTest" time="0.0"/>
+  <testcase name="processPreviewText()" classname="org.jabref.gui.worker.CitationStyleToClipboardWorkerTest" time="0.0"/>
+  <testcase name="processHtmlAsHtml()" classname="org.jabref.gui.worker.CitationStyleToClipboardWorkerTest" time="0.001"/>
+  <testcase name="processXslFo()" classname="org.jabref.gui.worker.CitationStyleToClipboardWorkerTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.model.database.BibDatabaseModeDetectionTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:25" hostname="n184-p67.eduroam.kth.se" time="0.009">
+  <properties/>
+  <testcase name="detectUndistinguishableAsBibtex()" classname="org.jabref.model.database.BibDatabaseModeDetectionTest" time="0.001"/>
+  <testcase name="detectMixedModeAsBiblatex()" classname="org.jabref.model.database.BibDatabaseModeDetectionTest" time="0.001"/>
+  <testcase name="ignoreUnknownTypesForBibtexDecision()" classname="org.jabref.model.database.BibDatabaseModeDetectionTest" time="0.003"/>
+  <testcase name="detectUnknownTypeAsBibtex()" classname="org.jabref.model.database.BibDatabaseModeDetectionTest" time="0.001"/>
+  <testcase name="ignoreUnknownTypesForBiblatexDecision()" classname="org.jabref.model.database.BibDatabaseModeDetectionTest" time="0.002"/>
+  <testcase name="detectBiblatex()" classname="org.jabref.model.database.BibDatabaseModeDetectionTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

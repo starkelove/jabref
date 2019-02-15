@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CleanupPresetPanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.cleanup</a> &gt; <span class="el_source">CleanupPresetPanel.java</span></div><h1>CleanupPresetPanel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.cleanup;
+
+import java.nio.file.Path;
+import java.util.EnumSet;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
+
+import org.jabref.logic.cleanup.CleanupPreset;
+import org.jabref.logic.cleanup.Cleanups;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.metadata.FilePreferences;
+
+import com.airhacks.afterburner.views.ViewLoader;
+
+public class CleanupPresetPanel extends VBox {
+
+    private final BibDatabaseContext databaseContext;
+    @FXML private Label cleanupRenamePDFLabel;
+    @FXML private CheckBox cleanUpDOI;
+    @FXML private CheckBox cleanUpEprint;
+    @FXML private CheckBox cleanUpISSN;
+    @FXML private CheckBox cleanUpMovePDF;
+    @FXML private CheckBox cleanUpMakePathsRelative;
+    @FXML private CheckBox cleanUpRenamePDF;
+    @FXML private CheckBox cleanUpRenamePDFonlyRelativePaths;
+    @FXML private CheckBox cleanUpUpgradeExternalLinks;
+    @FXML private CheckBox cleanUpBiblatex;
+    @FXML private CheckBox cleanUpBibtex;
+    @FXML private VBox formatterContainer;
+    private FieldFormatterCleanupsPanel cleanUpFormatters;
+
+<span class="nc" id="L40">    public CleanupPresetPanel(BibDatabaseContext databaseContext, CleanupPreset cleanupPreset, FilePreferences filePreferences) {</span>
+<span class="nc" id="L41">        this.databaseContext = Objects.requireNonNull(databaseContext);</span>
+
+        // Load FXML
+<span class="nc" id="L44">        ViewLoader.view(this)</span>
+<span class="nc" id="L45">                  .root(this)</span>
+<span class="nc" id="L46">                  .load();</span>
+
+<span class="nc" id="L48">        init(cleanupPreset, filePreferences);</span>
+<span class="nc" id="L49">    }</span>
+
+    private void init(CleanupPreset cleanupPreset, FilePreferences filePreferences) {
+<span class="nc" id="L52">        Optional&lt;Path&gt; firstExistingDir = databaseContext.getFirstExistingFileDir(filePreferences);</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (firstExistingDir.isPresent()) {</span>
+<span class="nc" id="L54">            cleanUpMovePDF.setText(Localization.lang(&quot;Move linked files to default file directory %0&quot;, firstExistingDir.get().toString()));</span>
+        } else {
+<span class="nc" id="L56">            cleanUpMovePDF.setText(Localization.lang(&quot;Move linked files to default file directory %0&quot;, &quot;...&quot;));</span>
+
+            // Since the directory does not exist, we cannot move it to there. So, this option is not checked - regardless of the presets stored in the preferences.
+<span class="nc" id="L59">            cleanUpMovePDF.setDisable(true);</span>
+<span class="nc" id="L60">            cleanUpMovePDF.setSelected(false);</span>
+        }
+
+<span class="nc" id="L63">        cleanUpRenamePDFonlyRelativePaths.disableProperty().bind(cleanUpRenamePDF.selectedProperty().not());</span>
+
+<span class="nc" id="L65">        cleanUpUpgradeExternalLinks.setText(Localization.lang(&quot;Upgrade external PDF/PS links to use the '%0' field.&quot;, FieldName.FILE));</span>
+
+<span class="nc" id="L67">        cleanUpFormatters = new FieldFormatterCleanupsPanel(Localization.lang(&quot;Run field formatter:&quot;), Cleanups.DEFAULT_SAVE_ACTIONS);</span>
+<span class="nc" id="L68">        formatterContainer.getChildren().setAll(cleanUpFormatters);</span>
+
+<span class="nc" id="L70">        String currentPattern = Localization.lang(&quot;Filename format pattern&quot;)</span>
+<span class="nc" id="L71">                                            .concat(&quot;: &quot;)</span>
+<span class="nc" id="L72">                                            .concat(filePreferences.getFileNamePattern());</span>
+<span class="nc" id="L73">        cleanupRenamePDFLabel.setText(currentPattern);</span>
+
+<span class="nc" id="L75">        updateDisplay(cleanupPreset);</span>
+<span class="nc" id="L76">    }</span>
+
+    private void updateDisplay(CleanupPreset preset) {
+<span class="nc" id="L79">        cleanUpDOI.setSelected(preset.isActive(CleanupPreset.CleanupStep.CLEAN_UP_DOI));</span>
+<span class="nc" id="L80">        cleanUpEprint.setSelected(preset.isActive(CleanupPreset.CleanupStep.CLEANUP_EPRINT));</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (!cleanUpMovePDF.isDisabled()) {</span>
+<span class="nc" id="L82">            cleanUpMovePDF.setSelected(preset.isActive(CleanupPreset.CleanupStep.MOVE_PDF));</span>
+        }
+<span class="nc" id="L84">        cleanUpMakePathsRelative.setSelected(preset.isActive(CleanupPreset.CleanupStep.MAKE_PATHS_RELATIVE));</span>
+<span class="nc" id="L85">        cleanUpRenamePDF.setSelected(preset.isRenamePDFActive());</span>
+<span class="nc" id="L86">        cleanUpRenamePDFonlyRelativePaths.setSelected(preset.isActive(CleanupPreset.CleanupStep.RENAME_PDF_ONLY_RELATIVE_PATHS));</span>
+<span class="nc" id="L87">        cleanUpUpgradeExternalLinks.setSelected(preset.isActive(CleanupPreset.CleanupStep.CLEAN_UP_UPGRADE_EXTERNAL_LINKS));</span>
+<span class="nc" id="L88">        cleanUpBiblatex.setSelected(preset.isActive(CleanupPreset.CleanupStep.CONVERT_TO_BIBLATEX));</span>
+<span class="nc" id="L89">        cleanUpBibtex.setSelected(preset.isActive(CleanupPreset.CleanupStep.CONVERT_TO_BIBTEX));</span>
+<span class="nc" id="L90">        cleanUpISSN.setSelected(preset.isActive(CleanupPreset.CleanupStep.CLEAN_UP_ISSN));</span>
+<span class="nc" id="L91">        cleanUpFormatters.setValues(preset.getFormatterCleanups());</span>
+<span class="nc" id="L92">    }</span>
+
+    public CleanupPreset getCleanupPreset() {
+<span class="nc" id="L95">        Set&lt;CleanupPreset.CleanupStep&gt; activeJobs = EnumSet.noneOf(CleanupPreset.CleanupStep.class);</span>
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (cleanUpMovePDF.isSelected()) {</span>
+<span class="nc" id="L98">            activeJobs.add(CleanupPreset.CleanupStep.MOVE_PDF);</span>
+        }
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        if (cleanUpDOI.isSelected()) {</span>
+<span class="nc" id="L101">            activeJobs.add(CleanupPreset.CleanupStep.CLEAN_UP_DOI);</span>
+        }
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (cleanUpEprint.isSelected()) {</span>
+<span class="nc" id="L104">            activeJobs.add(CleanupPreset.CleanupStep.CLEANUP_EPRINT);</span>
+        }
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (cleanUpISSN.isSelected()) {</span>
+<span class="nc" id="L107">            activeJobs.add(CleanupPreset.CleanupStep.CLEAN_UP_ISSN);</span>
+        }
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (cleanUpMakePathsRelative.isSelected()) {</span>
+<span class="nc" id="L110">            activeJobs.add(CleanupPreset.CleanupStep.MAKE_PATHS_RELATIVE);</span>
+        }
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if (cleanUpRenamePDF.isSelected()) {</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            if (cleanUpRenamePDFonlyRelativePaths.isSelected()) {</span>
+<span class="nc" id="L114">                activeJobs.add(CleanupPreset.CleanupStep.RENAME_PDF_ONLY_RELATIVE_PATHS);</span>
+            } else {
+<span class="nc" id="L116">                activeJobs.add(CleanupPreset.CleanupStep.RENAME_PDF);</span>
+            }
+        }
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        if (cleanUpUpgradeExternalLinks.isSelected()) {</span>
+<span class="nc" id="L120">            activeJobs.add(CleanupPreset.CleanupStep.CLEAN_UP_UPGRADE_EXTERNAL_LINKS);</span>
+        }
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (cleanUpBiblatex.isSelected()) {</span>
+<span class="nc" id="L123">            activeJobs.add(CleanupPreset.CleanupStep.CONVERT_TO_BIBLATEX);</span>
+        }
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        if (cleanUpBibtex.isSelected()) {</span>
+<span class="nc" id="L126">            activeJobs.add(CleanupPreset.CleanupStep.CONVERT_TO_BIBTEX);</span>
+        }
+
+<span class="nc" id="L129">        activeJobs.add(CleanupPreset.CleanupStep.FIX_FILE_LINKS);</span>
+
+<span class="nc" id="L131">        return new CleanupPreset(activeJobs, cleanUpFormatters.getFormatterCleanups());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

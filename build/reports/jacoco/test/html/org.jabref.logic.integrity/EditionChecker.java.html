@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EditionChecker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.integrity</a> &gt; <span class="el_source">EditionChecker.java</span></div><h1>EditionChecker.java</h1><pre class="source lang-java linenums">package org.jabref.logic.integrity;
+
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.strings.StringUtil;
+
+public class EditionChecker implements ValueChecker {
+
+<span class="fc" id="L14">    private static final Predicate&lt;String&gt; FIRST_LETTER_CAPITALIZED = Pattern.compile(&quot;^[A-Z]&quot;).asPredicate();</span>
+<span class="fc" id="L15">    private static final Predicate&lt;String&gt; ONLY_NUMERALS_OR_LITERALS = Pattern.compile(&quot;^([0-9]+|[^0-9].+)$&quot;)</span>
+<span class="fc" id="L16">            .asPredicate();</span>
+    private static final String FIRST_EDITION = &quot;1&quot;;
+
+    private final BibDatabaseContext bibDatabaseContextEdition;
+
+
+<span class="fc" id="L22">    public EditionChecker(BibDatabaseContext bibDatabaseContext) {</span>
+<span class="fc" id="L23">        this.bibDatabaseContextEdition = Objects.requireNonNull(bibDatabaseContext);</span>
+<span class="fc" id="L24">    }</span>
+
+    /**
+     * Checks, if field contains only an integer or a literal (biblatex mode)
+     * Checks, if the first letter is capitalized (BibTeX mode)
+     * biblatex package documentation:
+     * The edition of a printed publication. This must be an integer, not an ordinal.
+     * It is also possible to give the edition as a literal string, for example &quot;Third, revised and expanded edition&quot;.
+     * Official BibTeX specification:
+     * The edition of a book-for example, &quot;Second&quot;.
+     * This should be an ordinal, and should have the first letter capitalized.
+     */
+    @Override
+    public Optional&lt;String&gt; checkValue(String value) {
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if (StringUtil.isBlank(value)) {</span>
+<span class="nc" id="L39">            return Optional.empty();</span>
+        }
+
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (value.equals(FIRST_EDITION)) {</span>
+<span class="fc" id="L43">            return Optional.of(Localization.lang(&quot;edition of book reported as just 1&quot;));</span>
+        }
+
+        //biblatex
+<span class="fc bfc" id="L47" title="All 4 branches covered.">        if (bibDatabaseContextEdition.isBiblatexMode() &amp;&amp; !ONLY_NUMERALS_OR_LITERALS.test(value.trim())) {</span>
+<span class="fc" id="L48">            return Optional.of(Localization.lang(&quot;should contain an integer or a literal&quot;));</span>
+        }
+
+        //BibTeX
+<span class="fc bfc" id="L52" title="All 4 branches covered.">        if (!bibDatabaseContextEdition.isBiblatexMode() &amp;&amp; !FIRST_LETTER_CAPITALIZED.test(value.trim())) {</span>
+<span class="fc" id="L53">            return Optional.of(Localization.lang(&quot;should have the first letter capitalized&quot;));</span>
+        }
+
+<span class="fc" id="L56">        return Optional.empty();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

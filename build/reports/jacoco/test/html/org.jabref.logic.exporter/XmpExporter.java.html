@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XmpExporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.exporter</a> &gt; <span class="el_source">XmpExporter.java</span></div><h1>XmpExporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.exporter;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.logic.xmp.XmpPreferences;
+import org.jabref.logic.xmp.XmpUtilWriter;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+
+/**
+ * A custom exporter to write bib entries to a .xmp file for further processing
+ * in other scenarios and applications. The xmp metadata are written in dublin
+ * core format.
+ */
+public class XmpExporter extends Exporter {
+
+    private static final String XMP_SPLIT_PATTERN = &quot;split&quot;;
+
+    private final XmpPreferences xmpPreferences;
+
+    public XmpExporter(XmpPreferences xmpPreferences) {
+<span class="fc" id="L31">        super(&quot;xmp&quot;, &quot;Plain XMP&quot;, StandardFileType.XMP);</span>
+<span class="fc" id="L32">        this.xmpPreferences = xmpPreferences;</span>
+<span class="fc" id="L33">    }</span>
+
+    @Override
+    public void export(BibDatabaseContext databaseContext, Path file, Charset encoding, List&lt;BibEntry&gt; entries) throws Exception {
+<span class="fc" id="L37">        Objects.requireNonNull(databaseContext);</span>
+<span class="fc" id="L38">        Objects.requireNonNull(file);</span>
+<span class="fc" id="L39">        Objects.requireNonNull(entries);</span>
+
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (entries.isEmpty()) {</span>
+<span class="fc" id="L42">            return;</span>
+        }
+
+        // This is a distinction between writing all entries from the supplied list to a single .xmp file,
+        // or write every entry to a separate file.
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (file.getFileName().toString().trim().equals(XMP_SPLIT_PATTERN)) {</span>
+
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            for (BibEntry entry : entries) {</span>
+                // Avoid situations, where two cite keys are null
+                Path entryFile;
+<span class="fc" id="L52">                String suffix = entry.getId() + &quot;_&quot; + entry.getCiteKey() + &quot;.xmp&quot;;</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">                if (file.getParent() == null) {</span>
+<span class="nc" id="L54">                    entryFile = Paths.get(suffix);</span>
+                } else {
+<span class="fc" id="L56">                    entryFile = Paths.get(file.getParent().toString() + &quot;/&quot; + suffix);</span>
+                }
+
+<span class="fc" id="L59">                this.writeBibToXmp(entryFile, Arrays.asList(entry), encoding);</span>
+<span class="fc" id="L60">            }</span>
+        } else {
+<span class="fc" id="L62">            this.writeBibToXmp(file, entries, encoding);</span>
+        }
+<span class="fc" id="L64">    }</span>
+
+    private void writeBibToXmp(Path file, List&lt;BibEntry&gt; entries, Charset encoding) throws IOException {
+<span class="fc" id="L67">        String xmpContent = XmpUtilWriter.generateXmpStringWithoutXmpDeclaration(entries, this.xmpPreferences);</span>
+
+<span class="fc" id="L69">        try (BufferedWriter writer = Files.newBufferedWriter(file, encoding)) {</span>
+<span class="fc" id="L70">            writer.write(xmpContent);</span>
+<span class="fc" id="L71">            writer.flush();</span>
+        }
+<span class="fc" id="L73">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

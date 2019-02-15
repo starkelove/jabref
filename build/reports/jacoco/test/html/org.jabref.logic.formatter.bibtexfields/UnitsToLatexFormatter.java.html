@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnitsToLatexFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.formatter.bibtexfields</a> &gt; <span class="el_source">UnitsToLatexFormatter.java</span></div><h1>UnitsToLatexFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.formatter.bibtexfields;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.strings.StringLengthComparator;
+import org.jabref.model.cleanup.Formatter;
+
+public class UnitsToLatexFormatter extends Formatter {
+
+<span class="fc" id="L15">    private static final List&lt;String&gt; UNIT_LIST = Arrays.asList(</span>
+            &quot;A&quot;, // Ampere
+            &quot;Ah&quot;, // Ampere hours
+            &quot;B&quot;, // Byte
+            &quot;Bq&quot;, // Bequerel
+            &quot;C&quot;, // Coulomb
+            &quot;F&quot;, // Farad
+            &quot;Gy&quot;, // Gray
+            &quot;H&quot;, // Henry
+            &quot;Hz&quot;, // Hertz
+            &quot;J&quot;, // Joule
+            &quot;K&quot;, // Kelvin
+            &quot;N&quot;, // Newton
+            &quot;\\$\\\\Omega\\$&quot;, // Ohm
+            &quot;Pa&quot;, // Pascal
+            &quot;S&quot;, // Siemens, Samples
+            &quot;Sa&quot;, // Samples
+            &quot;Sv&quot;, // Sv
+            &quot;T&quot;, // Tesla
+            &quot;V&quot;, // Volt
+            &quot;VA&quot;, // Volt ampere
+            &quot;W&quot;, // Watt
+            &quot;Wb&quot;, // Weber
+            &quot;Wh&quot;, // Watt hours
+            &quot;bar&quot;, // bar
+            &quot;b&quot;, // bit
+            &quot;cd&quot;, // candela
+            &quot;dB&quot;, // decibel
+            &quot;dBm&quot;, // decibel
+            &quot;dBc&quot;, //decibel
+            &quot;eV&quot;, // electron volts
+            &quot;inch&quot;, // inch
+            &quot;kat&quot;, // katal
+            &quot;lm&quot;, // lumen
+            &quot;lx&quot;, // lux
+            &quot;m&quot;, // meters
+            &quot;mol&quot;, // mol
+            &quot;rad&quot;, // radians
+            &quot;s&quot;, // seconds
+            &quot;sr&quot; // steradians
+    );
+
+<span class="fc" id="L57">    private static final List&lt;String&gt; UNIT_PREFIX_LIST = Arrays.asList(</span>
+            &quot;y&quot;, // yocto
+            &quot;z&quot;, // zepto
+            &quot;a&quot;, // atto
+            &quot;f&quot;, // femto
+            &quot;p&quot;, // pico
+            &quot;n&quot;, // nano
+            &quot;\\$\\\\mu\\$&quot;, // micro
+            &quot;u&quot;, // micro
+            &quot;m&quot;, // milli
+            &quot;c&quot;, // centi
+            &quot;d&quot;, // deci
+            &quot;&quot;, // no prefix
+            &quot;da&quot;, // deca
+            &quot;h&quot;, // hekto
+            &quot;k&quot;, // kilo
+            &quot;M&quot;, // mega
+            &quot;G&quot;, // giga
+            &quot;T&quot;, // tera
+            &quot;P&quot;, // peta
+            &quot;E&quot;, // exa
+            &quot;Z&quot;, // zetta
+            &quot;Y&quot; // yotta
+    );
+
+    private final List&lt;String&gt; prefixUnitCombinations;
+
+<span class="fc" id="L84">    public UnitsToLatexFormatter() {</span>
+<span class="fc" id="L85">        prefixUnitCombinations = new ArrayList&lt;&gt;(</span>
+<span class="fc" id="L86">                UnitsToLatexFormatter.UNIT_LIST.size() * UnitsToLatexFormatter.UNIT_PREFIX_LIST.size());</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        for (String unit : UnitsToLatexFormatter.UNIT_LIST) {</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">            for (String prefix : UnitsToLatexFormatter.UNIT_PREFIX_LIST) {</span>
+<span class="fc" id="L89">                prefixUnitCombinations.add(prefix + unit);</span>
+<span class="fc" id="L90">            }</span>
+<span class="fc" id="L91">        }</span>
+<span class="fc" id="L92">        Collections.sort(prefixUnitCombinations, new StringLengthComparator()); // Sort based on string length</span>
+<span class="fc" id="L93">    }</span>
+
+    @Override
+    public String format(String text) {
+<span class="fc" id="L97">        Objects.requireNonNull(text);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (text.isEmpty()) {</span>
+<span class="fc" id="L99">            return text;</span>
+        }
+
+        // Replace the hyphen in 12-bit etc with a non-breaking hyphen, will also avoid bad casing of 12-Bit
+<span class="fc" id="L103">        String result = text.replaceAll(&quot;([0-9,\\.]+)-([Bb][Ii][Tt])&quot;, &quot;$1\\\\mbox\\{-\\}$2&quot;);</span>
+
+        // Replace the space in 12 bit etc with a non-breaking space, will also avoid bad casing of 12 Bit
+<span class="fc" id="L106">        result = result.replaceAll(&quot;([0-9,\\.]+) ([Bb][Ii][Tt])&quot;, &quot;$1~$2&quot;);</span>
+
+        // For each word in the list
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        for (String listOfWord : prefixUnitCombinations) {</span>
+            // Add {} if the character before is a space, -, /, (, [, or } or if it is at the start of the string but not if it is followed by a }
+<span class="fc" id="L111">            result = result.replaceAll(&quot;([0-9])(&quot; + listOfWord + &quot;)&quot;, &quot;$1\\{$2\\}&quot;); // Only add brackets to keep case</span>
+<span class="fc" id="L112">            result = result.replaceAll(&quot;([0-9])-(&quot; + listOfWord + &quot;)&quot;, &quot;$1\\\\mbox\\{-\\}\\{$2\\}&quot;); // Replace hyphen with non-break hyphen</span>
+<span class="fc" id="L113">            result = result.replaceAll(&quot;([0-9]) (&quot; + listOfWord + &quot;)&quot;, &quot;$1~\\{$2\\}&quot;); // Replace space with a hard space</span>
+<span class="fc" id="L114">        }</span>
+
+<span class="fc" id="L116">        return result;</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L121">        return Localization.lang(&quot;Converts units to LaTeX formatting.&quot;);</span>
+    }
+
+    @Override
+    public String getExampleInput() {
+<span class="fc" id="L126">        return &quot;1 Hz&quot;;</span>
+    }
+
+    @Override
+    public String getName() {
+<span class="fc" id="L131">        return Localization.lang(&quot;Units to LaTeX&quot;);</span>
+    }
+
+    @Override
+    public String getKey() {
+<span class="fc" id="L136">        return &quot;units_to_latex&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

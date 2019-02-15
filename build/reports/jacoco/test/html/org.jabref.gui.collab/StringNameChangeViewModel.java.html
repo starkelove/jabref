@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringNameChangeViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.collab</a> &gt; <span class="el_source">StringNameChangeViewModel.java</span></div><h1>StringNameChangeViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.collab;
+
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableInsertString;
+import org.jabref.gui.undo.UndoableStringChange;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.database.KeyCollisionException;
+import org.jabref.model.entry.BibtexString;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+class StringNameChangeViewModel extends ChangeViewModel {
+
+<span class="nc" id="L20">    private static final Logger LOGGER = LoggerFactory.getLogger(StringNameChangeViewModel.class);</span>
+    private final BibtexString string;
+    private final String mem;
+    private final String disk;
+    private final String content;
+
+    private final BibtexString tmpString;
+
+
+    public StringNameChangeViewModel(BibtexString string, BibtexString tmpString, String mem, String disk) {
+<span class="nc" id="L30">        super(Localization.lang(&quot;Renamed string&quot;) + &quot;: '&quot; + tmpString.getName() + '\'');</span>
+<span class="nc" id="L31">        this.tmpString = tmpString;</span>
+<span class="nc" id="L32">        this.string = string;</span>
+<span class="nc" id="L33">        this.content = tmpString.getContent();</span>
+<span class="nc" id="L34">        this.mem = mem;</span>
+<span class="nc" id="L35">        this.disk = disk;</span>
+
+<span class="nc" id="L37">    }</span>
+
+    @Override
+    public boolean makeChange(BasePanel panel, BibDatabase secondary, NamedCompound undoEdit) {
+
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (panel.getDatabase().hasStringLabel(disk)) {</span>
+            // The name to change to is already in the database, so we can't comply.
+<span class="nc" id="L44">            LOGGER.info(&quot;Cannot rename string '&quot; + mem + &quot;' to '&quot; + disk + &quot;' because the name &quot;</span>
+                    + &quot;is already in use.&quot;);
+        }
+
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (string == null) {</span>
+            // The string was removed or renamed locally. We guess that it was removed.
+<span class="nc" id="L50">            BibtexString bs = new BibtexString(disk, content);</span>
+            try {
+<span class="nc" id="L52">                panel.getDatabase().addString(bs);</span>
+<span class="nc" id="L53">                undoEdit.addEdit(new UndoableInsertString(panel, panel.getDatabase(), bs));</span>
+<span class="nc" id="L54">            } catch (KeyCollisionException ex) {</span>
+<span class="nc" id="L55">                LOGGER.info(&quot;Error: could not add string '&quot; + bs.getName() + &quot;': &quot; + ex.getMessage(), ex);</span>
+<span class="nc" id="L56">            }</span>
+<span class="nc" id="L57">        } else {</span>
+<span class="nc" id="L58">            string.setName(disk);</span>
+<span class="nc" id="L59">            undoEdit.addEdit(new UndoableStringChange(panel, string, true, mem, disk));</span>
+        }
+
+        // Update tmp database:
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (tmpString == null) {</span>
+<span class="nc" id="L64">            BibtexString bs = new BibtexString(disk, content);</span>
+<span class="nc" id="L65">            secondary.addString(bs);</span>
+<span class="nc" id="L66">        } else {</span>
+<span class="nc" id="L67">            tmpString.setName(disk);</span>
+        }
+
+<span class="nc" id="L70">        return true;</span>
+    }
+
+    @Override
+    public JComponent description() {
+<span class="nc" id="L75">        return new JLabel(disk + &quot; : &quot; + content);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

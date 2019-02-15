@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PersonNameSuggestionProvider.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.autocompleter</a> &gt; <span class="el_source">PersonNameSuggestionProvider.java</span></div><h1>PersonNameSuggestionProvider.java</h1><pre class="source lang-java linenums">package org.jabref.gui.autocompleter;
+
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+
+import org.jabref.model.entry.Author;
+import org.jabref.model.entry.AuthorList;
+import org.jabref.model.entry.BibEntry;
+
+import org.controlsfx.control.textfield.AutoCompletionBinding;
+
+/**
+ * Delivers possible completions as a list of {@link Author}s.
+ */
+public class PersonNameSuggestionProvider extends SuggestionProvider&lt;Author&gt; implements AutoCompleteSuggestionProvider&lt;Author&gt; {
+
+    private final List&lt;String&gt; fieldNames;
+<span class="fc" id="L20">    private final Comparator&lt;Author&gt; authorComparator = Comparator.comparing(Author::getNameForAlphabetization);</span>
+
+    PersonNameSuggestionProvider(String fieldName) {
+<span class="fc" id="L23">        this(Collections.singletonList(Objects.requireNonNull(fieldName)));</span>
+<span class="fc" id="L24">    }</span>
+
+    public PersonNameSuggestionProvider(List&lt;String&gt; fieldNames) {
+<span class="fc" id="L27">        super();</span>
+
+<span class="fc" id="L29">        this.fieldNames = Objects.requireNonNull(fieldNames);</span>
+
+<span class="fc" id="L31">    }</span>
+
+    @Override
+    public void indexEntry(BibEntry entry) {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (entry == null) {</span>
+<span class="fc" id="L36">            return;</span>
+        }
+
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        for (String fieldName : fieldNames) {</span>
+<span class="fc" id="L40">            entry.getField(fieldName).ifPresent(fieldValue -&gt;  {</span>
+<span class="fc" id="L41">                AuthorList authorList = AuthorList.parse(fieldValue);</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">                for (Author author : authorList.getAuthors()) {</span>
+<span class="fc" id="L43">                    addPossibleSuggestions(author);</span>
+<span class="fc" id="L44">                }</span>
+<span class="fc" id="L45">            });</span>
+<span class="fc" id="L46">        }</span>
+<span class="fc" id="L47">    }</span>
+
+    @Override
+    protected Comparator&lt;Author&gt; getComparator() {
+<span class="fc" id="L51">        return authorComparator;</span>
+    }
+
+    @Override
+    protected boolean isMatch(Author suggestion, AutoCompletionBinding.ISuggestionRequest request) {
+<span class="fc" id="L56">        String userTextLower = request.getUserText().toLowerCase();</span>
+<span class="fc" id="L57">        String suggestionStr = suggestion.getLastFirst(false).toLowerCase();</span>
+<span class="fc" id="L58">        return suggestionStr.contains(userTextLower);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

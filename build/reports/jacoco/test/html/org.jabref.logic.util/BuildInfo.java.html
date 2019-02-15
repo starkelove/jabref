@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BuildInfo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util</a> &gt; <span class="el_source">BuildInfo.java</span></div><h1>BuildInfo.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
+import java.util.Properties;
+
+public class BuildInfo {
+
+    public static final String UNKNOWN_VERSION = &quot;*unknown*&quot;;
+
+<span class="fc" id="L14">    public static final String OS = System.getProperty(&quot;os.name&quot;, UNKNOWN_VERSION);</span>
+<span class="fc" id="L15">    public static final String OS_VERSION = System.getProperty(&quot;os.version&quot;, UNKNOWN_VERSION).toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L16">    public static final String OS_ARCH = System.getProperty(&quot;os.arch&quot;, UNKNOWN_VERSION).toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L17">    public static final String JAVA_VERSION = System.getProperty(&quot;java.version&quot;, UNKNOWN_VERSION).toLowerCase(Locale.ROOT);</span>
+
+    private final Version version;
+    private final String authors;
+    private final String developers;
+    private final String year;
+    private final String azureInstrumentationKey;
+    private final String minRequiredJavaVersion;
+    private final boolean allowJava9;
+
+
+    public BuildInfo() {
+<span class="fc" id="L29">        this(&quot;/build.properties&quot;);</span>
+<span class="fc" id="L30">    }</span>
+
+<span class="fc" id="L32">    public BuildInfo(String path) {</span>
+<span class="fc" id="L33">        Properties properties = new Properties();</span>
+
+<span class="fc" id="L35">        try (InputStream stream = BuildInfo.class.getResourceAsStream(path)) {</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">            if (stream != null) {</span>
+<span class="fc" id="L37">                try (InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {</span>
+<span class="fc" id="L38">                    properties.load(reader);</span>
+                }
+            }
+<span class="nc" id="L41">        } catch (IOException ignored) {</span>
+            // nothing to do -&gt; default already set
+<span class="fc" id="L43">        }</span>
+
+<span class="fc" id="L45">        version = Version.parse(properties.getProperty(&quot;version&quot;));</span>
+<span class="fc" id="L46">        authors = properties.getProperty(&quot;authors&quot;, &quot;&quot;);</span>
+<span class="fc" id="L47">        year = properties.getProperty(&quot;year&quot;, &quot;&quot;);</span>
+<span class="fc" id="L48">        developers = properties.getProperty(&quot;developers&quot;, &quot;&quot;);</span>
+<span class="fc" id="L49">        azureInstrumentationKey = properties.getProperty(&quot;azureInstrumentationKey&quot;, &quot;&quot;);</span>
+<span class="fc" id="L50">        minRequiredJavaVersion = properties.getProperty(&quot;minRequiredJavaVersion&quot;, &quot;1.8&quot;);</span>
+<span class="fc" id="L51">        allowJava9 = &quot;true&quot;.equals(properties.getProperty(&quot;allowJava9&quot;, &quot;&quot;));</span>
+<span class="fc" id="L52">    }</span>
+
+    public Version getVersion() {
+<span class="fc" id="L55">        return version;</span>
+    }
+
+    public String getAuthors() {
+<span class="nc" id="L59">        return authors;</span>
+    }
+
+    public String getDevelopers() {
+<span class="nc" id="L63">        return developers;</span>
+    }
+
+    public String getYear() {
+<span class="nc" id="L67">        return year;</span>
+    }
+
+    public String getAzureInstrumentationKey() {
+<span class="fc" id="L71">        return azureInstrumentationKey;</span>
+    }
+
+    public String getMinRequiredJavaVersion() {
+<span class="nc" id="L75">        return minRequiredJavaVersion;</span>
+    }
+
+    public boolean isAllowJava9() {
+<span class="nc" id="L79">        return allowJava9;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

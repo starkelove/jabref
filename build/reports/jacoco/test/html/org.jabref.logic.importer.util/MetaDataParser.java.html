@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MetaDataParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.util</a> &gt; <span class="el_source">MetaDataParser.java</span></div><h1>MetaDataParser.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.util;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.jabref.logic.cleanup.Cleanups;
+import org.jabref.logic.importer.ParseException;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.metadata.ContentSelectors;
+import org.jabref.model.metadata.MetaData;
+import org.jabref.model.metadata.SaveOrderConfig;
+import org.jabref.model.strings.StringUtil;
+import org.jabref.model.util.FileUpdateMonitor;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class MetaDataParser {
+
+<span class="fc" id="L27">    private static final Logger LOGGER = LoggerFactory.getLogger(MetaDataParser.class);</span>
+    private static FileUpdateMonitor fileMonitor;
+
+<span class="fc" id="L30">    public MetaDataParser(FileUpdateMonitor fileMonitor) {</span>
+<span class="fc" id="L31">        MetaDataParser.fileMonitor = fileMonitor;</span>
+<span class="fc" id="L32">    }</span>
+
+    /**
+     * Parses the given data map and returns a new resulting {@link MetaData} instance.
+     */
+    public MetaData parse(Map&lt;String, String&gt; data, Character keywordSeparator) throws ParseException {
+<span class="fc" id="L38">        return parse(new MetaData(), data, keywordSeparator);</span>
+    }
+
+    /**
+     * Parses the data map and changes the given {@link MetaData} instance respectively.
+     */
+    public MetaData parse(MetaData metaData, Map&lt;String, String&gt; data, Character keywordSeparator) throws ParseException {
+<span class="fc" id="L45">        List&lt;String&gt; defaultCiteKeyPattern = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L46">        Map&lt;String, List&lt;String&gt;&gt; nonDefaultCiteKeyPatterns = new HashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        for (Map.Entry&lt;String, String&gt; entry : data.entrySet()) {</span>
+<span class="fc" id="L49">            List&lt;String&gt; value = getAsList(entry.getValue());</span>
+
+<span class="fc bfc" id="L51" title="All 2 branches covered.">            if (entry.getKey().startsWith(MetaData.PREFIX_KEYPATTERN)) {</span>
+<span class="fc" id="L52">                String entryType = entry.getKey().substring(MetaData.PREFIX_KEYPATTERN.length());</span>
+<span class="fc" id="L53">                nonDefaultCiteKeyPatterns.put(entryType, Collections.singletonList(getSingleItem(value)));</span>
+<span class="fc" id="L54">                continue;</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">            } else if (entry.getKey().startsWith(MetaData.FILE_DIRECTORY + '-')) {</span>
+                // The user name comes directly after &quot;FILE_DIRECTORY-&quot;
+<span class="fc" id="L57">                String user = entry.getKey().substring(MetaData.FILE_DIRECTORY.length() + 1);</span>
+<span class="fc" id="L58">                metaData.setUserFileDirectory(user, getSingleItem(value));</span>
+<span class="fc" id="L59">                continue;</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">            } else if (entry.getKey().startsWith(MetaData.SELECTOR_META_PREFIX)) {</span>
+<span class="fc" id="L61">                metaData.addContentSelector(ContentSelectors.parse(entry.getKey().substring(MetaData.SELECTOR_META_PREFIX.length()), StringUtil.unquote(entry.getValue(), MetaData.ESCAPE_CHARACTER)));</span>
+<span class="fc" id="L62">                continue;</span>
+            }
+
+<span class="fc bfc" id="L65" title="All 8 branches covered.">            switch (entry.getKey()) {</span>
+                case MetaData.GROUPSTREE:
+                case MetaData.GROUPSTREE_LEGACY:
+<span class="fc" id="L68">                    metaData.setGroups(GroupsParser.importGroups(value, keywordSeparator, fileMonitor));</span>
+<span class="fc" id="L69">                    break;</span>
+                case MetaData.SAVE_ACTIONS:
+<span class="fc" id="L71">                    metaData.setSaveActions(Cleanups.parse(value));</span>
+<span class="fc" id="L72">                    break;</span>
+                case MetaData.DATABASE_TYPE:
+<span class="fc" id="L74">                    metaData.setMode(BibDatabaseMode.parse(getSingleItem(value)));</span>
+<span class="fc" id="L75">                    break;</span>
+                case MetaData.KEYPATTERNDEFAULT:
+<span class="fc" id="L77">                    defaultCiteKeyPattern = Collections.singletonList(getSingleItem(value));</span>
+<span class="fc" id="L78">                    break;</span>
+                case MetaData.PROTECTED_FLAG_META:
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">                    if (Boolean.parseBoolean(getSingleItem(value))) {</span>
+<span class="fc" id="L81">                        metaData.markAsProtected();</span>
+                    } else {
+<span class="nc" id="L83">                        metaData.markAsNotProtected();</span>
+                    }
+<span class="nc" id="L85">                    break;</span>
+                case MetaData.FILE_DIRECTORY:
+<span class="fc" id="L87">                    metaData.setDefaultFileDirectory(getSingleItem(value));</span>
+<span class="fc" id="L88">                    break;</span>
+                case MetaData.SAVE_ORDER_CONFIG:
+<span class="fc" id="L90">                    metaData.setSaveOrderConfig(SaveOrderConfig.parse(value));</span>
+<span class="fc" id="L91">                    break;</span>
+                default:
+                    // Keep meta data items that we do not know in the file
+<span class="fc" id="L94">                    metaData.putUnkownMetaDataItem(entry.getKey(), value);</span>
+            }
+<span class="fc" id="L96">        }</span>
+<span class="pc bpc" id="L97" title="1 of 4 branches missed.">        if (!defaultCiteKeyPattern.isEmpty() || !nonDefaultCiteKeyPatterns.isEmpty()) {</span>
+<span class="fc" id="L98">            metaData.setCiteKeyPattern(defaultCiteKeyPattern, nonDefaultCiteKeyPatterns);</span>
+        }
+
+<span class="fc" id="L101">        return metaData;</span>
+    }
+
+    /**
+     * Returns the first item in the list.
+     * If the specified list does not contain exactly one item, then a {@link ParseException} will be thrown.
+     * @param value
+     * @return
+     */
+    private static String getSingleItem(List&lt;String&gt; value) throws ParseException {
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">        if (value.size() == 1) {</span>
+<span class="fc" id="L112">            return value.get(0);</span>
+        } else {
+<span class="nc" id="L114">            throw new ParseException(&quot;Expected a single item but received &quot; + value.toString());</span>
+        }
+    }
+
+    private static List&lt;String&gt; getAsList(String value) throws ParseException {
+<span class="fc" id="L119">        StringReader valueReader = new StringReader(value);</span>
+<span class="fc" id="L120">        List&lt;String&gt; orderedValue = new ArrayList&lt;&gt;();</span>
+
+        // We must allow for ; and \ in escape sequences.
+        try {
+            Optional&lt;String&gt; unit;
+<span class="fc bfc" id="L125" title="All 2 branches covered.">            while ((unit = getNextUnit(valueReader)).isPresent()) {</span>
+<span class="fc" id="L126">                orderedValue.add(unit.get());</span>
+            }
+<span class="nc" id="L128">        } catch (IOException ex) {</span>
+<span class="nc" id="L129">            LOGGER.error(&quot;Weird error while parsing meta data.&quot;, ex);</span>
+<span class="nc" id="L130">            throw new ParseException(&quot;Weird error while parsing meta data.&quot;, ex);</span>
+<span class="fc" id="L131">        }</span>
+<span class="fc" id="L132">        return orderedValue;</span>
+    }
+
+    /**
+     * Reads the next unit. Units are delimited by ';' (MetaData.SEPARATOR_CHARACTER).
+     */
+    private static Optional&lt;String&gt; getNextUnit(Reader reader) throws IOException {
+        int c;
+<span class="fc" id="L140">        boolean escape = false;</span>
+<span class="fc" id="L141">        StringBuilder res = new StringBuilder();</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        while ((c = reader.read()) != -1) {</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">            if (escape) {</span>
+<span class="fc" id="L144">                res.append((char) c);</span>
+<span class="fc" id="L145">                escape = false;</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">            } else if (c == MetaData.ESCAPE_CHARACTER) {</span>
+<span class="fc" id="L147">                escape = true;</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">            } else if (c == MetaData.SEPARATOR_CHARACTER) {</span>
+<span class="fc" id="L149">                break;</span>
+            } else {
+<span class="fc" id="L151">                res.append((char) c);</span>
+            }
+        }
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        if (res.length() &gt; 0) {</span>
+<span class="fc" id="L155">            return Optional.of(res.toString());</span>
+        }
+<span class="fc" id="L157">        return Optional.empty();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

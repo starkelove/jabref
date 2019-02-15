@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UndoableAbbreviator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.journals</a> &gt; <span class="el_source">UndoableAbbreviator.java</span></div><h1>UndoableAbbreviator.java</h1><pre class="source lang-java linenums">package org.jabref.gui.journals;
+
+import javax.swing.undo.CompoundEdit;
+
+import org.jabref.gui.undo.UndoableFieldChange;
+import org.jabref.logic.journals.Abbreviation;
+import org.jabref.logic.journals.JournalAbbreviationRepository;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+
+public class UndoableAbbreviator {
+
+    private final JournalAbbreviationRepository journalAbbreviationRepository;
+    private final boolean isoAbbreviationStyle;
+
+
+<span class="nc" id="L17">    public UndoableAbbreviator(JournalAbbreviationRepository journalAbbreviationRepository, boolean isoAbbreviationStyle) {</span>
+<span class="nc" id="L18">        this.journalAbbreviationRepository = journalAbbreviationRepository;</span>
+<span class="nc" id="L19">        this.isoAbbreviationStyle = isoAbbreviationStyle;</span>
+<span class="nc" id="L20">    }</span>
+
+    /**
+     * Abbreviate the journal name of the given entry.
+     *
+     * @param database  The database the entry belongs to, or null if no database.
+     * @param entry     The entry to be treated.
+     * @param fieldName The field name (e.g. &quot;journal&quot;)
+     * @param ce        If the entry is changed, add an edit to this compound.
+     * @return true if the entry was changed, false otherwise.
+     */
+    public boolean abbreviate(BibDatabase database, BibEntry entry, String fieldName, CompoundEdit ce) {
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if (!entry.hasField(fieldName)) {</span>
+<span class="nc" id="L33">            return false;</span>
+        }
+<span class="nc" id="L35">        String text = entry.getField(fieldName).get();</span>
+<span class="nc" id="L36">        String origText = text;</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        if (database != null) {</span>
+<span class="nc" id="L38">            text = database.resolveForStrings(text);</span>
+        }
+
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (!journalAbbreviationRepository.isKnownName(text)) {</span>
+<span class="nc" id="L42">            return false; // unknown, cannot un/abbreviate anything</span>
+        }
+
+<span class="nc" id="L45">        String newText = getAbbreviatedName(journalAbbreviationRepository.getAbbreviation(text).get());</span>
+
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        if (newText.equals(origText)) {</span>
+<span class="nc" id="L48">            return false;</span>
+        }
+
+<span class="nc" id="L51">        entry.setField(fieldName, newText);</span>
+<span class="nc" id="L52">        ce.addEdit(new UndoableFieldChange(entry, fieldName, origText, newText));</span>
+<span class="nc" id="L53">        return true;</span>
+    }
+
+    private String getAbbreviatedName(Abbreviation text) {
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (isoAbbreviationStyle) {</span>
+<span class="nc" id="L58">            return text.getIsoAbbreviation();</span>
+        } else {
+<span class="nc" id="L60">            return text.getMedlineAbbreviation();</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

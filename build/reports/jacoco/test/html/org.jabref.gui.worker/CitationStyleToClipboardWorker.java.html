@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CitationStyleToClipboardWorker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.worker</a> &gt; <span class="el_source">CitationStyleToClipboardWorker.java</span></div><h1>CitationStyleToClipboardWorker.java</h1><pre class="source lang-java linenums">package org.jabref.gui.worker;
+
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+import javax.swing.SwingWorker;
+
+import javafx.scene.input.ClipboardContent;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.ClipBoardManager;
+import org.jabref.logic.citationstyle.CitationStyle;
+import org.jabref.logic.citationstyle.CitationStyleGenerator;
+import org.jabref.logic.citationstyle.CitationStyleOutputFormat;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.layout.Layout;
+import org.jabref.logic.layout.LayoutFormatterPreferences;
+import org.jabref.logic.layout.LayoutHelper;
+import org.jabref.logic.util.OS;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.preferences.PreviewPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Copies the selected entries and formats them with the selected citation style (or preview), then it is copied to the clipboard.
+ * This worker cannot be reused.
+ */
+public class CitationStyleToClipboardWorker extends SwingWorker&lt;List&lt;String&gt;, Void&gt; {
+
+<span class="fc" id="L35">    private static final Logger LOGGER = LoggerFactory.getLogger(CitationStyleToClipboardWorker.class);</span>
+
+    private final BasePanel basePanel;
+    private final List&lt;BibEntry&gt; selectedEntries;
+    private final String style;
+    private final String previewStyle;
+    private final CitationStyleOutputFormat outputFormat;
+
+
+<span class="nc" id="L44">    public CitationStyleToClipboardWorker(BasePanel basePanel, CitationStyleOutputFormat outputFormat) {</span>
+<span class="nc" id="L45">        this.basePanel = basePanel;</span>
+<span class="nc" id="L46">        this.selectedEntries = basePanel.getSelectedEntries();</span>
+<span class="nc" id="L47">        PreviewPreferences previewPreferences = Globals.prefs.getPreviewPreferences();</span>
+<span class="nc" id="L48">        this.style = previewPreferences.getPreviewCycle().get(previewPreferences.getPreviewCyclePosition());</span>
+<span class="nc" id="L49">        this.previewStyle = Globals.prefs.getPreviewPreferences().getPreviewStyle();</span>
+<span class="nc" id="L50">        this.outputFormat = outputFormat;</span>
+
+<span class="nc" id="L52">        basePanel.frame().setStatus(Localization.lang(&quot;Copying...&quot;));</span>
+<span class="nc" id="L53">    }</span>
+
+    @Override
+    protected List&lt;String&gt; doInBackground() throws Exception {
+        // This worker stored the style as filename. The CSLAdapter and the CitationStyleCache store the source of the
+        // style. Therefore, we extract the style source from the file.
+<span class="nc" id="L59">        String styleSource = null;</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (CitationStyle.isCitationStyleFile(style)) {</span>
+<span class="nc" id="L61">            styleSource = CitationStyle.createCitationStyleFromFile(style)</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">                    .filter(citationStyleFromFile -&gt; !citationStyleFromFile.getSource().isEmpty())</span>
+<span class="nc" id="L63">                    .map(CitationStyle::getSource)</span>
+<span class="nc" id="L64">                    .orElse(null);</span>
+        }
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (styleSource != null) {</span>
+<span class="nc" id="L67">            return CitationStyleGenerator.generateCitations(selectedEntries, styleSource, outputFormat);</span>
+        } else {
+<span class="nc" id="L69">            StringReader sr = new StringReader(previewStyle.replace(&quot;__NEWLINE__&quot;, &quot;\n&quot;));</span>
+<span class="nc" id="L70">            LayoutFormatterPreferences layoutFormatterPreferences = Globals.prefs.getLayoutFormatterPreferences(Globals.journalAbbreviationLoader);</span>
+<span class="nc" id="L71">            Layout layout = new LayoutHelper(sr, layoutFormatterPreferences).getLayoutFromText();</span>
+
+<span class="nc" id="L73">            List&lt;String&gt; citations = new ArrayList&lt;&gt;(selectedEntries.size());</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            for (BibEntry entry : selectedEntries) {</span>
+<span class="nc" id="L75">                citations.add(layout.doLayout(entry, basePanel.getDatabase()));</span>
+<span class="nc" id="L76">            }</span>
+<span class="nc" id="L77">            return citations;</span>
+        }
+    }
+
+    /**
+     * Generates a plain text string out of the preview and copies it additionally to the html to the clipboard
+     * (WYSIWYG Editors use the HTML, plain text editors the text)
+     */
+    protected static String processPreview(List&lt;String&gt; citations) {
+<span class="fc" id="L86">        return String.join(CitationStyleOutputFormat.HTML.getLineSeparator(), citations);</span>
+    }
+
+    /**
+     * Joins every citation with a newline and returns it.
+     */
+    protected static ClipboardContent processText(List&lt;String&gt; citations) {
+<span class="fc" id="L93">        ClipboardContent content = new ClipboardContent();</span>
+<span class="fc" id="L94">        content.putString(String.join(CitationStyleOutputFormat.TEXT.getLineSeparator(), citations));</span>
+<span class="fc" id="L95">        return content;</span>
+    }
+
+    /**
+     * Converts the citations into the RTF format.
+     */
+    protected static ClipboardContent processRtf(List&lt;String&gt; citations) {
+<span class="fc" id="L102">        String result = &quot;{\\rtf&quot; + OS.NEWLINE +</span>
+<span class="fc" id="L103">                String.join(CitationStyleOutputFormat.RTF.getLineSeparator(), citations) +</span>
+                &quot;}&quot;;
+<span class="fc" id="L105">        ClipboardContent content = new ClipboardContent();</span>
+<span class="fc" id="L106">        content.putRtf(result);</span>
+<span class="fc" id="L107">        return content;</span>
+    }
+
+    /**
+     * Inserts each citation into a XLSFO body and copies it to the clipboard
+     */
+    protected static ClipboardContent processXslFo(List&lt;String&gt; citations) {
+<span class="fc" id="L114">        String result = &quot;&lt;?xml version=\&quot;1.0\&quot; encoding=\&quot;UTF-8\&quot;?&gt;&quot; + OS.NEWLINE +</span>
+                &quot;&lt;fo:root xmlns:fo=\&quot;http://www.w3.org/1999/XSL/Format\&quot;&gt;&quot; + OS.NEWLINE +
+                &quot;   &lt;fo:layout-master-set&gt;&quot; + OS.NEWLINE +
+                &quot;      &lt;fo:simple-page-master master-name=\&quot;citations\&quot;&gt;&quot; + OS.NEWLINE +
+                &quot;         &lt;fo:region-body/&gt;&quot; + OS.NEWLINE +
+                &quot;      &lt;/fo:simple-page-master&gt;&quot; + OS.NEWLINE +
+                &quot;   &lt;/fo:layout-master-set&gt;&quot; + OS.NEWLINE +
+                &quot;   &lt;fo:page-sequence master-reference=\&quot;citations\&quot;&gt;&quot; + OS.NEWLINE +
+                &quot;      &lt;fo:flow flow-name=\&quot;xsl-region-body\&quot;&gt;&quot; + OS.NEWLINE + OS.NEWLINE;
+
+<span class="fc" id="L124">        result += String.join(CitationStyleOutputFormat.XSL_FO.getLineSeparator(), citations);</span>
+
+<span class="fc" id="L126">        result += OS.NEWLINE +</span>
+                &quot;      &lt;/fo:flow&gt;&quot; + OS.NEWLINE +
+                &quot;   &lt;/fo:page-sequence&gt;&quot; + OS.NEWLINE +
+                &quot;&lt;/fo:root&gt;&quot; + OS.NEWLINE;
+
+<span class="fc" id="L131">        ClipboardContent content = new ClipboardContent();</span>
+<span class="fc" id="L132">        content.put(ClipBoardManager.XML, result);</span>
+<span class="fc" id="L133">        return content;</span>
+    }
+
+    /**
+     * Inserts each citation into a HTML body and copies it to the clipboard
+     */
+    protected static ClipboardContent processHtml(List&lt;String&gt; citations) {
+<span class="fc" id="L140">        String result = &quot;&lt;!DOCTYPE html&gt;&quot; + OS.NEWLINE +</span>
+                &quot;&lt;html&gt;&quot; + OS.NEWLINE +
+                &quot;   &lt;head&gt;&quot; + OS.NEWLINE +
+                &quot;      &lt;meta charset=\&quot;utf-8\&quot;&gt;&quot; + OS.NEWLINE +
+                &quot;   &lt;/head&gt;&quot; + OS.NEWLINE +
+                &quot;   &lt;body&gt;&quot; + OS.NEWLINE + OS.NEWLINE;
+
+<span class="fc" id="L147">        result += String.join(CitationStyleOutputFormat.HTML.getLineSeparator(), citations);</span>
+
+<span class="fc" id="L149">        result += OS.NEWLINE +</span>
+                &quot;   &lt;/body&gt;&quot; + OS.NEWLINE +
+                &quot;&lt;/html&gt;&quot; + OS.NEWLINE;
+
+<span class="fc" id="L153">        ClipboardContent content = new ClipboardContent();</span>
+<span class="fc" id="L154">        content.putHtml(result);</span>
+<span class="fc" id="L155">        return content;</span>
+    }
+
+    @Override
+    public void done() {
+        try {
+<span class="nc" id="L161">            List&lt;String&gt; citations = get();</span>
+
+            // if it's not a citation style take care of the preview
+<span class="nc bnc" id="L164" title="All 2 branches missed.">            if (!CitationStyle.isCitationStyleFile(style)) {</span>
+<span class="nc" id="L165">                Globals.clipboardManager.setHtmlContent(processPreview(citations));</span>
+            } else {
+                // if it's generated by a citation style take care of each output format
+                ClipboardContent content;
+<span class="nc bnc" id="L169" title="All 5 branches missed.">                switch (outputFormat) {</span>
+                    case HTML:
+<span class="nc" id="L171">                        content = processHtml(citations);</span>
+<span class="nc" id="L172">                        break;</span>
+                    case RTF:
+<span class="nc" id="L174">                        content = processRtf(citations);</span>
+<span class="nc" id="L175">                        break;</span>
+                    case XSL_FO:
+<span class="nc" id="L177">                        content = processXslFo(citations);</span>
+<span class="nc" id="L178">                        break;</span>
+                    case ASCII_DOC:
+                    case TEXT:
+<span class="nc" id="L181">                        content = processText(citations);</span>
+<span class="nc" id="L182">                        break;</span>
+                    default:
+<span class="nc" id="L184">                        LOGGER.warn(&quot;unknown output format: '&quot; + outputFormat + &quot;', processing it via the default.&quot;);</span>
+<span class="nc" id="L185">                        content = processText(citations);</span>
+                        break;
+                }
+<span class="nc" id="L188">                Globals.clipboardManager.setContent(content);</span>
+            }
+
+<span class="nc" id="L191">            basePanel.frame().setStatus(Localization.lang(&quot;Copied %0 citations.&quot;, String.valueOf(selectedEntries.size())));</span>
+<span class="nc" id="L192">        } catch (InterruptedException | ExecutionException e) {</span>
+<span class="nc" id="L193">            LOGGER.error(&quot;Error while copying citations to the clipboard&quot;, e);</span>
+<span class="nc" id="L194">        }</span>
+<span class="nc" id="L195">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

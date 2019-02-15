@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StyleSelectDialogView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.openoffice</a> &gt; <span class="el_source">StyleSelectDialogView.java</span></div><h1>StyleSelectDialogView.java</h1><pre class="source lang-java linenums">package org.jabref.gui.openoffice;
+
+import javax.inject.Inject;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.layout.VBox;
+
+import org.jabref.gui.DialogService;
+import org.jabref.gui.PreviewPanel;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.util.BaseDialog;
+import org.jabref.gui.util.ValueTableCellFactory;
+import org.jabref.gui.util.ViewModelTableRowFactory;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.openoffice.OOBibStyle;
+import org.jabref.logic.openoffice.StyleLoader;
+import org.jabref.logic.util.TestEntry;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.preferences.PreferencesService;
+
+import com.airhacks.afterburner.views.ViewLoader;
+import org.fxmisc.easybind.EasyBind;
+
+public class StyleSelectDialogView extends BaseDialog&lt;OOBibStyle&gt; {
+
+<span class="nc" id="L33">    private final MenuItem edit = new MenuItem(Localization.lang(&quot;Edit&quot;));</span>
+<span class="nc" id="L34">    private final MenuItem reload = new MenuItem(Localization.lang(&quot;Reload&quot;));</span>
+    private final StyleLoader loader;
+    @FXML private TableColumn&lt;StyleSelectItemViewModel, String&gt; colName;
+    @FXML private TableView&lt;StyleSelectItemViewModel&gt; tvStyles;
+    @FXML private TableColumn&lt;StyleSelectItemViewModel, String&gt; colJournals;
+    @FXML private TableColumn&lt;StyleSelectItemViewModel, String&gt; colFile;
+    @FXML private TableColumn&lt;StyleSelectItemViewModel, Boolean&gt; colDeleteIcon;
+    @FXML private Button add;
+    @FXML private VBox vbox;
+    @Inject private PreferencesService preferencesService;
+    @Inject private DialogService dialogService;
+    private StyleSelectDialogViewModel viewModel;
+    private PreviewPanel previewArticle;
+    private PreviewPanel previewBook;
+
+<span class="nc" id="L49">    public StyleSelectDialogView(StyleLoader loader) {</span>
+
+<span class="nc" id="L51">        this.loader = loader;</span>
+
+<span class="nc" id="L53">        ViewLoader.view(this)</span>
+<span class="nc" id="L54">                  .load()</span>
+<span class="nc" id="L55">                  .setAsDialogPane(this);</span>
+
+<span class="nc" id="L57">        setResultConverter(button -&gt; {</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            if (button == ButtonType.OK) {</span>
+<span class="nc" id="L59">                viewModel.storePrefs();</span>
+<span class="nc" id="L60">                return tvStyles.getSelectionModel().getSelectedItem().getStyle();</span>
+            }
+<span class="nc" id="L62">            return null;</span>
+        });
+<span class="nc" id="L64">        setTitle(Localization.lang(&quot;Style selection&quot;));</span>
+<span class="nc" id="L65">    }</span>
+
+    @FXML
+    private void initialize() {
+
+<span class="nc" id="L70">        viewModel = new StyleSelectDialogViewModel(dialogService, loader, preferencesService);</span>
+
+<span class="nc" id="L72">        previewArticle = new PreviewPanel(null, new BibDatabaseContext(), preferencesService.getKeyBindingRepository(), preferencesService.getPreviewPreferences(), dialogService, ExternalFileTypes.getInstance());</span>
+<span class="nc" id="L73">        previewArticle.setEntry(TestEntry.getTestEntry());</span>
+<span class="nc" id="L74">        vbox.getChildren().add(previewArticle);</span>
+
+<span class="nc" id="L76">        previewBook = new PreviewPanel(null, new BibDatabaseContext(), preferencesService.getKeyBindingRepository(), preferencesService.getPreviewPreferences(), dialogService, ExternalFileTypes.getInstance());</span>
+<span class="nc" id="L77">        previewBook.setEntry(TestEntry.getTestEntryBook());</span>
+<span class="nc" id="L78">        vbox.getChildren().add(previewBook);</span>
+
+<span class="nc" id="L80">        colName.setCellValueFactory(cellData -&gt; cellData.getValue().nameProperty());</span>
+<span class="nc" id="L81">        colJournals.setCellValueFactory(cellData -&gt; cellData.getValue().journalsProperty());</span>
+<span class="nc" id="L82">        colFile.setCellValueFactory(cellData -&gt; cellData.getValue().fileProperty());</span>
+<span class="nc" id="L83">        colDeleteIcon.setCellValueFactory(cellData -&gt; cellData.getValue().internalStyleProperty());</span>
+
+<span class="nc" id="L85">        new ValueTableCellFactory&lt;StyleSelectItemViewModel, Boolean&gt;()</span>
+<span class="nc" id="L86">                .withGraphic(internalStyle -&gt; {</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                    if (!internalStyle) {</span>
+<span class="nc" id="L88">                        return IconTheme.JabRefIcons.DELETE_ENTRY.getGraphicNode();</span>
+                    }
+<span class="nc" id="L90">                    return null;</span>
+                })
+<span class="nc" id="L92">                .withOnMouseClickedEvent(item -&gt; {</span>
+<span class="nc" id="L93">                    return evt -&gt; viewModel.deleteStyle();</span>
+                })
+<span class="nc" id="L95">                .withTooltip(item -&gt; {</span>
+<span class="nc" id="L96">                    return Localization.lang(&quot;Remove style&quot;);</span>
+                })
+<span class="nc" id="L98">                .install(colDeleteIcon);</span>
+
+<span class="nc" id="L100">        edit.setOnAction(e -&gt; viewModel.editStyle());</span>
+
+<span class="nc" id="L102">        new ViewModelTableRowFactory&lt;StyleSelectItemViewModel&gt;()</span>
+<span class="nc" id="L103">                .withOnMouseClickedEvent((item, event) -&gt; {</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                    if (event.getClickCount() == 2) {</span>
+<span class="nc" id="L105">                        viewModel.viewStyle(item);</span>
+                    }
+<span class="nc" id="L107">                })</span>
+<span class="nc" id="L108">                .withContextMenu(item -&gt; createContextMenu())</span>
+<span class="nc" id="L109">                .install(tvStyles);</span>
+
+<span class="nc" id="L111">        tvStyles.getSelectionModel().selectedItemProperty().addListener((observable, oldvalue, newvalue) -&gt; {</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            if (newvalue == null) {</span>
+<span class="nc" id="L113">                viewModel.selectedItemProperty().setValue(oldvalue);</span>
+            } else {
+<span class="nc" id="L115">                viewModel.selectedItemProperty().setValue(newvalue);</span>
+            }
+<span class="nc" id="L117">        });</span>
+
+<span class="nc" id="L119">        tvStyles.setItems(viewModel.stylesProperty());</span>
+
+<span class="nc" id="L121">        add.setGraphic(IconTheme.JabRefIcons.ADD.getGraphicNode());</span>
+
+<span class="nc" id="L123">        EasyBind.subscribe(viewModel.selectedItemProperty(), style -&gt; {</span>
+<span class="nc" id="L124">            tvStyles.getSelectionModel().select(style);</span>
+<span class="nc" id="L125">            previewArticle.setLayout(style.getStyle().getReferenceFormat(&quot;default&quot;));</span>
+<span class="nc" id="L126">            previewBook.setLayout(style.getStyle().getReferenceFormat(&quot;default&quot;));</span>
+<span class="nc" id="L127">        });</span>
+<span class="nc" id="L128">    }</span>
+
+    private ContextMenu createContextMenu() {
+<span class="nc" id="L131">        ContextMenu contextMenu = new ContextMenu();</span>
+<span class="nc" id="L132">        contextMenu.getItems().addAll(edit, reload);</span>
+<span class="nc" id="L133">        return contextMenu;</span>
+    }
+
+    @FXML
+    private void addStyleFile() {
+<span class="nc" id="L138">        viewModel.addStyleFile();</span>
+<span class="nc" id="L139">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

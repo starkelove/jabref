@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.model.EntryTypesTest" tests="26" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:26" hostname="n184-p67.eduroam.kth.se" time="0.037">
+  <properties/>
+  <testcase name="assertDefaultValuesBibtex()" classname="org.jabref.model.EntryTypesTest" time="0.001"/>
+  <testcase name="standardTypeIsStillAcessibleIfOverwritten(EntryType, BibDatabaseMode)[1]" classname="org.jabref.model.EntryTypesTest" time="0.001"/>
+  <testcase name="standardTypeIsStillAcessibleIfOverwritten(EntryType, BibDatabaseMode)[2]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <testcase name="standardTypeCannotBeRemoved(EntryType, BibDatabaseMode)[1]" classname="org.jabref.model.EntryTypesTest" time="0.001"/>
+  <testcase name="standardTypeCannotBeRemoved(EntryType, BibDatabaseMode)[2]" classname="org.jabref.model.EntryTypesTest" time="0.001"/>
+  <testcase name="unknownTypeIsNotFound(BibDatabaseMode)[1]" classname="org.jabref.model.EntryTypesTest" time="0.001"/>
+  <testcase name="unknownTypeIsNotFound(BibDatabaseMode)[2]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <testcase name="registerCustomEntryTypeDoesNotAffectOtherMode(BibDatabaseMode, BibDatabaseMode)[1]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <testcase name="registerCustomEntryTypeDoesNotAffectOtherMode(BibDatabaseMode, BibDatabaseMode)[2]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <testcase name="assertDefaultValuesBiblatex()" classname="org.jabref.model.EntryTypesTest" time="0.001"/>
+  <testcase name="unknownTypeIsConvertedToMiscByGetTypeOrDefault(EntryType, BibDatabaseMode)[1]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <testcase name="unknownTypeIsConvertedToMiscByGetTypeOrDefault(EntryType, BibDatabaseMode)[2]" classname="org.jabref.model.EntryTypesTest" time="0.001"/>
+  <testcase name="registeredCustomizedStandardEntryTypeIsContainedInListOfCustomizedEntryTypes(BibDatabaseMode)[1]" classname="org.jabref.model.EntryTypesTest" time="0.002"/>
+  <testcase name="registeredCustomizedStandardEntryTypeIsContainedInListOfCustomizedEntryTypes(BibDatabaseMode)[2]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <testcase name="standardTypeIsRestoredAfterDeletionOfOverwrittenType(EntryType, BibDatabaseMode)[1]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <testcase name="standardTypeIsRestoredAfterDeletionOfOverwrittenType(EntryType, BibDatabaseMode)[2]" classname="org.jabref.model.EntryTypesTest" time="0.001"/>
+  <testcase name="registerCustomEntryType(BibDatabaseMode)[1]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <testcase name="registerCustomEntryType(BibDatabaseMode)[2]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <testcase name="overwriteStandardTypeRequiredFieldsDoesNotAffectOtherMode(BibDatabaseMode, BibDatabaseMode)[1]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <testcase name="overwriteStandardTypeRequiredFieldsDoesNotAffectOtherMode(BibDatabaseMode, BibDatabaseMode)[2]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <testcase name="overwriteStandardTypeRequiredFields(BibDatabaseMode)[1]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <testcase name="overwriteStandardTypeRequiredFields(BibDatabaseMode)[2]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <testcase name="registeredCustomEntryTypeIsContainedInListOfCustomizedEntryTypes(BibDatabaseMode)[1]" classname="org.jabref.model.EntryTypesTest" time="0.002"/>
+  <testcase name="registeredCustomEntryTypeIsContainedInListOfCustomizedEntryTypes(BibDatabaseMode)[2]" classname="org.jabref.model.EntryTypesTest" time="0.003"/>
+  <testcase name="overwriteCustomEntryTypeFields(BibDatabaseMode)[1]" classname="org.jabref.model.EntryTypesTest" time="0.001"/>
+  <testcase name="overwriteCustomEntryTypeFields(BibDatabaseMode)[2]" classname="org.jabref.model.EntryTypesTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

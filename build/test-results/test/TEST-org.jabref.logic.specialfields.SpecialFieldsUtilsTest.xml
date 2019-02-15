@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.specialfields.SpecialFieldsUtilsTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:24" hostname="n184-p67.eduroam.kth.se" time="0.011">
+  <properties/>
+  <testcase name="syncSpecialFieldsFromKeywordCausesNoChangeWhenKeywordsAreEmpty()" classname="org.jabref.logic.specialfields.SpecialFieldsUtilsTest" time="0.001"/>
+  <testcase name="syncKeywordsFromSpecialFieldsCausesChange()" classname="org.jabref.logic.specialfields.SpecialFieldsUtilsTest" time="0.003"/>
+  <testcase name="syncSpecialFieldsFromKeywordCausesChange()" classname="org.jabref.logic.specialfields.SpecialFieldsUtilsTest" time="0.002"/>
+  <testcase name="syncSpecialFieldsFromKeywordWritesToSpecialField()" classname="org.jabref.logic.specialfields.SpecialFieldsUtilsTest" time="0.001"/>
+  <testcase name="syncKeywordsFromSpecialFieldsWritesToKeywords()" classname="org.jabref.logic.specialfields.SpecialFieldsUtilsTest" time="0.0"/>
+  <testcase name="syncKeywordsFromSpecialFieldsForEmptyFieldCausesNoChange()" classname="org.jabref.logic.specialfields.SpecialFieldsUtilsTest" time="0.0"/>
+  <testcase name="updateFieldRemovesSpecialFieldKeywordWhenKeywordSyncIsUsed()" classname="org.jabref.logic.specialfields.SpecialFieldsUtilsTest" time="0.001"/>
+  <testcase name="syncKeywordsFromSpecialFieldsOverwritesKeywords()" classname="org.jabref.logic.specialfields.SpecialFieldsUtilsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

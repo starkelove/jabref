@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Importer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer</a> &gt; <span class="el_source">Importer.java</span></div><h1>Importer.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.Objects;
+
+import org.jabref.logic.util.FileType;
+
+/**
+ * Role of an importer for JabRef.
+ */
+<span class="fc" id="L19">public abstract class Importer implements Comparable&lt;Importer&gt; {</span>
+
+    /**
+     * Check whether the source is in the correct format for this importer.
+     *
+     * The effect of this method is primarily to avoid unnecessary processing of
+     * files when searching for a suitable import format. If this method returns
+     * false, the import routine will move on to the next import format.
+     *
+     * Thus the correct behaviour is to return false if it is certain that the file is
+     * not of the suitable type, and true otherwise. Returning true is the safe choice if not certain.
+     */
+    public abstract boolean isRecognizedFormat(BufferedReader input) throws IOException;
+
+    /**
+     * Check whether the source is in the correct format for this importer.
+     *
+     * @param filePath the path of the file to check
+     * @param encoding the encoding of the file
+     * @return true, if the file is in a recognized format
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
+    public boolean isRecognizedFormat(Path filePath, Charset encoding) throws IOException {
+<span class="fc" id="L42">        try (BufferedReader bufferedReader = getReader(filePath, encoding)) {</span>
+<span class="fc" id="L43">            return isRecognizedFormat(bufferedReader);</span>
+<span class="fc" id="L44">        }</span>
+    }
+
+    /**
+     * Check whether the source is in the correct format for this importer.
+     *
+     * @param data the data to check
+     * @return true, if the data is in a recognized format
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
+    public boolean isRecognizedFormat(String data) throws IOException {
+<span class="fc" id="L55">        try (StringReader stringReader = new StringReader(data); BufferedReader bufferedReader = new BufferedReader(stringReader)) {</span>
+<span class="fc" id="L56">            return isRecognizedFormat(bufferedReader);</span>
+<span class="fc" id="L57">        }</span>
+    }
+
+    /**
+     * Parse the database in the source.
+     *
+     * This method can be called in two different contexts - either when importing in
+     * a specified format, or when importing in unknown format. In the latter case,
+     * JabRef cycles through all available import formats. No error messages or feedback
+     * is displayed from individual import formats in this case.
+     *
+     * If importing in a specified format and an empty library is returned, JabRef reports
+     * that no entries were found.
+     *
+     * This method should never return null.
+     *
+     * @param input the input to read from
+     */
+    public abstract ParserResult importDatabase(BufferedReader input) throws IOException;
+
+    /**
+     * Parse the database in the specified file.
+     *
+     * Importer having the facilities to detect the correct encoding of a file should overwrite this method,
+     * determine the encoding and then call {@link #importDatabase(BufferedReader)}.
+     *
+     * @param filePath the path to the file which should be imported
+     * @param encoding the encoding used to decode the file
+     */
+    public ParserResult importDatabase(Path filePath, Charset encoding) throws IOException {
+<span class="fc" id="L87">        try (BufferedReader bufferedReader = getReader(filePath, encoding)) {</span>
+<span class="fc" id="L88">            ParserResult parserResult = importDatabase(bufferedReader);</span>
+<span class="fc" id="L89">            parserResult.getMetaData().setEncoding(encoding);</span>
+<span class="fc" id="L90">            parserResult.setFile(filePath.toFile());</span>
+<span class="fc" id="L91">            return parserResult;</span>
+<span class="fc" id="L92">        }</span>
+    }
+
+    /**
+     * Parse the database in the specified string.
+     *
+     * Importer having the facilities to detect the correct encoding of a string should overwrite this method,
+     * determine the encoding and then call {@link #importDatabase(BufferedReader)}.
+     *
+     * @param data the string which should be imported
+     * @return the parsed result
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
+    public ParserResult importDatabase(String data) throws IOException {
+<span class="fc" id="L106">        try (StringReader stringReader = new StringReader(data); BufferedReader bufferedReader = new BufferedReader(stringReader)) {</span>
+<span class="fc" id="L107">            ParserResult parserResult = importDatabase(bufferedReader);</span>
+<span class="fc" id="L108">            return parserResult;</span>
+<span class="fc" id="L109">        }</span>
+    }
+
+    protected static BufferedReader getUTF8Reader(Path filePath) throws IOException {
+<span class="fc" id="L113">        return getReader(filePath, StandardCharsets.UTF_8);</span>
+    }
+
+    protected static BufferedReader getUTF16Reader(Path filePath) throws IOException {
+<span class="fc" id="L117">        return getReader(filePath, StandardCharsets.UTF_16);</span>
+    }
+
+    public static BufferedReader getReader(Path filePath, Charset encoding)
+            throws IOException {
+<span class="fc" id="L122">        InputStream stream = new FileInputStream(filePath.toFile());</span>
+<span class="fc" id="L123">        return new BufferedReader(new InputStreamReader(stream, encoding));</span>
+    }
+
+    /**
+     * Returns the name of this import format.
+     *
+     * &lt;p&gt;The name must be unique.&lt;/p&gt;
+     *
+     * @return format name, must be unique and not &lt;code&gt;null&lt;/code&gt;
+     */
+    public abstract String getName();
+
+    /**
+     * Returns the type of files that this importer can read
+     * @return {@link FileType} corresponding to the importer
+     */
+    public abstract FileType getFileType();
+
+    /**
+     * Returns a one-word ID which identifies this importer.
+     * Used for example, to identify the importer when used from the command line.
+     *
+     * @return ID, must be unique and not &lt;code&gt;null&lt;/code&gt;
+     */
+    public String getId() {
+<span class="fc" id="L148">        String id = getName();</span>
+<span class="fc" id="L149">        StringBuilder result = new StringBuilder(id.length());</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        for (int i = 0; i &lt; id.length(); i++) {</span>
+<span class="fc" id="L151">            char c = id.charAt(i);</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">            if (Character.isLetterOrDigit(c)) {</span>
+<span class="fc" id="L153">                result.append(Character.toLowerCase(c));</span>
+            }
+        }
+<span class="fc" id="L156">        return result.toString();</span>
+    }
+
+    /**
+     * Returns the description of the import format.
+     *
+     * The description should specify
+     * &lt;ul&gt;&lt;li&gt;
+     *   what kind of entries from what sources and based on what specification it is able to import
+     * &lt;/li&gt;&lt;li&gt;
+     *   by what criteria it {@link #isRecognizedFormat(BufferedReader) recognizes} an import format
+     * &lt;/li&gt;&lt;/ul&gt;
+     *
+     * @return description of the import format
+     */
+    public abstract String getDescription();
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L175">        return getName().hashCode();</span>
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">        if (this == obj) {</span>
+<span class="nc" id="L181">            return true;</span>
+        }
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">        if (!(obj instanceof Importer)) {</span>
+<span class="nc" id="L184">            return false;</span>
+        }
+<span class="fc" id="L186">        Importer other = (Importer) obj;</span>
+<span class="fc" id="L187">        return Objects.equals(this.getName(), other.getName());</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L192">        return getName();</span>
+    }
+
+    @Override
+    public int compareTo(Importer o) {
+<span class="fc" id="L197">        return getName().compareTo(o.getName());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

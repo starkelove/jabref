@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Formatters.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.formatter</a> &gt; <span class="el_source">Formatters.java</span></div><h1>Formatters.java</h1><pre class="source lang-java linenums">package org.jabref.logic.formatter;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.logic.formatter.bibtexfields.CleanupURLFormatter;
+import org.jabref.logic.formatter.bibtexfields.ClearFormatter;
+import org.jabref.logic.formatter.bibtexfields.EscapeUnderscoresFormatter;
+import org.jabref.logic.formatter.bibtexfields.HtmlToLatexFormatter;
+import org.jabref.logic.formatter.bibtexfields.HtmlToUnicodeFormatter;
+import org.jabref.logic.formatter.bibtexfields.LatexCleanupFormatter;
+import org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatter;
+import org.jabref.logic.formatter.bibtexfields.NormalizeMonthFormatter;
+import org.jabref.logic.formatter.bibtexfields.NormalizeNamesFormatter;
+import org.jabref.logic.formatter.bibtexfields.NormalizePagesFormatter;
+import org.jabref.logic.formatter.bibtexfields.OrdinalsToSuperscriptFormatter;
+import org.jabref.logic.formatter.bibtexfields.RegexFormatter;
+import org.jabref.logic.formatter.bibtexfields.RemoveBracesFormatter;
+import org.jabref.logic.formatter.bibtexfields.UnicodeToLatexFormatter;
+import org.jabref.logic.formatter.bibtexfields.UnitsToLatexFormatter;
+import org.jabref.logic.formatter.casechanger.CapitalizeFormatter;
+import org.jabref.logic.formatter.casechanger.LowerCaseFormatter;
+import org.jabref.logic.formatter.casechanger.SentenceCaseFormatter;
+import org.jabref.logic.formatter.casechanger.TitleCaseFormatter;
+import org.jabref.logic.formatter.casechanger.UpperCaseFormatter;
+import org.jabref.logic.formatter.minifier.MinifyNameListFormatter;
+import org.jabref.logic.layout.format.LatexToUnicodeFormatter;
+import org.jabref.model.cleanup.Formatter;
+
+public class Formatters {
+
+    private Formatters() {
+    }
+
+    public static List&lt;Formatter&gt; getConverters() {
+<span class="fc" id="L39">        return Arrays.asList(</span>
+                new HtmlToLatexFormatter(),
+                new HtmlToUnicodeFormatter(),
+                new LatexToUnicodeFormatter(),
+                new UnicodeToLatexFormatter()
+        );
+    }
+
+    public static List&lt;Formatter&gt; getCaseChangers() {
+<span class="fc" id="L48">        return Arrays.asList(</span>
+                new CapitalizeFormatter(),
+                new LowerCaseFormatter(),
+                new SentenceCaseFormatter(),
+                new TitleCaseFormatter(),
+                new UpperCaseFormatter()
+        );
+    }
+
+    public static List&lt;Formatter&gt; getOthers() {
+<span class="fc" id="L58">        return Arrays.asList(</span>
+                new ClearFormatter(),
+                new CleanupURLFormatter(),
+                new LatexCleanupFormatter(),
+                new MinifyNameListFormatter(),
+                new NormalizeDateFormatter(),
+                new NormalizeMonthFormatter(),
+                new NormalizeNamesFormatter(),
+                new NormalizePagesFormatter(),
+                new OrdinalsToSuperscriptFormatter(),
+                new RemoveBracesFormatter(),
+                new UnitsToLatexFormatter(),
+                new EscapeUnderscoresFormatter()
+        );
+    }
+
+    public static List&lt;Formatter&gt; getAll() {
+<span class="fc" id="L75">        List&lt;Formatter&gt; all = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L76">        all.addAll(getConverters());</span>
+<span class="fc" id="L77">        all.addAll(getCaseChangers());</span>
+<span class="fc" id="L78">        all.addAll(getOthers());</span>
+<span class="fc" id="L79">        return all;</span>
+    }
+
+    public static Optional&lt;Formatter&gt; getFormatterForModifier(String modifier) {
+<span class="fc" id="L83">        Objects.requireNonNull(modifier);</span>
+
+<span class="pc bpc" id="L85" title="2 of 10 branches missed.">        switch (modifier) {</span>
+            case &quot;lower&quot;:
+<span class="fc" id="L87">                return Optional.of(new LowerCaseFormatter());</span>
+            case &quot;upper&quot;:
+<span class="fc" id="L89">                return Optional.of(new UpperCaseFormatter());</span>
+        }
+
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        if (modifier.startsWith(RegexFormatter.KEY)) {</span>
+<span class="fc" id="L93">            String regex = modifier.substring(RegexFormatter.KEY.length());</span>
+<span class="fc" id="L94">            return Optional.of(new RegexFormatter(regex));</span>
+        } else {
+<span class="fc" id="L96">            return getAll().stream().filter(f -&gt; f.getKey().equals(modifier)).findAny();</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

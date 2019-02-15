@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LinkedEntriesEditorViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.fieldeditors</a> &gt; <span class="el_source">LinkedEntriesEditorViewModel.java</span></div><h1>LinkedEntriesEditorViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.fieldeditors;
+
+import java.util.Collection;
+import java.util.stream.Collectors;
+
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.SimpleListProperty;
+import javafx.collections.FXCollections;
+import javafx.util.StringConverter;
+
+import org.jabref.gui.autocompleter.AutoCompleteSuggestionProvider;
+import org.jabref.gui.util.BindingsHelper;
+import org.jabref.logic.integrity.FieldCheckers;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.EntryLinkList;
+import org.jabref.model.entry.ParsedEntryLink;
+
+import org.controlsfx.control.textfield.AutoCompletionBinding;
+
+public class LinkedEntriesEditorViewModel extends AbstractEditorViewModel {
+
+    private final BibDatabaseContext databaseContext;
+    private final ListProperty&lt;ParsedEntryLink&gt; linkedEntries;
+
+    public LinkedEntriesEditorViewModel(String fieldName, AutoCompleteSuggestionProvider&lt;?&gt; suggestionProvider, BibDatabaseContext databaseContext, FieldCheckers fieldCheckers) {
+<span class="nc" id="L27">        super(fieldName, suggestionProvider, fieldCheckers);</span>
+
+<span class="nc" id="L29">        this.databaseContext = databaseContext;</span>
+<span class="nc" id="L30">        linkedEntries = new SimpleListProperty&lt;&gt;(FXCollections.observableArrayList());</span>
+<span class="nc" id="L31">        BindingsHelper.bindContentBidirectional(</span>
+                linkedEntries,
+                text,
+                EntryLinkList::serialize,
+<span class="nc" id="L35">                newText -&gt; EntryLinkList.parse(newText, databaseContext.getDatabase()));</span>
+<span class="nc" id="L36">    }</span>
+
+    @Override
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public Collection&lt;ParsedEntryLink&gt; complete(AutoCompletionBinding.ISuggestionRequest request) {
+        //We have to cast the BibEntries from the BibEntrySuggestionProvider to ParsedEntryLink
+<span class="nc" id="L42">        Collection&lt;BibEntry&gt; bibEntries = (Collection&lt;BibEntry&gt;) super.complete(request);</span>
+<span class="nc" id="L43">        return bibEntries.stream().map(ParsedEntryLink::new).collect(Collectors.toList());</span>
+    }
+
+    public ListProperty&lt;ParsedEntryLink&gt; linkedEntriesProperty() {
+<span class="nc" id="L47">        return linkedEntries;</span>
+    }
+
+    public StringConverter&lt;ParsedEntryLink&gt; getStringConverter() {
+<span class="nc" id="L51">        return new StringConverter&lt;ParsedEntryLink&gt;() {</span>
+
+            @Override
+            public String toString(ParsedEntryLink linkedEntry) {
+<span class="nc bnc" id="L55" title="All 2 branches missed.">                if (linkedEntry == null) {</span>
+<span class="nc" id="L56">                    return &quot;&quot;;</span>
+                }
+<span class="nc" id="L58">                return linkedEntry.getKey();</span>
+            }
+
+            @Override
+            public ParsedEntryLink fromString(String key) {
+<span class="nc" id="L63">                return databaseContext.getDatabase().getEntryByKey(key).map(ParsedEntryLink::new).orElse(null);</span>
+            }
+        };
+    }
+
+    public void jumpToEntry(ParsedEntryLink parsedEntryLink) {
+        // TODO: Implement jump to entry
+        // TODO: Add toolitp for tag: Localization.lang(&quot;Jump to entry&quot;)
+        // This feature was removed while converting the linked entries editor to JavaFX
+        // Right now there is no nice way to re-implement it as we have no good interface to control the focus of the main table
+        // (except directly using the JabRefFrame class as below)
+        //parsedEntryLink.getLinkedEntry().ifPresent(
+        //        e -&gt; frame.getCurrentBasePanel().highlightEntry(e)
+        //);
+<span class="nc" id="L77">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

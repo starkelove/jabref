@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JournalAbbreviationRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.journals</a> &gt; <span class="el_source">JournalAbbreviationRepository.java</span></div><h1>JournalAbbreviationRepository.java</h1><pre class="source lang-java linenums">package org.jabref.logic.journals;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+
+/**
+ * A repository for all journal abbreviations, including add and find methods.
+ */
+public class JournalAbbreviationRepository {
+
+<span class="fc" id="L15">    private final Set&lt;Abbreviation&gt; abbreviations = new HashSet&lt;&gt;(16000); // We have over 15.000 abbreviations in the built-in lists</span>
+
+<span class="fc" id="L17">    public JournalAbbreviationRepository(Abbreviation... abbreviations) {</span>
+<span class="fc bfc" id="L18" title="All 2 branches covered.">        for (Abbreviation abbreviation : abbreviations) {</span>
+<span class="fc" id="L19">            addEntry(abbreviation);</span>
+        }
+<span class="fc" id="L21">    }</span>
+
+    private static boolean isMatched(String name, Abbreviation abbreviation) {
+<span class="fc bfc" id="L24" title="All 2 branches covered.">        return name.equalsIgnoreCase(abbreviation.getName())</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">                || name.equalsIgnoreCase(abbreviation.getIsoAbbreviation())</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">                || name.equalsIgnoreCase(abbreviation.getMedlineAbbreviation());</span>
+    }
+
+    private static boolean isMatchedAbbreviated(String name, Abbreviation abbreviation) {
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        boolean isAbbreviated = name.equalsIgnoreCase(abbreviation.getIsoAbbreviation())</span>
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">                || name.equalsIgnoreCase(abbreviation.getMedlineAbbreviation());</span>
+<span class="fc" id="L32">        boolean isExpanded = name.equalsIgnoreCase(abbreviation.getName());</span>
+<span class="fc bfc" id="L33" title="All 4 branches covered.">        return isAbbreviated &amp;&amp; !isExpanded;</span>
+    }
+
+    public int size() {
+<span class="fc" id="L37">        return abbreviations.size();</span>
+    }
+
+    /**
+     * Returns true if the given journal name is contained in the list either in its full form (e.g Physical Review
+     * Letters) or its abbreviated form (e.g. Phys. Rev. Lett.).
+     */
+    public boolean isKnownName(String journalName) {
+<span class="fc" id="L45">        return abbreviations.stream().anyMatch(abbreviation -&gt; isMatched(journalName.trim(), abbreviation));</span>
+    }
+
+    /**
+     * Returns true if the given journal name is in its abbreviated form (e.g. Phys. Rev. Lett.). The test is strict,
+     * i.e. journals whose abbreviation is the same as the full name are not considered
+     */
+    public boolean isAbbreviatedName(String journalName) {
+<span class="fc" id="L53">        return abbreviations.stream().anyMatch(abbreviation -&gt; isMatchedAbbreviated(journalName.trim(), abbreviation));</span>
+    }
+
+    /**
+     * Attempts to get the abbreviated name of the journal given. May contain dots.
+     *
+     * @param journalName The journal name to abbreviate.
+     * @return The abbreviated name
+     */
+    public Optional&lt;Abbreviation&gt; getAbbreviation(String journalName) {
+<span class="fc" id="L63">        return abbreviations.stream().filter(abbreviation -&gt; isMatched(journalName.trim(), abbreviation)).findFirst();</span>
+    }
+
+    public void addEntry(Abbreviation abbreviation) {
+<span class="fc" id="L67">        Objects.requireNonNull(abbreviation);</span>
+
+        // Abbreviation equality is tested on name only, so we might have to remove an old abbreviation
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (abbreviations.contains(abbreviation)) {</span>
+<span class="fc" id="L71">            abbreviations.remove(abbreviation);</span>
+        }
+
+<span class="fc" id="L74">        abbreviations.add(abbreviation);</span>
+<span class="fc" id="L75">    }</span>
+
+    public void addEntries(Collection&lt;Abbreviation&gt; abbreviationsToAdd) {
+<span class="fc" id="L78">        abbreviationsToAdd.forEach(this::addEntry);</span>
+<span class="fc" id="L79">    }</span>
+
+    public Set&lt;Abbreviation&gt; getAbbreviations() {
+<span class="fc" id="L82">        return Collections.unmodifiableSet(abbreviations);</span>
+    }
+
+    public Optional&lt;String&gt; getNextAbbreviation(String text) {
+<span class="fc" id="L86">        return getAbbreviation(text).map(abbreviation -&gt; abbreviation.getNext(text));</span>
+    }
+
+    public Optional&lt;String&gt; getMedlineAbbreviation(String text) {
+<span class="fc" id="L90">        return getAbbreviation(text).map(Abbreviation::getMedlineAbbreviation);</span>
+    }
+
+    public Optional&lt;String&gt; getIsoAbbreviation(String text) {
+<span class="fc" id="L94">        return getAbbreviation(text).map(Abbreviation::getIsoAbbreviation);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IEEETranEntryTypes.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry</a> &gt; <span class="el_source">IEEETranEntryTypes.java</span></div><h1>IEEETranEntryTypes.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * This class represents all supported IEEETran entry types.
+ *
+ * @see http://ctan.sharelatex.com/tex-archive/macros/latex/contrib/IEEEtran/bibtex/IEEEtran_bst_HOWTO.pdf
+ * &lt;p&gt;
+ * Electronic, IEEETranBSTCTL, Periodical, Patent, Standard
+ */
+public class IEEETranEntryTypes {
+    /**
+     * Electronic entry type for internet references
+     * &lt;p&gt;
+     * Required fields:
+     * Optional fields: author, month, year, title, language, howpublished, organization, address, note, url
+     */
+<span class="fc" id="L21">    public static final EntryType ELECTRONIC = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L24">            addAllOptional(FieldName.AUTHOR, FieldName.MONTH, FieldName.YEAR, FieldName.TITLE, FieldName.LANGUAGE,</span>
+                    FieldName.HOWPUBLISHED, FieldName.ORGANIZATION, FieldName.ADDRESS, FieldName.NOTE, FieldName.URL);
+<span class="fc" id="L26">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L30">            return &quot;Electronic&quot;;</span>
+        }
+    };
+
+    /**
+     * Special entry type that can be used to externally control some aspects of the bibliography style.
+     */
+<span class="fc" id="L37">    public static final EntryType IEEETRANBSTCTL = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L40">            addAllOptional(FieldName.CTLUSE_ARTICLE_NUMBER, FieldName.CTLUSE_PAPER, FieldName.CTLUSE_FORCED_ETAL,</span>
+                    FieldName.CTLUSE_URL, FieldName.CTLMAX_NAMES_FORCED_ETAL, FieldName.CTLNAMES_SHOW_ETAL,
+                    FieldName.CTLUSE_ALT_SPACING, FieldName.CTLALT_STRETCH_FACTOR, FieldName.CTLDASH_REPEATED_NAMES,
+                    FieldName.CTLNAME_FORMAT_STRING, FieldName.CTLNAME_LATEX_CMD, FieldName.CTLNAME_URL_PREFIX);
+<span class="fc" id="L44">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L48">            return &quot;IEEEtranBSTCTL&quot;;</span>
+        }
+
+    };
+
+    /**
+     * The periodical entry type is used for journals and magazines.
+     * &lt;p&gt;
+     * Required fields: title, year
+     * Optional fields: editor, language, series, volume, number, organization, month, note, url
+     */
+<span class="fc" id="L59">    public static final EntryType PERIODICAL = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L62">            addAllRequired(FieldName.TITLE, FieldName.YEAR);</span>
+<span class="fc" id="L63">            addAllOptional(FieldName.EDITOR, FieldName.LANGUAGE, FieldName.SERIES, FieldName.VOLUME, FieldName.NUMBER,</span>
+                    FieldName.ORGANIZATION, FieldName.MONTH, FieldName.NOTE, FieldName.URL);
+<span class="fc" id="L65">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L69">            return &quot;Periodical&quot;;</span>
+        }
+    };
+
+    /**
+     * Entry type for patents.
+     * &lt;p&gt;
+     * Required fields: nationality, number, year or yearfiled
+     * Optional fields: author, title, language, assignee, address, type, number, day, dayfiled, month, monthfiled, note, url
+     */
+<span class="fc" id="L79">    public static final EntryType PATENT = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L82">            addAllRequired(FieldName.NATIONALITY, FieldName.NUMBER,</span>
+<span class="fc" id="L83">                    FieldName.orFields(FieldName.YEAR, FieldName.YEARFILED));</span>
+<span class="fc" id="L84">            addAllOptional(FieldName.AUTHOR, FieldName.TITLE, FieldName.LANGUAGE, FieldName.ASSIGNEE, FieldName.ADDRESS,</span>
+                    FieldName.TYPE, FieldName.NUMBER, FieldName.DAY, FieldName.DAYFILED, FieldName.MONTH,
+                    FieldName.MONTHFILED, FieldName.NOTE, FieldName.URL);
+<span class="fc" id="L87">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L91">            return &quot;Patent&quot;;</span>
+        }
+    };
+
+    /**
+     * The standard entry type is used for proposed or formally published standards.
+     * &lt;p&gt;
+     * Required fields: title, organization or institution
+     * Optional fields: author, language, howpublished, type, number, revision, address, month, year, note, url
+     */
+<span class="fc" id="L101">    public static final EntryType STANDARD = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L104">            addAllRequired(FieldName.TITLE, FieldName.orFields(FieldName.ORGANIZATION, FieldName.INSTITUTION));</span>
+<span class="fc" id="L105">            addAllOptional(FieldName.AUTHOR, FieldName.LANGUAGE, FieldName.HOWPUBLISHED, FieldName.TYPE,</span>
+                    FieldName.NUMBER, FieldName.REVISION, FieldName.ADDRESS, FieldName.MONTH, FieldName.YEAR,
+                    FieldName.NOTE, FieldName.URL);
+<span class="fc" id="L108">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L112">            return &quot;Standard&quot;;</span>
+        }
+    };
+
+<span class="fc" id="L116">    public static final List&lt;EntryType&gt; ALL = Arrays.asList(ELECTRONIC, IEEETRANBSTCTL, PERIODICAL, PATENT, STANDARD);</span>
+
+    private IEEETranEntryTypes() {
+    }
+
+    public static Optional&lt;EntryType&gt; getType(String name) {
+<span class="fc" id="L122">        return ALL.stream().filter(e -&gt; e.getName().equalsIgnoreCase(name)).findFirst();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

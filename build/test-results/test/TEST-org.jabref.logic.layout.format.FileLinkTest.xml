@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.layout.format.FileLinkTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:25" hostname="n184-p67.eduroam.kth.se" time="0.023">
+  <properties/>
+  <testcase name="testOnlyFilename()" classname="org.jabref.logic.layout.format.FileLinkTest" time="0.018"/>
+  <testcase name="testMultipleFilesPick()" classname="org.jabref.logic.layout.format.FileLinkTest" time="0.002"/>
+  <testcase name="testEmpty()" classname="org.jabref.logic.layout.format.FileLinkTest" time="0.0"/>
+  <testcase name="testNull()" classname="org.jabref.logic.layout.format.FileLinkTest" time="0.0"/>
+  <testcase name="testCompleteRecord()" classname="org.jabref.logic.layout.format.FileLinkTest" time="0.001"/>
+  <testcase name="testMultipleFiles()" classname="org.jabref.logic.layout.format.FileLinkTest" time="0.001"/>
+  <testcase name="testMultipleFilesPickNonExistant()" classname="org.jabref.logic.layout.format.FileLinkTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

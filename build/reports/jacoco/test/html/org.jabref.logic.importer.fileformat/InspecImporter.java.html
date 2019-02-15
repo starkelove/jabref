@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InspecImporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fileformat</a> &gt; <span class="el_source">InspecImporter.java</span></div><h1>InspecImporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fileformat;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.importer.Importer;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.entry.AuthorList;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BibtexEntryTypes;
+import org.jabref.model.entry.FieldName;
+
+/**
+ * INSPEC format importer.
+ */
+<span class="fc" id="L22">public class InspecImporter extends Importer {</span>
+
+<span class="fc" id="L24">    private static final Pattern INSPEC_PATTERN = Pattern.compile(&quot;Record.*INSPEC.*&quot;);</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L28">        return &quot;INSPEC&quot;;</span>
+    }
+
+    @Override
+    public StandardFileType getFileType() {
+<span class="fc" id="L33">        return StandardFileType.TXT;</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L38">        return &quot;INSPEC format importer.&quot;;</span>
+    }
+
+    @Override
+    public boolean isRecognizedFormat(BufferedReader reader) throws IOException {
+        // Our strategy is to look for the &quot;PY &lt;year&gt;&quot; line.
+        String str;
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        while ((str = reader.readLine()) != null) {</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">            if (INSPEC_PATTERN.matcher(str).find()) {</span>
+<span class="fc" id="L47">                return true;</span>
+            }
+        }
+<span class="fc" id="L50">        return false;</span>
+    }
+
+    @Override
+    public ParserResult importDatabase(BufferedReader reader) throws IOException {
+<span class="fc" id="L55">        List&lt;BibEntry&gt; bibitems = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L56">        StringBuilder sb = new StringBuilder();</span>
+        String str;
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        while ((str = reader.readLine()) != null) {</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            if (str.length() &lt; 2) {</span>
+<span class="fc" id="L60">                continue;</span>
+            }
+<span class="fc bfc" id="L62" title="All 2 branches covered.">            if (str.indexOf(&quot;Record&quot;) == 0) {</span>
+<span class="fc" id="L63">                sb.append(&quot;__::__&quot;).append(str);</span>
+            } else {
+<span class="fc" id="L65">                sb.append(&quot;__NEWFIELD__&quot;).append(str);</span>
+            }
+        }
+<span class="fc" id="L68">        String[] entries = sb.toString().split(&quot;__::__&quot;);</span>
+<span class="fc" id="L69">        String type = &quot;&quot;;</span>
+<span class="fc" id="L70">        Map&lt;String, String&gt; h = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        for (String entry : entries) {</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            if (entry.indexOf(&quot;Record&quot;) != 0) {</span>
+<span class="fc" id="L73">                continue;</span>
+            }
+<span class="fc" id="L75">            h.clear();</span>
+
+<span class="fc" id="L77">            String[] fields = entry.split(&quot;__NEWFIELD__&quot;);</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">            for (String s : fields) {</span>
+<span class="fc" id="L79">                String f3 = s.substring(0, 2);</span>
+<span class="fc" id="L80">                String frest = s.substring(5);</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">                if (&quot;TI&quot;.equals(f3)) {</span>
+<span class="fc" id="L82">                    h.put(FieldName.TITLE, frest);</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                } else if (&quot;PY&quot;.equals(f3)) {</span>
+<span class="fc" id="L84">                    h.put(FieldName.YEAR, frest);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">                } else if (&quot;AU&quot;.equals(f3)) {</span>
+<span class="fc" id="L86">                    h.put(FieldName.AUTHOR,</span>
+<span class="fc" id="L87">                            AuthorList.fixAuthorLastNameFirst(frest.replace(&quot;,-&quot;, &quot;, &quot;).replace(&quot;;&quot;, &quot; and &quot;)));</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">                } else if (&quot;AB&quot;.equals(f3)) {</span>
+<span class="fc" id="L89">                    h.put(FieldName.ABSTRACT, frest);</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">                } else if (&quot;ID&quot;.equals(f3)) {</span>
+<span class="fc" id="L91">                    h.put(FieldName.KEYWORDS, frest);</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">                } else if (&quot;SO&quot;.equals(f3)) {</span>
+<span class="fc" id="L93">                    int m = frest.indexOf('.');</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">                    if (m &gt;= 0) {</span>
+<span class="fc" id="L95">                        String jr = frest.substring(0, m);</span>
+<span class="fc" id="L96">                        h.put(FieldName.JOURNAL, jr.replace(&quot;-&quot;, &quot; &quot;));</span>
+<span class="fc" id="L97">                        frest = frest.substring(m);</span>
+<span class="fc" id="L98">                        m = frest.indexOf(';');</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">                        if (m &gt;= 5) {</span>
+<span class="fc" id="L100">                            String yr = frest.substring(m - 5, m).trim();</span>
+<span class="fc" id="L101">                            h.put(FieldName.YEAR, yr);</span>
+<span class="fc" id="L102">                            frest = frest.substring(m);</span>
+<span class="fc" id="L103">                            m = frest.indexOf(':');</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">                            if (m &gt;= 0) {</span>
+<span class="fc" id="L105">                                String pg = frest.substring(m + 1).trim();</span>
+<span class="fc" id="L106">                                h.put(FieldName.PAGES, pg);</span>
+<span class="fc" id="L107">                                String vol = frest.substring(1, m).trim();</span>
+<span class="fc" id="L108">                                h.put(FieldName.VOLUME, vol);</span>
+                            }
+                        }
+                    }
+
+<span class="fc bfc" id="L113" title="All 2 branches covered.">                } else if (&quot;RT&quot;.equals(f3)) {</span>
+<span class="fc" id="L114">                    frest = frest.trim();</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">                    if (&quot;Journal-Paper&quot;.equals(frest)) {</span>
+<span class="fc" id="L116">                        type = &quot;article&quot;;</span>
+<span class="pc bpc" id="L117" title="1 of 4 branches missed.">                    } else if (&quot;Conference-Paper&quot;.equals(frest) || &quot;Conference-Paper; Journal-Paper&quot;.equals(frest)) {</span>
+<span class="fc" id="L118">                        type = &quot;inproceedings&quot;;</span>
+                    } else {
+<span class="fc" id="L120">                        type = frest.replace(&quot; &quot;, &quot;&quot;);</span>
+                    }
+                }
+            }
+<span class="fc" id="L124">            BibEntry b = new BibEntry(BibtexEntryTypes.getTypeOrDefault(type));</span>
+<span class="fc" id="L125">            b.setField(h);</span>
+
+<span class="fc" id="L127">            bibitems.add(b);</span>
+
+        }
+
+<span class="fc" id="L131">        return new ParserResult(bibitems);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

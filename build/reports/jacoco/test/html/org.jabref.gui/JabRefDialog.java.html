@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JabRefDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui</a> &gt; <span class="el_source">JabRefDialog.java</span></div><h1>JabRefDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui;
+
+import java.awt.Frame;
+
+import javax.swing.JDialog;
+
+import org.jabref.Globals;
+
+public class JabRefDialog extends JDialog {
+
+    public &lt;T extends JabRefDialog&gt; JabRefDialog(boolean modal, Class&lt;T&gt; clazz) {
+<span class="nc" id="L12">        this(&quot;JabRef&quot;, modal, clazz);</span>
+<span class="nc" id="L13">    }</span>
+
+    public &lt;T extends JabRefDialog&gt; JabRefDialog(Class&lt;T&gt; clazz) {
+<span class="nc" id="L16">        this(true, clazz);</span>
+<span class="nc" id="L17">    }</span>
+
+    public &lt;T extends JabRefDialog&gt; JabRefDialog(String title, Class&lt;T&gt; clazz) {
+<span class="nc" id="L20">        this(title, true, clazz);</span>
+<span class="nc" id="L21">    }</span>
+
+    public &lt;T extends JabRefDialog&gt; JabRefDialog(String title, boolean modal, Class&lt;T&gt; clazz) {
+<span class="nc" id="L24">        super((Frame) null, title, modal);</span>
+
+<span class="nc" id="L26">        trackDialogOpening(clazz);</span>
+<span class="nc" id="L27">    }</span>
+
+    public &lt;T  extends JabRefDialog&gt; JabRefDialog(java.awt.Dialog owner, String title, Class&lt;T&gt; clazz) {
+<span class="nc" id="L30">        this(owner, title, true, clazz);</span>
+<span class="nc" id="L31">    }</span>
+
+    public &lt;T  extends JabRefDialog&gt; JabRefDialog(java.awt.Dialog owner, String title, boolean modal, Class&lt;T&gt; clazz) {
+<span class="nc" id="L34">        super(owner, title, modal);</span>
+
+<span class="nc" id="L36">        trackDialogOpening(clazz);</span>
+<span class="nc" id="L37">    }</span>
+
+    private &lt;T extends JabRefDialog&gt; void trackDialogOpening(Class&lt;T&gt; clazz) {
+<span class="nc" id="L40">        Globals.getTelemetryClient().ifPresent(client -&gt; client.trackPageView(clazz.getName()));</span>
+<span class="nc" id="L41">    }</span>
+
+    @Override
+    public void setVisible(boolean visible) {
+<span class="nc" id="L45">        super.setVisible(visible);</span>
+
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        if (visible) {</span>
+            // FIXME: Ugly hack to ensure that new dialogs are not hidden behind the main window
+<span class="nc" id="L49">            setAlwaysOnTop(true);</span>
+<span class="nc" id="L50">            requestFocus();</span>
+<span class="nc" id="L51">            setAlwaysOnTop(false);</span>
+        }
+<span class="nc" id="L53">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MSBibDatabase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.msbib</a> &gt; <span class="el_source">MSBibDatabase.java</span></div><h1>MSBibDatabase.java</h1><pre class="source lang-java linenums">package org.jabref.logic.msbib;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
+/**
+ * Microsoft Word bibliography.
+ * The class is uesed both for import and export
+ * See http://www.ecma-international.org/publications/standards/Ecma-376.htm
+ */
+public class MSBibDatabase {
+
+    public static final String NAMESPACE = &quot;http://schemas.openxmlformats.org/officeDocument/2006/bibliography&quot;;
+    public static final String PREFIX = &quot;b:&quot;;
+
+<span class="fc" id="L37">    private static final Logger LOGGER = LoggerFactory.getLogger(MSBibDatabase.class);</span>
+
+    private Set&lt;MSBibEntry&gt; entries;
+
+
+    /**
+     * Creates a {@link MSBibDatabase} for &lt;b&gt;import&lt;/b&gt;
+     */
+<span class="fc" id="L45">    public MSBibDatabase() {</span>
+<span class="fc" id="L46">        entries = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L47">    }</span>
+
+    // TODO: why an additonal entry list? entries are included inside database!
+    /**
+     * Creates a new {@link MSBibDatabase} for &lt;b&gt;export&lt;/b&gt;
+     * @param database The bib database
+     * @param entries List of {@link BibEntry}
+     */
+<span class="fc" id="L55">    public MSBibDatabase(BibDatabase database, List&lt;BibEntry&gt; entries) {</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        if (entries == null) {</span>
+<span class="nc" id="L57">            addEntriesForExport(database.getEntries());</span>
+        } else {
+<span class="fc" id="L59">            addEntriesForExport(entries);</span>
+        }
+<span class="fc" id="L61">    }</span>
+
+    /**
+     * Imports entries from an office xml file
+     * @param reader
+     * @return List of {@link BibEntry}
+     */
+    public List&lt;BibEntry&gt; importEntriesFromXml(BufferedReader reader) {
+<span class="fc" id="L69">        entries = new HashSet&lt;&gt;();</span>
+        Document inputDocument;
+        try {
+<span class="fc" id="L72">            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();</span>
+<span class="fc" id="L73">            factory.setNamespaceAware(true);</span>
+<span class="fc" id="L74">            DocumentBuilder documentBuilder = factory.newDocumentBuilder();</span>
+<span class="fc" id="L75">            inputDocument = documentBuilder.parse(new InputSource(reader));</span>
+<span class="fc" id="L76">        } catch (ParserConfigurationException | SAXException | IOException e) {</span>
+<span class="fc" id="L77">            LOGGER.warn(&quot;Could not parse document&quot;, e);</span>
+<span class="fc" id="L78">            return Collections.emptyList();</span>
+<span class="fc" id="L79">        }</span>
+<span class="fc" id="L80">        NodeList rootList = inputDocument.getElementsByTagNameNS(&quot;*&quot;, &quot;Sources&quot;);</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">        if (rootList.getLength() == 0) {</span>
+<span class="nc" id="L82">            rootList = inputDocument.getElementsByTagNameNS(&quot;*&quot;, &quot;Sources&quot;);</span>
+        }
+<span class="fc" id="L84">        List&lt;BibEntry&gt; bibitems = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        if (rootList.getLength() == 0) {</span>
+<span class="nc" id="L86">            return bibitems;</span>
+        }
+
+<span class="fc" id="L89">        NodeList sourceList = ((Element) rootList.item(0)).getElementsByTagNameNS(&quot;*&quot;, &quot;Source&quot;);</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        for (int i = 0; i &lt; sourceList.getLength(); i++) {</span>
+<span class="fc" id="L91">            MSBibEntry entry = new MSBibEntry((Element) sourceList.item(i));</span>
+<span class="fc" id="L92">            entries.add(entry);</span>
+<span class="fc" id="L93">            bibitems.add(BibTeXConverter.convert(entry));</span>
+        }
+
+<span class="fc" id="L96">        return bibitems;</span>
+    }
+
+    private void addEntriesForExport(List&lt;BibEntry&gt; entriesToAdd) {
+<span class="fc" id="L100">        entries = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        for (BibEntry entry : entriesToAdd) {</span>
+<span class="fc" id="L102">            MSBibEntry newMods = MSBibConverter.convert(entry);</span>
+<span class="fc" id="L103">            entries.add(newMods);</span>
+<span class="fc" id="L104">        }</span>
+<span class="fc" id="L105">    }</span>
+
+    /**
+     * Gets the assembled dom for export
+     * @return XML Document
+     */
+    public Document getDomForExport() {
+<span class="fc" id="L112">        Document document = null;</span>
+        try {
+<span class="fc" id="L114">            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();</span>
+<span class="fc" id="L115">            factory.setNamespaceAware(true);</span>
+<span class="fc" id="L116">            DocumentBuilder documentBuilder = factory.newDocumentBuilder();</span>
+<span class="fc" id="L117">            document = documentBuilder.newDocument();</span>
+
+<span class="fc" id="L119">            Element rootNode = document.createElementNS(NAMESPACE, PREFIX + &quot;Sources&quot;);</span>
+<span class="fc" id="L120">            rootNode.setAttributeNS(&quot;http://www.w3.org/2000/xmlns/&quot;, &quot;xmlns&quot;, NAMESPACE);</span>
+<span class="fc" id="L121">            rootNode.setAttributeNS(&quot;http://www.w3.org/2000/xmlns/&quot;,</span>
+<span class="fc" id="L122">                    &quot;xmlns:&quot; + PREFIX.substring(0, PREFIX.length() - 1), NAMESPACE);</span>
+<span class="fc" id="L123">            rootNode.setAttribute(&quot;SelectedStyle&quot;, &quot;&quot;);</span>
+
+<span class="fc bfc" id="L125" title="All 2 branches covered.">            for (MSBibEntry entry : entries) {</span>
+<span class="fc" id="L126">                Node node = entry.getEntryDom(document);</span>
+<span class="fc" id="L127">                rootNode.appendChild(node);</span>
+<span class="fc" id="L128">            }</span>
+<span class="fc" id="L129">            document.appendChild(rootNode);</span>
+<span class="nc" id="L130">        } catch (ParserConfigurationException e) {</span>
+<span class="nc" id="L131">            LOGGER.warn(&quot;Could not build XML document&quot;, e);</span>
+<span class="fc" id="L132">        }</span>
+<span class="fc" id="L133">        return document;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

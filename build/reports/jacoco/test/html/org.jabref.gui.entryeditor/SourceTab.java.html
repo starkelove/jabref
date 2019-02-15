@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SourceTab.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.entryeditor</a> &gt; <span class="el_source">SourceTab.java</span></div><h1>SourceTab.java</h1><pre class="source lang-java linenums">package org.jabref.gui.entryeditor;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.Map;
+import java.util.Objects;
+
+import javax.swing.undo.UndoManager;
+
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.ListChangeListener;
+import javafx.scene.control.Tooltip;
+
+import org.jabref.gui.DialogService;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.undo.CountingUndoManager;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableChangeType;
+import org.jabref.gui.undo.UndoableFieldChange;
+import org.jabref.gui.util.BindingsHelper;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.logic.bibtex.BibEntryWriter;
+import org.jabref.logic.bibtex.InvalidFieldValueException;
+import org.jabref.logic.bibtex.LatexFieldFormatter;
+import org.jabref.logic.bibtex.LatexFieldFormatterPreferences;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.importer.fileformat.BibtexParser;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.InternalBibtexFields;
+import org.jabref.model.util.FileUpdateMonitor;
+
+import de.saxsys.mvvmfx.utils.validation.ObservableRuleBasedValidator;
+import de.saxsys.mvvmfx.utils.validation.ValidationMessage;
+import org.controlsfx.control.NotificationPane;
+import org.fxmisc.flowless.VirtualizedScrollPane;
+import org.fxmisc.richtext.CodeArea;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class SourceTab extends EntryEditorTab {
+
+<span class="fc" id="L49">    private static final Logger LOGGER = LoggerFactory.getLogger(SourceTab.class);</span>
+    private final LatexFieldFormatterPreferences fieldFormatterPreferences;
+    private final BibDatabaseMode mode;
+    private final UndoManager undoManager;
+<span class="fc" id="L53">    private final ObjectProperty&lt;ValidationMessage&gt; sourceIsValid = new SimpleObjectProperty&lt;&gt;();</span>
+<span class="fc" id="L54">    private final ObservableRuleBasedValidator sourceValidator = new ObservableRuleBasedValidator(sourceIsValid);</span>
+    private final ImportFormatPreferences importFormatPreferences;
+    private final FileUpdateMonitor fileMonitor;
+    private final DialogService dialogService;
+
+<span class="fc" id="L59">    public SourceTab(BibDatabaseContext bibDatabaseContext, CountingUndoManager undoManager, LatexFieldFormatterPreferences fieldFormatterPreferences, ImportFormatPreferences importFormatPreferences, FileUpdateMonitor fileMonitor, DialogService dialogService) {</span>
+<span class="fc" id="L60">        this.mode = bibDatabaseContext.getMode();</span>
+<span class="fc" id="L61">        this.setText(Localization.lang(&quot;%0 source&quot;, mode.getFormattedName()));</span>
+<span class="fc" id="L62">        this.setTooltip(new Tooltip(Localization.lang(&quot;Show/edit %0 source&quot;, mode.getFormattedName())));</span>
+<span class="fc" id="L63">        this.setGraphic(IconTheme.JabRefIcons.SOURCE.getGraphicNode());</span>
+<span class="fc" id="L64">        this.undoManager = undoManager;</span>
+<span class="fc" id="L65">        this.fieldFormatterPreferences = fieldFormatterPreferences;</span>
+<span class="fc" id="L66">        this.importFormatPreferences = importFormatPreferences;</span>
+<span class="fc" id="L67">        this.fileMonitor = fileMonitor;</span>
+<span class="fc" id="L68">        this.dialogService = dialogService;</span>
+
+<span class="fc" id="L70">    }</span>
+
+    private static String getSourceString(BibEntry entry, BibDatabaseMode type, LatexFieldFormatterPreferences fieldFormatterPreferences) throws IOException {
+<span class="fc" id="L73">        StringWriter stringWriter = new StringWriter(200);</span>
+<span class="fc" id="L74">        LatexFieldFormatter formatter = LatexFieldFormatter.buildIgnoreHashes(fieldFormatterPreferences);</span>
+<span class="fc" id="L75">        new BibEntryWriter(formatter, false).writeWithoutPrependedNewlines(entry, stringWriter, type);</span>
+
+<span class="fc" id="L77">        return stringWriter.getBuffer().toString();</span>
+    }
+
+    private CodeArea createSourceEditor() {
+<span class="fc" id="L81">        CodeArea codeArea = new CodeArea();</span>
+<span class="fc" id="L82">        codeArea.setWrapText(true);</span>
+<span class="fc" id="L83">        return codeArea;</span>
+    }
+
+    @Override
+    public boolean shouldShow(BibEntry entry) {
+<span class="nc" id="L88">        return true;</span>
+    }
+
+    @Override
+    protected void bindToEntry(BibEntry entry) {
+<span class="fc" id="L93">        CodeArea codeArea = createSourceEditor();</span>
+<span class="fc" id="L94">        VirtualizedScrollPane&lt;CodeArea&gt; node = new VirtualizedScrollPane&lt;&gt;(codeArea);</span>
+<span class="fc" id="L95">        NotificationPane notificationPane = new NotificationPane(node);</span>
+<span class="fc" id="L96">        notificationPane.setShowFromTop(false);</span>
+<span class="fc" id="L97">        sourceValidator.getValidationStatus().getMessages().addListener((ListChangeListener&lt;ValidationMessage&gt;) c -&gt; {</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            if (sourceValidator.getValidationStatus().isValid()) {</span>
+<span class="nc" id="L99">                notificationPane.hide();</span>
+            } else {
+<span class="nc" id="L101">                sourceValidator.getValidationStatus().getHighestMessage().ifPresent(validationMessage -&gt; {</span>
+<span class="nc" id="L102">                    notificationPane.show(validationMessage.getMessage());//this seems not working</span>
+<span class="nc" id="L103">                    dialogService.showErrorDialogAndWait(validationMessage.getMessage());</span>
+<span class="nc" id="L104">                });</span>
+            }
+<span class="nc" id="L106">        });</span>
+<span class="fc" id="L107">        this.setContent(codeArea);</span>
+
+        // Store source for on focus out event in the source code (within its text area)
+        // and update source code for every change of entry field values
+<span class="fc" id="L111">        BindingsHelper.bindContentBidirectional(entry.getFieldsObservable(), codeArea.focusedProperty(), onFocus -&gt; {</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            if (!onFocus) {</span>
+<span class="nc" id="L113">                storeSource(codeArea.textProperty().getValue());</span>
+            }
+<span class="nc" id="L115">        }, fields -&gt; {</span>
+<span class="fc" id="L116">            DefaultTaskExecutor.runAndWaitInJavaFXThread(() -&gt; {</span>
+<span class="fc" id="L117">                codeArea.clear();</span>
+                try {
+<span class="fc" id="L119">                    codeArea.appendText(getSourceString(entry, mode, fieldFormatterPreferences));</span>
+<span class="nc" id="L120">                } catch (IOException ex) {</span>
+<span class="nc" id="L121">                    codeArea.setEditable(false);</span>
+<span class="nc" id="L122">                    codeArea.appendText(ex.getMessage() + &quot;\n\n&quot; +</span>
+<span class="nc" id="L123">                            Localization.lang(&quot;Correct the entry, and reopen editor to display/edit source.&quot;));</span>
+<span class="nc" id="L124">                    LOGGER.debug(&quot;Incorrect entry&quot;, ex);</span>
+<span class="fc" id="L125">                }</span>
+<span class="fc" id="L126">            });</span>
+<span class="fc" id="L127">        });</span>
+
+<span class="fc" id="L129">    }</span>
+
+    private void storeSource(String text) {
+<span class="nc bnc" id="L132" title="All 4 branches missed.">        if ((currentEntry == null) || text.isEmpty()) {</span>
+<span class="nc" id="L133">            return;</span>
+        }
+
+<span class="nc" id="L136">        BibtexParser bibtexParser = new BibtexParser(importFormatPreferences, fileMonitor);</span>
+        try {
+<span class="nc" id="L138">            ParserResult parserResult = bibtexParser.parse(new StringReader(text));</span>
+<span class="nc" id="L139">            BibDatabase database = parserResult.getDatabase();</span>
+
+<span class="nc bnc" id="L141" title="All 2 branches missed.">            if (database.getEntryCount() &gt; 1) {</span>
+<span class="nc" id="L142">                throw new IllegalStateException(&quot;More than one entry found.&quot;);</span>
+            }
+
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            if (!database.hasEntries()) {</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">                if (parserResult.hasWarnings()) {</span>
+                    // put the warning into as exception text -&gt; it will be displayed to the user
+<span class="nc" id="L148">                    throw new IllegalStateException(parserResult.warnings().get(0));</span>
+                } else {
+<span class="nc" id="L150">                    throw new IllegalStateException(&quot;No entries found.&quot;);</span>
+                }
+            }
+
+<span class="nc bnc" id="L154" title="All 2 branches missed.">            if (parserResult.hasWarnings()) {</span>
+                // put the warning into as exception text -&gt; it will be displayed to the user
+
+<span class="nc" id="L157">                throw new IllegalStateException(parserResult.getErrorMessage());</span>
+            }
+
+<span class="nc" id="L160">            NamedCompound compound = new NamedCompound(Localization.lang(&quot;source edit&quot;));</span>
+<span class="nc" id="L161">            BibEntry newEntry = database.getEntries().get(0);</span>
+<span class="nc" id="L162">            String newKey = newEntry.getCiteKeyOptional().orElse(null);</span>
+
+<span class="nc bnc" id="L164" title="All 2 branches missed.">            if (newKey != null) {</span>
+<span class="nc" id="L165">                currentEntry.setCiteKey(newKey);</span>
+            } else {
+<span class="nc" id="L167">                currentEntry.clearCiteKey();</span>
+            }
+
+            // First, remove fields that the user has removed.
+<span class="nc bnc" id="L171" title="All 2 branches missed.">            for (Map.Entry&lt;String, String&gt; field : currentEntry.getFieldMap().entrySet()) {</span>
+<span class="nc" id="L172">                String fieldName = field.getKey();</span>
+<span class="nc" id="L173">                String fieldValue = field.getValue();</span>
+
+<span class="nc bnc" id="L175" title="All 4 branches missed.">                if (InternalBibtexFields.isDisplayableField(fieldName) &amp;&amp; !newEntry.hasField(fieldName)) {</span>
+<span class="nc" id="L176">                    compound.addEdit(</span>
+                            new UndoableFieldChange(currentEntry, fieldName, fieldValue, null));
+<span class="nc" id="L178">                    currentEntry.clearField(fieldName);</span>
+                }
+<span class="nc" id="L180">            }</span>
+
+            // Then set all fields that have been set by the user.
+<span class="nc bnc" id="L183" title="All 2 branches missed.">            for (Map.Entry&lt;String, String&gt; field : newEntry.getFieldMap().entrySet()) {</span>
+<span class="nc" id="L184">                String fieldName = field.getKey();</span>
+<span class="nc" id="L185">                String oldValue = currentEntry.getField(fieldName).orElse(null);</span>
+<span class="nc" id="L186">                String newValue = field.getValue();</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">                if (!Objects.equals(oldValue, newValue)) {</span>
+                    // Test if the field is legally set.
+<span class="nc" id="L189">                    new LatexFieldFormatter(fieldFormatterPreferences)</span>
+<span class="nc" id="L190">                            .format(newValue, fieldName);</span>
+
+<span class="nc" id="L192">                    compound.addEdit(new UndoableFieldChange(currentEntry, fieldName, oldValue, newValue));</span>
+<span class="nc" id="L193">                    currentEntry.setField(fieldName, newValue);</span>
+                }
+<span class="nc" id="L195">            }</span>
+
+            // See if the user has changed the entry type:
+<span class="nc bnc" id="L198" title="All 2 branches missed.">            if (!Objects.equals(newEntry.getType(), currentEntry.getType())) {</span>
+<span class="nc" id="L199">                compound.addEdit(new UndoableChangeType(currentEntry, currentEntry.getType(), newEntry.getType()));</span>
+<span class="nc" id="L200">                currentEntry.setType(newEntry.getType());</span>
+            }
+<span class="nc" id="L202">            compound.end();</span>
+<span class="nc" id="L203">            undoManager.addEdit(compound);</span>
+
+<span class="nc" id="L205">            sourceIsValid.setValue(null);</span>
+<span class="nc" id="L206">        } catch (InvalidFieldValueException | IllegalStateException | IOException ex) {</span>
+<span class="nc" id="L207">            sourceIsValid.setValue(ValidationMessage.error(Localization.lang(&quot;Problem with parsing entry&quot;) + &quot;: &quot; + ex.getMessage()));</span>
+<span class="nc" id="L208">            LOGGER.debug(&quot;Incorrect source&quot;, ex);</span>
+<span class="nc" id="L209">        }</span>
+<span class="nc" id="L210">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

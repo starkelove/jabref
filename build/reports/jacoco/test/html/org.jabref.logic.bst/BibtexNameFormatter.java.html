@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibtexNameFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.bst</a> &gt; <span class="el_source">BibtexNameFormatter.java</span></div><h1>BibtexNameFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.bst;
+
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.jabref.model.entry.Author;
+import org.jabref.model.entry.AuthorList;
+
+/**
+ * From Bibtex:
+ *
+ * &quot;The |built_in| function {\.{format.name\$}} pops the
+ * top three literals (they are a string, an integer, and a string
+ * literal, in that order). The last string literal represents a
+ * name list (each name corresponding to a person), the integer
+ * literal specifies which name to pick from this list, and the
+ * first string literal specifies how to format this name, as
+ * described in the \BibTeX\ documentation. Finally, this function
+ * pushes the formatted name. If any of the types is incorrect, it
+ * complains and pushes the null string.&quot;
+ *
+ * Sounds easy - is a nightmare... X-(
+ *
+ */
+public class BibtexNameFormatter {
+
+    private BibtexNameFormatter() {
+    }
+
+    /**
+     * Formats the nth author of the author name list by a given format string
+     *
+     * @param authorsNameList The string from an author field
+     * @param whichName index of the list, starting with 1
+     * @param formatString TODO
+     * @param warn collects the warnings, may-be-null
+     * @return
+     */
+    public static String formatName(String authorsNameList, int whichName, String formatString, Warn warn) {
+<span class="fc" id="L42">        AuthorList al = AuthorList.parse(authorsNameList);</span>
+
+<span class="pc bpc" id="L44" title="3 of 4 branches missed.">        if ((whichName &lt; 1) &amp;&amp; (whichName &gt; al.getNumberOfAuthors())) {</span>
+<span class="nc" id="L45">            warn.warn(&quot;AuthorList &quot; + authorsNameList + &quot; does not contain an author with number &quot; + whichName);</span>
+<span class="nc" id="L46">            return &quot;&quot;;</span>
+        }
+<span class="fc" id="L48">        return BibtexNameFormatter.formatName(al.getAuthor(whichName - 1), formatString, warn);</span>
+    }
+
+    /**
+     * @param warn collects the warnings, may-be-null
+     */
+    public static String formatName(Author author, String format, Warn warn) {
+
+<span class="fc" id="L56">        StringBuilder sb = new StringBuilder();</span>
+
+<span class="fc" id="L58">        char[] c = format.toCharArray();</span>
+<span class="fc" id="L59">        int n = c.length;</span>
+<span class="fc" id="L60">        int braceLevel = 0;</span>
+<span class="fc" id="L61">        int group = 0;</span>
+
+<span class="fc" id="L63">        int i = 0;</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        while (i &lt; n) {</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">            if (c[i] == '{') {</span>
+<span class="fc" id="L66">                group++;</span>
+<span class="fc" id="L67">                i++;</span>
+<span class="fc" id="L68">                braceLevel++;</span>
+<span class="fc" id="L69">                StringBuilder level1Chars = new StringBuilder();</span>
+<span class="fc" id="L70">                StringBuilder wholeChar = new StringBuilder();</span>
+<span class="fc bfc" id="L71" title="All 4 branches covered.">                while ((i &lt; n) &amp;&amp; (braceLevel &gt; 0)) {</span>
+<span class="fc" id="L72">                    wholeChar.append(c[i]);</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">                    if (c[i] == '{') {</span>
+<span class="fc" id="L74">                        braceLevel++;</span>
+<span class="fc" id="L75">                        i++;</span>
+<span class="fc" id="L76">                        continue;</span>
+                    }
+<span class="fc bfc" id="L78" title="All 2 branches covered.">                    if (c[i] == '}') {</span>
+<span class="fc" id="L79">                        braceLevel--;</span>
+<span class="fc" id="L80">                        i++;</span>
+<span class="fc" id="L81">                        continue;</span>
+                    }
+<span class="fc bfc" id="L83" title="All 4 branches covered.">                    if ((braceLevel == 1) &amp;&amp; Character.isLetter(c[i])) {</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">                        if (&quot;fvlj&quot;.indexOf(c[i]) == -1) {</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">                            if (warn != null) {</span>
+<span class="nc" id="L86">                                warn.warn(</span>
+                                        &quot;Format string in format.name$ may only contain fvlj on brace level 1 in group &quot;
+                                                + group + &quot;: &quot; + format);
+                            }
+                        } else {
+<span class="fc" id="L91">                            level1Chars.append(c[i]);</span>
+                        }
+                    }
+<span class="fc" id="L94">                    i++;</span>
+                }
+<span class="fc" id="L96">                i--; // unskip last brace (for last i++ at the end)</span>
+<span class="fc" id="L97">                String control = level1Chars.toString().toLowerCase(Locale.ROOT);</span>
+
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">                if (control.isEmpty()) {</span>
+<span class="nc" id="L100">                    continue;</span>
+                }
+
+<span class="pc bpc" id="L103" title="3 of 4 branches missed.">                if ((control.length() &gt; 2) &amp;&amp; (warn != null)) {</span>
+<span class="nc" id="L104">                    warn.warn(&quot;Format string in format.name$ may only be one or two character long on brace level 1 in group &quot; + group + &quot;: &quot; + format);</span>
+                }
+
+<span class="fc" id="L107">                char type = control.charAt(0);</span>
+
+                Optional&lt;String&gt; tokenS;
+<span class="pc bpc" id="L110" title="1 of 5 branches missed.">                switch (type) {</span>
+                case 'f':
+<span class="fc" id="L112">                    tokenS = author.getFirst();</span>
+<span class="fc" id="L113">                    break;</span>
+                case 'v':
+<span class="fc" id="L115">                    tokenS = author.getVon();</span>
+<span class="fc" id="L116">                    break;</span>
+                case 'l':
+<span class="fc" id="L118">                    tokenS = author.getLast();</span>
+<span class="fc" id="L119">                    break;</span>
+                case 'j':
+<span class="fc" id="L121">                    tokenS = author.getJr();</span>
+<span class="fc" id="L122">                    break;</span>
+                default:
+<span class="nc" id="L124">                    throw new VMException(&quot;Internal error&quot;);</span>
+                }
+
+<span class="fc bfc" id="L127" title="All 2 branches covered.">                if (!tokenS.isPresent()) {</span>
+<span class="fc" id="L128">                    i++;</span>
+<span class="fc" id="L129">                    continue;</span>
+                }
+<span class="fc" id="L131">                String[] tokens = tokenS.get().split(&quot; &quot;);</span>
+
+<span class="fc" id="L133">                boolean abbreviateThatIsSingleLetter = true;</span>
+
+<span class="fc bfc" id="L135" title="All 2 branches covered.">                if (control.length() == 2) {</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">                    if (control.charAt(1) == control.charAt(0)) {</span>
+<span class="fc" id="L137">                        abbreviateThatIsSingleLetter = false;</span>
+                    } else {
+<span class="nc bnc" id="L139" title="All 2 branches missed.">                        if (warn != null) {</span>
+<span class="nc" id="L140">                            warn.warn(&quot;Format string in format.name$ may only contain one type of vlfj on brace level 1 in group &quot; + group + &quot;: &quot; + format);</span>
+                        }
+                    }
+                }
+
+                // Now we know what to do
+
+<span class="pc bpc" id="L147" title="2 of 4 branches missed.">                if ((braceLevel == 0) &amp;&amp; (wholeChar.charAt(wholeChar.length() - 1) == '}')) {</span>
+<span class="fc" id="L148">                    wholeChar.deleteCharAt(wholeChar.length() - 1);</span>
+                }
+
+<span class="fc" id="L151">                char[] d = wholeChar.toString().toCharArray();</span>
+
+<span class="fc" id="L153">                int bLevel = 1;</span>
+
+<span class="fc" id="L155">                String interToken = null;</span>
+<span class="fc" id="L156">                int groupStart = sb.length();</span>
+
+<span class="fc bfc" id="L158" title="All 2 branches covered.">                for (int j = 0; j &lt; d.length; j++) {</span>
+
+<span class="pc bpc" id="L160" title="1 of 4 branches missed.">                    if (Character.isLetter(d[j]) &amp;&amp; (bLevel == 1)) {</span>
+<span class="fc" id="L161">                        groupStart = sb.length();</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">                        if (!abbreviateThatIsSingleLetter) {</span>
+<span class="fc" id="L163">                            j++;</span>
+                        }
+<span class="fc bfc" id="L165" title="All 4 branches covered.">                        if (((j + 1) &lt; d.length) &amp;&amp; (d[j + 1] == '{')) {</span>
+<span class="fc" id="L166">                            StringBuilder interTokenSb = new StringBuilder();</span>
+<span class="fc" id="L167">                            j = BibtexNameFormatter.consumeToMatchingBrace(interTokenSb, d, j + 1);</span>
+<span class="fc" id="L168">                            interToken = interTokenSb.substring(1, interTokenSb.length() - 1);</span>
+                        }
+
+<span class="fc bfc" id="L171" title="All 2 branches covered.">                        for (int k = 0; k &lt; tokens.length; k++) {</span>
+<span class="fc" id="L172">                            String token = tokens[k];</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">                            if (abbreviateThatIsSingleLetter) {</span>
+<span class="fc" id="L174">                                String[] dashes = token.split(&quot;-&quot;);</span>
+
+<span class="fc" id="L176">                                token = Arrays.asList(dashes).stream().map(BibtexNameFormatter::getFirstCharOfString)</span>
+<span class="fc" id="L177">                                        .collect(Collectors.joining(&quot;.-&quot;));</span>
+                            }
+
+                            // Output token
+<span class="fc" id="L181">                            sb.append(token);</span>
+
+<span class="fc bfc" id="L183" title="All 2 branches covered.">                            if (k &lt; (tokens.length - 1)) {</span>
+                                // Output Intertoken String
+<span class="fc bfc" id="L185" title="All 2 branches covered.">                                if (interToken == null) {</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">                                    if (abbreviateThatIsSingleLetter) {</span>
+<span class="fc" id="L187">                                        sb.append('.');</span>
+                                    }
+                                    // No clue what this means (What the hell are tokens anyway???
+                                    // if (lex_class[name_sep_char[cur_token]] = sep_char) then
+                                    //    append_ex_buf_char_and_check (name_sep_char[cur_token])
+<span class="fc bfc" id="L192" title="All 4 branches covered.">                                    if ((k == (tokens.length - 2)) || (BibtexNameFormatter.numberOfChars(sb.substring(groupStart, sb.length()), 3) &lt; 3)) {</span>
+<span class="fc" id="L193">                                        sb.append('~');</span>
+                                    } else {
+<span class="fc" id="L195">                                        sb.append(' ');</span>
+                                    }
+                                } else {
+<span class="fc" id="L198">                                    sb.append(interToken);</span>
+                                }
+                            }
+                        }
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">                    } else if (d[j] == '}') {</span>
+<span class="nc" id="L203">                        bLevel--;</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">                        if (bLevel &gt; 0) {</span>
+<span class="nc" id="L205">                            sb.append('}');</span>
+                        }
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">                    } else if (d[j] == '{') {</span>
+<span class="nc" id="L208">                        bLevel++;</span>
+<span class="nc" id="L209">                        sb.append('{');</span>
+                    } else {
+<span class="fc" id="L211">                        sb.append(d[j]);</span>
+                    }
+                }
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">                if (sb.length() &gt; 0) {</span>
+<span class="fc" id="L215">                    boolean noDisTie = false;</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">                    if ((sb.charAt(sb.length() - 1) == '~') &amp;&amp;</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">                            ((BibtexNameFormatter.numberOfChars(sb.substring(groupStart, sb.length()), 4) &gt;= 4) ||</span>
+<span class="pc bpc" id="L218" title="3 of 6 branches missed.">                            ((sb.length() &gt; 1) &amp;&amp; (noDisTie = sb.charAt(sb.length() - 2) == '~')))) {</span>
+<span class="fc" id="L219">                        sb.deleteCharAt(sb.length() - 1);</span>
+<span class="pc bpc" id="L220" title="1 of 2 branches missed.">                        if (!noDisTie) {</span>
+<span class="fc" id="L221">                            sb.append(' ');</span>
+                        }
+                    }
+                }
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">            } else if (c[i] == '}') {</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">                if (warn != null) {</span>
+<span class="nc" id="L227">                    warn.warn(&quot;Unmatched brace in format string: &quot; + format);</span>
+                }
+            } else {
+<span class="fc" id="L230">                sb.append(c[i]); // verbatim</span>
+            }
+<span class="fc" id="L232">            i++;</span>
+        }
+<span class="pc bpc" id="L234" title="3 of 4 branches missed.">        if ((braceLevel != 0) &amp;&amp; (warn != null)) {</span>
+<span class="nc" id="L235">            warn.warn(&quot;Unbalanced brace in format string for nameFormat: &quot; + format);</span>
+        }
+
+<span class="fc" id="L238">        return sb.toString();</span>
+    }
+
+    /**
+     * Including the matching brace.
+     *
+     * @param interTokenSb
+     * @param c
+     * @param pos
+     * @return
+     */
+    public static int consumeToMatchingBrace(StringBuilder interTokenSb, char[] c, int pos) {
+
+<span class="fc" id="L251">        int braceLevel = 0;</span>
+
+<span class="fc bfc" id="L253" title="All 2 branches covered.">        for (int i = pos; i &lt; c.length; i++) {</span>
+<span class="fc bfc" id="L254" title="All 2 branches covered.">            if (c[i] == '}') {</span>
+<span class="fc" id="L255">                braceLevel--;</span>
+<span class="fc bfc" id="L256" title="All 2 branches covered.">                if (braceLevel == 0) {</span>
+<span class="fc" id="L257">                    interTokenSb.append('}');</span>
+<span class="fc" id="L258">                    return i;</span>
+                }
+<span class="fc bfc" id="L260" title="All 2 branches covered.">            } else if (c[i] == '{') {</span>
+<span class="fc" id="L261">                braceLevel++;</span>
+            }
+<span class="fc" id="L263">            interTokenSb.append(c[i]);</span>
+        }
+<span class="fc" id="L265">        return c.length;</span>
+    }
+
+    /**
+     * Takes care of special characters too
+     *
+     * @param s
+     * @return
+     */
+    public static String getFirstCharOfString(String s) {
+<span class="fc" id="L275">        char[] c = s.toCharArray();</span>
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">        for (int i = 0; i &lt; c.length; i++) {</span>
+<span class="fc bfc" id="L277" title="All 2 branches covered.">            if (Character.isLetter(c[i])) {</span>
+<span class="fc" id="L278">                return String.valueOf(c[i]);</span>
+            }
+<span class="pc bpc" id="L280" title="2 of 6 branches missed.">            if ((c[i] == '{') &amp;&amp; ((i + 1) &lt; c.length) &amp;&amp; (c[i + 1] == '\\')) {</span>
+<span class="fc" id="L281">                StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L282">                BibtexNameFormatter.consumeToMatchingBrace(sb, c, i);</span>
+<span class="fc" id="L283">                return sb.toString();</span>
+            }
+        }
+<span class="nc" id="L286">        return &quot;&quot;;</span>
+    }
+
+    public static int numberOfChars(String token, int inStop) {
+<span class="fc" id="L290">        int stop = inStop;</span>
+<span class="fc bfc" id="L291" title="All 2 branches covered.">        if (stop &lt; 0) {</span>
+<span class="fc" id="L292">            stop = Integer.MAX_VALUE;</span>
+        }
+
+<span class="fc" id="L295">        int result = 0;</span>
+<span class="fc" id="L296">        int i = 0;</span>
+<span class="fc" id="L297">        char[] c = token.toCharArray();</span>
+<span class="fc" id="L298">        int n = c.length;</span>
+
+<span class="fc" id="L300">        int braceLevel = 0;</span>
+<span class="fc bfc" id="L301" title="All 4 branches covered.">        while ((i &lt; n) &amp;&amp; (result &lt; stop)) {</span>
+<span class="fc" id="L302">            i++;</span>
+<span class="fc bfc" id="L303" title="All 2 branches covered.">            if (c[i - 1] == '{') {</span>
+<span class="fc" id="L304">                braceLevel++;</span>
+<span class="pc bpc" id="L305" title="2 of 6 branches missed.">                if ((braceLevel == 1) &amp;&amp; (i &lt; n) &amp;&amp; (c[i] == '\\')) {</span>
+<span class="fc" id="L306">                    i++;</span>
+<span class="pc bpc" id="L307" title="1 of 4 branches missed.">                    while ((i &lt; n) &amp;&amp; (braceLevel &gt; 0)) {</span>
+<span class="fc bfc" id="L308" title="All 2 branches covered.">                        if (c[i] == '}') {</span>
+<span class="fc" id="L309">                            braceLevel--;</span>
+<span class="fc bfc" id="L310" title="All 2 branches covered.">                        } else if (c[i] == '{') {</span>
+<span class="fc" id="L311">                            braceLevel++;</span>
+                        }
+<span class="fc" id="L313">                        i++;</span>
+                    }
+                }
+<span class="fc bfc" id="L316" title="All 2 branches covered.">            } else if (c[i - 1] == '}') {</span>
+<span class="fc" id="L317">                braceLevel--;</span>
+            }
+<span class="fc" id="L319">            result++;</span>
+        }
+<span class="fc" id="L321">        return result;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

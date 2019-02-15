@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibtexWidth.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.bst</a> &gt; <span class="el_source">BibtexWidth.java</span></div><h1>BibtexWidth.java</h1><pre class="source lang-java linenums">package org.jabref.logic.bst;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * The |built_in| function {\.{purify\$}} pops the top (string) literal, removes
+ * nonalphanumeric characters except for |white_space| and |sep_char| characters
+ * (these get converted to a |space|) and removes certain alphabetic characters
+ * contained in the control sequences associated with a special character, and
+ * pushes the resulting string. If the literal isn't a string, it complains and
+ * pushes the null string.
+ *
+ */
+public class BibtexWidth {
+
+<span class="fc" id="L18">    private static final Logger LOGGER = LoggerFactory.getLogger(BibtexWidth.class);</span>
+
+    /*
+     * Quoted from Bibtex:
+     *
+     * Now we initialize the system-dependent |char_width| array, for which
+     * |space| is the only |white_space| character given a nonzero printing
+     * width. The widths here are taken from Stanford's June~'87 $cmr10$~font
+     * and represent hundredths of a point (rounded), but since they're used
+     * only for relative comparisons, the units have no meaning.
+     */
+
+    private static int[] widths;
+
+    static {
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">        if (BibtexWidth.widths == null) {</span>
+<span class="fc" id="L34">            BibtexWidth.widths = new int[128];</span>
+
+<span class="fc bfc" id="L36" title="All 2 branches covered.">            for (int i = 0; i &lt; 128; i++) {</span>
+<span class="fc" id="L37">                BibtexWidth.widths[i] = 0;</span>
+            }
+<span class="fc" id="L39">            BibtexWidth.widths[32] = 278;</span>
+<span class="fc" id="L40">            BibtexWidth.widths[33] = 278;</span>
+<span class="fc" id="L41">            BibtexWidth.widths[34] = 500;</span>
+<span class="fc" id="L42">            BibtexWidth.widths[35] = 833;</span>
+<span class="fc" id="L43">            BibtexWidth.widths[36] = 500;</span>
+<span class="fc" id="L44">            BibtexWidth.widths[37] = 833;</span>
+<span class="fc" id="L45">            BibtexWidth.widths[38] = 778;</span>
+<span class="fc" id="L46">            BibtexWidth.widths[39] = 278;</span>
+<span class="fc" id="L47">            BibtexWidth.widths[40] = 389;</span>
+<span class="fc" id="L48">            BibtexWidth.widths[41] = 389;</span>
+<span class="fc" id="L49">            BibtexWidth.widths[42] = 500;</span>
+<span class="fc" id="L50">            BibtexWidth.widths[43] = 778;</span>
+<span class="fc" id="L51">            BibtexWidth.widths[44] = 278;</span>
+<span class="fc" id="L52">            BibtexWidth.widths[45] = 333;</span>
+<span class="fc" id="L53">            BibtexWidth.widths[46] = 278;</span>
+<span class="fc" id="L54">            BibtexWidth.widths[47] = 500;</span>
+<span class="fc" id="L55">            BibtexWidth.widths[48] = 500;</span>
+<span class="fc" id="L56">            BibtexWidth.widths[49] = 500;</span>
+<span class="fc" id="L57">            BibtexWidth.widths[50] = 500;</span>
+<span class="fc" id="L58">            BibtexWidth.widths[51] = 500;</span>
+<span class="fc" id="L59">            BibtexWidth.widths[52] = 500;</span>
+<span class="fc" id="L60">            BibtexWidth.widths[53] = 500;</span>
+<span class="fc" id="L61">            BibtexWidth.widths[54] = 500;</span>
+<span class="fc" id="L62">            BibtexWidth.widths[55] = 500;</span>
+<span class="fc" id="L63">            BibtexWidth.widths[56] = 500;</span>
+<span class="fc" id="L64">            BibtexWidth.widths[57] = 500;</span>
+<span class="fc" id="L65">            BibtexWidth.widths[58] = 278;</span>
+<span class="fc" id="L66">            BibtexWidth.widths[59] = 278;</span>
+<span class="fc" id="L67">            BibtexWidth.widths[60] = 278;</span>
+<span class="fc" id="L68">            BibtexWidth.widths[61] = 778;</span>
+<span class="fc" id="L69">            BibtexWidth.widths[62] = 472;</span>
+<span class="fc" id="L70">            BibtexWidth.widths[63] = 472;</span>
+<span class="fc" id="L71">            BibtexWidth.widths[64] = 778;</span>
+<span class="fc" id="L72">            BibtexWidth.widths[65] = 750;</span>
+<span class="fc" id="L73">            BibtexWidth.widths[66] = 708;</span>
+<span class="fc" id="L74">            BibtexWidth.widths[67] = 722;</span>
+<span class="fc" id="L75">            BibtexWidth.widths[68] = 764;</span>
+<span class="fc" id="L76">            BibtexWidth.widths[69] = 681;</span>
+<span class="fc" id="L77">            BibtexWidth.widths[70] = 653;</span>
+<span class="fc" id="L78">            BibtexWidth.widths[71] = 785;</span>
+<span class="fc" id="L79">            BibtexWidth.widths[72] = 750;</span>
+<span class="fc" id="L80">            BibtexWidth.widths[73] = 361;</span>
+<span class="fc" id="L81">            BibtexWidth.widths[74] = 514;</span>
+<span class="fc" id="L82">            BibtexWidth.widths[75] = 778;</span>
+<span class="fc" id="L83">            BibtexWidth.widths[76] = 625;</span>
+<span class="fc" id="L84">            BibtexWidth.widths[77] = 917;</span>
+<span class="fc" id="L85">            BibtexWidth.widths[78] = 750;</span>
+<span class="fc" id="L86">            BibtexWidth.widths[79] = 778;</span>
+<span class="fc" id="L87">            BibtexWidth.widths[80] = 681;</span>
+<span class="fc" id="L88">            BibtexWidth.widths[81] = 778;</span>
+<span class="fc" id="L89">            BibtexWidth.widths[82] = 736;</span>
+<span class="fc" id="L90">            BibtexWidth.widths[83] = 556;</span>
+<span class="fc" id="L91">            BibtexWidth.widths[84] = 722;</span>
+<span class="fc" id="L92">            BibtexWidth.widths[85] = 750;</span>
+<span class="fc" id="L93">            BibtexWidth.widths[86] = 750;</span>
+<span class="fc" id="L94">            BibtexWidth.widths[87] = 1028;</span>
+<span class="fc" id="L95">            BibtexWidth.widths[88] = 750;</span>
+<span class="fc" id="L96">            BibtexWidth.widths[89] = 750;</span>
+<span class="fc" id="L97">            BibtexWidth.widths[90] = 611;</span>
+<span class="fc" id="L98">            BibtexWidth.widths[91] = 278;</span>
+<span class="fc" id="L99">            BibtexWidth.widths[92] = 500;</span>
+<span class="fc" id="L100">            BibtexWidth.widths[93] = 278;</span>
+<span class="fc" id="L101">            BibtexWidth.widths[94] = 500;</span>
+<span class="fc" id="L102">            BibtexWidth.widths[95] = 278;</span>
+<span class="fc" id="L103">            BibtexWidth.widths[96] = 278;</span>
+<span class="fc" id="L104">            BibtexWidth.widths[97] = 500;</span>
+<span class="fc" id="L105">            BibtexWidth.widths[98] = 556;</span>
+<span class="fc" id="L106">            BibtexWidth.widths[99] = 444;</span>
+<span class="fc" id="L107">            BibtexWidth.widths[100] = 556;</span>
+<span class="fc" id="L108">            BibtexWidth.widths[101] = 444;</span>
+<span class="fc" id="L109">            BibtexWidth.widths[102] = 306;</span>
+<span class="fc" id="L110">            BibtexWidth.widths[103] = 500;</span>
+<span class="fc" id="L111">            BibtexWidth.widths[104] = 556;</span>
+<span class="fc" id="L112">            BibtexWidth.widths[105] = 278;</span>
+<span class="fc" id="L113">            BibtexWidth.widths[106] = 306;</span>
+<span class="fc" id="L114">            BibtexWidth.widths[107] = 528;</span>
+<span class="fc" id="L115">            BibtexWidth.widths[108] = 278;</span>
+<span class="fc" id="L116">            BibtexWidth.widths[109] = 833;</span>
+<span class="fc" id="L117">            BibtexWidth.widths[110] = 556;</span>
+<span class="fc" id="L118">            BibtexWidth.widths[111] = 500;</span>
+<span class="fc" id="L119">            BibtexWidth.widths[112] = 556;</span>
+<span class="fc" id="L120">            BibtexWidth.widths[113] = 528;</span>
+<span class="fc" id="L121">            BibtexWidth.widths[114] = 392;</span>
+<span class="fc" id="L122">            BibtexWidth.widths[115] = 394;</span>
+<span class="fc" id="L123">            BibtexWidth.widths[116] = 389;</span>
+<span class="fc" id="L124">            BibtexWidth.widths[117] = 556;</span>
+<span class="fc" id="L125">            BibtexWidth.widths[118] = 528;</span>
+<span class="fc" id="L126">            BibtexWidth.widths[119] = 722;</span>
+<span class="fc" id="L127">            BibtexWidth.widths[120] = 528;</span>
+<span class="fc" id="L128">            BibtexWidth.widths[121] = 528;</span>
+<span class="fc" id="L129">            BibtexWidth.widths[122] = 444;</span>
+<span class="fc" id="L130">            BibtexWidth.widths[123] = 500;</span>
+<span class="fc" id="L131">            BibtexWidth.widths[124] = 1000;</span>
+<span class="fc" id="L132">            BibtexWidth.widths[125] = 500;</span>
+<span class="fc" id="L133">            BibtexWidth.widths[126] = 500;</span>
+        }
+<span class="fc" id="L135">    }</span>
+
+    private BibtexWidth() {
+    }
+
+    private static int getSpecialCharWidth(char[] c, int pos) {
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">        if ((pos + 1) &lt; c.length) {</span>
+<span class="pc bpc" id="L142" title="2 of 4 branches missed.">            if ((c[pos] == 'o') &amp;&amp; (c[pos + 1] == 'e')) {</span>
+<span class="fc" id="L143">                return 778;</span>
+            }
+<span class="nc bnc" id="L145" title="All 4 branches missed.">            if ((c[pos] == 'O') &amp;&amp; (c[pos + 1] == 'E')) {</span>
+<span class="nc" id="L146">                return 1014;</span>
+            }
+<span class="nc bnc" id="L148" title="All 4 branches missed.">            if ((c[pos] == 'a') &amp;&amp; (c[pos + 1] == 'e')) {</span>
+<span class="nc" id="L149">                return 722;</span>
+            }
+<span class="nc bnc" id="L151" title="All 4 branches missed.">            if ((c[pos] == 'A') &amp;&amp; (c[pos + 1] == 'E')) {</span>
+<span class="nc" id="L152">                return 903;</span>
+            }
+<span class="nc bnc" id="L154" title="All 4 branches missed.">            if ((c[pos] == 's') &amp;&amp; (c[pos + 1] == 's')) {</span>
+<span class="nc" id="L155">                return 500;</span>
+            }
+        }
+<span class="nc" id="L158">        return BibtexWidth.getCharWidth(c[pos]);</span>
+    }
+
+    public static int getCharWidth(char c) {
+
+<span class="pc bpc" id="L163" title="2 of 4 branches missed.">        if ((c &gt;= 0) &amp;&amp; (c &lt; 128)) {</span>
+<span class="fc" id="L164">            return BibtexWidth.widths[c];</span>
+        } else {
+<span class="nc" id="L166">            return 0;</span>
+        }
+    }
+
+    /**
+     *
+     * @param toMeasure
+     * @param warn
+     *            may-be-null
+     * @return
+     */
+    public static int width(String toMeasure) {
+
+        /*
+         * From Bibtex: We use the natural width for all but special characters,
+         * and we complain if the string isn't brace-balanced.
+         */
+
+<span class="fc" id="L184">        int i = 0;</span>
+<span class="fc" id="L185">        int n = toMeasure.length();</span>
+<span class="fc" id="L186">        int braceLevel = 0;</span>
+<span class="fc" id="L187">        char[] c = toMeasure.toCharArray();</span>
+<span class="fc" id="L188">        int result = 0;</span>
+
+        /*
+         * From Bibtex:
+         *
+         * We use the natural widths of all characters except that some
+         * characters have no width: braces, control sequences (except for the
+         * usual 13 accented and foreign characters, whose widths are given in
+         * the next module), and |white_space| following control sequences (even
+         * a null control sequence).
+         *
+         */
+<span class="fc bfc" id="L200" title="All 2 branches covered.">        while (i &lt; n) {</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">            if (c[i] == '{') {</span>
+<span class="fc" id="L202">                braceLevel++;</span>
+<span class="pc bpc" id="L203" title="3 of 6 branches missed.">                if ((braceLevel == 1) &amp;&amp; ((i + 1) &lt; n) &amp;&amp; (c[i + 1] == '\\')) {</span>
+<span class="fc" id="L204">                    i++; // skip brace</span>
+<span class="fc bfc" id="L205" title="All 4 branches covered.">                    while ((i &lt; n) &amp;&amp; (braceLevel &gt; 0)) {</span>
+<span class="fc" id="L206">                        i++; // skip backslash</span>
+
+<span class="fc" id="L208">                        int afterBackslash = i;</span>
+<span class="pc bpc" id="L209" title="1 of 4 branches missed.">                        while ((i &lt; n) &amp;&amp; Character.isLetter(c[i])) {</span>
+<span class="fc" id="L210">                            i++;</span>
+                        }
+<span class="pc bpc" id="L212" title="1 of 4 branches missed.">                        if ((i &lt; n) &amp;&amp; (i == afterBackslash)) {</span>
+<span class="fc" id="L213">                            i++; // Skip non-alpha control seq</span>
+                        } else {
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">                            if (BibtexCaseChanger.findSpecialChar(c, afterBackslash).isPresent()) {</span>
+<span class="fc" id="L216">                                result += BibtexWidth.getSpecialCharWidth(c, afterBackslash);</span>
+                            }
+                        }
+<span class="pc bpc" id="L219" title="1 of 4 branches missed.">                        while ((i &lt; n) &amp;&amp; Character.isWhitespace(c[i])) {</span>
+<span class="fc" id="L220">                            i++;</span>
+                        }
+<span class="pc bpc" id="L222" title="1 of 6 branches missed.">                        while ((i &lt; n) &amp;&amp; (braceLevel &gt; 0) &amp;&amp; (c[i] != '\\')) {</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">                            if (c[i] == '}') {</span>
+<span class="fc" id="L224">                                braceLevel--;</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">                            } else if (c[i] == '{') {</span>
+<span class="fc" id="L226">                                braceLevel++;</span>
+                            } else {
+<span class="fc" id="L228">                                result += BibtexWidth.getCharWidth(c[i]);</span>
+                            }
+<span class="fc" id="L230">                            i++;</span>
+                        }
+<span class="fc" id="L232">                    }</span>
+                    continue;
+                }
+<span class="pc bpc" id="L235" title="1 of 2 branches missed.">            } else if (c[i] == '}') {</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">                if (braceLevel &gt; 0) {</span>
+<span class="nc" id="L237">                    braceLevel--;</span>
+                } else {
+<span class="nc" id="L239">                    LOGGER.warn(&quot;Too many closing braces in string: &quot; + toMeasure);</span>
+                }
+            }
+<span class="fc" id="L242">            result += BibtexWidth.getCharWidth(c[i]);</span>
+<span class="fc" id="L243">            i++;</span>
+        }
+<span class="pc bpc" id="L245" title="1 of 2 branches missed.">        if (braceLevel &gt; 0) {</span>
+<span class="nc" id="L246">            LOGGER.warn(&quot;No enough closing braces in string: &quot; + toMeasure);</span>
+        }
+<span class="fc" id="L248">        return result;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

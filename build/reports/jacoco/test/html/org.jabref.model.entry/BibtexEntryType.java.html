@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibtexEntryType.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry</a> &gt; <span class="el_source">BibtexEntryType.java</span></div><h1>BibtexEntryType.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * Abstract base class for all BibTex entry types.
+ */
+public abstract class BibtexEntryType implements EntryType {
+
+    private final Set&lt;String&gt; requiredFields;
+    private final Set&lt;String&gt; optionalFields;
+
+
+<span class="fc" id="L18">    public BibtexEntryType() {</span>
+<span class="fc" id="L19">        requiredFields = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc" id="L20">        optionalFields = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc" id="L21">    }</span>
+
+    void addAllOptional(String... fieldNames) {
+<span class="fc" id="L24">        optionalFields.addAll(Arrays.asList(fieldNames));</span>
+<span class="fc" id="L25">    }</span>
+
+    void addAllRequired(String... fieldNames) {
+<span class="fc" id="L28">        requiredFields.addAll(Arrays.asList(fieldNames));</span>
+<span class="fc" id="L29">    }</span>
+
+    @Override
+    public Set&lt;String&gt; getOptionalFields() {
+<span class="fc" id="L33">        return Collections.unmodifiableSet(optionalFields);</span>
+    }
+
+    @Override
+    public Set&lt;String&gt; getRequiredFields() {
+<span class="fc" id="L38">        return Collections.unmodifiableSet(requiredFields);</span>
+    }
+
+    @Override
+    public int compareTo(EntryType o) {
+<span class="fc" id="L43">        return getName().compareTo(o.getName());</span>
+    }
+
+    @Override
+    public Set&lt;String&gt; getPrimaryOptionalFields() {
+<span class="nc" id="L48">        return getOptionalFields();</span>
+    }
+
+    @Override
+    public Set&lt;String&gt; getSecondaryOptionalFields() {
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        return getOptionalFields().stream().filter(field -&gt; !isPrimary(field)).collect(Collectors.toSet());</span>
+    }
+
+    private boolean isPrimary(String field) {
+<span class="nc" id="L57">        return getPrimaryOptionalFields().contains(field);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

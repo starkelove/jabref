@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibtexPurify.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.bst</a> &gt; <span class="el_source">BibtexPurify.java</span></div><h1>BibtexPurify.java</h1><pre class="source lang-java linenums">package org.jabref.logic.bst;
+
+/**
+ *
+ * The |built_in| function {\.{purify\$}} pops the top (string) literal, removes
+ * nonalphanumeric characters except for |white_space| and |sep_char| characters
+ * (these get converted to a |space|) and removes certain alphabetic characters
+ * contained in the control sequences associated with a special character, and
+ * pushes the resulting string. If the literal isn't a string, it complains and
+ * pushes the null string.
+ *
+ */
+public class BibtexPurify {
+
+    private BibtexPurify() {
+    }
+
+    /**
+     *
+     * @param toPurify
+     * @param warn
+     *            may-be-null
+     * @return
+     */
+    public static String purify(String toPurify, Warn warn) {
+
+<span class="fc" id="L27">        StringBuilder sb = new StringBuilder();</span>
+
+<span class="fc" id="L29">        char[] cs = toPurify.toCharArray();</span>
+<span class="fc" id="L30">        int n = cs.length;</span>
+<span class="fc" id="L31">        int i = 0;</span>
+
+<span class="fc" id="L33">        int braceLevel = 0;</span>
+
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        while (i &lt; n) {</span>
+<span class="fc" id="L36">            char c = cs[i];</span>
+<span class="fc bfc" id="L37" title="All 6 branches covered.">            if (Character.isWhitespace(c) || (c == '-') || (c == '~')) {</span>
+<span class="fc" id="L38">                sb.append(' ');</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">            } else if (Character.isLetterOrDigit(c)) {</span>
+<span class="fc" id="L40">                sb.append(c);</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            } else if (c == '{') {</span>
+<span class="fc" id="L42">                braceLevel++;</span>
+<span class="pc bpc" id="L43" title="3 of 6 branches missed.">                if ((braceLevel == 1) &amp;&amp; ((i + 1) &lt; n) &amp;&amp; (cs[i + 1] == '\\')) {</span>
+<span class="fc" id="L44">                    i++; // skip brace</span>
+<span class="fc bfc" id="L45" title="All 4 branches covered.">                    while ((i &lt; n) &amp;&amp; (braceLevel &gt; 0)) {</span>
+<span class="fc" id="L46">                        i++; // skip backslash</span>
+<span class="fc" id="L47">                        BibtexCaseChanger.findSpecialChar(cs, i).ifPresent(sb::append);</span>
+
+<span class="pc bpc" id="L49" title="1 of 4 branches missed.">                        while ((i &lt; n) &amp;&amp; Character.isLetter(cs[i])) {</span>
+<span class="fc" id="L50">                            i++;</span>
+                        }
+<span class="pc bpc" id="L52" title="1 of 6 branches missed.">                        while ((i &lt; n) &amp;&amp; (braceLevel &gt; 0) &amp;&amp; ((c = cs[i]) != '\\')) {</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">                            if (Character.isLetterOrDigit(c)) {</span>
+<span class="fc" id="L54">                                sb.append(c);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                            } else if (c == '}') {</span>
+<span class="fc" id="L56">                                braceLevel--;</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">                            } else if (c == '{') {</span>
+<span class="fc" id="L58">                                braceLevel++;</span>
+                            }
+<span class="fc" id="L60">                            i++;</span>
+                        }
+                    }
+                    continue;
+                }
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">            } else if (c == '}') {</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">                if (braceLevel &gt; 0) {</span>
+<span class="nc" id="L67">                    braceLevel--;</span>
+                } else {
+<span class="nc bnc" id="L69" title="All 2 branches missed.">                    if (warn != null) {</span>
+<span class="nc" id="L70">                        warn.warn(&quot;Unbalanced brace in string for purify$: &quot; + toPurify);</span>
+                    }
+                }
+            }
+<span class="fc" id="L74">            i++;</span>
+<span class="fc" id="L75">        }</span>
+<span class="pc bpc" id="L76" title="3 of 4 branches missed.">        if ((braceLevel != 0) &amp;&amp; (warn != null)) {</span>
+<span class="nc" id="L77">            warn.warn(&quot;Unbalanced brace in string for purify$: &quot; + toPurify);</span>
+        }
+
+<span class="fc" id="L80">        return sb.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

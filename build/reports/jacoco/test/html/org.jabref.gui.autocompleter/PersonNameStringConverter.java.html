@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PersonNameStringConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.autocompleter</a> &gt; <span class="el_source">PersonNameStringConverter.java</span></div><h1>PersonNameStringConverter.java</h1><pre class="source lang-java linenums">package org.jabref.gui.autocompleter;
+
+import javafx.util.StringConverter;
+
+import org.jabref.model.entry.Author;
+import org.jabref.model.entry.AuthorList;
+
+public class PersonNameStringConverter extends StringConverter&lt;Author&gt; {
+
+    private final boolean autoCompFF;
+    private final boolean autoCompLF;
+    private final AutoCompleteFirstNameMode autoCompleteFirstNameMode;
+
+<span class="nc" id="L14">    public PersonNameStringConverter(boolean autoCompFF, boolean autoCompLF, AutoCompleteFirstNameMode autoCompleteFirstNameMode) {</span>
+<span class="nc" id="L15">        this.autoCompFF = autoCompFF;</span>
+<span class="nc" id="L16">        this.autoCompLF = autoCompLF;</span>
+<span class="nc" id="L17">        this.autoCompleteFirstNameMode = autoCompleteFirstNameMode;</span>
+<span class="nc" id="L18">    }</span>
+
+<span class="nc" id="L20">    public PersonNameStringConverter(AutoCompletePreferences preferences) {</span>
+<span class="nc bnc" id="L21" title="All 2 branches missed.">        if (preferences.getOnlyCompleteFirstLast()) {</span>
+<span class="nc" id="L22">            autoCompFF = true;</span>
+<span class="nc" id="L23">            autoCompLF = false;</span>
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        } else if (preferences.getOnlyCompleteLastFirst()) {</span>
+<span class="nc" id="L25">            autoCompFF = false;</span>
+<span class="nc" id="L26">            autoCompLF = true;</span>
+        } else {
+<span class="nc" id="L28">            autoCompFF = true;</span>
+<span class="nc" id="L29">            autoCompLF = true;</span>
+        }
+
+<span class="nc" id="L32">        autoCompleteFirstNameMode = preferences.getFirstNameMode();</span>
+<span class="nc" id="L33">    }</span>
+
+    @Override
+    public String toString(Author author) {
+
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        if (autoCompLF) {</span>
+<span class="nc bnc" id="L39" title="All 4 branches missed.">            switch (autoCompleteFirstNameMode) {</span>
+                case ONLY_ABBREVIATED:
+<span class="nc" id="L41">                    return author.getLastFirst(true);</span>
+                case ONLY_FULL:
+<span class="nc" id="L43">                    return author.getLastFirst(false);</span>
+                case BOTH:
+<span class="nc" id="L45">                    return author.getLastFirst(true);</span>
+                default:
+                    break;
+            }
+        }
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        if (autoCompFF) {</span>
+<span class="nc bnc" id="L51" title="All 4 branches missed.">            switch (autoCompleteFirstNameMode) {</span>
+                case ONLY_ABBREVIATED:
+<span class="nc" id="L53">                    return author.getFirstLast(true);</span>
+                case ONLY_FULL:
+<span class="nc" id="L55">                    return author.getFirstLast(false);</span>
+                case BOTH:
+<span class="nc" id="L57">                    return author.getFirstLast(true);</span>
+                default:
+                    break;
+            }
+        }
+<span class="nc" id="L62">        return author.getLastOnly();</span>
+    }
+
+    @Override
+    public Author fromString(String string) {
+<span class="nc" id="L67">        return AuthorList.parse(string).getAuthor(0);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldName.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry</a> &gt; <span class="el_source">FieldName.java</span></div><h1>FieldName.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import org.jabref.model.strings.StringUtil;
+
+/**
+ * String constants for BibTeX entry field names
+ */
+public class FieldName {
+    // Character separating field names that are to be used in sequence as
+    // fallbacks for a single column (e.g. &quot;author/editor&quot; to use editor where
+    // author is not set):
+    public static final String FIELD_SEPARATOR = &quot;/&quot;;
+
+    public static final String INTERNAL_ALL_FIELD = &quot;all&quot;;
+    public static final String INTERNAL_ALL_TEXT_FIELDS_FIELD = &quot;all-text-fields&quot;;
+
+    // Field name constants
+    public static final String ABSTRACT = &quot;abstract&quot;;
+    public static final String ADDENDUM = &quot;addendum&quot;;
+    public static final String ADDRESS = &quot;address&quot;;
+    public static final String AFTERWORD = &quot;afterword&quot;;
+    public static final String ANNOTE = &quot;annote&quot;;
+    public static final String ANNOTATION = &quot;annotation&quot;;
+    public static final String ANNOTATOR = &quot;annotator&quot;;
+    public static final String ASSIGNEE = &quot;assignee&quot;;
+    public static final String AUTHOR = &quot;author&quot;;
+    public static final String BOOKAUTHOR = &quot;bookauthor&quot;;
+    public static final String BOOKPAGINATION = &quot;bookpagination&quot;;
+    public static final String BOOKSUBTITLE = &quot;booksubtitle&quot;;
+    public static final String BOOKTITLE = &quot;booktitle&quot;;
+    public static final String BOOKTITLEADDON = &quot;booktitleaddon&quot;;
+    public static final String CHAPTER = &quot;chapter&quot;;
+    public static final String COMMENTATOR = &quot;commentator&quot;;
+    public static final String COMMENT = &quot;comment&quot;;
+    public static final String CROSSREF = &quot;crossref&quot;;
+    public static final String DATE = &quot;date&quot;;
+    public static final String DAY = &quot;day&quot;;
+    public static final String DAYFILED = &quot;dayfiled&quot;;
+    public static final String DOI = &quot;doi&quot;;
+    public static final String EDITION = &quot;edition&quot;;
+    public static final String EDITOR = &quot;editor&quot;;
+    public static final String EDITORA = &quot;editora&quot;;
+    public static final String EDITORB = &quot;editorb&quot;;
+    public static final String EDITORC = &quot;editorc&quot;;
+    public static final String EDITORTYPE = &quot;editortype&quot;;
+    public static final String EDITORATYPE = &quot;editoratype&quot;;
+    public static final String EDITORBTYPE = &quot;editorbtype&quot;;
+    public static final String EDITORCTYPE = &quot;editorctype&quot;;
+    public static final String EID = &quot;eid&quot;;
+    public static final String ENTRYSET = &quot;entryset&quot;;
+    public static final String EPRINT = &quot;eprint&quot;;
+    public static final String EPRINTCLASS = &quot;eprintclass&quot;;
+    public static final String EPRINTTYPE = &quot;eprinttype&quot;;
+    public static final String EVENTDATE = &quot;eventdate&quot;;
+    public static final String EVENTTITLE = &quot;eventtitle&quot;;
+    public static final String EVENTTITLEADDON = &quot;eventtitleaddon&quot;;
+    public static final String FILE = &quot;file&quot;;
+    public static final String FOREWORD = &quot;foreword&quot;;
+    public static final String FOLDER = &quot;folder&quot;;
+    public static final String GENDER = &quot;gender&quot;;
+    public static final String HOLDER = &quot;holder&quot;;
+    public static final String HOWPUBLISHED = &quot;howpublished&quot;;
+    public static final String INSTITUTION = &quot;institution&quot;;
+    public static final String INTRODUCTION = &quot;introduction&quot;;
+    public static final String ISBN = &quot;isbn&quot;;
+    public static final String ISRN = &quot;isrn&quot;;
+    public static final String ISSN = &quot;issn&quot;;
+    public static final String ISSUE = &quot;issue&quot;;
+    public static final String ISSUETITLE = &quot;issuetitle&quot;;
+    public static final String ISSUESUBTITLE = &quot;issuesubtitle&quot;;
+    public static final String JOURNAL = &quot;journal&quot;;
+    public static final String JOURNALSUBTITLE = &quot;journalsubtitle&quot;;
+    public static final String JOURNALTITLE = &quot;journaltitle&quot;;
+    public static final String KEY = &quot;key&quot;;
+    public static final String KEYWORDS = &quot;keywords&quot;;
+    public static final String LANGUAGE = &quot;language&quot;;
+    public static final String LOCATION = &quot;location&quot;;
+    public static final String MAINSUBTITLE = &quot;mainsubtitle&quot;;
+    public static final String MAINTITLE = &quot;maintitle&quot;;
+    public static final String MAINTITLEADDON = &quot;maintitleaddon&quot;;
+    public static final String MONTH = &quot;month&quot;;
+    public static final String MONTHFILED = &quot;monthfiled&quot;;
+    public static final String NAMEADDON = &quot;nameaddon&quot;;
+    public static final String NATIONALITY = &quot;nationality&quot;;
+    public static final String NOTE = &quot;note&quot;;
+    public static final String NUMBER = &quot;number&quot;;
+    public static final String ORGANIZATION = &quot;organization&quot;;
+    public static final String ORIGDATE = &quot;origdate&quot;;
+    public static final String ORIGLANGUAGE = &quot;origlanguage&quot;;
+    public static final String PAGES = &quot;pages&quot;;
+    public static final String PAGETOTAL = &quot;pagetotal&quot;;
+    public static final String PAGINATION = &quot;pagination&quot;;
+    public static final String PART = &quot;part&quot;;
+    public static final String PDF = &quot;pdf&quot;;
+    public static final String PMID = &quot;pmid&quot;;
+    public static final String PS = &quot;ps&quot;;
+    public static final String PUBLISHER = &quot;publisher&quot;;
+    public static final String PUBSTATE = &quot;pubstate&quot;;
+    public static final String RELATED = &quot;related&quot;;
+    public static final String REPORTNO = &quot;reportno&quot;;
+    public static final String REVIEW = &quot;review&quot;;
+    public static final String REVISION = &quot;revision&quot;;
+    public static final String SCHOOL = &quot;school&quot;;
+    public static final String SERIES = &quot;series&quot;;
+    public static final String SHORTAUTHOR = &quot;shortauthor&quot;;
+    public static final String SHORTEDITOR = &quot;shorteditor&quot;;
+    public static final String SHORTTITLE = &quot;shorttitle&quot;;
+    public static final String SORTNAME = &quot;sortname&quot;;
+    public static final String SUBTITLE = &quot;subtitle&quot;;
+    public static final String TITLE = &quot;title&quot;;
+    public static final String TITLEADDON = &quot;titleaddon&quot;;
+    public static final String TRANSLATOR = &quot;translator&quot;;
+    public static final String TYPE = &quot;type&quot;;
+    public static final String URI = &quot;uri&quot;;
+    public static final String URL = &quot;url&quot;;
+    public static final String URLDATE = &quot;urldate&quot;;
+    public static final String VENUE = &quot;venue&quot;;
+    public static final String VERSION = &quot;version&quot;;
+    public static final String VOLUME = &quot;volume&quot;;
+    public static final String VOLUMES = &quot;volumes&quot;;
+    public static final String YEAR = &quot;year&quot;;
+    public static final String YEARFILED = &quot;yearfiled&quot;;
+    public static final String MR_NUMBER = &quot;mrnumber&quot;;
+
+    // IEEE BSTctl fields
+    public static final String CTLALT_STRETCH_FACTOR = &quot;ctlalt_stretch_factor&quot;;
+    public static final String CTLDASH_REPEATED_NAMES = &quot;ctldash_repeated_names&quot;;
+    public static final String CTLMAX_NAMES_FORCED_ETAL = &quot;ctlmax_names_forced_etal&quot;;
+    public static final String CTLNAME_FORMAT_STRING = &quot;ctlname_format_string&quot;;
+    public static final String CTLNAME_LATEX_CMD = &quot;ctlname_latex_cmd&quot;;
+    public static final String CTLNAME_URL_PREFIX = &quot;ctlname_url_prefix&quot;;
+    public static final String CTLNAMES_SHOW_ETAL = &quot;ctlnames_show_etal&quot;;
+    public static final String CTLUSE_ALT_SPACING = &quot;ctluse_alt_spacing&quot;;
+    public static final String CTLUSE_ARTICLE_NUMBER = &quot;ctluse_article_number&quot;;
+    public static final String CTLUSE_FORCED_ETAL = &quot;ctluse_forced_etal&quot;;
+    public static final String CTLUSE_PAPER = &quot;ctluse_paper&quot;;
+    public static final String CTLUSE_URL = &quot;ctluse_url&quot;;
+
+    // JabRef internal field names
+    public static final String OWNER = &quot;owner&quot;;
+    public static final String TIMESTAMP = &quot;timestamp&quot;; // Not the actual field name, but the default value
+    public static final String GROUPS = &quot;groups&quot;;
+    public static final String SEARCH_INTERNAL = &quot;__search&quot;;
+    public static final String GROUPSEARCH_INTERNAL = &quot;__groupsearch&quot;;
+    public static final String MARKED_INTERNAL = &quot;__markedentry&quot;;
+
+    // Map to hold alternative display names
+<span class="fc" id="L154">    private static final Map&lt;String, String&gt; DISPLAY_NAMES = new HashMap&lt;&gt;();</span>
+
+    private FieldName() {
+    }
+
+    public static String orFields(String... fields) {
+<span class="fc" id="L160">        return String.join(FieldName.FIELD_SEPARATOR, fields);</span>
+    }
+
+    public static String orFields(List&lt;String&gt; fields) {
+<span class="nc" id="L164">        return String.join(FieldName.FIELD_SEPARATOR, fields);</span>
+    }
+
+    static {
+<span class="fc" id="L168">        DISPLAY_NAMES.put(FieldName.DOI, &quot;DOI&quot;);</span>
+<span class="fc" id="L169">        DISPLAY_NAMES.put(FieldName.ISBN, &quot;ISBN&quot;);</span>
+<span class="fc" id="L170">        DISPLAY_NAMES.put(FieldName.ISRN, &quot;ISRN&quot;);</span>
+<span class="fc" id="L171">        DISPLAY_NAMES.put(FieldName.ISSN, &quot;ISSN&quot;);</span>
+<span class="fc" id="L172">        DISPLAY_NAMES.put(FieldName.PMID, &quot;PMID&quot;);</span>
+<span class="fc" id="L173">        DISPLAY_NAMES.put(FieldName.PS, &quot;PS&quot;);</span>
+<span class="fc" id="L174">        DISPLAY_NAMES.put(FieldName.PDF, &quot;PDF&quot;);</span>
+<span class="fc" id="L175">        DISPLAY_NAMES.put(FieldName.URI, &quot;URI&quot;);</span>
+<span class="fc" id="L176">        DISPLAY_NAMES.put(FieldName.URL, &quot;URL&quot;);</span>
+<span class="fc" id="L177">    }</span>
+
+    /**
+     * @param field - field to get the display version for
+     * @return A version of the field name more suitable for display
+     */
+    public static String getDisplayName(String field) {
+<span class="nc" id="L184">        String lowercaseField = field.toLowerCase(Locale.ROOT);</span>
+
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        if (DISPLAY_NAMES.containsKey(lowercaseField)) {</span>
+<span class="nc" id="L187">            return DISPLAY_NAMES.get(lowercaseField);</span>
+        }
+<span class="nc" id="L189">        return StringUtil.capitalizeFirst(field);</span>
+    }
+
+    public static List&lt;String&gt; getNotTextFieldNames() {
+<span class="fc" id="L193">        return Arrays.asList(FieldName.DOI, FieldName.FILE, FieldName.URL, FieldName.URI, FieldName.ISBN, FieldName.ISSN, FieldName.MONTH, FieldName.DATE, FieldName.YEAR);</span>
+    }
+
+    public static List&lt;String&gt; getIdentifierFieldNames() {
+<span class="fc" id="L197">        return Arrays.asList(FieldName.DOI, FieldName.EPRINT, FieldName.PMID);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

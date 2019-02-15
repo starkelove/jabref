@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Cleanups.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.cleanup</a> &gt; <span class="el_source">Cleanups.java</span></div><h1>Cleanups.java</h1><pre class="source lang-java linenums">package org.jabref.logic.cleanup;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.jabref.logic.formatter.Formatters;
+import org.jabref.logic.formatter.IdentityFormatter;
+import org.jabref.logic.formatter.bibtexfields.HtmlToLatexFormatter;
+import org.jabref.logic.formatter.bibtexfields.HtmlToUnicodeFormatter;
+import org.jabref.logic.formatter.bibtexfields.NormalizeDateFormatter;
+import org.jabref.logic.formatter.bibtexfields.NormalizeMonthFormatter;
+import org.jabref.logic.formatter.bibtexfields.NormalizePagesFormatter;
+import org.jabref.logic.formatter.bibtexfields.OrdinalsToSuperscriptFormatter;
+import org.jabref.logic.formatter.bibtexfields.UnicodeToLatexFormatter;
+import org.jabref.logic.layout.format.LatexToUnicodeFormatter;
+import org.jabref.logic.layout.format.ReplaceUnicodeLigaturesFormatter;
+import org.jabref.model.cleanup.FieldFormatterCleanup;
+import org.jabref.model.cleanup.FieldFormatterCleanups;
+import org.jabref.model.cleanup.Formatter;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.strings.StringUtil;
+
+public class Cleanups {
+
+    public static final FieldFormatterCleanups DEFAULT_SAVE_ACTIONS;
+    public static final FieldFormatterCleanups RECOMMEND_BIBTEX_ACTIONS;
+    public static final FieldFormatterCleanups RECOMMEND_BIBLATEX_ACTIONS;
+
+    static {
+<span class="fc" id="L30">        List&lt;FieldFormatterCleanup&gt; defaultFormatters = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L31">        defaultFormatters.add(new FieldFormatterCleanup(FieldName.PAGES, new NormalizePagesFormatter()));</span>
+<span class="fc" id="L32">        defaultFormatters.add(new FieldFormatterCleanup(FieldName.DATE, new NormalizeDateFormatter()));</span>
+<span class="fc" id="L33">        defaultFormatters.add(new FieldFormatterCleanup(FieldName.MONTH, new NormalizeMonthFormatter()));</span>
+<span class="fc" id="L34">        defaultFormatters.add(new FieldFormatterCleanup(FieldName.INTERNAL_ALL_TEXT_FIELDS_FIELD, new ReplaceUnicodeLigaturesFormatter()));</span>
+<span class="fc" id="L35">        DEFAULT_SAVE_ACTIONS = new FieldFormatterCleanups(false, defaultFormatters);</span>
+
+<span class="fc" id="L37">        List&lt;FieldFormatterCleanup&gt; recommendedBibTeXFormatters = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L38">        recommendedBibTeXFormatters.addAll(defaultFormatters);</span>
+<span class="fc" id="L39">        recommendedBibTeXFormatters.add(new FieldFormatterCleanup(FieldName.INTERNAL_ALL_TEXT_FIELDS_FIELD, new HtmlToLatexFormatter()));</span>
+<span class="fc" id="L40">        recommendedBibTeXFormatters.add(new FieldFormatterCleanup(FieldName.INTERNAL_ALL_TEXT_FIELDS_FIELD, new UnicodeToLatexFormatter()));</span>
+<span class="fc" id="L41">        recommendedBibTeXFormatters.add(new FieldFormatterCleanup(FieldName.INTERNAL_ALL_TEXT_FIELDS_FIELD, new OrdinalsToSuperscriptFormatter()));</span>
+<span class="fc" id="L42">        RECOMMEND_BIBTEX_ACTIONS = new FieldFormatterCleanups(false, recommendedBibTeXFormatters);</span>
+
+<span class="fc" id="L44">        List&lt;FieldFormatterCleanup&gt; recommendedBiblatexFormatters = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L45">        recommendedBiblatexFormatters.addAll(defaultFormatters);</span>
+<span class="fc" id="L46">        recommendedBiblatexFormatters.add(new FieldFormatterCleanup(FieldName.TITLE, new HtmlToUnicodeFormatter()));</span>
+<span class="fc" id="L47">        recommendedBiblatexFormatters.add(new FieldFormatterCleanup(FieldName.INTERNAL_ALL_TEXT_FIELDS_FIELD, new LatexToUnicodeFormatter()));</span>
+        // DO NOT ADD OrdinalsToSuperscriptFormatter here, because this causes issues. See https://github.com/JabRef/jabref/issues/2596.
+<span class="fc" id="L49">        RECOMMEND_BIBLATEX_ACTIONS = new FieldFormatterCleanups(false, recommendedBiblatexFormatters);</span>
+<span class="fc" id="L50">    }</span>
+
+    private Cleanups() {
+    }
+
+    public static List&lt;Formatter&gt; getBuiltInFormatters() {
+<span class="fc" id="L56">        return Formatters.getAll();</span>
+    }
+
+    public static List&lt;FieldFormatterCleanup&gt; parse(String formatterString) {
+
+<span class="pc bpc" id="L61" title="2 of 4 branches missed.">        if ((formatterString == null) || formatterString.isEmpty()) {</span>
+            // no save actions defined in the meta data
+<span class="nc" id="L63">            return new ArrayList&lt;&gt;();</span>
+        }
+
+<span class="fc" id="L66">        List&lt;FieldFormatterCleanup&gt; actions = new ArrayList&lt;&gt;();</span>
+
+        //read concrete actions
+<span class="fc" id="L69">        int startIndex = 0;</span>
+
+        // first remove all newlines for easier parsing
+<span class="fc" id="L72">        String remainingString = formatterString;</span>
+
+<span class="fc" id="L74">        remainingString = StringUtil.unifyLineBreaks(remainingString, &quot;&quot;);</span>
+        try {
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            while (startIndex &lt; formatterString.length()) {</span>
+                // read the field name
+<span class="fc" id="L78">                int currentIndex = remainingString.indexOf('[');</span>
+<span class="fc" id="L79">                String fieldKey = remainingString.substring(0, currentIndex);</span>
+<span class="fc" id="L80">                int endIndex = remainingString.indexOf(']');</span>
+<span class="fc" id="L81">                startIndex += endIndex + 1;</span>
+
+                //read each formatter
+<span class="fc" id="L84">                int tokenIndex = remainingString.indexOf(',');</span>
+                do {
+<span class="fc" id="L86">                    boolean doBreak = false;</span>
+<span class="pc bpc" id="L87" title="1 of 4 branches missed.">                    if ((tokenIndex == -1) || (tokenIndex &gt; endIndex)) {</span>
+<span class="fc" id="L88">                        tokenIndex = remainingString.indexOf(']');</span>
+<span class="fc" id="L89">                        doBreak = true;</span>
+                    }
+
+<span class="fc" id="L92">                    String formatterKey = remainingString.substring(currentIndex + 1, tokenIndex);</span>
+<span class="fc" id="L93">                    actions.add(new FieldFormatterCleanup(fieldKey, getFormatterFromString(formatterKey)));</span>
+
+<span class="fc" id="L95">                    remainingString = remainingString.substring(tokenIndex + 1);</span>
+<span class="pc bpc" id="L96" title="1 of 4 branches missed.">                    if (remainingString.startsWith(&quot;]&quot;) || doBreak) {</span>
+<span class="fc" id="L97">                        break;</span>
+                    }
+<span class="fc" id="L99">                    tokenIndex = remainingString.indexOf(',');</span>
+
+<span class="fc" id="L101">                    currentIndex = -1;</span>
+<span class="fc" id="L102">                } while (true);</span>
+<span class="fc" id="L103">            }</span>
+<span class="fc" id="L104">        } catch (StringIndexOutOfBoundsException ignore) {</span>
+            // if this exception occurs, the remaining part of the save actions string is invalid.
+            // Thus we stop parsing and take what we have parsed until now
+<span class="fc" id="L107">            return actions;</span>
+<span class="fc" id="L108">        }</span>
+<span class="fc" id="L109">        return actions;</span>
+    }
+
+    public static FieldFormatterCleanups parse(List&lt;String&gt; formatterMetaList) {
+
+<span class="pc bpc" id="L114" title="2 of 4 branches missed.">        if ((formatterMetaList != null) &amp;&amp; (formatterMetaList.size() &gt;= 2)) {</span>
+<span class="fc" id="L115">            boolean enablementStatus = FieldFormatterCleanups.ENABLED.equals(formatterMetaList.get(0));</span>
+<span class="fc" id="L116">            String formatterString = formatterMetaList.get(1);</span>
+<span class="fc" id="L117">            return new FieldFormatterCleanups(enablementStatus, parse(formatterString));</span>
+        } else {
+            // return default actions
+<span class="nc" id="L120">            return DEFAULT_SAVE_ACTIONS;</span>
+        }
+    }
+
+    private static Formatter getFormatterFromString(String formatterName) {
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        for (Formatter formatter : getBuiltInFormatters()) {</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">            if (formatterName.equals(formatter.getKey())) {</span>
+<span class="fc" id="L127">                return formatter;</span>
+            }
+<span class="fc" id="L129">        }</span>
+<span class="fc" id="L130">        return new IdentityFormatter();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ListSynchronizer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.maintable</a> &gt; <span class="el_source">ListSynchronizer.java</span></div><h1>ListSynchronizer.java</h1><pre class="source lang-java linenums">package org.jabref.gui.maintable;
+
+import org.jabref.model.database.event.EntryAddedEvent;
+import org.jabref.model.database.event.EntryRemovedEvent;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.event.EntryChangedEvent;
+
+import ca.odell.glazedlists.EventList;
+import com.google.common.eventbus.Subscribe;
+
+public class ListSynchronizer {
+
+    private final EventList&lt;BibEntry&gt; list;
+
+<span class="nc" id="L15">    public ListSynchronizer(EventList&lt;BibEntry&gt; list) {</span>
+<span class="nc" id="L16">        this.list = list;</span>
+<span class="nc" id="L17">    }</span>
+
+    @Subscribe
+    public void listen(EntryAddedEvent entryAddedEvent) {
+<span class="nc" id="L21">        lock();</span>
+        try {
+<span class="nc" id="L23">            list.add(entryAddedEvent.getBibEntry());</span>
+        } finally {
+<span class="nc" id="L25">            unlock();</span>
+        }
+<span class="nc" id="L27">    }</span>
+
+    @Subscribe
+    public void listen(EntryRemovedEvent entryRemovedEvent) {
+<span class="nc" id="L31">        lock();</span>
+        try {
+<span class="nc" id="L33">            list.remove(entryRemovedEvent.getBibEntry());</span>
+        } finally {
+<span class="nc" id="L35">            unlock();</span>
+        }
+<span class="nc" id="L37">    }</span>
+
+    @Subscribe
+    public void listen(EntryChangedEvent entryChangedEvent) {
+<span class="nc" id="L41">        lock();</span>
+        try {
+            // cannot use list#indexOf b/c it won't distinguish between duplicates
+<span class="nc bnc" id="L44" title="All 2 branches missed.">            for (int i = 0; i &lt; list.size(); i++) {</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">                if (list.get(i) == entryChangedEvent.getBibEntry()) {</span>
+<span class="nc" id="L46">                    list.set(i, entryChangedEvent.getBibEntry());</span>
+<span class="nc" id="L47">                    break;</span>
+                }
+            }
+        } finally {
+<span class="nc" id="L51">            unlock();</span>
+        }
+<span class="nc" id="L53">    }</span>
+
+    private void lock() {
+<span class="nc" id="L56">        list.getReadWriteLock().writeLock().lock();</span>
+<span class="nc" id="L57">    }</span>
+
+    private void unlock() {
+<span class="nc" id="L60">        list.getReadWriteLock().writeLock().unlock();</span>
+<span class="nc" id="L61">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

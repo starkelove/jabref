@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TooltipTextUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">TooltipTextUtil.java</span></div><h1>TooltipTextUtil.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import javafx.scene.text.Text;
+
+/**
+ * Utility class with static methods for javafx {@link Text} objects
+ */
+<span class="nc" id="L12">public class TooltipTextUtil {</span>
+
+<span class="fc" id="L14">    public enum TextType {</span>
+<span class="fc" id="L15">        NORMAL, BOLD, ITALIC, MONOSPACED</span>
+    }
+
+    public static Text createText(String textString, TextType textType) {
+<span class="fc" id="L19">        Text text = new Text(textString);</span>
+<span class="pc bfc" id="L20" title="All 4 branches covered.">        switch (textType) {</span>
+            case BOLD:
+<span class="fc" id="L22">                text.getStyleClass().setAll(&quot;tooltip-text-bold&quot;);</span>
+<span class="fc" id="L23">                break;</span>
+            case ITALIC:
+<span class="fc" id="L25">                text.getStyleClass().setAll(&quot;tooltip-text-italic&quot;);</span>
+<span class="fc" id="L26">                break;</span>
+            case MONOSPACED:
+<span class="fc" id="L28">                text.getStyleClass().setAll(&quot;tooltip-text-monospaced&quot;);</span>
+<span class="fc" id="L29">                break;</span>
+            default:
+                break;
+        }
+<span class="fc" id="L33">        return text;</span>
+    }
+
+    public static Text createText(String textString) {
+<span class="fc" id="L37">        return createText(textString, TextType.NORMAL);</span>
+    }
+
+    public static String textToHTMLString(Text text) {
+<span class="fc" id="L41">        String textString = text.getText();</span>
+<span class="fc" id="L42">        textString = textString.replace(&quot;\n&quot;, &quot;&lt;br&gt;&quot;);</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (text.getStyleClass().toString().contains(&quot;tooltip-text-monospaced&quot;)) {</span>
+<span class="fc" id="L44">            textString = String.format(&quot;&lt;kbd&gt;%s&lt;/kbd&gt;&quot;, textString);</span>
+        }
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (text.getStyleClass().toString().contains(&quot;tooltip-text-bold&quot;)) {</span>
+<span class="fc" id="L47">            textString = String.format(&quot;&lt;b&gt;%s&lt;/b&gt;&quot;, textString);</span>
+        }
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (text.getStyleClass().toString().contains(&quot;tooltip-text-italic&quot;)) {</span>
+<span class="fc" id="L50">            textString = String.format(&quot;&lt;i&gt;%s&lt;/i&gt;&quot;, textString);</span>
+        }
+<span class="fc" id="L52">        return textString;</span>
+    }
+
+
+    /**
+     * Formats a String to multiple Texts by replacing some parts and adding font characteristics.
+     */
+    public static List&lt;Text&gt; formatToTexts(String original, TextReplacement... replacements) {
+<span class="fc" id="L60">        List&lt;Text&gt; textList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L61">        textList.add(new Text(original));</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        for (TextReplacement replacement : replacements) {</span>
+<span class="fc" id="L63">            splitReplace(textList, replacement);</span>
+        }
+
+<span class="fc" id="L66">        return textList;</span>
+    }
+
+    private static void splitReplace(List&lt;Text&gt; textList, TextReplacement replacement) {
+<span class="fc" id="L70">        Optional&lt;Text&gt; textContainingReplacement = textList.stream().filter(it -&gt; it.getText().contains(replacement.toReplace)).findFirst();</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (textContainingReplacement.isPresent()) {</span>
+<span class="fc" id="L72">            int index = textList.indexOf(textContainingReplacement.get());</span>
+<span class="fc" id="L73">            String original = textContainingReplacement.get().getText();</span>
+<span class="fc" id="L74">            textList.remove(index);</span>
+<span class="fc" id="L75">            String[] textParts = original.split(replacement.toReplace);</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            if (textParts.length == 2) {</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">                if (textParts[0].equals(&quot;&quot;)) {</span>
+<span class="fc" id="L78">                    textList.add(index, TooltipTextUtil.createText(replacement.replacement, replacement.textType));</span>
+<span class="fc" id="L79">                    textList.add(index + 1, TooltipTextUtil.createText(textParts[1], TooltipTextUtil.TextType.NORMAL));</span>
+                } else {
+<span class="fc" id="L81">                    textList.add(index, TooltipTextUtil.createText(textParts[0], TooltipTextUtil.TextType.NORMAL));</span>
+<span class="fc" id="L82">                    textList.add(index + 1, TooltipTextUtil.createText(replacement.replacement, replacement.textType));</span>
+<span class="fc" id="L83">                    textList.add(index + 2, TooltipTextUtil.createText(textParts[1], TooltipTextUtil.TextType.NORMAL));</span>
+                }
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">            } else if (textParts.length == 1) {</span>
+<span class="fc" id="L86">                textList.add(index, TooltipTextUtil.createText(textParts[0], TooltipTextUtil.TextType.NORMAL));</span>
+<span class="fc" id="L87">                textList.add(index + 1, TooltipTextUtil.createText(replacement.replacement, replacement.textType));</span>
+            } else {
+<span class="nc" id="L89">                throw new IllegalStateException(&quot;It is not allowed that the toReplace string: '&quot; + replacement.toReplace</span>
+                        + &quot;' exists multiple times in the original string&quot;);
+            }
+<span class="fc" id="L92">        } else {</span>
+<span class="nc" id="L93">            throw new IllegalStateException(&quot;It is not allowed that the toReplace string: '&quot; + replacement.toReplace</span>
+                    + &quot;' does not exist in the original string&quot;);
+        }
+<span class="fc" id="L96">    }</span>
+
+<span class="nc" id="L98">    public static class TextReplacement {</span>
+        private final String toReplace;
+        private final String replacement;
+        private final TooltipTextUtil.TextType textType;
+
+<span class="fc" id="L103">        public TextReplacement(String toReplace, String replacement, TooltipTextUtil.TextType textType) {</span>
+<span class="fc" id="L104">            this.toReplace = toReplace;</span>
+<span class="fc" id="L105">            this.replacement = replacement;</span>
+<span class="fc" id="L106">            this.textType = textType;</span>
+<span class="fc" id="L107">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

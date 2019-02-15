@@ -1,0 +1,627 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TreeNode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model</a> &gt; <span class="el_source">TreeNode.java</span></div><h1>TreeNode.java</h1><pre class="source lang-java linenums">package org.jabref.model;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
+/**
+ * Represents a node in a tree.
+ * &lt;p&gt;
+ * Usually, tree nodes have a value property which allows access to the value stored in the node.
+ * In contrast to this approach, the TreeNode&lt;T&gt; class is designed to be used as a base class which provides the
+ * tree traversing functionality via inheritance.
+ * &lt;p&gt;
+ * Example usage:
+ * private class BasicTreeNode extends TreeNode&lt;BasicTreeNode&gt; {
+ * public BasicTreeNode() {
+ * super(BasicTreeNode.class);
+ * }
+ * }
+ * &lt;p&gt;
+ * This class started out as a copy of javax.swing.tree.DefaultMutableTreeNode.
+ *
+ * @param &lt;T&gt; the type of the class
+ */
+// We use some explicit casts of the form &quot;(T) this&quot;. The constructor ensures that this cast is valid.
+@SuppressWarnings(&quot;unchecked&quot;) public abstract class TreeNode&lt;T extends TreeNode&lt;T&gt;&gt; {
+
+    /**
+     * Array of children, may be empty if this node has no children (but never null)
+     */
+    private final ObservableList&lt;T&gt; children;
+    /**
+     * This node's parent, or null if this node has no parent
+     */
+    private T parent;
+    /**
+     * The function which is invoked when something changed in the subtree.
+     */
+<span class="fc" id="L46">    private Consumer&lt;T&gt; onDescendantChanged = t -&gt; {</span>
+        /* Do nothing */
+<span class="fc" id="L48">    };</span>
+
+    /**
+     * Constructs a tree node without parent and no children.
+     *
+     * @param derivingClass class deriving from TreeNode&lt;T&gt;. It should always be &quot;T.class&quot;.
+     *                      We need this parameter since it is hard to get this information by other means.
+     */
+<span class="fc" id="L56">    public TreeNode(Class&lt;T&gt; derivingClass) {</span>
+<span class="fc" id="L57">        parent = null;</span>
+<span class="fc" id="L58">        children = FXCollections.observableArrayList();</span>
+
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (!derivingClass.isInstance(this)) {</span>
+<span class="fc" id="L61">            throw new UnsupportedOperationException(&quot;The class extending TreeNode&lt;T&gt; has to derive from T&quot;);</span>
+        }
+<span class="fc" id="L63">    }</span>
+
+    /**
+     * Get the path from the root node to this node.
+     * &lt;p&gt;
+     * The elements in the returned list represent the child index of each node in the path, starting at the root.
+     * If this node is the root node, the returned list has zero elements.
+     *
+     * @return a list of numbers which represent an indexed path from the root node to this node
+     */
+    public List&lt;Integer&gt; getIndexedPathFromRoot() {
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (parent == null) {</span>
+<span class="fc" id="L75">            return new ArrayList&lt;&gt;();</span>
+        }
+
+<span class="fc" id="L78">        List&lt;Integer&gt; path = parent.getIndexedPathFromRoot();</span>
+<span class="fc" id="L79">        path.add(getPositionInParent());</span>
+<span class="fc" id="L80">        return path;</span>
+    }
+
+    /**
+     * Get the descendant of this node as indicated by the indexedPath.
+     * &lt;p&gt;
+     * If the path could not be traversed completely (i.e. one of the child indices did not exist),
+     * an empty Optional will be returned.
+     *
+     * @param indexedPath sequence of child indices that describe a path from this node to one of its descendants.
+     *                    Be aware that if indexedPath was obtained by getIndexedPathFromRoot(), this node should
+     *                    usually be the root node.
+     * @return descendant found by evaluating indexedPath
+     */
+    public Optional&lt;T&gt; getDescendant(List&lt;Integer&gt; indexedPath) {
+<span class="fc" id="L95">        T cursor = (T) this;</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        for (int index : indexedPath) {</span>
+<span class="fc" id="L97">            Optional&lt;T&gt; child = cursor.getChildAt(index);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">            if (child.isPresent()) {</span>
+<span class="fc" id="L99">                cursor = child.get();</span>
+            } else {
+<span class="fc" id="L101">                return Optional.empty();</span>
+            }
+<span class="fc" id="L103">        }</span>
+<span class="fc" id="L104">        return Optional.of(cursor);</span>
+    }
+
+    /**
+     * Get the child index of this node in its parent.
+     * &lt;p&gt;
+     * If this node is a root, then an UnsupportedOperationException is thrown.
+     * Use the isRoot method to check for this case.
+     *
+     * @return the child index of this node in its parent
+     */
+    public int getPositionInParent() {
+<span class="fc" id="L116">        return getParent().orElseThrow(() -&gt; new UnsupportedOperationException(&quot;Roots have no position in parent&quot;))</span>
+<span class="fc" id="L117">                .getIndexOfChild((T) this).get();</span>
+    }
+
+    /**
+     * Gets the index of the specified child in this node's child list.
+     * &lt;p&gt;
+     * If the specified node is not a child of this node, returns an empty Optional.
+     * This method performs a linear search and is O(n) where n is the number of children.
+     *
+     * @param childNode the node to search for among this node's children
+     * @return an integer giving the index of the node in this node's child list
+     * or an empty Optional if the specified node is a not a child of this node
+     * @throws NullPointerException if childNode is null
+     */
+    public Optional&lt;Integer&gt; getIndexOfChild(T childNode) {
+<span class="fc" id="L132">        Objects.requireNonNull(childNode);</span>
+<span class="fc" id="L133">        int index = children.indexOf(childNode);</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if (index == -1) {</span>
+<span class="fc" id="L135">            return Optional.empty();</span>
+        } else {
+<span class="fc" id="L137">            return Optional.of(index);</span>
+        }
+    }
+
+    /**
+     * Gets the number of levels above this node, i.e. the distance from the root to this node.
+     * &lt;p&gt;
+     * If this node is the root, returns 0.
+     *
+     * @return an int giving the number of levels above this node
+     */
+    public int getLevel() {
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        if (parent == null) {</span>
+<span class="fc" id="L150">            return 0;</span>
+        }
+<span class="fc" id="L152">        return parent.getLevel() + 1;</span>
+    }
+
+    /**
+     * Returns the number of children of this node.
+     *
+     * @return an int giving the number of children of this node
+     */
+    public int getNumberOfChildren() {
+<span class="fc" id="L161">        return children.size();</span>
+    }
+
+    /**
+     * Removes this node from its parent and makes it a child of the specified node
+     * by adding it to the end of children list.
+     * In this way the whole subtree based at this node is moved to the given node.
+     *
+     * @param target the new parent
+     * @throws NullPointerException           if target is null
+     * @throws ArrayIndexOutOfBoundsException if targetIndex is out of bounds
+     * @throws UnsupportedOperationException  if target is an descendant of this node
+     */
+    public void moveTo(T target) {
+<span class="fc" id="L175">        Objects.requireNonNull(target);</span>
+
+<span class="fc" id="L177">        Optional&lt;T&gt; oldParent = getParent();</span>
+<span class="fc bfc" id="L178" title="All 4 branches covered.">        if (oldParent.isPresent() &amp;&amp; (oldParent.get() == target)) {</span>
+<span class="fc" id="L179">            this.moveTo(target, target.getNumberOfChildren() - 1);</span>
+        } else {
+<span class="fc" id="L181">            this.moveTo(target, target.getNumberOfChildren());</span>
+        }
+<span class="fc" id="L183">    }</span>
+
+    /**
+     * Returns the path from the root, to get to this node. The last element in the path is this node.
+     *
+     * @return a list of nodes giving the path, where the first element in the path is the root
+     * and the last element is this node.
+     */
+    public List&lt;T&gt; getPathFromRoot() {
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        if (parent == null) {</span>
+<span class="fc" id="L193">            List&lt;T&gt; pathToMe = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L194">            pathToMe.add((T) this);</span>
+<span class="fc" id="L195">            return pathToMe;</span>
+        }
+
+<span class="fc" id="L198">        List&lt;T&gt; path = parent.getPathFromRoot();</span>
+<span class="fc" id="L199">        path.add((T) this);</span>
+<span class="fc" id="L200">        return path;</span>
+    }
+
+    /**
+     * Returns the next sibling of this node in the parent's children list.
+     * Returns an empty Optional if this node has no parent or if it is the parent's last child.
+     * &lt;p&gt;
+     * This method performs a linear search that is O(n) where n is the number of children.
+     * To traverse the entire children collection, use the parent's getChildren() instead.
+     *
+     * @return the sibling of this node that immediately follows this node
+     * @see #getChildren
+     */
+    public Optional&lt;T&gt; getNextSibling() {
+<span class="fc" id="L214">        return getRelativeSibling(+1);</span>
+    }
+
+    /**
+     * Returns the previous sibling of this node in the parent's children list.
+     * Returns an empty Optional if this node has no parent or is the parent's first child.
+     * &lt;p&gt;
+     * This method performs a linear search that is O(n) where n is the number of children.
+     *
+     * @return the sibling of this node that immediately precedes this node
+     * @see #getChildren
+     */
+    public Optional&lt;T&gt; getPreviousSibling() {
+<span class="fc" id="L227">        return getRelativeSibling(-1);</span>
+    }
+
+    /**
+     * Returns the sibling which is shiftIndex away from this node.
+     */
+    private Optional&lt;T&gt; getRelativeSibling(int shiftIndex) {
+<span class="fc bfc" id="L234" title="All 2 branches covered.">        if (parent == null) {</span>
+<span class="fc" id="L235">            return Optional.empty();</span>
+        } else {
+<span class="fc" id="L237">            int indexInParent = getPositionInParent();</span>
+<span class="fc" id="L238">            int indexTarget = indexInParent + shiftIndex;</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">            if (parent.childIndexExists(indexTarget)) {</span>
+<span class="fc" id="L240">                return parent.getChildAt(indexTarget);</span>
+            } else {
+<span class="fc" id="L242">                return Optional.empty();</span>
+            }
+        }
+    }
+
+    /**
+     * Returns this node's parent or an empty Optional if this node has no parent.
+     *
+     * @return this node's parent T, or an empty Optional if this node has no parent
+     */
+    public Optional&lt;T&gt; getParent() {
+<span class="fc" id="L253">        return Optional.ofNullable(parent);</span>
+    }
+
+    /**
+     * Sets the parent node of this node.
+     * &lt;p&gt;
+     * This method does not add this node to the children collection of the new parent nor does it remove this node
+     * from the old parent. You should probably call moveTo or remove to change the tree.
+     *
+     * @param parent the new parent
+     */
+    protected void setParent(T parent) {
+<span class="fc" id="L265">        this.parent = parent;</span>
+<span class="fc" id="L266">    }</span>
+
+    /**
+     * Returns the child at the specified index in this node's children collection.
+     *
+     * @param index an index into this node's children collection
+     * @return the node in this node's children collection at the specified index,
+     * or an empty Optional if the index does not point to a child
+     */
+    public Optional&lt;T&gt; getChildAt(int index) {
+<span class="fc bfc" id="L276" title="All 2 branches covered.">        return childIndexExists(index) ? Optional.of(children.get(index)) : Optional.empty();</span>
+    }
+
+    /**
+     * Returns whether the specified index is a valid index for a child.
+     *
+     * @param index the index to be tested
+     * @return returns true when index is at least 0 and less then the count of children
+     */
+    protected boolean childIndexExists(int index) {
+<span class="fc bfc" id="L286" title="All 4 branches covered.">        return (index &gt;= 0) &amp;&amp; (index &lt; children.size());</span>
+    }
+
+    /**
+     * Returns true if this node is the root of the tree.
+     * The root is the only node in the tree with an empty parent; every tree has exactly one root.
+     *
+     * @return true if this node is the root of its tree
+     */
+    public boolean isRoot() {
+<span class="fc bfc" id="L296" title="All 2 branches covered.">        return parent == null;</span>
+    }
+
+    /**
+     * Returns true if this node is an ancestor of the given node.
+     * &lt;p&gt;
+     * A node is considered an ancestor of itself.
+     *
+     * @param anotherNode node to test
+     * @return true if anotherNode is a descendant of this node
+     * @throws NullPointerException if anotherNode is null
+     * @see #isNodeDescendant
+     */
+    public boolean isAncestorOf(T anotherNode) {
+<span class="fc" id="L310">        Objects.requireNonNull(anotherNode);</span>
+
+<span class="fc bfc" id="L312" title="All 2 branches covered.">        if (anotherNode == this) {</span>
+<span class="fc" id="L313">            return true;</span>
+        } else {
+<span class="fc bfc" id="L315" title="All 2 branches covered.">            for (T child : children) {</span>
+<span class="fc bfc" id="L316" title="All 2 branches covered.">                if (child.isAncestorOf(anotherNode)) {</span>
+<span class="fc" id="L317">                    return true;</span>
+                }
+<span class="fc" id="L319">            }</span>
+<span class="fc" id="L320">            return false;</span>
+        }
+    }
+
+    /**
+     * Returns the root of the tree that contains this node. The root is the ancestor with an empty parent.
+     * Thus a node without a parent is considered its own root.
+     *
+     * @return the root of the tree that contains this node
+     */
+    public T getRoot() {
+<span class="fc bfc" id="L331" title="All 2 branches covered.">        if (parent == null) {</span>
+<span class="fc" id="L332">            return (T) this;</span>
+        } else {
+<span class="fc" id="L334">            return parent.getRoot();</span>
+        }
+    }
+
+    /**
+     * Returns true if this node has no children.
+     *
+     * @return true if this node has no children
+     */
+    public boolean isLeaf() {
+<span class="fc bfc" id="L344" title="All 2 branches covered.">        return (getNumberOfChildren() == 0);</span>
+    }
+
+    /**
+     * Removes the subtree rooted at this node from the tree, giving this node an empty parent.
+     * Does nothing if this node is the root of it tree.
+     */
+    public void removeFromParent() {
+<span class="pc bpc" id="L352" title="1 of 2 branches missed.">        if (parent != null) {</span>
+<span class="fc" id="L353">            parent.removeChild((T) this);</span>
+        }
+<span class="fc" id="L355">    }</span>
+
+    /**
+     * Removes all of this node's children, setting their parents to empty.
+     * If this node has no children, this method does nothing.
+     */
+    public void removeAllChildren() {
+<span class="fc bfc" id="L362" title="All 2 branches covered.">        while (getNumberOfChildren() &gt; 0) {</span>
+<span class="fc" id="L363">            removeChild(0);</span>
+        }
+<span class="fc" id="L365">    }</span>
+
+    /**
+     * Returns this node's first child if it exists (otherwise returns an empty Optional).
+     *
+     * @return the first child of this node
+     */
+    public Optional&lt;T&gt; getFirstChild() {
+<span class="fc" id="L373">        return getChildAt(0);</span>
+    }
+
+    /**
+     * Returns this node's last child if it exists (otherwise returns an empty Optional).
+     *
+     * @return the last child of this node
+     */
+    public Optional&lt;T&gt; getLastChild() {
+<span class="fc" id="L382">        return getChildAt(children.size() - 1);</span>
+    }
+
+    /**
+     * Returns true if anotherNode is a descendant of this node
+     * -- if it is this node, one of this node's children, or a descendant of one of this node's children.
+     * Note that a node is considered a descendant of itself.
+     * &lt;p&gt;
+     * If anotherNode is null, an exception is thrown.
+     *
+     * @param anotherNode node to test as descendant of this node
+     * @return true if this node is an ancestor of anotherNode
+     * @see #isAncestorOf
+     */
+    public boolean isNodeDescendant(T anotherNode) {
+<span class="fc" id="L397">        Objects.requireNonNull(anotherNode);</span>
+
+<span class="fc" id="L399">        return this.isAncestorOf(anotherNode);</span>
+    }
+
+    /**
+     * Gets a forward-order list of this node's children.
+     * &lt;p&gt;
+     * The returned list is unmodifiable - use the add and remove methods to modify the nodes children.
+     * However, changing the nodes children (for example by calling moveTo) is reflected in a change of
+     * the list returned by getChildren. In other words, getChildren provides a read-only view on the children but
+     * not a copy.
+     *
+     * @return a list of this node's children
+     */
+    public ObservableList&lt;T&gt; getChildren() {
+<span class="fc" id="L413">        return FXCollections.unmodifiableObservableList(children);</span>
+    }
+
+    /**
+     * Removes the given child from this node's child list, giving it an empty parent.
+     *
+     * @param child a child of this node to remove
+     */
+    public void removeChild(T child) {
+<span class="fc" id="L422">        Objects.requireNonNull(child);</span>
+
+<span class="fc" id="L424">        children.remove(child);</span>
+<span class="fc" id="L425">        child.setParent(null);</span>
+
+<span class="fc" id="L427">        notifyAboutDescendantChange((T)this);</span>
+<span class="fc" id="L428">    }</span>
+
+    /**
+     * Removes the child at the specified index from this node's children and sets that node's parent to empty.
+     * &lt;p&gt;
+     * Does nothing if the index does not point to a child.
+     *
+     * @param childIndex the index in this node's child array of the child to remove
+     */
+    public void removeChild(int childIndex) {
+<span class="fc" id="L438">        Optional&lt;T&gt; child = getChildAt(childIndex);</span>
+<span class="pc bpc" id="L439" title="1 of 2 branches missed.">        if (child.isPresent()) {</span>
+<span class="fc" id="L440">            children.remove(childIndex);</span>
+<span class="fc" id="L441">            child.get().setParent(null);</span>
+        }
+
+<span class="fc" id="L444">        notifyAboutDescendantChange((T)this);</span>
+<span class="fc" id="L445">    }</span>
+
+    /**
+     * Adds the node at the end the children collection. Also sets the parent of the given node to this node.
+     * The given node is not allowed to already be in a tree (i.e. it has to have no parent).
+     *
+     * @param child the node to add
+     * @return the child node
+     */
+    public T addChild(T child) {
+<span class="fc" id="L455">        return addChild(child, children.size());</span>
+    }
+
+    /**
+     * Adds the node at the given position in the children collection. Also sets the parent of the given node to this node.
+     * The given node is not allowed to already be in a tree (i.e. it has to have no parent).
+     *
+     * @param child the node to add
+     * @param index the position where the node should be added
+     * @return the child node
+     * @throws IndexOutOfBoundsException if the index is out of range
+     */
+    public T addChild(T child, int index) {
+<span class="fc" id="L468">        Objects.requireNonNull(child);</span>
+<span class="fc bfc" id="L469" title="All 2 branches covered.">        if (child.getParent().isPresent()) {</span>
+<span class="fc" id="L470">            throw new UnsupportedOperationException(&quot;Cannot add a node which already has a parent, use moveTo instead&quot;);</span>
+        }
+
+<span class="fc" id="L473">        child.setParent((T) this);</span>
+<span class="fc" id="L474">        children.add(index, child);</span>
+
+<span class="fc" id="L476">        notifyAboutDescendantChange((T)this);</span>
+
+<span class="fc" id="L478">        return child;</span>
+    }
+
+    /**
+     * Removes all children from this node and makes them a child of the specified node
+     * by adding it to the specified position in the children list.
+     *
+     * @param target      the new parent
+     * @param targetIndex the position where the children should be inserted
+     * @throws NullPointerException           if target is null
+     * @throws ArrayIndexOutOfBoundsException if targetIndex is out of bounds
+     * @throws UnsupportedOperationException  if target is an descendant of one of the children of this node
+     */
+    public void moveAllChildrenTo(T target, int targetIndex) {
+<span class="fc bfc" id="L492" title="All 2 branches covered.">        while (getNumberOfChildren() &gt; 0) {</span>
+<span class="fc" id="L493">            getLastChild().get().moveTo(target, targetIndex);</span>
+        }
+<span class="fc" id="L495">    }</span>
+
+    /**
+     * Sorts the list of children according to the order induced by the specified {@link Comparator}.
+     * &lt;p&gt;
+     * All children must be mutually comparable using the specified comparator
+     * (that is, {@code c.compare(e1, e2)} must not throw a {@code ClassCastException}
+     * for any children {@code e1} and {@code e2} in the list).
+     *
+     * @param comparator the comparator used to compare the child nodes
+     * @param recursive  if true the whole subtree is sorted
+     * @throws NullPointerException if the comparator is null
+     */
+    public void sortChildren(Comparator&lt;? super T&gt; comparator, boolean recursive) {
+<span class="fc" id="L509">        Objects.requireNonNull(comparator);</span>
+
+<span class="fc bfc" id="L511" title="All 2 branches covered.">        if (this.isLeaf()) {</span>
+<span class="fc" id="L512">            return; // nothing to sort</span>
+        }
+
+<span class="fc" id="L515">        int j = getNumberOfChildren() - 1;</span>
+        int lastModified;
+<span class="fc bfc" id="L517" title="All 2 branches covered.">        while (j &gt; 0) {</span>
+<span class="fc" id="L518">            lastModified = j + 1;</span>
+<span class="fc" id="L519">            j = -1;</span>
+<span class="fc bfc" id="L520" title="All 2 branches covered.">            for (int i = 1; i &lt; lastModified; ++i) {</span>
+<span class="fc" id="L521">                T child1 = getChildAt(i - 1).get();</span>
+<span class="fc" id="L522">                T child2 = getChildAt(i).get();</span>
+<span class="fc bfc" id="L523" title="All 2 branches covered.">                if (comparator.compare(child1, child2) &gt; 0) {</span>
+<span class="fc" id="L524">                    child1.moveTo((T) this, i);</span>
+<span class="fc" id="L525">                    j = i;</span>
+                }
+            }
+        }
+<span class="fc bfc" id="L529" title="All 2 branches covered.">        if (recursive) {</span>
+<span class="fc bfc" id="L530" title="All 2 branches covered.">            for (T child : getChildren()) {</span>
+<span class="fc" id="L531">                child.sortChildren(comparator, true);</span>
+<span class="fc" id="L532">            }</span>
+        }
+<span class="fc" id="L534">    }</span>
+
+    /**
+     * Removes this node from its parent and makes it a child of the specified node
+     * by adding it to the specified position in the children list.
+     * In this way the whole subtree based at this node is moved to the given node.
+     *
+     * @param target      the new parent
+     * @param targetIndex the position where the children should be inserted
+     * @throws NullPointerException           if target is null
+     * @throws ArrayIndexOutOfBoundsException if targetIndex is out of bounds
+     * @throws UnsupportedOperationException  if target is an descendant of this node
+     */
+    public void moveTo(T target, int targetIndex) {
+<span class="fc" id="L548">        Objects.requireNonNull(target);</span>
+
+        // Check that the target node is not an ancestor of this node, because this would create loops in the tree
+<span class="fc bfc" id="L551" title="All 2 branches covered.">        if (this.isAncestorOf(target)) {</span>
+<span class="fc" id="L552">            throw new UnsupportedOperationException(&quot;the target cannot be a descendant of this node&quot;);</span>
+        }
+
+        // Remove from previous parent
+<span class="fc" id="L556">        Optional&lt;T&gt; oldParent = getParent();</span>
+<span class="fc bfc" id="L557" title="All 2 branches covered.">        if (oldParent.isPresent()) {</span>
+<span class="fc" id="L558">            oldParent.get().removeChild((T) this);</span>
+        }
+
+        // Add as child
+<span class="fc" id="L562">        target.addChild((T) this, targetIndex);</span>
+<span class="fc" id="L563">    }</span>
+
+    /**
+     * Creates a deep copy of this node and all of its children.
+     *
+     * @return a deep copy of the subtree
+     */
+    public T copySubtree() {
+<span class="fc" id="L571">        T copy = copyNode();</span>
+<span class="fc bfc" id="L572" title="All 2 branches covered.">        for (T child : getChildren()) {</span>
+<span class="fc" id="L573">            child.copySubtree().moveTo(copy);</span>
+<span class="fc" id="L574">        }</span>
+<span class="fc" id="L575">        return copy;</span>
+    }
+
+    /**
+     * Creates a copy of this node, completely separated from the tree (i.e. no children and no parent)
+     *
+     * @return a deep copy of this node
+     */
+    public abstract T copyNode();
+
+    /**
+     * Adds the given function to the list of subscribers which are notified when something changes in the subtree.
+     *
+     * The following events are supported (the text in parentheses specifies which node is passed as the source):
+     *  - addChild (new parent)
+     *  - removeChild (old parent)
+     *  - move (old parent and new parent)
+     * @param subscriber function to be invoked upon a change
+     */
+    public void subscribeToDescendantChanged(Consumer&lt;T&gt; subscriber) {
+<span class="fc" id="L595">        onDescendantChanged = onDescendantChanged.andThen(subscriber);</span>
+<span class="fc" id="L596">    }</span>
+
+    /**
+     * Helper method which notifies all subscribers about a change in the subtree and bubbles the event to all parents.
+     * @param source the node which changed
+     */
+    protected void notifyAboutDescendantChange(T source) {
+<span class="fc" id="L603">        onDescendantChanged.accept(source);</span>
+
+<span class="fc bfc" id="L605" title="All 2 branches covered.">        if (!isRoot()) {</span>
+<span class="fc" id="L606">            parent.notifyAboutDescendantChange(source);</span>
+        }
+<span class="fc" id="L608">    }</span>
+
+    /**
+     * Returns the group and any of its children in the tree satisfying the given condition.
+     */
+    public List&lt;T&gt; findChildrenSatisfying(Predicate&lt;T&gt; matcher) {
+<span class="fc" id="L614">        List&lt;T&gt; hits = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L616" title="All 2 branches covered.">        if (matcher.test((T) this)) {</span>
+<span class="fc" id="L617">            hits.add((T) this);</span>
+        }
+
+<span class="fc bfc" id="L620" title="All 2 branches covered.">        for (T child : getChildren()) {</span>
+<span class="fc" id="L621">            hits.addAll(child.findChildrenSatisfying(matcher));</span>
+<span class="fc" id="L622">        }</span>
+
+<span class="fc" id="L624">        return hits;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

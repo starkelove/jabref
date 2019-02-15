@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.model.entry.identifier.DOITest" tests="15" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:26" hostname="n184-p67.eduroam.kth.se" time="0.017">
+  <properties/>
+  <testcase name="rejectInvalidDirectoryIndicator()" classname="org.jabref.model.entry.identifier.DOITest" time="0.001"/>
+  <testcase name="noDOIFoundInsideArbitraryText()" classname="org.jabref.model.entry.identifier.DOITest" time="0.0"/>
+  <testcase name="correctlyDecodeHttpDOIs()" classname="org.jabref.model.entry.identifier.DOITest" time="0.001"/>
+  <testcase name="acceptURNPrefix()" classname="org.jabref.model.entry.identifier.DOITest" time="0.0"/>
+  <testcase name="constructCorrectURLForDoi()" classname="org.jabref.model.entry.identifier.DOITest" time="0.001"/>
+  <testcase name="findDoiInsideArbitraryText()" classname="org.jabref.model.entry.identifier.DOITest" time="0.001"/>
+  <testcase name="correctlyEncodeDOIs()" classname="org.jabref.model.entry.identifier.DOITest" time="0.001"/>
+  <testcase name="rejectMissingDivider()" classname="org.jabref.model.entry.identifier.DOITest" time="0.001"/>
+  <testcase name="acceptPlainDoi()" classname="org.jabref.model.entry.identifier.DOITest" time="0.0"/>
+  <testcase name="acceptDoiPrefix()" classname="org.jabref.model.entry.identifier.DOITest" time="0.0"/>
+  <testcase name="rejectEmbeddedDoi()" classname="org.jabref.model.entry.identifier.DOITest" time="0.004"/>
+  <testcase name="ignoreLeadingAndTrailingWhitespaces()" classname="org.jabref.model.entry.identifier.DOITest" time="0.001"/>
+  <testcase name="rejectInvalidDoiUri()" classname="org.jabref.model.entry.identifier.DOITest" time="0.001"/>
+  <testcase name="parseDOIWithWhiteSpace()" classname="org.jabref.model.entry.identifier.DOITest" time="0.001"/>
+  <testcase name="acceptURLDoi()" classname="org.jabref.model.entry.identifier.DOITest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

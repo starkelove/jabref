@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DOI.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry.identifier</a> &gt; <span class="el_source">DOI.java</span></div><h1>DOI.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry.identifier;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jabref.model.entry.FieldName;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Class for working with Digital object identifiers (DOIs)
+ *
+ * @see https://en.wikipedia.org/wiki/Digital_object_identifier
+ */
+public class DOI implements Identifier {
+<span class="fc" id="L21">    private static final Logger LOGGER = LoggerFactory.getLogger(DOI.class);</span>
+
+    // DOI resolver
+<span class="fc" id="L24">    private static final URI RESOLVER = URI.create(&quot;https://doi.org&quot;);</span>
+    // Regex
+    // (see http://www.doi.org/doi_handbook/2_Numbering.html)
+    private static final String DOI_EXP = &quot;&quot;
+            + &quot;(?:urn:)?&quot;                       // optional urn
+            + &quot;(?:doi:)?&quot;                       // optional doi
+            + &quot;(&quot;                               // begin group \1
+            + &quot;10&quot;                              // directory indicator
+            + &quot;(?:\\.[0-9]+)+&quot;                  // registrant codes
+            + &quot;[/:%]&quot; // divider
+            + &quot;(?:.+)&quot;                          // suffix alphanumeric string
+            + &quot;)&quot;;                              // end group \1
+    private static final String FIND_DOI_EXP = &quot;&quot;
+            + &quot;(?:urn:)?&quot;                       // optional urn
+            + &quot;(?:doi:)?&quot;                       // optional doi
+            + &quot;(&quot;                               // begin group \1
+            + &quot;10&quot;                              // directory indicator
+            + &quot;(?:\\.[0-9]+)+&quot;                  // registrant codes
+            + &quot;[/:]&quot;                            // divider
+            + &quot;(?:[^\\s]+)&quot;                     // suffix alphanumeric without space
+            + &quot;)&quot;;                              // end group \1
+    private static final String HTTP_EXP = &quot;https?://[^\\s]+?&quot; + DOI_EXP;
+    // Pattern
+<span class="fc" id="L47">    private static final Pattern EXACT_DOI_PATT = Pattern.compile(&quot;^(?:https?://[^\\s]+?)?&quot; + DOI_EXP + &quot;$&quot;, Pattern.CASE_INSENSITIVE);</span>
+<span class="fc" id="L48">    private static final Pattern DOI_PATT = Pattern.compile(&quot;(?:https?://[^\\s]+?)?&quot; + FIND_DOI_EXP, Pattern.CASE_INSENSITIVE);</span>
+    // DOI
+    private final String doi;
+
+    /**
+     * Creates a DOI from various schemes including URL, URN, and plain DOIs.
+     *
+     * @param doi the DOI string
+     * @throws NullPointerException if DOI is null
+     * @throws IllegalArgumentException if doi does not include a valid DOI
+     * @return an instance of the DOI class
+     */
+<span class="fc" id="L60">    public DOI(String doi) {</span>
+<span class="fc" id="L61">        Objects.requireNonNull(doi);</span>
+
+        // Remove whitespace
+<span class="fc" id="L64">        String trimmedDoi = doi.trim();</span>
+
+        // HTTP URL decoding
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (doi.matches(HTTP_EXP)) {</span>
+            try {
+                // decodes path segment
+<span class="fc" id="L70">                URI url = new URI(trimmedDoi);</span>
+<span class="fc" id="L71">                trimmedDoi = url.getScheme() + &quot;://&quot; + url.getHost() + url.getPath();</span>
+<span class="nc" id="L72">            } catch (URISyntaxException e) {</span>
+<span class="nc" id="L73">                throw new IllegalArgumentException(doi + &quot; is not a valid HTTP DOI.&quot;);</span>
+<span class="fc" id="L74">            }</span>
+        }
+
+        // Extract DOI
+<span class="fc" id="L78">        Matcher matcher = EXACT_DOI_PATT.matcher(trimmedDoi);</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (matcher.find()) {</span>
+            // match only group \1
+<span class="fc" id="L81">            this.doi = matcher.group(1);</span>
+        } else {
+<span class="fc" id="L83">            throw new IllegalArgumentException(trimmedDoi + &quot; is not a valid DOI.&quot;);</span>
+        }
+<span class="fc" id="L85">    }</span>
+
+    /**
+     * Creates an Optional&lt;DOI&gt; from various schemes including URL, URN, and plain DOIs.
+     *
+     * Useful for suppressing the &lt;c&gt;IllegalArgumentException&lt;/c&gt; of the Constructor
+     * and checking for Optional.isPresent() instead.
+     *
+     * @param doi the DOI string
+     * @return an Optional containing the DOI or an empty Optional
+     */
+    public static Optional&lt;DOI&gt; parse(String doi) {
+        try {
+<span class="fc" id="L98">            String cleanedDOI = doi.trim();</span>
+<span class="fc" id="L99">            cleanedDOI = doi.replaceAll(&quot; &quot;, &quot;&quot;);</span>
+<span class="fc" id="L100">            return Optional.of(new DOI(cleanedDOI));</span>
+<span class="fc" id="L101">        } catch (IllegalArgumentException | NullPointerException e) {</span>
+<span class="fc" id="L102">            return Optional.empty();</span>
+        }
+    }
+
+    /**
+     * Determines whether a DOI is valid or not
+     *
+     * @param doi the DOI string
+     * @return true if DOI is valid, false otherwise
+     */
+    public static boolean isValid(String doi) {
+<span class="fc" id="L113">        return parse(doi).isPresent();</span>
+    }
+
+    /**
+     * Tries to find a DOI inside the given text.
+     *
+     * @param text the Text which might contain a DOI
+     * @return an Optional containing the DOI or an empty Optional
+     */
+    public static Optional&lt;DOI&gt; findInText(String text) {
+<span class="fc" id="L123">        Optional&lt;DOI&gt; result = Optional.empty();</span>
+
+<span class="fc" id="L125">        Matcher matcher = DOI_PATT.matcher(text);</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        if (matcher.find()) {</span>
+            // match only group \1
+<span class="fc" id="L128">            result = Optional.of(new DOI(matcher.group(1)));</span>
+        }
+<span class="fc" id="L130">        return result;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L135">        return &quot;DOI{&quot; +</span>
+                &quot;doi='&quot; + doi + '\'' +
+                '}';
+    }
+
+    /**
+     * Return the plain DOI
+     *
+     * @return the plain DOI value.
+     */
+    public String getDOI() {
+<span class="fc" id="L146">        return doi;</span>
+    }
+
+    /**
+     * Return a URI presentation for the DOI
+     *
+     * @return an encoded URI representation of the DOI
+     */
+    @Override
+    public Optional&lt;URI&gt; getExternalURI() {
+        try {
+<span class="fc" id="L157">            URI uri = new URI(RESOLVER.getScheme(), RESOLVER.getHost(), &quot;/&quot; + doi, null);</span>
+<span class="fc" id="L158">            return Optional.of(uri);</span>
+<span class="nc" id="L159">        } catch (URISyntaxException e) {</span>
+            // should never happen
+<span class="nc" id="L161">            LOGGER.error(doi + &quot; could not be encoded as URI.&quot;, e);</span>
+<span class="nc" id="L162">            return Optional.empty();</span>
+        }
+    }
+
+    /**
+     * Return an ASCII URL presentation for the DOI
+     *
+     * @return an encoded URL representation of the DOI
+     */
+    public String getURIAsASCIIString() {
+<span class="fc" id="L172">        return getExternalURI().map(URI::toASCIIString).orElse(&quot;&quot;);</span>
+    }
+
+    @Override
+    public String getDefaultField() {
+<span class="nc" id="L177">        return FieldName.DOI;</span>
+    }
+
+    @Override
+    public String getNormalized() {
+<span class="nc" id="L182">        return doi;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

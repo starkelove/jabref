@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.layout.format.RTFCharsTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:25" hostname="n184-p67.eduroam.kth.se" time="0.011">
+  <properties/>
+  <testcase name="testSpecialCharacters()" classname="org.jabref.logic.layout.format.RTFCharsTest" time="0.004"/>
+  <testcase name="testLaTeXHighlighting()" classname="org.jabref.logic.layout.format.RTFCharsTest" time="0.001"/>
+  <testcase name="testBasicFormat()" classname="org.jabref.logic.layout.format.RTFCharsTest" time="0.0"/>
+  <testcase name="testRTFCharacters()" classname="org.jabref.logic.layout.format.RTFCharsTest" time="0.001"/>
+  <testcase name="testRTFCharactersCapital()" classname="org.jabref.logic.layout.format.RTFCharsTest" time="0.0"/>
+  <testcase name="testComplicated2()" classname="org.jabref.logic.layout.format.RTFCharsTest" time="0.0"/>
+  <testcase name="testComplicated3()" classname="org.jabref.logic.layout.format.RTFCharsTest" time="0.001"/>
+  <testcase name="testComplicated4()" classname="org.jabref.logic.layout.format.RTFCharsTest" time="0.0"/>
+  <testcase name="testComplicated5()" classname="org.jabref.logic.layout.format.RTFCharsTest" time="0.001"/>
+  <testcase name="testComplicated6()" classname="org.jabref.logic.layout.format.RTFCharsTest" time="0.0"/>
+  <testcase name="testComplicated()" classname="org.jabref.logic.layout.format.RTFCharsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

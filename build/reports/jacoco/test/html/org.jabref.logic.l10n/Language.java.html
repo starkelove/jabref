@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Language.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.l10n</a> &gt; <span class="el_source">Language.java</span></div><h1>Language.java</h1><pre class="source lang-java linenums">package org.jabref.logic.l10n;
+
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+
+/**
+ * Contains all supported languages.
+ */
+<span class="fc" id="L10">public enum Language {</span>
+
+<span class="fc" id="L12">    BahasaIndonesia(&quot;Bahasa Indonesia&quot;, &quot;in&quot;),</span>
+<span class="fc" id="L13">    BrazilianPortuguese(&quot;Brazilian Portuguese&quot;, &quot;pt_BR&quot;),</span>
+<span class="fc" id="L14">    Danish(&quot;Dansk&quot;, &quot;da&quot;),</span>
+<span class="fc" id="L15">    German(&quot;Deutsch&quot;, &quot;de&quot;),</span>
+<span class="fc" id="L16">    English(&quot;English&quot;, &quot;en&quot;),</span>
+<span class="fc" id="L17">    Spanish(&quot;Español&quot;, &quot;es&quot;),</span>
+<span class="fc" id="L18">    French(&quot;Français&quot;, &quot;fr&quot;),</span>
+<span class="fc" id="L19">    Italian(&quot;Italiano&quot;, &quot;it&quot;),</span>
+<span class="fc" id="L20">    Japanese(&quot;Japanese&quot;, &quot;ja&quot;),</span>
+<span class="fc" id="L21">    Dutch(&quot;Nederlands&quot;, &quot;nl&quot;),</span>
+<span class="fc" id="L22">    Norwegian(&quot;Norsk&quot;, &quot;no&quot;),</span>
+<span class="fc" id="L23">    Persian(&quot;Persian (فارسی)&quot;, &quot;fa&quot;),</span>
+<span class="fc" id="L24">    Russian(&quot;Russian&quot;, &quot;ru&quot;),</span>
+<span class="fc" id="L25">    SimplifiedChinese(&quot;Simplified Chinese&quot;, &quot;zh&quot;),</span>
+<span class="fc" id="L26">    Svenska(&quot;Svenska&quot;, &quot;sv&quot;),</span>
+<span class="fc" id="L27">    Turkish(&quot;Turkish&quot;, &quot;tr&quot;),</span>
+<span class="fc" id="L28">    Vietnamese(&quot;Vietnamese&quot;, &quot;vi&quot;),</span>
+<span class="fc" id="L29">    Greek(&quot;ελληνικά&quot;, &quot;el&quot;),</span>
+<span class="fc" id="L30">    Tagalog(&quot;Tagalog/Filipino&quot;, &quot;tl&quot;);</span>
+
+    private final String displayName;
+    private final String id;
+
+<span class="fc" id="L35">    Language(String displayName, String id) {</span>
+<span class="fc" id="L36">        this.displayName = displayName;</span>
+<span class="fc" id="L37">        this.id = id;</span>
+<span class="fc" id="L38">    }</span>
+
+    public static Optional&lt;Locale&gt; convertToSupportedLocale(Language language) {
+<span class="fc" id="L41">        Objects.requireNonNull(language);</span>
+
+        //Very important to split languages like pt_BR into two parts, because otherwise the country would be treated lowercase and create problems in loading
+<span class="fc" id="L44">        String[] languageParts = language.getId().split(&quot;_&quot;);</span>
+        Locale locale;
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (languageParts.length == 1) {</span>
+<span class="fc" id="L47">            locale = new Locale(languageParts[0]);</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        } else if (languageParts.length == 2) {</span>
+<span class="fc" id="L49">            locale = new Locale(languageParts[0], languageParts[1]);</span>
+        } else {
+<span class="nc" id="L51">            locale = Locale.ENGLISH;</span>
+        }
+
+<span class="fc" id="L54">        return Optional.of(locale);</span>
+
+    }
+
+    public String getDisplayName() {
+<span class="nc" id="L59">        return displayName;</span>
+    }
+
+    public String getId() {
+<span class="fc" id="L63">        return id;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

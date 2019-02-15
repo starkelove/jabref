@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PreviewPreferences.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.preferences</a> &gt; <span class="el_source">PreviewPreferences.java</span></div><h1>PreviewPreferences.java</h1><pre class="source lang-java linenums">package org.jabref.preferences;
+
+import java.util.List;
+
+import org.jabref.Globals;
+import org.jabref.logic.layout.LayoutFormatterPreferences;
+
+public class PreviewPreferences {
+
+    private final List&lt;String&gt; previewCycle;
+    private final int previewCyclePosition;
+    private final Number previewPanelDividerPosition;
+    private final boolean previewPanelEnabled;
+    private final String previewStyle;
+    private final String previewStyleDefault;
+
+<span class="nc" id="L17">    public PreviewPreferences(List&lt;String&gt; previewCycle, int previeCyclePosition, Number previewPanelDividerPosition, boolean previewPanelEnabled, String previewStyle, String previewStyleDefault) {</span>
+<span class="nc" id="L18">        this.previewCycle = previewCycle;</span>
+<span class="nc" id="L19">        this.previewCyclePosition = previeCyclePosition;</span>
+<span class="nc" id="L20">        this.previewPanelDividerPosition = previewPanelDividerPosition;</span>
+<span class="nc" id="L21">        this.previewPanelEnabled = previewPanelEnabled;</span>
+<span class="nc" id="L22">        this.previewStyle = previewStyle;</span>
+<span class="nc" id="L23">        this.previewStyleDefault = previewStyleDefault;</span>
+<span class="nc" id="L24">    }</span>
+
+    public List&lt;String&gt; getPreviewCycle() {
+<span class="nc" id="L27">        return previewCycle;</span>
+    }
+
+    public int getPreviewCyclePosition() {
+<span class="nc" id="L31">        return previewCyclePosition;</span>
+    }
+
+    public Number getPreviewPanelDividerPosition() {
+<span class="nc" id="L35">        return previewPanelDividerPosition;</span>
+    }
+
+    public boolean isPreviewPanelEnabled() {
+<span class="nc" id="L39">        return previewPanelEnabled;</span>
+    }
+
+    public String getPreviewStyle() {
+<span class="nc" id="L43">        return previewStyle;</span>
+    }
+
+    public String getPreviewStyleDefault() {
+<span class="nc" id="L47">        return previewStyleDefault;</span>
+    }
+
+    public Builder getBuilder() {
+<span class="nc" id="L51">        return new Builder(this);</span>
+    }
+
+    public String getCurrentPreviewStyle() {
+<span class="nc" id="L55">        return getPreviewCycle().get(getPreviewCyclePosition());</span>
+    }
+
+    public LayoutFormatterPreferences getLayoutFormatterPreferences() {
+<span class="nc" id="L59">        return Globals.prefs.getLayoutFormatterPreferences(Globals.journalAbbreviationLoader);</span>
+    }
+
+    public static class Builder {
+
+        private List&lt;String&gt; previewCycle;
+        private int previeCyclePosition;
+        private Number previewPanelDividerPosition;
+        private boolean previewPanelEnabled;
+        private String previewStyle;
+        private final String previewStyleDefault;
+
+<span class="nc" id="L71">        public Builder(PreviewPreferences previewPreferences) {</span>
+<span class="nc" id="L72">            this.previewCycle = previewPreferences.getPreviewCycle();</span>
+<span class="nc" id="L73">            this.previeCyclePosition = previewPreferences.getPreviewCyclePosition();</span>
+<span class="nc" id="L74">            this.previewPanelDividerPosition = previewPreferences.getPreviewPanelDividerPosition();</span>
+<span class="nc" id="L75">            this.previewPanelEnabled = previewPreferences.isPreviewPanelEnabled();</span>
+<span class="nc" id="L76">            this.previewStyle = previewPreferences.getPreviewStyle();</span>
+<span class="nc" id="L77">            this.previewStyleDefault = previewPreferences.getPreviewStyleDefault();</span>
+<span class="nc" id="L78">        }</span>
+
+        public Builder withPreviewCycle(List&lt;String&gt; previewCycle) {
+<span class="nc" id="L81">            this.previewCycle = previewCycle;</span>
+<span class="nc" id="L82">            return withPreviewCyclePosition(previeCyclePosition);</span>
+        }
+
+        public Builder withPreviewCyclePosition(int position) {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">            if (previewCycle.isEmpty()) {</span>
+<span class="nc" id="L87">                previeCyclePosition = 0;</span>
+            } else {
+<span class="nc" id="L89">                previeCyclePosition = position;</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">                while (previeCyclePosition &lt; 0) {</span>
+<span class="nc" id="L91">                    previeCyclePosition += previewCycle.size();</span>
+                }
+<span class="nc" id="L93">                previeCyclePosition %= previewCycle.size();</span>
+            }
+<span class="nc" id="L95">            return this;</span>
+        }
+
+        public Builder withPreviewPanelDividerPosition(Number previewPanelDividerPosition) {
+<span class="nc" id="L99">            this.previewPanelDividerPosition = previewPanelDividerPosition;</span>
+<span class="nc" id="L100">            return this;</span>
+        }
+
+        public Builder withPreviewPanelEnabled(boolean previewPanelEnabled) {
+<span class="nc" id="L104">            this.previewPanelEnabled = previewPanelEnabled;</span>
+<span class="nc" id="L105">            return this;</span>
+        }
+
+        public Builder withPreviewStyle(String previewStyle) {
+<span class="nc" id="L109">            this.previewStyle = previewStyle;</span>
+<span class="nc" id="L110">            return this;</span>
+        }
+
+        public PreviewPreferences build() {
+<span class="nc" id="L114">            return new PreviewPreferences(previewCycle, previeCyclePosition, previewPanelDividerPosition, previewPanelEnabled, previewStyle, previewStyleDefault);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

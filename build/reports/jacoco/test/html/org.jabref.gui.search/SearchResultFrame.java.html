@@ -1,0 +1,650 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchResultFrame.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.search</a> &gt; <span class="el_source">SearchResultFrame.java</span></div><h1>SearchResultFrame.java</h1><pre class="source lang-java linenums">package org.jabref.gui.search;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTable;
+import javax.swing.KeyStroke;
+import javax.swing.table.TableColumnModel;
+
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.GUIGlobals;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.PreviewPanel;
+import org.jabref.gui.customjfx.CustomJFXPanel;
+import org.jabref.gui.desktop.JabRefDesktop;
+import org.jabref.gui.externalfiletype.ExternalFileMenuItem;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.gui.filelist.FileListEntry;
+import org.jabref.gui.filelist.FileListTableModel;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.keyboard.KeyBinding;
+import org.jabref.gui.maintable.MainTableNameFormatter;
+import org.jabref.gui.renderer.GeneralRenderer;
+import org.jabref.gui.util.comparator.IconComparator;
+import org.jabref.logic.bibtex.comparator.EntryComparator;
+import org.jabref.logic.bibtex.comparator.FieldComparator;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.search.SearchQuery;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.FieldProperty;
+import org.jabref.model.entry.InternalBibtexFields;
+import org.jabref.model.strings.StringUtil;
+import org.jabref.preferences.SearchPreferences;
+
+import ca.odell.glazedlists.BasicEventList;
+import ca.odell.glazedlists.EventList;
+import ca.odell.glazedlists.SortedList;
+import ca.odell.glazedlists.event.ListEvent;
+import ca.odell.glazedlists.event.ListEventListener;
+import ca.odell.glazedlists.gui.AbstractTableComparatorChooser;
+import ca.odell.glazedlists.gui.AdvancedTableFormat;
+import ca.odell.glazedlists.swing.DefaultEventSelectionModel;
+import ca.odell.glazedlists.swing.DefaultEventTableModel;
+import ca.odell.glazedlists.swing.GlazedListsSwing;
+import ca.odell.glazedlists.swing.TableComparatorChooser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Dialog to display search results, potentially from more than one BasePanel, with
+ * possibility to preview and to locate each entry in the main window.
+ */
+public class SearchResultFrame {
+
+<span class="nc" id="L85">    private static final String[] FIELDS = new String[] {FieldName.AUTHOR, FieldName.TITLE, FieldName.YEAR, FieldName.JOURNAL};</span>
+    private static final int DATABASE_COL = 0;
+    private static final int FILE_COL = 1;
+    private static final int URL_COL = 2;
+    private static final int PAD = 3;
+
+<span class="nc" id="L91">    private static final Logger LOGGER = LoggerFactory.getLogger(SearchResultFrame.class);</span>
+
+    private final JabRefFrame frame;
+    private JFrame searchResultFrame;
+<span class="nc" id="L95">    private final JLabel fileLabel = new JLabel(IconTheme.JabRefIcons.FILE.getSmallIcon());</span>
+<span class="nc" id="L96">    private final JLabel urlLabel = new JLabel(IconTheme.JabRefIcons.WWW.getSmallIcon());</span>
+
+<span class="nc" id="L98">    private final JSplitPane contentPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);</span>
+
+<span class="nc" id="L100">    private final EventList&lt;BibEntry&gt; entries = new BasicEventList&lt;&gt;();</span>
+
+<span class="nc" id="L102">    private final Map&lt;BibEntry, BasePanel&gt; entryHome = new HashMap&lt;&gt;();</span>
+    private DefaultEventTableModel&lt;BibEntry&gt; model;
+
+    private SortedList&lt;BibEntry&gt; sortedEntries;
+    private JTable entryTable;
+    private PreviewPanel preview;
+
+    private final SearchQuery searchQuery;
+    private final boolean globalSearch;
+
+<span class="nc" id="L112">    public SearchResultFrame(JabRefFrame frame, String title, SearchQuery searchQuery, boolean globalSearch) {</span>
+<span class="nc" id="L113">        this.frame = Objects.requireNonNull(frame);</span>
+<span class="nc" id="L114">        this.searchQuery = searchQuery;</span>
+<span class="nc" id="L115">        this.globalSearch = globalSearch;</span>
+<span class="nc" id="L116">        frame.getGlobalSearchBar().setSearchResultFrame(this);</span>
+<span class="nc" id="L117">        init(Objects.requireNonNull(title));</span>
+<span class="nc" id="L118">    }</span>
+
+    private void init(String title) {
+<span class="nc" id="L121">        searchResultFrame = new JFrame();</span>
+<span class="nc" id="L122">        searchResultFrame.setTitle(title);</span>
+<span class="nc" id="L123">        searchResultFrame.setIconImages(IconTheme.getLogoSet());</span>
+
+<span class="nc" id="L125">        preview = new PreviewPanel(null, null, Globals.getKeyPrefs(), Globals.prefs.getPreviewPreferences(), frame.getDialogService(), ExternalFileTypes.getInstance());</span>
+
+<span class="nc" id="L127">        sortedEntries = new SortedList&lt;&gt;(entries, new EntryComparator(false, true, FieldName.AUTHOR));</span>
+<span class="nc" id="L128">        model = (DefaultEventTableModel&lt;BibEntry&gt;) GlazedListsSwing.eventTableModelWithThreadProxyList(sortedEntries,</span>
+                                                                                                       new EntryTableFormat());
+<span class="nc" id="L130">        entryTable = new JTable(model);</span>
+
+<span class="nc" id="L132">        GeneralRenderer renderer = new GeneralRenderer(Color.white);</span>
+<span class="nc" id="L133">        entryTable.setDefaultRenderer(JLabel.class, renderer);</span>
+<span class="nc" id="L134">        entryTable.setDefaultRenderer(String.class, renderer);</span>
+<span class="nc" id="L135">        setWidths();</span>
+<span class="nc" id="L136">        TableComparatorChooser&lt;BibEntry&gt; tableSorter = TableComparatorChooser.install(entryTable, sortedEntries,</span>
+                                                                                      AbstractTableComparatorChooser.MULTIPLE_COLUMN_KEYBOARD);
+<span class="nc" id="L138">        setupComparatorChooser(tableSorter);</span>
+<span class="nc" id="L139">        JScrollPane sp = new JScrollPane(entryTable);</span>
+
+<span class="nc" id="L141">        final DefaultEventSelectionModel&lt;BibEntry&gt; selectionModel = (DefaultEventSelectionModel&lt;BibEntry&gt;) GlazedListsSwing</span>
+<span class="nc" id="L142">                                                                                                                           .eventSelectionModelWithThreadProxyList(sortedEntries);</span>
+<span class="nc" id="L143">        entryTable.setSelectionModel(selectionModel);</span>
+<span class="nc" id="L144">        selectionModel.getSelected().addListEventListener(new EntrySelectionListener());</span>
+<span class="nc" id="L145">        entryTable.addMouseListener(new TableClickListener());</span>
+
+<span class="nc" id="L147">        contentPane.setTopComponent(sp);</span>
+
+<span class="nc" id="L149">        JFXPanel container = CustomJFXPanel.wrap(new Scene(preview));</span>
+<span class="nc" id="L150">        contentPane.setBottomComponent(container);</span>
+
+        // Key bindings:
+<span class="nc" id="L153">        AbstractAction closeAction = new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L157">                dispose();</span>
+<span class="nc" id="L158">            }</span>
+        };
+
+<span class="nc" id="L161">        ActionMap actionMap = contentPane.getActionMap();</span>
+<span class="nc" id="L162">        InputMap inputMap = contentPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);</span>
+<span class="nc" id="L163">        inputMap.put(Globals.getKeyPrefs().getKey(KeyBinding.CLOSE), &quot;close&quot;);</span>
+<span class="nc" id="L164">        inputMap.put(Globals.getKeyPrefs().getKey(KeyBinding.CLOSE_DATABASE), &quot;close&quot;);</span>
+<span class="nc" id="L165">        actionMap.put(&quot;close&quot;, closeAction);</span>
+
+<span class="nc" id="L167">        actionMap = entryTable.getActionMap();</span>
+<span class="nc" id="L168">        inputMap = entryTable.getInputMap();</span>
+        //Override 'selectNextColumnCell' and 'selectPreviousColumnCell' to move rows instead of cells on TAB
+<span class="nc" id="L170">        actionMap.put(&quot;selectNextColumnCell&quot;, new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L174">                selectNextEntry();</span>
+<span class="nc" id="L175">            }</span>
+        });
+<span class="nc" id="L177">        actionMap.put(&quot;selectPreviousColumnCell&quot;, new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L181">                selectPreviousEntry();</span>
+<span class="nc" id="L182">            }</span>
+        });
+<span class="nc" id="L184">        actionMap.put(&quot;selectNextRow&quot;, new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L188">                selectNextEntry();</span>
+<span class="nc" id="L189">            }</span>
+        });
+<span class="nc" id="L191">        actionMap.put(&quot;selectPreviousRow&quot;, new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L195">                selectPreviousEntry();</span>
+<span class="nc" id="L196">            }</span>
+        });
+
+<span class="nc" id="L199">        String selectFirst = &quot;selectFirst&quot;;</span>
+<span class="nc" id="L200">        inputMap.put(Globals.getKeyPrefs().getKey(KeyBinding.SELECT_FIRST_ENTRY), selectFirst);</span>
+<span class="nc" id="L201">        actionMap.put(selectFirst, new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent event) {
+<span class="nc" id="L205">                selectFirstEntry();</span>
+<span class="nc" id="L206">            }</span>
+        });
+
+<span class="nc" id="L209">        String selectLast = &quot;selectLast&quot;;</span>
+<span class="nc" id="L210">        inputMap.put(Globals.getKeyPrefs().getKey(KeyBinding.SELECT_LAST_ENTRY), selectLast);</span>
+<span class="nc" id="L211">        actionMap.put(selectLast, new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent event) {
+<span class="nc" id="L215">                selectLastEntry();</span>
+<span class="nc" id="L216">            }</span>
+        });
+
+<span class="nc" id="L219">        actionMap.put(&quot;copy&quot;, new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc bnc" id="L223" title="All 2 branches missed.">                if (!selectionModel.getSelected().isEmpty()) {</span>
+<span class="nc" id="L224">                    List&lt;BibEntry&gt; bes = selectionModel.getSelected();</span>
+                    try {
+<span class="nc" id="L226">                        Globals.clipboardManager.setContent(bes);</span>
+<span class="nc" id="L227">                    } catch (IOException e1) {</span>
+<span class="nc" id="L228">                        LOGGER.error(&quot;Error while serializing entries for clipboard&quot;, e1);</span>
+<span class="nc" id="L229">                    }</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">                    frame.output(Localization.lang(&quot;Copied&quot;) + ' ' + (bes.size() &gt; 1 ? bes.size() + &quot; &quot;</span>
+<span class="nc" id="L231">                            + Localization.lang(&quot;entries&quot;)</span>
+<span class="nc" id="L232">                            : &quot;1 &quot; + Localization.lang(&quot;entry&quot;) + '.'));</span>
+                }
+<span class="nc" id="L234">            }</span>
+        });
+
+        // override standard enter-action; enter opens the selected entry
+<span class="nc" id="L238">        entryTable.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), &quot;Enter&quot;);</span>
+<span class="nc" id="L239">        actionMap.put(&quot;Enter&quot;, new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+<span class="nc" id="L243">                BibEntry entry = sortedEntries.get(entryTable.getSelectedRow());</span>
+<span class="nc" id="L244">                selectEntryInBasePanel(entry);</span>
+<span class="nc" id="L245">            }</span>
+        });
+
+<span class="nc" id="L248">        searchResultFrame.addWindowListener(new WindowAdapter() {</span>
+
+            @Override
+            public void windowOpened(WindowEvent e) {
+<span class="nc" id="L252">                contentPane.setDividerLocation(0.5f);</span>
+<span class="nc" id="L253">            }</span>
+
+            @Override
+            public void windowClosing(WindowEvent event) {
+<span class="nc" id="L257">                dispose();</span>
+<span class="nc" id="L258">            }</span>
+        });
+
+<span class="nc" id="L261">        searchResultFrame.getContentPane().add(contentPane, BorderLayout.CENTER);</span>
+
+        // Remember and default to last size:
+<span class="nc" id="L264">        SearchPreferences searchPreferences = new SearchPreferences(Globals.prefs);</span>
+<span class="nc" id="L265">        searchResultFrame.setSize(searchPreferences.getSeachDialogWidth(), searchPreferences.getSeachDialogHeight());</span>
+<span class="nc" id="L266">        searchResultFrame.setLocation(searchPreferences.getSearchDialogPosX(), searchPreferences.getSearchDialogPosY());</span>
+
+<span class="nc" id="L268">        searchResultFrame.addComponentListener(new ComponentAdapter() {</span>
+
+            @Override
+            public void componentResized(ComponentEvent e) {
+<span class="nc" id="L272">                new SearchPreferences(Globals.prefs)</span>
+<span class="nc" id="L273">                        .setSearchDialogWidth(searchResultFrame.getSize().width)</span>
+<span class="nc" id="L274">                        .setSearchDialogHeight(searchResultFrame.getSize().height);</span>
+<span class="nc" id="L275">            }</span>
+
+            @Override
+            public void componentMoved(ComponentEvent e) {
+<span class="nc" id="L279">                new SearchPreferences(Globals.prefs)</span>
+<span class="nc" id="L280">                                                    .setSearchDialogPosX(searchResultFrame.getLocation().x)</span>
+<span class="nc" id="L281">                                                    .setSearchDialogPosY(searchResultFrame.getLocation().y);</span>
+<span class="nc" id="L282">            }</span>
+        });
+<span class="nc" id="L284">    }</span>
+
+    /**
+     * Control the visibility of the dialog.
+     * @param visible true to show dialog, false to hide.
+     */
+    public void setVisible(boolean visible) {
+<span class="nc" id="L291">        searchResultFrame.setVisible(visible);</span>
+<span class="nc" id="L292">    }</span>
+
+    public void selectFirstEntry() {
+<span class="nc" id="L295">        selectEntry(0);</span>
+<span class="nc" id="L296">    }</span>
+
+    public void selectLastEntry() {
+<span class="nc" id="L299">        selectEntry(entryTable.getRowCount() - 1);</span>
+<span class="nc" id="L300">    }</span>
+
+    public void selectPreviousEntry() {
+<span class="nc" id="L303">        selectEntry(((entryTable.getSelectedRow() - 1) + entryTable.getRowCount()) % entryTable.getRowCount());</span>
+<span class="nc" id="L304">    }</span>
+
+    public void selectNextEntry() {
+<span class="nc" id="L307">        selectEntry((entryTable.getSelectedRow() + 1) % entryTable.getRowCount());</span>
+<span class="nc" id="L308">    }</span>
+
+    public void selectEntry(int index) {
+<span class="nc bnc" id="L311" title="All 4 branches missed.">        if ((index &gt;= 0) &amp;&amp; (index &lt; entryTable.getRowCount())) {</span>
+<span class="nc" id="L312">            entryTable.changeSelection(index, 0, false, false);</span>
+        } else {
+<span class="nc" id="L314">            contentPane.setDividerLocation(1.0f);</span>
+        }
+<span class="nc" id="L316">    }</span>
+
+    /**
+     * Set up the comparators for each column, so the user can modify sort order
+     * by clicking the column labels.
+     * @param comparatorChooser The comparator chooser controlling the sort order.
+     */
+    private void setupComparatorChooser(TableComparatorChooser&lt;BibEntry&gt; comparatorChooser) {
+        List&lt;Comparator&gt; comparators;
+        // Icon columns:
+<span class="nc bnc" id="L326" title="All 2 branches missed.">        for (int i = 0; i &lt; PAD; i++) {</span>
+<span class="nc" id="L327">            comparators = comparatorChooser.getComparatorsForColumn(i);</span>
+<span class="nc" id="L328">            comparators.clear();</span>
+<span class="nc bnc" id="L329" title="All 2 branches missed.">            if (i == FILE_COL) {</span>
+<span class="nc" id="L330">                comparators.add(new IconComparator(Collections.singletonList(FieldName.FILE)));</span>
+<span class="nc bnc" id="L331" title="All 2 branches missed.">            } else if (i == URL_COL) {</span>
+<span class="nc" id="L332">                comparators.add(new IconComparator(Collections.singletonList(FieldName.URL)));</span>
+<span class="nc bnc" id="L333" title="All 2 branches missed.">            } else if (i == DATABASE_COL) {</span>
+<span class="nc" id="L334">                comparators.add((entry1, entry2) -&gt; {</span>
+<span class="nc" id="L335">                    String databaseTitle1 = entryHome.get(entry1).getTabTitle();</span>
+<span class="nc" id="L336">                    String databaseTitle2 = entryHome.get(entry2).getTabTitle();</span>
+<span class="nc" id="L337">                    return databaseTitle1.compareTo(databaseTitle2);</span>
+                });
+            }
+
+        }
+        // Remaining columns:
+<span class="nc bnc" id="L343" title="All 2 branches missed.">        for (int i = PAD; i &lt; (PAD + FIELDS.length); i++) {</span>
+<span class="nc" id="L344">            comparators = comparatorChooser.getComparatorsForColumn(i);</span>
+<span class="nc" id="L345">            comparators.clear();</span>
+<span class="nc" id="L346">            comparators.add(new FieldComparator(FIELDS[i - PAD]));</span>
+        }
+
+<span class="nc" id="L349">        sortedEntries.getReadWriteLock().writeLock().lock();</span>
+<span class="nc" id="L350">        comparatorChooser.appendComparator(PAD, 0, false);</span>
+<span class="nc" id="L351">        sortedEntries.getReadWriteLock().writeLock().unlock();</span>
+
+<span class="nc" id="L353">    }</span>
+
+    /**
+     * Set column widths according to which field is shown, and lock icon columns
+     * to a suitable width.
+     */
+    private void setWidths() {
+<span class="nc" id="L360">        TableColumnModel cm = entryTable.getColumnModel();</span>
+<span class="nc bnc" id="L361" title="All 2 branches missed.">        for (int i = 0; i &lt; (PAD + FIELDS.length); i++) {</span>
+<span class="nc bnc" id="L362" title="All 3 branches missed.">            switch (i) {</span>
+                case FILE_COL:
+                case URL_COL:
+<span class="nc" id="L365">                    cm.getColumn(i).setPreferredWidth(GUIGlobals.WIDTH_ICON_COL);</span>
+<span class="nc" id="L366">                    cm.getColumn(i).setMinWidth(GUIGlobals.WIDTH_ICON_COL);</span>
+<span class="nc" id="L367">                    cm.getColumn(i).setMaxWidth(GUIGlobals.WIDTH_ICON_COL);</span>
+<span class="nc" id="L368">                    break;</span>
+                case DATABASE_COL: {
+<span class="nc" id="L370">                    Double width = InternalBibtexFields.getFieldLength(FieldName.AUTHOR);</span>
+<span class="nc" id="L371">                    cm.getColumn(i).setPreferredWidth(width.intValue());</span>
+<span class="nc" id="L372">                    break;</span>
+                }
+                default: {
+<span class="nc" id="L375">                    Double width = InternalBibtexFields.getFieldLength(FIELDS[i - PAD]);</span>
+<span class="nc" id="L376">                    cm.getColumn(i).setPreferredWidth(width.intValue());</span>
+<span class="nc" id="L377">                    break;</span>
+                }
+            }
+        }
+<span class="nc" id="L381">    }</span>
+
+    /**
+     * Add a list of entries to the table.
+     * @param newEntries The list of entries.
+     * @param panel A reference to the BasePanel where the entries belong.
+     */
+    public void addEntries(List&lt;BibEntry&gt; newEntries, BasePanel panel) {
+<span class="nc bnc" id="L389" title="All 2 branches missed.">        for (BibEntry entry : newEntries) {</span>
+<span class="nc" id="L390">            addEntry(entry, panel);</span>
+<span class="nc" id="L391">        }</span>
+<span class="nc" id="L392">    }</span>
+
+    /**
+     * Add a single entry to the table.
+     * @param entry The entry to add.
+     * @param panel A reference to the BasePanel where the entry belongs.
+     */
+    private void addEntry(BibEntry entry, BasePanel panel) {
+<span class="nc" id="L400">        entries.add(entry);</span>
+<span class="nc" id="L401">        entryHome.put(entry, panel);</span>
+
+<span class="nc bnc" id="L403" title="All 4 branches missed.">        if ((preview.getEntry() == null) || !preview.getBasePanel().isPresent()) {</span>
+<span class="nc" id="L404">            preview.setEntry(entry);</span>
+<span class="nc" id="L405">            preview.setBasePanel(panel);</span>
+<span class="nc" id="L406">            preview.setDatabaseContext(panel.getBibDatabaseContext());</span>
+        }
+<span class="nc" id="L408">    }</span>
+
+    private void selectEntryInBasePanel(BibEntry entry) {
+<span class="nc" id="L411">        BasePanel basePanel = entryHome.get(entry);</span>
+<span class="nc" id="L412">        frame.showBasePanel(basePanel);</span>
+<span class="nc" id="L413">        basePanel.requestFocus();</span>
+<span class="nc" id="L414">        basePanel.clearAndSelect(entry);</span>
+<span class="nc" id="L415">    }</span>
+
+    public void dispose() {
+<span class="nc" id="L418">        frame.getGlobalSearchBar().setSearchResultFrame(null);</span>
+<span class="nc" id="L419">        searchResultFrame.dispose();</span>
+<span class="nc" id="L420">        frame.getGlobalSearchBar().focus();</span>
+<span class="nc" id="L421">    }</span>
+
+    public void focus() {
+<span class="nc" id="L424">        entryTable.requestFocus();</span>
+<span class="nc" id="L425">    }</span>
+
+    public SearchQuery getSearchQuery() {
+<span class="nc" id="L428">        return searchQuery;</span>
+    }
+
+    public boolean isGlobalSearch() {
+<span class="nc" id="L432">        return globalSearch;</span>
+    }
+
+    /**
+     * Mouse listener for the entry table. Processes icon clicks to open external
+     * files or urls, as well as the opening of the context menu.
+     */
+<span class="nc" id="L439">    class TableClickListener extends MouseAdapter {</span>
+
+        @Override
+        public void mouseReleased(MouseEvent e) {
+<span class="nc bnc" id="L443" title="All 2 branches missed.">            if (e.isPopupTrigger()) {</span>
+<span class="nc" id="L444">                processPopupTrigger(e);</span>
+            }
+<span class="nc" id="L446">        }</span>
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+<span class="nc bnc" id="L450" title="All 2 branches missed.">            if (e.isPopupTrigger()) {</span>
+<span class="nc" id="L451">                processPopupTrigger(e);</span>
+<span class="nc" id="L452">                return;</span>
+            }
+
+            // First find the row on which the user has clicked.
+<span class="nc" id="L456">            final int row = entryTable.rowAtPoint(e.getPoint());</span>
+
+            // A double click on an entry should highlight the entry in its BasePanel:
+<span class="nc bnc" id="L459" title="All 2 branches missed.">            if (e.getClickCount() == 2) {</span>
+<span class="nc" id="L460">                selectEntryInBasePanel(model.getElementAt(row));</span>
+            }
+<span class="nc" id="L462">        }</span>
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+<span class="nc bnc" id="L466" title="All 2 branches missed.">            if (e.isPopupTrigger()) {</span>
+<span class="nc" id="L467">                processPopupTrigger(e);</span>
+<span class="nc" id="L468">                return;</span>
+            }
+            //if (e.)
+<span class="nc" id="L471">            final int col = entryTable.columnAtPoint(e.getPoint());</span>
+<span class="nc" id="L472">            final int row = entryTable.rowAtPoint(e.getPoint());</span>
+<span class="nc bnc" id="L473" title="All 2 branches missed.">            if (col &lt; PAD) {</span>
+<span class="nc" id="L474">                BibEntry entry = sortedEntries.get(row);</span>
+<span class="nc" id="L475">                BasePanel p = entryHome.get(entry);</span>
+<span class="nc bnc" id="L476" title="All 3 branches missed.">                switch (col) {</span>
+                case FILE_COL:
+<span class="nc bnc" id="L478" title="All 2 branches missed.">                    if (entry.hasField(FieldName.FILE)) {</span>
+<span class="nc" id="L479">                        FileListTableModel tableModel = new FileListTableModel();</span>
+<span class="nc" id="L480">                        entry.getField(FieldName.FILE).ifPresent(tableModel::setContent);</span>
+<span class="nc bnc" id="L481" title="All 2 branches missed.">                        if (tableModel.getRowCount() == 0) {</span>
+<span class="nc" id="L482">                            return;</span>
+                        }
+<span class="nc" id="L484">                        FileListEntry fl = tableModel.getEntry(0);</span>
+<span class="nc" id="L485">                            (new ExternalFileMenuItem(frame, &quot;&quot;, fl.getLink(), null,</span>
+<span class="nc" id="L486">                                p.getBibDatabaseContext(), fl.getType())).actionPerformed(null);</span>
+<span class="nc" id="L487">                    }</span>
+                    break;
+                case URL_COL:
+<span class="nc" id="L490">                    entry.getField(FieldName.URL).ifPresent(link -&gt; { try {</span>
+<span class="nc" id="L491">                        JabRefDesktop.openExternalViewer(p.getBibDatabaseContext(), link, FieldName.URL);</span>
+<span class="nc" id="L492">                    } catch (IOException ex) {</span>
+<span class="nc" id="L493">                            LOGGER.warn(&quot;Could not open viewer&quot;, ex);</span>
+<span class="nc" id="L494">                        }</span>
+<span class="nc" id="L495">                    });</span>
+<span class="nc" id="L496">                    break;</span>
+                default:
+                    break;
+                }
+            }
+<span class="nc" id="L501">        }</span>
+
+        /**
+         * If the user has signalled the opening of a context menu, the event
+         * gets redirected to this method. Here we open a file link menu if the
+         * user is pointing at a file link icon. Otherwise a general context
+         * menu should be shown.
+         * @param e The triggering mouse event.
+         */
+        public void processPopupTrigger(MouseEvent e) {
+<span class="nc" id="L511">            BibEntry entry = sortedEntries.get(entryTable.rowAtPoint(e.getPoint()));</span>
+<span class="nc" id="L512">            BasePanel p = entryHome.get(entry);</span>
+<span class="nc" id="L513">            int col = entryTable.columnAtPoint(e.getPoint());</span>
+<span class="nc" id="L514">            JPopupMenu menu = new JPopupMenu();</span>
+<span class="nc" id="L515">            int count = 0;</span>
+
+<span class="nc bnc" id="L517" title="All 2 branches missed.">            if (col == FILE_COL) {</span>
+                // We use a FileListTableModel to parse the field content:
+<span class="nc" id="L519">                FileListTableModel fileList = new FileListTableModel();</span>
+<span class="nc" id="L520">                entry.getField(FieldName.FILE).ifPresent(fileList::setContent);</span>
+                // If there are one or more links, open the first one:
+<span class="nc bnc" id="L522" title="All 2 branches missed.">                for (int i = 0; i &lt; fileList.getRowCount(); i++) {</span>
+<span class="nc" id="L523">                    FileListEntry flEntry = fileList.getEntry(i);</span>
+<span class="nc" id="L524">                    String description = flEntry.getDescription();</span>
+<span class="nc bnc" id="L525" title="All 4 branches missed.">                    if ((description == null) || (description.trim().isEmpty())) {</span>
+<span class="nc" id="L526">                        description = flEntry.getLink();</span>
+                    }
+<span class="nc" id="L528">                    menu.add(new ExternalFileMenuItem(p.frame(), description, flEntry.getLink(),</span>
+<span class="nc" id="L529">                                                      flEntry.getType().get().getIcon().getSmallIcon(), p.getBibDatabaseContext(), flEntry.getType()));</span>
+<span class="nc" id="L530">                    count++;</span>
+                }
+
+            }
+
+<span class="nc bnc" id="L535" title="All 2 branches missed.">            if (count &gt; 0) {</span>
+<span class="nc" id="L536">                menu.show(entryTable, e.getX(), e.getY());</span>
+            }
+<span class="nc" id="L538">        }</span>
+    }
+
+    /**
+     * The listener for the Glazed list monitoring the current selection.
+     * When selection changes, we need to update the preview panel.
+     */
+<span class="nc" id="L545">    private class EntrySelectionListener implements ListEventListener&lt;BibEntry&gt; {</span>
+
+        @Override
+        public void listChanged(ListEvent&lt;BibEntry&gt; listEvent) {
+<span class="nc bnc" id="L549" title="All 2 branches missed.">            if (listEvent.getSourceList().size() == 1) {</span>
+<span class="nc" id="L550">                BibEntry entry = listEvent.getSourceList().get(0);</span>
+                // Find out which BasePanel the selected entry belongs to:
+<span class="nc" id="L552">                BasePanel basePanel = entryHome.get(entry);</span>
+                // Update the preview's database context:
+<span class="nc" id="L554">                preview.setDatabaseContext(basePanel.getBibDatabaseContext());</span>
+                // Update the preview's entry:
+<span class="nc" id="L556">                preview.setEntry(entry);</span>
+<span class="nc" id="L557">                preview.setBasePanel(entryHome.get(entry));</span>
+<span class="nc" id="L558">                preview.setDatabaseContext(entryHome.get(entry).getBibDatabaseContext());</span>
+<span class="nc" id="L559">                contentPane.setDividerLocation(0.5f);</span>
+            }
+<span class="nc" id="L561">        }</span>
+    }
+
+    /**
+     * TableFormat for the table shown in the dialog. Handles the display of entry
+     * fields and icons for linked files and urls.
+     */
+<span class="nc" id="L568">    private class EntryTableFormat implements AdvancedTableFormat&lt;BibEntry&gt; {</span>
+
+        @Override
+        public int getColumnCount() {
+<span class="nc" id="L572">            return PAD + FIELDS.length;</span>
+        }
+
+        @Override
+        public String getColumnName(int column) {
+<span class="nc bnc" id="L577" title="All 2 branches missed.">            if (column &gt;= PAD) {</span>
+<span class="nc" id="L578">                return StringUtil.capitalizeFirst(FIELDS[column - PAD]);</span>
+<span class="nc bnc" id="L579" title="All 2 branches missed.">            } else if (column == DATABASE_COL) {</span>
+<span class="nc" id="L580">                return Localization.lang(&quot;Library&quot;);</span>
+            } else {
+<span class="nc" id="L582">                return &quot;&quot;;</span>
+            }
+        }
+
+        @Override
+        public Object getColumnValue(BibEntry entry, int column) {
+<span class="nc bnc" id="L588" title="All 2 branches missed.">            if (column &lt; PAD) {</span>
+<span class="nc bnc" id="L589" title="All 4 branches missed.">                switch (column) {</span>
+                    case DATABASE_COL:
+<span class="nc" id="L591">                        return entryHome.get(entry).getTabTitle();</span>
+                    case FILE_COL:
+<span class="nc bnc" id="L593" title="All 2 branches missed.">                        if (entry.hasField(FieldName.FILE)) {</span>
+<span class="nc" id="L594">                            FileListTableModel tmpModel = new FileListTableModel();</span>
+<span class="nc" id="L595">                            entry.getField(FieldName.FILE).ifPresent(tmpModel::setContent);</span>
+<span class="nc" id="L596">                            fileLabel.setToolTipText(tmpModel.getToolTipHTMLRepresentation());</span>
+<span class="nc bnc" id="L597" title="All 2 branches missed.">                            if (tmpModel.getRowCount() &gt; 0) {</span>
+<span class="nc bnc" id="L598" title="All 2 branches missed.">                                if (tmpModel.getEntry(0).getType().isPresent()) {</span>
+<span class="nc" id="L599">                                    fileLabel.setIcon(tmpModel.getEntry(0).getType().get().getIcon().getSmallIcon());</span>
+                                } else {
+<span class="nc" id="L601">                                    fileLabel.setIcon(IconTheme.JabRefIcons.FILE.getSmallIcon());</span>
+                                }
+                            }
+<span class="nc" id="L604">                            return fileLabel;</span>
+                        } else {
+<span class="nc" id="L606">                            return null;</span>
+                        }
+                    case URL_COL: {
+<span class="nc" id="L609">                        Optional&lt;String&gt; urlField = entry.getField(FieldName.URL);</span>
+<span class="nc bnc" id="L610" title="All 2 branches missed.">                        if (urlField.isPresent()) {</span>
+<span class="nc" id="L611">                            urlLabel.setToolTipText(urlField.get());</span>
+<span class="nc" id="L612">                            return urlLabel;</span>
+                        }
+<span class="nc" id="L614">                        return null;</span>
+                    }
+                    default:
+<span class="nc" id="L617">                        return null;</span>
+                }
+            } else {
+<span class="nc" id="L620">                String field = FIELDS[column - PAD];</span>
+<span class="nc" id="L621">                String fieldContent = entry.getLatexFreeField(field).orElse(&quot;&quot;);</span>
+
+<span class="nc bnc" id="L623" title="All 2 branches missed.">                if (InternalBibtexFields.getFieldProperties(field).contains(FieldProperty.PERSON_NAMES)) {</span>
+                    // For name fields, tap into a MainTableFormat instance and use
+                    // the same name formatting as is used in the entry table:
+<span class="nc" id="L626">                    return MainTableNameFormatter.formatName(fieldContent);</span>
+                }
+<span class="nc" id="L628">                return fieldContent;</span>
+            }
+        }
+
+        @Override
+        public Class&lt;?&gt; getColumnClass(int i) {
+<span class="nc bnc" id="L634" title="All 2 branches missed.">            switch (i) {</span>
+                case FILE_COL:
+                case URL_COL:
+<span class="nc" id="L637">                    return JLabel.class;</span>
+                default:
+<span class="nc" id="L639">                    return String.class;</span>
+            }
+        }
+
+        @Override
+        public Comparator&lt;?&gt; getColumnComparator(int i) {
+<span class="nc" id="L645">            return null;</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

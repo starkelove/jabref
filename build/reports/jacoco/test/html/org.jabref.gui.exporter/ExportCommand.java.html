@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExportCommand.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.exporter</a> &gt; <span class="el_source">ExportCommand.java</span></div><h1>ExportCommand.java</h1><pre class="source lang-java linenums">package org.jabref.gui.exporter;
+
+import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import javafx.stage.FileChooser;
+
+import org.jabref.Globals;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.actions.SimpleCommand;
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.gui.util.FileDialogConfiguration;
+import org.jabref.gui.util.FileFilterConverter;
+import org.jabref.logic.exporter.Exporter;
+import org.jabref.logic.exporter.ExporterFactory;
+import org.jabref.logic.exporter.SavePreferences;
+import org.jabref.logic.exporter.TemplateExporter;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.layout.LayoutFormatterPreferences;
+import org.jabref.logic.util.io.FileUtil;
+import org.jabref.logic.xmp.XmpPreferences;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Performs an export action
+ */
+public class ExportCommand extends SimpleCommand {
+
+<span class="nc" id="L36">    private static final Logger LOGGER = LoggerFactory.getLogger(ExportCommand.class);</span>
+    private final JabRefFrame frame;
+    private final boolean selectedOnly;
+    private final JabRefPreferences preferences;
+    private final DialogService dialogService;
+
+    /**
+     * @param selectedOnly true if only the selected entries should be exported, otherwise all entries are exported
+     */
+<span class="nc" id="L45">    public ExportCommand(JabRefFrame frame, boolean selectedOnly, JabRefPreferences preferences) {</span>
+<span class="nc" id="L46">        this.frame = frame;</span>
+<span class="nc" id="L47">        this.selectedOnly = selectedOnly;</span>
+<span class="nc" id="L48">        this.preferences = preferences;</span>
+<span class="nc" id="L49">        this.dialogService = frame.getDialogService();</span>
+<span class="nc" id="L50">    }</span>
+
+    @Override
+    public void execute() {
+<span class="nc" id="L54">        List&lt;TemplateExporter&gt; customExporters = preferences.getCustomExportFormats(Globals.journalAbbreviationLoader);</span>
+<span class="nc" id="L55">        LayoutFormatterPreferences layoutPreferences = preferences.getLayoutFormatterPreferences(Globals.journalAbbreviationLoader);</span>
+<span class="nc" id="L56">        SavePreferences savePreferences = preferences.loadForExportFromPreferences();</span>
+<span class="nc" id="L57">        XmpPreferences xmpPreferences = preferences.getXMPPreferences();</span>
+
+        //Get list of exporters and sort before adding to file dialog
+<span class="nc" id="L60">        List&lt;Exporter&gt; exporters = Globals.exportFactory.getExporters().stream()</span>
+<span class="nc" id="L61">                                                        .sorted(Comparator.comparing(Exporter::getName))</span>
+<span class="nc" id="L62">                                                        .collect(Collectors.toList());</span>
+
+<span class="nc" id="L64">        Globals.exportFactory = ExporterFactory.create(customExporters, layoutPreferences, savePreferences, xmpPreferences);</span>
+<span class="nc" id="L65">        FileDialogConfiguration fileDialogConfiguration = new FileDialogConfiguration.Builder()</span>
+<span class="nc" id="L66">                .addExtensionFilter(FileFilterConverter.exporterToExtensionFilter(exporters))</span>
+<span class="nc" id="L67">                .withDefaultExtension(Globals.prefs.get(JabRefPreferences.LAST_USED_EXPORT))</span>
+<span class="nc" id="L68">                .withInitialDirectory(Globals.prefs.get(JabRefPreferences.EXPORT_WORKING_DIRECTORY))</span>
+<span class="nc" id="L69">                .build();</span>
+<span class="nc" id="L70">        dialogService.showFileSaveDialog(fileDialogConfiguration)</span>
+<span class="nc" id="L71">                     .ifPresent(path -&gt; export(path, fileDialogConfiguration.getSelectedExtensionFilter(), exporters));</span>
+<span class="nc" id="L72">    }</span>
+
+    private void export(Path file, FileChooser.ExtensionFilter selectedExtensionFilter, List&lt;Exporter&gt; exporters) {
+<span class="nc" id="L75">        String selectedExtension = selectedExtensionFilter.getExtensions().get(0).replace(&quot;*&quot;, &quot;&quot;);</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (!file.endsWith(selectedExtension)) {</span>
+<span class="nc" id="L77">            FileUtil.addExtension(file, selectedExtension);</span>
+        }
+
+<span class="nc" id="L80">        final Exporter format = FileFilterConverter.getExporter(selectedExtensionFilter, exporters)</span>
+<span class="nc" id="L81">                                                   .orElseThrow(() -&gt; new IllegalStateException(&quot;User didn't selected a file type for the extension&quot;));</span>
+        List&lt;BibEntry&gt; entries;
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (selectedOnly) {</span>
+            // Selected entries
+<span class="nc" id="L85">            entries = frame.getCurrentBasePanel().getSelectedEntries();</span>
+        } else {
+            // All entries
+<span class="nc" id="L88">            entries = frame.getCurrentBasePanel().getDatabase().getEntries();</span>
+        }
+
+        // Set the global variable for this database's file directory before exporting,
+        // so formatters can resolve linked files correctly.
+        // (This is an ugly hack!)
+<span class="nc" id="L94">        Globals.prefs.fileDirForDatabase = frame.getCurrentBasePanel()</span>
+<span class="nc" id="L95">                                                .getBibDatabaseContext()</span>
+<span class="nc" id="L96">                                                .getFileDirectories(Globals.prefs.getFilePreferences());</span>
+
+        // Make sure we remember which filter was used, to set
+        // the default for next time:
+<span class="nc" id="L100">        Globals.prefs.put(JabRefPreferences.LAST_USED_EXPORT, format.getName());</span>
+<span class="nc" id="L101">        Globals.prefs.put(JabRefPreferences.EXPORT_WORKING_DIRECTORY, file.getParent().toString());</span>
+
+<span class="nc" id="L103">        final List&lt;BibEntry&gt; finEntries = entries;</span>
+<span class="nc" id="L104">        BackgroundTask</span>
+<span class="nc" id="L105">                .wrap(() -&gt; {</span>
+<span class="nc" id="L106">                    format.export(frame.getCurrentBasePanel().getBibDatabaseContext(),</span>
+                            file,
+<span class="nc" id="L108">                            frame.getCurrentBasePanel()</span>
+<span class="nc" id="L109">                                 .getBibDatabaseContext()</span>
+<span class="nc" id="L110">                                 .getMetaData()</span>
+<span class="nc" id="L111">                                 .getEncoding()</span>
+<span class="nc" id="L112">                                 .orElse(Globals.prefs.getDefaultEncoding()),</span>
+                            finEntries);
+<span class="nc" id="L114">                    return null; // can not use BackgroundTask.wrap(Runnable) because Runnable.run() can't throw Exceptions</span>
+                })
+<span class="nc" id="L116">                .onSuccess(x -&gt; frame.output(Localization.lang(&quot;%0 export successful&quot;, format.getName())))</span>
+<span class="nc" id="L117">                .onFailure(this::handleError)</span>
+<span class="nc" id="L118">                .executeWith(Globals.TASK_EXECUTOR);</span>
+<span class="nc" id="L119">    }</span>
+
+    private void handleError(Exception ex) {
+<span class="nc" id="L122">        LOGGER.warn(&quot;Problem exporting&quot;, ex);</span>
+<span class="nc" id="L123">        frame.output(Localization.lang(&quot;Could not save file.&quot;));</span>
+        // Need to warn the user that saving failed!
+<span class="nc" id="L125">        frame.getDialogService().showErrorDialogAndWait(Localization.lang(&quot;Save library&quot;), Localization.lang(&quot;Could not save file.&quot;), ex);</span>
+<span class="nc" id="L126">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

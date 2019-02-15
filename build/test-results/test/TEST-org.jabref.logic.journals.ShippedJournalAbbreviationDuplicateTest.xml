@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.journals.ShippedJournalAbbreviationDuplicateTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:26" hostname="n184-p67.eduroam.kth.se" time="19.897">
+  <properties/>
+  <testcase name="noDuplicatesInShippedIEEEStandardJournalAbbreviations()" classname="org.jabref.logic.journals.ShippedJournalAbbreviationDuplicateTest" time="9.855"/>
+  <testcase name="noDuplicatesInShippedIEEEOfficialJournalAbbreviations()" classname="org.jabref.logic.journals.ShippedJournalAbbreviationDuplicateTest" time="10.042"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

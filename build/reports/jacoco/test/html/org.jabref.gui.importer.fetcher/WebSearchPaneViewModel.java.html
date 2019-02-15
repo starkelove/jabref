@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WebSearchPaneViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.importer.fetcher</a> &gt; <span class="el_source">WebSearchPaneViewModel.java</span></div><h1>WebSearchPaneViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.importer.fetcher;
+
+import java.util.Comparator;
+import java.util.List;
+
+import javax.swing.SwingUtilities;
+
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleListProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
+import org.jabref.JabRefExecutorService;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.importer.ImportInspectionDialog;
+import org.jabref.logic.importer.FetcherException;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.SearchBasedFetcher;
+import org.jabref.logic.importer.WebFetcher;
+import org.jabref.logic.importer.WebFetchers;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.strings.StringUtil;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.fxmisc.easybind.EasyBind;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class WebSearchPaneViewModel {
+
+<span class="nc" id="L36">    private static final Logger LOGGER = LoggerFactory.getLogger(WebSearchPaneViewModel.class);</span>
+
+<span class="nc" id="L38">    private final ObjectProperty&lt;SearchBasedFetcher&gt; selectedFetcher = new SimpleObjectProperty&lt;&gt;();</span>
+<span class="nc" id="L39">    private final ListProperty&lt;SearchBasedFetcher&gt; fetchers = new SimpleListProperty&lt;&gt;(FXCollections.observableArrayList());</span>
+<span class="nc" id="L40">    private final StringProperty query = new SimpleStringProperty();</span>
+    private final JabRefFrame frame;
+
+<span class="nc" id="L43">    public WebSearchPaneViewModel(ImportFormatPreferences importPreferences, JabRefFrame frame, JabRefPreferences preferences) {</span>
+        // TODO: Rework so that we don't rely on JabRefFrame and not the complete preferences
+<span class="nc" id="L45">        this.frame = frame;</span>
+
+<span class="nc" id="L47">        List&lt;SearchBasedFetcher&gt; allFetchers = WebFetchers.getSearchBasedFetchers(importPreferences);</span>
+<span class="nc" id="L48">        allFetchers.sort(Comparator.comparing(WebFetcher::getName));</span>
+<span class="nc" id="L49">        fetchers.setAll(allFetchers);</span>
+
+        // Choose last-selected fetcher as default
+<span class="nc" id="L52">        int defaultFetcherIndex = preferences.getInt(JabRefPreferences.SELECTED_FETCHER_INDEX);</span>
+<span class="nc bnc" id="L53" title="All 4 branches missed.">        if ((defaultFetcherIndex &lt;= 0) || (defaultFetcherIndex &gt;= fetchers.size())) {</span>
+<span class="nc" id="L54">            selectedFetcherProperty().setValue(fetchers.get(0));</span>
+        } else {
+<span class="nc" id="L56">            selectedFetcherProperty().setValue(fetchers.get(defaultFetcherIndex));</span>
+        }
+<span class="nc" id="L58">        EasyBind.subscribe(selectedFetcherProperty(), newFetcher -&gt; {</span>
+<span class="nc" id="L59">            int newIndex = fetchers.indexOf(newFetcher);</span>
+<span class="nc" id="L60">            preferences.putInt(JabRefPreferences.SELECTED_FETCHER_INDEX, newIndex);</span>
+<span class="nc" id="L61">        });</span>
+<span class="nc" id="L62">    }</span>
+
+    public ObservableList&lt;SearchBasedFetcher&gt; getFetchers() {
+<span class="nc" id="L65">        return fetchers.get();</span>
+    }
+
+    public ListProperty&lt;SearchBasedFetcher&gt; fetchersProperty() {
+<span class="nc" id="L69">        return fetchers;</span>
+    }
+
+    public SearchBasedFetcher getSelectedFetcher() {
+<span class="nc" id="L73">        return selectedFetcher.get();</span>
+    }
+
+    public ObjectProperty&lt;SearchBasedFetcher&gt; selectedFetcherProperty() {
+<span class="nc" id="L77">        return selectedFetcher;</span>
+    }
+
+    public String getQuery() {
+<span class="nc" id="L81">        return query.get();</span>
+    }
+
+    public StringProperty queryProperty() {
+<span class="nc" id="L85">        return query;</span>
+    }
+
+    public void search() {
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        if (StringUtil.isBlank(getQuery())) {</span>
+<span class="nc" id="L90">            frame.output(Localization.lang(&quot;Please enter a search string&quot;));</span>
+<span class="nc" id="L91">            return;</span>
+        }
+
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (frame.getCurrentBasePanel() == null) {</span>
+<span class="nc" id="L95">            frame.output(Localization.lang(&quot;Please open or start a new library before searching&quot;));</span>
+<span class="nc" id="L96">            return;</span>
+        }
+
+<span class="nc" id="L99">        SearchBasedFetcher activeFetcher = getSelectedFetcher();</span>
+<span class="nc" id="L100">        final ImportInspectionDialog dialog = new ImportInspectionDialog(frame, frame.getCurrentBasePanel(),</span>
+<span class="nc" id="L101">                activeFetcher.getName(), false);</span>
+
+<span class="nc" id="L103">        SwingUtilities.invokeLater(() -&gt; dialog.setVisible(true));</span>
+
+<span class="nc" id="L105">        JabRefExecutorService.INSTANCE.execute(() -&gt; {</span>
+<span class="nc" id="L106">            dialog.setStatus(Localization.lang(&quot;Processing %0&quot;, getQuery()));</span>
+            try {
+<span class="nc" id="L108">                List&lt;BibEntry&gt; matches = activeFetcher.performSearch(getQuery().trim());</span>
+<span class="nc" id="L109">                dialog.addEntries(matches);</span>
+<span class="nc" id="L110">                dialog.entryListComplete();</span>
+<span class="nc" id="L111">            } catch (FetcherException e) {</span>
+<span class="nc" id="L112">                LOGGER.error(&quot;Error while fetching from &quot; + activeFetcher.getName(), e);</span>
+<span class="nc" id="L113">                dialog.showErrorMessage(activeFetcher.getName(), e.getLocalizedMessage());</span>
+<span class="nc" id="L114">            }</span>
+<span class="nc" id="L115">        });</span>
+<span class="nc" id="L116">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

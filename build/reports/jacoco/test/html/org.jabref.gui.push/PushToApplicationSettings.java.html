@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PushToApplicationSettings.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.push</a> &gt; <span class="el_source">PushToApplicationSettings.java</span></div><h1>PushToApplicationSettings.java</h1><pre class="source lang-java linenums">package org.jabref.gui.push;
+
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
+
+import org.jabref.Globals;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.gui.util.FileDialogConfiguration;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.preferences.JabRefPreferences;
+
+import com.jgoodies.forms.builder.FormBuilder;
+import com.jgoodies.forms.layout.FormLayout;
+
+<span class="nc" id="L22">public class PushToApplicationSettings {</span>
+<span class="nc" id="L23">    protected final JTextField path = new JTextField(30);</span>
+<span class="nc" id="L24">    protected final TextField path1 = new TextField();</span>
+    protected JPanel settings;
+    protected GridPane jfxSettings;
+    protected FormBuilder builder;
+    protected AbstractPushToApplication application;
+    private DialogService dialogService;
+
+    /**
+     * This method asks the implementing class to return a JPanel populated with the imlementation's options panel, if
+     * necessary. If the JPanel is shown to the user, and the user indicates that settings should be stored, the
+     * implementation's storeSettings() method will be called. This method must make sure all widgets in the panel are
+     * in the correct selection states.
+     *
+     * @return a JPanel containing options, or null if options are not needed.
+     */
+    public JPanel getSettingsPanel(int n) {
+<span class="nc bnc" id="L40" title="All 7 branches missed.">        switch (n) {</span>
+<span class="nc" id="L41">            case 0: application = new PushToEmacs(dialogService);</span>
+<span class="nc" id="L42">                    break;</span>
+<span class="nc" id="L43">            case 1: application = new PushToLyx(dialogService);</span>
+<span class="nc" id="L44">                    break;</span>
+<span class="nc" id="L45">            case 2: application = new PushToTexmaker(dialogService);</span>
+<span class="nc" id="L46">                    break;</span>
+<span class="nc" id="L47">            case 3: application = new PushToTeXstudio(dialogService);</span>
+<span class="nc" id="L48">                     break;</span>
+<span class="nc" id="L49">            case 4: application = new PushToVim(dialogService);</span>
+<span class="nc" id="L50">                    break;</span>
+<span class="nc" id="L51">            case 5: application = new PushToWinEdt(dialogService);</span>
+<span class="nc" id="L52">                    break;</span>
+<span class="nc" id="L53">            default: application = null;</span>
+                    break;
+        }
+<span class="nc" id="L56">        application.initParameters();</span>
+<span class="nc" id="L57">        String commandPath = Globals.prefs.get(application.commandPathPreferenceKey);</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (settings == null) {</span>
+<span class="nc" id="L59">            initSettingsPanel();</span>
+        }
+<span class="nc" id="L61">        path.setText(commandPath);</span>
+<span class="nc" id="L62">        return settings;</span>
+    }
+
+    public GridPane getJFXSettingPane() {
+<span class="nc" id="L66">        application.initParameters();</span>
+<span class="nc" id="L67">        String commandPath = Globals.prefs.get(application.commandPathPreferenceKey);</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (jfxSettings == null) {</span>
+<span class="nc" id="L69">            initJFXSettingsPanel();</span>
+        }
+<span class="nc" id="L71">        path1.setText(commandPath);</span>
+<span class="nc" id="L72">        return jfxSettings;</span>
+    }
+
+    /**
+     * Create a FormBuilder, fill it with a textbox for the path and store the JPanel in settings
+     */
+    protected void initSettingsPanel() {
+<span class="nc" id="L79">        builder = FormBuilder.create();</span>
+<span class="nc" id="L80">        builder.layout(new FormLayout(&quot;left:pref, 4dlu, fill:pref:grow, 4dlu, fill:pref&quot;, &quot;p&quot;));</span>
+<span class="nc" id="L81">        StringBuilder label = new StringBuilder(Localization.lang(&quot;Path to %0&quot;, application.commandPathPreferenceKey));</span>
+        // In case the application name and the actual command is not the same, add the command in brackets
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (application.getCommandName() == null) {</span>
+<span class="nc" id="L84">            label.append(':');</span>
+        } else {
+<span class="nc" id="L86">            label.append(&quot; (&quot;).append(application.getCommandName()).append(&quot;):&quot;);</span>
+        }
+<span class="nc" id="L88">        builder.add(label.toString()).xy(1, 1);</span>
+<span class="nc" id="L89">        builder.add(path).xy(3, 1);</span>
+<span class="nc" id="L90">        JButton browse = new JButton(Localization.lang(&quot;Browse&quot;));</span>
+
+<span class="nc" id="L92">        FileDialogConfiguration fileDialogConfiguration = new FileDialogConfiguration.Builder()</span>
+<span class="nc" id="L93">                .withInitialDirectory(Globals.prefs.get(JabRefPreferences.WORKING_DIRECTORY)).build();</span>
+
+<span class="nc" id="L95">        browse.addActionListener(</span>
+<span class="nc" id="L96">                e -&gt; DefaultTaskExecutor.runInJavaFXThread(() -&gt; dialogService.showFileOpenDialog(fileDialogConfiguration))</span>
+<span class="nc" id="L97">                                        .ifPresent(f -&gt; path.setText(f.toAbsolutePath().toString())));</span>
+<span class="nc" id="L98">        builder.add(browse).xy(5, 1);</span>
+<span class="nc" id="L99">        settings = builder.build();</span>
+<span class="nc" id="L100">    }</span>
+
+    protected void initJFXSettingsPanel() {
+<span class="nc" id="L103">        jfxSettings = new GridPane();</span>
+<span class="nc" id="L104">        StringBuilder label = new StringBuilder(Localization.lang(&quot;Path to %0&quot;, application.getApplicationName()));</span>
+        // In case the application name and the actual command is not the same, add the command in brackets
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (application.getCommandName() == null) {</span>
+<span class="nc" id="L107">            label.append(':');</span>
+        } else {
+<span class="nc" id="L109">            label.append(&quot; (&quot;).append(application.getCommandName()).append(&quot;):&quot;);</span>
+        }
+<span class="nc" id="L111">        jfxSettings.add(new Label(label.toString()),1,1);</span>
+<span class="nc" id="L112">        jfxSettings.add(path1,2, 1);</span>
+<span class="nc" id="L113">        Button browse = new Button(Localization.lang(&quot;Browse&quot;));</span>
+
+<span class="nc" id="L115">        FileDialogConfiguration fileDialogConfiguration = new FileDialogConfiguration.Builder()</span>
+<span class="nc" id="L116">                .withInitialDirectory(Globals.prefs.get(JabRefPreferences.WORKING_DIRECTORY)).build();</span>
+
+<span class="nc" id="L118">        browse.setOnAction(</span>
+<span class="nc" id="L119">                e -&gt; DefaultTaskExecutor.runInJavaFXThread(() -&gt; dialogService.showFileOpenDialog(fileDialogConfiguration))</span>
+<span class="nc" id="L120">                        .ifPresent(f -&gt; path.setText(f.toAbsolutePath().toString())));</span>
+<span class="nc" id="L121">        jfxSettings.add(browse,3, 1);</span>
+<span class="nc" id="L122">    }</span>
+
+    /**
+     * This method is called to indicate that the settings panel returned from the getSettingsPanel() method has been
+     * shown to the user and that the user has indicated that the settings should be stored. This method must store the
+     * state of the widgets in the settings panel to Globals.prefs.
+     */
+    public void storeSettings() {
+<span class="nc" id="L130">        Globals.prefs.put(application.commandPathPreferenceKey, path.getText());</span>
+<span class="nc" id="L131">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

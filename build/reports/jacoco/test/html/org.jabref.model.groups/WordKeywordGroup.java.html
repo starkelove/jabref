@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WordKeywordGroup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.groups</a> &gt; <span class="el_source">WordKeywordGroup.java</span></div><h1>WordKeywordGroup.java</h1><pre class="source lang-java linenums">package org.jabref.model.groups;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.jabref.model.EntryTypes;
+import org.jabref.model.FieldChange;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.EntryType;
+import org.jabref.model.entry.KeywordList;
+import org.jabref.model.strings.StringUtil;
+
+/**
+ * Matches entries if a given field contains a specified word.
+ */
+public class WordKeywordGroup extends KeywordGroup implements GroupEntryChanger {
+
+    protected final Character keywordSeparator;
+    private final Set&lt;String&gt; searchWords;
+    private final boolean onlySplitWordsAtSeparator;
+
+    public WordKeywordGroup(String name, GroupHierarchyType context, String searchField,
+            String searchExpression, boolean caseSensitive, Character keywordSeparator,
+            boolean onlySplitWordsAtSeparator) {
+<span class="fc" id="L33">        super(name, context, searchField, searchExpression, caseSensitive);</span>
+
+<span class="fc" id="L35">        this.keywordSeparator = keywordSeparator;</span>
+<span class="fc" id="L36">        this.onlySplitWordsAtSeparator = onlySplitWordsAtSeparator;</span>
+<span class="fc" id="L37">        this.searchWords = getSearchWords(searchExpression);</span>
+<span class="fc" id="L38">    }</span>
+
+    private static boolean containsCaseInsensitive(Set&lt;String&gt; searchIn, Collection&lt;String&gt; searchFor) {
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        for (String searchWord : searchFor) {</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">            if (!containsCaseInsensitive(searchIn, searchWord)) {</span>
+<span class="fc" id="L43">                return false;</span>
+            }
+<span class="fc" id="L45">        }</span>
+<span class="fc" id="L46">        return true;</span>
+    }
+
+    private static boolean containsCaseInsensitive(Set&lt;String&gt; searchIn, String searchFor) {
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        for (String word : searchIn) {</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">            if (word.equalsIgnoreCase(searchFor)) {</span>
+<span class="fc" id="L52">                return true;</span>
+            }
+<span class="fc" id="L54">        }</span>
+<span class="fc" id="L55">        return false;</span>
+    }
+
+    @Override
+    public List&lt;FieldChange&gt; add(Collection&lt;BibEntry&gt; entriesToAdd) {
+<span class="fc" id="L60">        Objects.requireNonNull(entriesToAdd);</span>
+
+<span class="fc" id="L62">        List&lt;FieldChange&gt; changes = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        for (BibEntry entry : new ArrayList&lt;&gt;(entriesToAdd)) {</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (!contains(entry)) {</span>
+<span class="fc" id="L65">                String oldContent = entry.getField(searchField).orElse(&quot;&quot;);</span>
+<span class="fc" id="L66">                KeywordList wordlist = KeywordList.parse(oldContent, keywordSeparator);</span>
+<span class="fc" id="L67">                wordlist.add(searchExpression);</span>
+<span class="fc" id="L68">                String newContent = wordlist.getAsString(keywordSeparator);</span>
+<span class="fc" id="L69">                entry.setField(searchField, newContent).ifPresent(changes::add);</span>
+            }
+<span class="fc" id="L71">        }</span>
+<span class="fc" id="L72">        return changes;</span>
+    }
+
+    @Override
+    public List&lt;FieldChange&gt; remove(List&lt;BibEntry&gt; entriesToRemove) {
+<span class="fc" id="L77">        Objects.requireNonNull(entriesToRemove);</span>
+<span class="fc" id="L78">        List&lt;FieldChange&gt; changes = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        for (BibEntry entry : new ArrayList&lt;&gt;(entriesToRemove)) {</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">            if (contains(entry)) {</span>
+<span class="fc" id="L81">                String oldContent = entry.getField(searchField).orElse(&quot;&quot;);</span>
+<span class="fc" id="L82">                KeywordList wordlist = KeywordList.parse(oldContent, keywordSeparator);</span>
+<span class="fc" id="L83">                wordlist.remove(searchExpression);</span>
+<span class="fc" id="L84">                String newContent = wordlist.getAsString(keywordSeparator);</span>
+<span class="fc" id="L85">                entry.setField(searchField, newContent).ifPresent(changes::add);</span>
+            }
+<span class="fc" id="L87">        }</span>
+<span class="fc" id="L88">        return changes;</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L94">            return true;</span>
+        }
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (!(o instanceof WordKeywordGroup)) {</span>
+<span class="nc" id="L97">            return false;</span>
+        }
+<span class="fc" id="L99">        WordKeywordGroup other = (WordKeywordGroup) o;</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        return Objects.equals(getName(), other.getName())</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getHierarchicalContext(), other.getHierarchicalContext())</span>
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(searchField, other.searchField)</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(searchExpression, other.searchExpression)</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(caseSensitive, other.caseSensitive)</span>
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(keywordSeparator, other.keywordSeparator)</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(onlySplitWordsAtSeparator, other.onlySplitWordsAtSeparator);</span>
+    }
+
+    @Override
+    public boolean contains(BibEntry entry) {
+<span class="fc" id="L111">        Set&lt;String&gt; content = getFieldContentAsWords(entry);</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (caseSensitive) {</span>
+<span class="fc" id="L113">            return content.containsAll(searchWords);</span>
+        } else {
+<span class="fc" id="L115">            return containsCaseInsensitive(content, searchWords);</span>
+        }
+    }
+
+    private Set&lt;String&gt; getFieldContentAsWords(BibEntry entry) {
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (onlySplitWordsAtSeparator) {</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">            if (BibEntry.TYPE_HEADER.equals(searchField)) {</span>
+<span class="nc" id="L122">                Optional&lt;EntryType&gt; entryType = EntryTypes.getType(entry.getType(), BibDatabaseMode.BIBLATEX);</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">                if (entryType.isPresent()) {</span>
+<span class="nc" id="L124">                    return searchWords.stream().filter(sw -&gt; entryType.get().getName().equals(sw)).collect(Collectors.toSet());</span>
+                }
+            }
+<span class="fc" id="L127">            return entry.getField(searchField)</span>
+<span class="fc" id="L128">                    .map(content -&gt; KeywordList.parse(content, keywordSeparator).toStringList())</span>
+<span class="fc" id="L129">                    .orElse(Collections.emptySet());</span>
+        } else {
+<span class="fc" id="L131">            return entry.getFieldAsWords(searchField);</span>
+        }
+    }
+
+    private Set&lt;String&gt; getSearchWords(String searchExpression) {
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        if (onlySplitWordsAtSeparator) {</span>
+<span class="fc" id="L137">            return KeywordList.parse(searchExpression, keywordSeparator).toStringList();</span>
+        } else {
+<span class="fc" id="L139">            return new HashSet&lt;&gt;(StringUtil.getStringAsWords(searchExpression));</span>
+        }
+    }
+
+    @Override
+    public AbstractGroup deepCopy() {
+<span class="nc" id="L145">        return new WordKeywordGroup(getName(), getHierarchicalContext(), searchField, searchExpression,</span>
+                caseSensitive, keywordSeparator, onlySplitWordsAtSeparator);
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L151">        return Objects.hash(getName(),</span>
+<span class="fc" id="L152">                getHierarchicalContext(),</span>
+                searchField,
+                searchExpression,
+<span class="fc" id="L155">                caseSensitive,</span>
+                keywordSeparator,
+<span class="fc" id="L157">                onlySplitWordsAtSeparator);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

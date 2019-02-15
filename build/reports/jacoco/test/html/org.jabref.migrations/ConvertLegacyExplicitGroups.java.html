@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConvertLegacyExplicitGroups.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.migrations</a> &gt; <span class="el_source">ConvertLegacyExplicitGroups.java</span></div><h1>ConvertLegacyExplicitGroups.java</h1><pre class="source lang-java linenums">package org.jabref.migrations;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.groups.ExplicitGroup;
+import org.jabref.model.groups.GroupTreeNode;
+
+/**
+ * Converts legacy explicit groups, where the group contained a list of assigned entries, to the new format,
+ * where the entry stores a list of groups it belongs to.
+ */
+<span class="fc" id="L16">public class ConvertLegacyExplicitGroups implements PostOpenMigration {</span>
+
+    @Override
+    public void performMigration(ParserResult parserResult) {
+<span class="fc" id="L20">        Objects.requireNonNull(parserResult);</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        if (!parserResult.getMetaData().getGroups().isPresent()) {</span>
+<span class="fc" id="L22">            return;</span>
+        }
+
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        for (ExplicitGroup group : getExplicitGroupsWithLegacyKeys(parserResult.getMetaData().getGroups().get())) {</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">            for (String entryKey : group.getLegacyEntryKeys()) {</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">                for (BibEntry entry : parserResult.getDatabase().getEntriesByKey(entryKey)) {</span>
+<span class="fc" id="L28">                    group.add(entry);</span>
+<span class="fc" id="L29">                }</span>
+<span class="fc" id="L30">            }</span>
+<span class="fc" id="L31">            group.clearLegacyEntryKeys();</span>
+<span class="fc" id="L32">        }</span>
+<span class="fc" id="L33">    }</span>
+
+    private List&lt;ExplicitGroup&gt; getExplicitGroupsWithLegacyKeys(GroupTreeNode node) {
+<span class="fc" id="L36">        Objects.requireNonNull(node);</span>
+<span class="fc" id="L37">        List&lt;ExplicitGroup&gt; findings = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (node.getGroup() instanceof ExplicitGroup) {</span>
+<span class="fc" id="L40">            ExplicitGroup group = (ExplicitGroup) node.getGroup();</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (!group.getLegacyEntryKeys().isEmpty()) {</span>
+<span class="fc" id="L42">                findings.add(group);</span>
+            }
+        }
+
+<span class="fc" id="L46">        node.getChildren().forEach(child -&gt; findings.addAll(getExplicitGroupsWithLegacyKeys(child)));</span>
+
+<span class="fc" id="L48">        return findings;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

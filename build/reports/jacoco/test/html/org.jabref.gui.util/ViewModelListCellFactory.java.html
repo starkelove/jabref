@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ViewModelListCellFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">ViewModelListCellFactory.java</span></div><h1>ViewModelListCellFactory.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.util.function.BiConsumer;
+
+import javafx.scene.Node;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.paint.Paint;
+import javafx.scene.text.Text;
+import javafx.util.Callback;
+
+import org.jabref.model.strings.StringUtil;
+
+import de.jensd.fx.glyphs.GlyphIcons;
+import de.jensd.fx.glyphs.materialdesignicons.utils.MaterialDesignIconFactory;
+
+/**
+ * Constructs a {@link ListCell} based on the view model of the row and a bunch of specified converter methods.
+ *
+ * @param &lt;T&gt; cell value
+ */
+<span class="nc" id="L27">public class ViewModelListCellFactory&lt;T&gt; implements Callback&lt;ListView&lt;T&gt;, ListCell&lt;T&gt;&gt; {</span>
+
+    private Callback&lt;T, String&gt; toText;
+    private Callback&lt;T, Node&gt; toGraphic;
+    private Callback&lt;T, String&gt; toTooltip;
+    private BiConsumer&lt;T, ? super MouseEvent&gt; toOnMouseClickedEvent;
+    private Callback&lt;T, String&gt; toStyleClass;
+    private Callback&lt;T, ContextMenu&gt; toContextMenu;
+    private BiConsumer&lt;T, ? super MouseEvent&gt; toOnDragDetected;
+    private BiConsumer&lt;T, ? super DragEvent&gt; toOnDragDropped;
+    private BiConsumer&lt;T, ? super DragEvent&gt; toOnDragEntered;
+    private BiConsumer&lt;T, ? super DragEvent&gt; toOnDragExited;
+    private BiConsumer&lt;T, ? super DragEvent&gt; toOnDragOver;
+
+    public ViewModelListCellFactory&lt;T&gt; withText(Callback&lt;T, String&gt; toText) {
+<span class="nc" id="L42">        this.toText = toText;</span>
+<span class="nc" id="L43">        return this;</span>
+    }
+
+    public ViewModelListCellFactory&lt;T&gt; withGraphic(Callback&lt;T, Node&gt; toGraphic) {
+<span class="nc" id="L47">        this.toGraphic = toGraphic;</span>
+<span class="nc" id="L48">        return this;</span>
+    }
+
+    public ViewModelListCellFactory&lt;T&gt; withIcon(Callback&lt;T, GlyphIcons&gt; toIcon) {
+<span class="nc" id="L52">        this.toGraphic = viewModel -&gt; {</span>
+<span class="nc" id="L53">            GlyphIcons icon = toIcon.call(viewModel);</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">            if (icon != null) {</span>
+<span class="nc" id="L55">                return MaterialDesignIconFactory.get().createIcon(icon);</span>
+            } else {
+<span class="nc" id="L57">                return null;</span>
+            }
+        };
+<span class="nc" id="L60">        return this;</span>
+    }
+
+    public ViewModelListCellFactory&lt;T&gt; withIcon(Callback&lt;T, GlyphIcons&gt; toIcon, Callback&lt;T, Paint&gt; toColor) {
+<span class="nc" id="L64">        this.toGraphic = viewModel -&gt; {</span>
+<span class="nc" id="L65">            Text graphic = MaterialDesignIconFactory.get().createIcon(toIcon.call(viewModel));</span>
+<span class="nc" id="L66">            graphic.setFill(toColor.call(viewModel));</span>
+<span class="nc" id="L67">            return graphic;</span>
+        };
+<span class="nc" id="L69">        return this;</span>
+    }
+
+    public ViewModelListCellFactory&lt;T&gt; withTooltip(Callback&lt;T, String&gt; toTooltip) {
+<span class="nc" id="L73">        this.toTooltip = toTooltip;</span>
+<span class="nc" id="L74">        return this;</span>
+    }
+
+    public ViewModelListCellFactory&lt;T&gt; withContextMenu(Callback&lt;T, ContextMenu&gt; toContextMenu) {
+<span class="nc" id="L78">        this.toContextMenu = toContextMenu;</span>
+<span class="nc" id="L79">        return this;</span>
+    }
+
+    public ViewModelListCellFactory&lt;T&gt; withStyleClass(Callback&lt;T, String&gt; toStyleClass) {
+<span class="nc" id="L83">        this.toStyleClass = toStyleClass;</span>
+<span class="nc" id="L84">        return this;</span>
+    }
+
+    public ViewModelListCellFactory&lt;T&gt; withOnMouseClickedEvent(
+            BiConsumer&lt;T, ? super MouseEvent&gt; toOnMouseClickedEvent) {
+<span class="nc" id="L89">        this.toOnMouseClickedEvent = toOnMouseClickedEvent;</span>
+<span class="nc" id="L90">        return this;</span>
+    }
+
+    public ViewModelListCellFactory&lt;T&gt; setOnDragDetected(BiConsumer&lt;T, ? super MouseEvent&gt; toOnDragDetected) {
+<span class="nc" id="L94">        this.toOnDragDetected = toOnDragDetected;</span>
+<span class="nc" id="L95">        return this;</span>
+    }
+
+    public ViewModelListCellFactory&lt;T&gt; setOnDragDropped(BiConsumer&lt;T, ? super DragEvent&gt; toOnDragDropped) {
+<span class="nc" id="L99">        this.toOnDragDropped = toOnDragDropped;</span>
+<span class="nc" id="L100">        return this;</span>
+    }
+
+    public ViewModelListCellFactory&lt;T&gt; setOnDragEntered(BiConsumer&lt;T, ? super DragEvent&gt; toOnDragEntered) {
+<span class="nc" id="L104">        this.toOnDragEntered = toOnDragEntered;</span>
+<span class="nc" id="L105">        return this;</span>
+    }
+
+    public ViewModelListCellFactory&lt;T&gt; setOnDragExited(BiConsumer&lt;T, ? super DragEvent&gt; toOnDragExited) {
+<span class="nc" id="L109">        this.toOnDragExited = toOnDragExited;</span>
+<span class="nc" id="L110">        return this;</span>
+    }
+
+    public ViewModelListCellFactory&lt;T&gt; setOnDragOver(BiConsumer&lt;T, ? super DragEvent&gt; toOnDragOver) {
+<span class="nc" id="L114">        this.toOnDragOver = toOnDragOver;</span>
+<span class="nc" id="L115">        return this;</span>
+    }
+
+    public void install(ComboBox&lt;T&gt; comboBox) {
+<span class="nc" id="L119">        comboBox.setButtonCell(this.call(null));</span>
+<span class="nc" id="L120">        comboBox.setCellFactory(this);</span>
+<span class="nc" id="L121">    }</span>
+
+    public void install(ListView&lt;T&gt; listView) {
+<span class="nc" id="L124">        listView.setCellFactory(this);</span>
+<span class="nc" id="L125">    }</span>
+
+    @Override
+    public ListCell&lt;T&gt; call(ListView&lt;T&gt; param) {
+
+<span class="nc" id="L130">        return new ListCell&lt;T&gt;() {</span>
+
+            @Override
+            protected void updateItem(T item, boolean empty) {
+<span class="nc" id="L134">                super.updateItem(item, empty);</span>
+
+<span class="nc" id="L136">                T viewModel = getItem();</span>
+<span class="nc bnc" id="L137" title="All 4 branches missed.">                if (empty || (viewModel == null)) {</span>
+<span class="nc" id="L138">                    setText(null);</span>
+<span class="nc" id="L139">                    setGraphic(null);</span>
+<span class="nc" id="L140">                    setOnMouseClicked(null);</span>
+<span class="nc" id="L141">                    setTooltip(null);</span>
+                } else {
+<span class="nc bnc" id="L143" title="All 2 branches missed.">                    if (toText != null) {</span>
+<span class="nc" id="L144">                        setText(toText.call(viewModel));</span>
+                    }
+<span class="nc bnc" id="L146" title="All 2 branches missed.">                    if (toGraphic != null) {</span>
+<span class="nc" id="L147">                        setGraphic(toGraphic.call(viewModel));</span>
+                    }
+<span class="nc bnc" id="L149" title="All 2 branches missed.">                    if (toOnMouseClickedEvent != null) {</span>
+<span class="nc" id="L150">                        setOnMouseClicked(event -&gt; toOnMouseClickedEvent.accept(viewModel, event));</span>
+                    }
+<span class="nc bnc" id="L152" title="All 2 branches missed.">                    if (toStyleClass != null) {</span>
+<span class="nc" id="L153">                        getStyleClass().setAll(toStyleClass.call(viewModel));</span>
+                    }
+<span class="nc bnc" id="L155" title="All 2 branches missed.">                    if (toTooltip != null) {</span>
+<span class="nc" id="L156">                        String tooltipText = toTooltip.call(viewModel);</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">                        if (StringUtil.isNotBlank(tooltipText)) {</span>
+<span class="nc" id="L158">                            setTooltip(new Tooltip(tooltipText));</span>
+                        }
+                    }
+<span class="nc bnc" id="L161" title="All 2 branches missed.">                    if (toContextMenu != null) {</span>
+<span class="nc" id="L162">                        setContextMenu(toContextMenu.call(viewModel));</span>
+                    }
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                    if (toOnDragDetected != null) {</span>
+<span class="nc" id="L165">                        setOnDragDetected(event -&gt; toOnDragDetected.accept(viewModel, event));</span>
+                    }
+<span class="nc bnc" id="L167" title="All 2 branches missed.">                    if (toOnDragDropped != null) {</span>
+<span class="nc" id="L168">                        setOnDragDropped(event -&gt; toOnDragDropped.accept(viewModel, event));</span>
+                    }
+<span class="nc bnc" id="L170" title="All 2 branches missed.">                    if (toOnDragEntered != null) {</span>
+<span class="nc" id="L171">                        setOnDragEntered(event -&gt; toOnDragEntered.accept(viewModel, event));</span>
+                    }
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                    if (toOnDragExited != null) {</span>
+<span class="nc" id="L174">                        setOnDragExited(event -&gt; toOnDragExited.accept(viewModel, event));</span>
+                    }
+<span class="nc bnc" id="L176" title="All 2 branches missed.">                    if (toOnDragOver != null) {</span>
+<span class="nc" id="L177">                        setOnDragOver(event -&gt; toOnDragOver.accept(viewModel, event));</span>
+                    }
+                }
+<span class="nc" id="L180">                getListView().refresh();</span>
+<span class="nc" id="L181">            }</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbbreviationParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.journals</a> &gt; <span class="el_source">AbbreviationParser.java</span></div><h1>AbbreviationParser.java</h1><pre class="source lang-java linenums">package org.jabref.logic.journals;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Reads abbreviation files (property files using NAME = ABBREVIATION as a format) into a list of Abbreviations.
+ */
+<span class="fc" id="L26">public class AbbreviationParser {</span>
+
+<span class="fc" id="L28">    private static final Logger LOGGER = LoggerFactory.getLogger(AbbreviationParser.class);</span>
+
+<span class="fc" id="L30">    private final Set&lt;Abbreviation&gt; abbreviations = new HashSet&lt;&gt;(5000);</span>
+
+    public void readJournalListFromResource(String resourceFileName) {
+<span class="fc" id="L33">        URL url = Objects.requireNonNull(JournalAbbreviationRepository.class.getResource(Objects.requireNonNull(resourceFileName)));</span>
+        try {
+<span class="fc" id="L35">            readJournalList(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8));</span>
+<span class="nc" id="L36">        } catch (IOException e) {</span>
+<span class="nc" id="L37">            LOGGER.info(&quot;Could not read journal list from file &quot; + resourceFileName, e);</span>
+<span class="fc" id="L38">        }</span>
+<span class="fc" id="L39">    }</span>
+
+    public void readJournalListFromFile(File file) throws FileNotFoundException {
+<span class="fc" id="L42">        try (FileReader reader = new FileReader(Objects.requireNonNull(file))) {</span>
+<span class="fc" id="L43">            readJournalList(reader);</span>
+<span class="nc" id="L44">        } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L45">            throw e;</span>
+<span class="nc" id="L46">        } catch (IOException e) {</span>
+<span class="nc" id="L47">            LOGGER.warn(&quot;Could not read journal list from file &quot; + file.getAbsolutePath(), e);</span>
+<span class="fc" id="L48">        }</span>
+<span class="fc" id="L49">    }</span>
+
+    public void readJournalListFromFile(File file, Charset encoding) throws FileNotFoundException {
+<span class="nc" id="L52">        try (FileInputStream stream = new FileInputStream(Objects.requireNonNull(file));</span>
+<span class="nc" id="L53">                InputStreamReader reader = new InputStreamReader(stream, Objects.requireNonNull(encoding))) {</span>
+<span class="nc" id="L54">            readJournalList(reader);</span>
+<span class="nc" id="L55">        } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L56">            throw e;</span>
+<span class="nc" id="L57">        } catch (IOException e) {</span>
+<span class="nc" id="L58">            LOGGER.warn(&quot;Could not read journal list from file &quot; + file.getAbsolutePath(), e);</span>
+<span class="nc" id="L59">        }</span>
+<span class="nc" id="L60">    }</span>
+
+    /**
+     * Read the given file, which should contain a list of journal names and their
+     * abbreviations. Each line should be formatted as: &quot;Full Journal Name=Abbr. Journal Name&quot;
+     *
+     * @param in
+     */
+    private void readJournalList(Reader in) {
+<span class="fc" id="L69">        try (BufferedReader reader = new BufferedReader(in)) {</span>
+            String line;
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            while ((line = reader.readLine()) != null) {</span>
+<span class="fc" id="L72">                addLine(line);</span>
+            }
+
+<span class="nc" id="L75">        } catch (IOException ex) {</span>
+<span class="nc" id="L76">            LOGGER.info(&quot;Could not read journal list from file &quot;, ex);</span>
+<span class="fc" id="L77">        }</span>
+<span class="fc" id="L78">    }</span>
+
+    private void addLine(String line) {
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (line.startsWith(&quot;#&quot;)) {</span>
+<span class="fc" id="L82">            return;</span>
+        }
+<span class="fc" id="L84">        String[] parts = line.split(&quot;=&quot;);</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        if (parts.length == 2) {</span>
+<span class="fc" id="L86">            final String fullName = parts[0].trim();</span>
+<span class="fc" id="L87">            final String abbrName = parts[1].trim();</span>
+
+            // check
+<span class="pc bpc" id="L90" title="2 of 4 branches missed.">            if ((fullName.length() &lt;= 0) || (abbrName.length() &lt;= 0)) {</span>
+<span class="nc" id="L91">                return;</span>
+            }
+
+<span class="fc" id="L94">            Abbreviation abbreviation = new Abbreviation(fullName, abbrName);</span>
+<span class="fc" id="L95">            this.abbreviations.add(abbreviation);</span>
+        }
+<span class="fc" id="L97">    }</span>
+
+    public List&lt;Abbreviation&gt; getAbbreviations() {
+<span class="fc" id="L100">        return new LinkedList&lt;&gt;(abbreviations);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

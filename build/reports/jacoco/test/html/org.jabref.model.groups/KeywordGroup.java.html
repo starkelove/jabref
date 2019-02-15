@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KeywordGroup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.groups</a> &gt; <span class="el_source">KeywordGroup.java</span></div><h1>KeywordGroup.java</h1><pre class="source lang-java linenums">package org.jabref.model.groups;
+
+/**
+ * Matches entries based on a search phrase relative to the content in a specified field.
+ */
+public abstract class KeywordGroup extends AbstractGroup {
+    protected final String searchField;
+    protected final String searchExpression;
+    protected final boolean caseSensitive;
+
+    public KeywordGroup(String name, GroupHierarchyType context, String searchField, String
+            searchExpression, boolean caseSensitive) {
+<span class="fc" id="L13">        super(name, context);</span>
+<span class="fc" id="L14">        this.caseSensitive = caseSensitive;</span>
+<span class="fc" id="L15">        this.searchField = searchField;</span>
+<span class="fc" id="L16">        this.searchExpression = searchExpression;</span>
+<span class="fc" id="L17">    }</span>
+
+    public boolean isCaseSensitive() {
+<span class="fc" id="L20">        return caseSensitive;</span>
+    }
+
+    public String getSearchExpression() {
+<span class="fc" id="L24">        return searchExpression;</span>
+    }
+
+    public String getSearchField() {
+<span class="fc" id="L28">        return searchField;</span>
+    }
+
+    @Override
+    public boolean isDynamic() {
+<span class="nc" id="L33">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChangeEntryTypeMenu.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.menus</a> &gt; <span class="el_source">ChangeEntryTypeMenu.java</span></div><h1>ChangeEntryTypeMenu.java</h1><pre class="source lang-java linenums">package org.jabref.gui.menus;
+
+import java.awt.Font;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.KeyStroke;
+import javax.swing.undo.UndoManager;
+
+import javafx.collections.ObservableList;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.actions.ChangeTypeAction;
+import org.jabref.gui.keyboard.KeyBinding;
+import org.jabref.gui.keyboard.KeyBindingRepository;
+import org.jabref.gui.undo.CountingUndoManager;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.EntryTypes;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BibtexEntryTypes;
+import org.jabref.model.entry.EntryType;
+import org.jabref.model.entry.IEEETranEntryTypes;
+
+public class ChangeEntryTypeMenu {
+<span class="nc" id="L35">    public final Map&lt;String, KeyStroke&gt; entryShortCuts = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L37">    public ChangeEntryTypeMenu(KeyBindingRepository keyBindings) {</span>
+<span class="nc" id="L38">        entryShortCuts.put(BibtexEntryTypes.ARTICLE.getName(), keyBindings.getKey(KeyBinding.NEW_ARTICLE));</span>
+<span class="nc" id="L39">        entryShortCuts.put(BibtexEntryTypes.BOOK.getName(), keyBindings.getKey(KeyBinding.NEW_BOOK));</span>
+<span class="nc" id="L40">        entryShortCuts.put(BibtexEntryTypes.PHDTHESIS.getName(), keyBindings.getKey(KeyBinding.NEW_PHDTHESIS));</span>
+<span class="nc" id="L41">        entryShortCuts.put(BibtexEntryTypes.INBOOK.getName(), keyBindings.getKey(KeyBinding.NEW_MASTERSTHESIS));</span>
+<span class="nc" id="L42">        entryShortCuts.put(BibtexEntryTypes.INBOOK.getName(), keyBindings.getKey(KeyBinding.NEW_INBOOK));</span>
+<span class="nc" id="L43">        entryShortCuts.put(BibtexEntryTypes.PROCEEDINGS.getName(), keyBindings.getKey(KeyBinding.NEW_PROCEEDINGS));</span>
+<span class="nc" id="L44">        entryShortCuts.put(BibtexEntryTypes.UNPUBLISHED.getName(), keyBindings.getKey(KeyBinding.NEW_UNPUBLISHED));</span>
+<span class="nc" id="L45">        entryShortCuts.put(BibtexEntryTypes.TECHREPORT.getName(), keyBindings.getKey(KeyBinding.NEW_TECHREPORT));</span>
+<span class="nc" id="L46">    }</span>
+
+    public JMenu getChangeEntryTypeMenu(BasePanel panel) {
+<span class="nc" id="L49">        JMenu menu = new JMenu(Localization.lang(&quot;Change entry type&quot;));</span>
+<span class="nc" id="L50">        populateChangeEntryTypeMenu(menu, panel);</span>
+<span class="nc" id="L51">        return menu;</span>
+    }
+
+    public ContextMenu getChangeEntryTypePopupMenu(BibEntry entry, BibDatabaseContext bibDatabaseContext, CountingUndoManager undoManager) {
+<span class="nc" id="L55">        ContextMenu menu = new ContextMenu();</span>
+<span class="nc" id="L56">        populateComplete(menu.getItems(), entry, bibDatabaseContext, undoManager);</span>
+<span class="nc" id="L57">        return menu;</span>
+    }
+
+    public Menu getChangeEntryTypeMenu(BibEntry entry, BibDatabaseContext bibDatabaseContext, CountingUndoManager undoManager) {
+<span class="nc" id="L61">        Menu menu = new Menu();</span>
+<span class="nc" id="L62">        menu.setText(Localization.lang(&quot;Change entry type&quot;));</span>
+<span class="nc" id="L63">        populateComplete(menu.getItems(), entry, bibDatabaseContext, undoManager);</span>
+<span class="nc" id="L64">        return menu;</span>
+    }
+
+    private void populateComplete(ObservableList&lt;MenuItem&gt; items, BibEntry entry, BibDatabaseContext bibDatabaseContext, CountingUndoManager undoManager) {
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (bibDatabaseContext.isBiblatexMode()) {</span>
+            // Default BibLaTeX
+<span class="nc" id="L70">            populate(items, EntryTypes.getAllValues(BibDatabaseMode.BIBLATEX), entry, undoManager);</span>
+
+            // Custom types
+<span class="nc" id="L73">            populateSubMenu(items, Localization.lang(&quot;Custom&quot;), EntryTypes.getAllCustomTypes(BibDatabaseMode.BIBLATEX), entry, undoManager);</span>
+        } else {
+            // Default BibTeX
+<span class="nc" id="L76">            populateSubMenu(items, BibDatabaseMode.BIBTEX.getFormattedName(), BibtexEntryTypes.ALL, entry, undoManager);</span>
+<span class="nc" id="L77">            items.remove(0); // Remove separator</span>
+
+            // IEEETran
+<span class="nc" id="L80">            populateSubMenu(items, &quot;IEEETran&quot;, IEEETranEntryTypes.ALL, entry, undoManager);</span>
+
+            // Custom types
+<span class="nc" id="L83">            populateSubMenu(items, Localization.lang(&quot;Custom&quot;), EntryTypes.getAllCustomTypes(BibDatabaseMode.BIBTEX), entry, undoManager);</span>
+        }
+<span class="nc" id="L85">    }</span>
+
+    private void populateSubMenu(ObservableList&lt;MenuItem&gt; items, String text, List&lt;EntryType&gt; entryTypes, BibEntry entry, CountingUndoManager undoManager) {
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (!entryTypes.isEmpty()) {</span>
+<span class="nc" id="L89">            items.add(new SeparatorMenuItem());</span>
+<span class="nc" id="L90">            Menu custom = new Menu(text);</span>
+<span class="nc" id="L91">            populate(custom, entryTypes, entry, undoManager);</span>
+<span class="nc" id="L92">            items.add(custom);</span>
+        }
+<span class="nc" id="L94">    }</span>
+
+    private void populate(ObservableList&lt;MenuItem&gt; items, Collection&lt;EntryType&gt; types, BibEntry entry, UndoManager undoManager) {
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        for (EntryType type : types) {</span>
+<span class="nc" id="L98">            items.add(ChangeTypeAction.as(type, entry, undoManager));</span>
+<span class="nc" id="L99">        }</span>
+<span class="nc" id="L100">    }</span>
+
+    private void populate(Menu menu, Collection&lt;EntryType&gt; types, BibEntry entry, UndoManager undoManager) {
+<span class="nc" id="L103">        populate(menu.getItems(), types, entry, undoManager);</span>
+<span class="nc" id="L104">    }</span>
+
+    /**
+     * Remove all types from the menu. Then cycle through all available
+     * types, and add them.
+     */
+    private void populateChangeEntryTypeMenu(JMenu menu, BasePanel panel) {
+<span class="nc" id="L111">        menu.removeAll();</span>
+
+        // biblatex?
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (panel.getBibDatabaseContext().isBiblatexMode()) {</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">            for (EntryType type : EntryTypes.getAllValues(BibDatabaseMode.BIBLATEX)) {</span>
+<span class="nc" id="L116">                menu.add(new ChangeTypeAction(type, panel));</span>
+<span class="nc" id="L117">            }</span>
+
+<span class="nc" id="L119">            List&lt;EntryType&gt; customTypes = EntryTypes.getAllCustomTypes(BibDatabaseMode.BIBLATEX);</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">            if (!customTypes.isEmpty()) {</span>
+<span class="nc" id="L121">                menu.addSeparator();</span>
+                // custom types
+<span class="nc" id="L123">                createEntryTypeSection(panel, menu, &quot;Custom Entries&quot;, customTypes);</span>
+            }
+<span class="nc" id="L125">        } else {</span>
+            // Bibtex
+<span class="nc" id="L127">            createEntryTypeSection(panel, menu, &quot;BibTeX Entries&quot;, BibtexEntryTypes.ALL);</span>
+<span class="nc" id="L128">            menu.addSeparator();</span>
+            // ieeetran
+<span class="nc" id="L130">            createEntryTypeSection(panel, menu, &quot;IEEETran Entries&quot;, IEEETranEntryTypes.ALL);</span>
+
+<span class="nc" id="L132">            List&lt;EntryType&gt; customTypes = EntryTypes.getAllCustomTypes(BibDatabaseMode.BIBTEX);</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">            if (!customTypes.isEmpty()) {</span>
+<span class="nc" id="L134">                menu.addSeparator();</span>
+                // custom types
+<span class="nc" id="L136">                createEntryTypeSection(panel, menu, &quot;Custom Entries&quot;, customTypes);</span>
+            }
+        }
+<span class="nc" id="L139">    }</span>
+
+    private void createEntryTypeSection(BasePanel panel, JMenu menu, String title, List&lt;? extends EntryType&gt; types) {
+        // bibtex
+<span class="nc" id="L143">        JMenuItem header = new JMenuItem(title);</span>
+<span class="nc" id="L144">        Font font = new Font(menu.getFont().getName(), Font.ITALIC, menu.getFont().getSize());</span>
+<span class="nc" id="L145">        header.setFont(font);</span>
+<span class="nc" id="L146">        header.setEnabled(false);</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        if (!types.isEmpty()) {</span>
+<span class="nc" id="L148">            menu.add(header);</span>
+        }
+
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        for (EntryType type : types) {</span>
+<span class="nc" id="L152">            menu.add(new ChangeTypeAction(type, panel));</span>
+<span class="nc" id="L153">        }</span>
+<span class="nc" id="L154">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

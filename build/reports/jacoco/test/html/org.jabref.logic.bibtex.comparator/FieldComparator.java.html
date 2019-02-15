@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldComparator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.bibtex.comparator</a> &gt; <span class="el_source">FieldComparator.java</span></div><h1>FieldComparator.java</h1><pre class="source lang-java linenums">package org.jabref.logic.bibtex.comparator;
+
+import java.text.Collator;
+import java.text.ParseException;
+import java.text.RuleBasedCollator;
+import java.util.Comparator;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.model.entry.AuthorList;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.FieldProperty;
+import org.jabref.model.entry.InternalBibtexFields;
+import org.jabref.model.entry.Month;
+import org.jabref.model.metadata.SaveOrderConfig;
+import org.jabref.model.strings.StringUtil;
+
+/**
+ * A comparator for BibEntry fields
+ */
+public class FieldComparator implements Comparator&lt;BibEntry&gt; {
+
+<span class="fc" id="L25">    private static final Collator COLLATOR = getCollator();</span>
+
+<span class="fc" id="L27">    enum FieldType {</span>
+<span class="fc" id="L28">        NAME, TYPE, YEAR, MONTH, OTHER</span>
+    }
+
+    private final String[] field;
+    private final String fieldName;
+    private final FieldType fieldType;
+    private final boolean isNumeric;
+    private final int multiplier;
+
+    public FieldComparator(String field) {
+<span class="fc" id="L38">        this(field, false);</span>
+<span class="fc" id="L39">    }</span>
+
+    public FieldComparator(SaveOrderConfig.SortCriterion sortCriterion) {
+<span class="fc" id="L42">        this(sortCriterion.field, sortCriterion.descending);</span>
+<span class="fc" id="L43">    }</span>
+
+<span class="fc" id="L45">    public FieldComparator(String field, boolean descending) {</span>
+<span class="fc" id="L46">        this.fieldName = Objects.requireNonNull(field);</span>
+<span class="fc" id="L47">        this.field = fieldName.split(FieldName.FIELD_SEPARATOR);</span>
+<span class="fc" id="L48">        fieldType = determineFieldType();</span>
+<span class="fc" id="L49">        isNumeric = InternalBibtexFields.isNumeric(this.field[0]);</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        multiplier = descending ? -1 : 1;</span>
+<span class="fc" id="L51">    }</span>
+
+    private static Collator getCollator() {
+        try {
+<span class="fc" id="L55">            return new RuleBasedCollator(</span>
+<span class="fc" id="L56">                    ((RuleBasedCollator) Collator.getInstance()).getRules().replace(&quot;&lt;'\u005f'&quot;, &quot;&lt;' '&lt;'\u005f'&quot;));</span>
+<span class="nc" id="L57">        } catch (ParseException e) {</span>
+<span class="nc" id="L58">            return Collator.getInstance();</span>
+        }
+    }
+
+    private FieldType determineFieldType() {
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (BibEntry.TYPE_HEADER.equals(this.field[0])) {</span>
+<span class="fc" id="L64">            return FieldType.TYPE;</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        } else if (InternalBibtexFields.getFieldProperties(this.field[0]).contains(FieldProperty.PERSON_NAMES)) {</span>
+<span class="fc" id="L66">            return FieldType.NAME;</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        } else if (FieldName.YEAR.equals(this.field[0])) {</span>
+<span class="fc" id="L68">            return FieldType.YEAR;</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        } else if (FieldName.MONTH.equals(this.field[0])) {</span>
+<span class="fc" id="L70">            return FieldType.MONTH;</span>
+        } else {
+<span class="fc" id="L72">            return FieldType.OTHER;</span>
+        }
+    }
+
+    private String getField(BibEntry entry) {
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">        for (String aField : field) {</span>
+<span class="fc" id="L78">            Optional&lt;String&gt; o = entry.getFieldOrAliasLatexFree(aField);</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">            if (o.isPresent()) {</span>
+<span class="fc" id="L80">                return o.get();</span>
+            }
+        }
+<span class="nc" id="L83">        return null;</span>
+    }
+
+    @Override
+    public int compare(BibEntry e1, BibEntry e2) {
+        String f1;
+        String f2;
+
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        if (fieldType == FieldType.TYPE) {</span>
+            // Sort by type.
+<span class="fc" id="L93">            f1 = e1.getType();</span>
+<span class="fc" id="L94">            f2 = e2.getType();</span>
+        } else {
+            // If the field is author or editor, we rearrange names so they are
+            // sorted according to last name.
+<span class="fc" id="L98">            f1 = getField(e1);</span>
+<span class="fc" id="L99">            f2 = getField(e2);</span>
+        }
+
+        // Catch all cases involving null:
+<span class="pc bpc" id="L103" title="3 of 4 branches missed.">        if ((f1 == null) &amp;&amp; (f2 == null)) {</span>
+<span class="nc" id="L104">            return 0;</span>
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">        } else if (f1 == null) {</span>
+<span class="nc" id="L106">            return multiplier;</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        } else if (f2 == null) {</span>
+<span class="nc" id="L108">            return -multiplier;</span>
+        }
+
+        // Now we know that both f1 and f2 are != null
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (fieldType == FieldType.NAME) {</span>
+<span class="fc" id="L113">            f1 = AuthorList.fixAuthorForAlphabetization(f1);</span>
+<span class="fc" id="L114">            f2 = AuthorList.fixAuthorForAlphabetization(f2);</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        } else if (fieldType == FieldType.YEAR) {</span>
+<span class="fc" id="L116">            Integer f1year = StringUtil.intValueOfOptional(f1).orElse(0);</span>
+<span class="fc" id="L117">            Integer f2year = StringUtil.intValueOfOptional(f2).orElse(0);</span>
+<span class="fc" id="L118">            int comparisonResult = Integer.compare(f1year, f2year);</span>
+<span class="fc" id="L119">            return comparisonResult * multiplier;</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        } else if (fieldType == FieldType.MONTH) {</span>
+<span class="fc" id="L121">            int month1 = Month.parse(f1).map(Month::getNumber).orElse(-1);</span>
+<span class="fc" id="L122">            int month2 = Month.parse(f2).map(Month::getNumber).orElse(-1);</span>
+<span class="fc" id="L123">            return Integer.compare(month1, month2) * multiplier;</span>
+        }
+
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">        if (isNumeric) {</span>
+<span class="nc" id="L127">            Optional&lt;Integer&gt; i1 = StringUtil.intValueOfOptional(f1);</span>
+<span class="nc" id="L128">            Optional&lt;Integer&gt; i2 = StringUtil.intValueOfOptional(f2);</span>
+
+<span class="nc bnc" id="L130" title="All 4 branches missed.">            if ((i2.isPresent()) &amp;&amp; (i1.isPresent())) {</span>
+                // Ok, parsing was successful. Update f1 and f2:
+<span class="nc" id="L132">                return i1.get().compareTo(i2.get()) * multiplier;</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">            } else if (i1.isPresent()) {</span>
+                // The first one was parseable, but not the second one.
+                // This means we consider one &lt; two
+<span class="nc" id="L136">                return -1 * multiplier;</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">            } else if (i2.isPresent()) {</span>
+                // The second one was parseable, but not the first one.
+                // This means we consider one &gt; two
+<span class="nc" id="L140">                return 1 * multiplier;</span>
+            }
+            // Else none of them were parseable, and we can fall back on comparing strings.
+        }
+
+<span class="fc" id="L145">        String ours = f1.toLowerCase(Locale.ENGLISH);</span>
+<span class="fc" id="L146">        String theirs = f2.toLowerCase(Locale.ENGLISH);</span>
+<span class="fc" id="L147">        return COLLATOR.compare(ours, theirs) * multiplier;</span>
+    }
+
+    /**
+     * Returns the field this Comparator compares by.
+     *
+     * @return The field name.
+     */
+    public String getFieldName() {
+<span class="fc" id="L156">        return fieldName;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

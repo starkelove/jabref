@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.gui.exporter.SaveAllActionTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:23:38" hostname="n184-p67.eduroam.kth.se" time="0.734">
+  <properties/>
+  <testcase name="executeShouldShowSaveAsWindowIfDatabaseNotSelected" classname="org.jabref.gui.exporter.SaveAllActionTest" time="0.661"/>
+  <testcase name="executeShouldRunSaveCommandInEveryPanel" classname="org.jabref.gui.exporter.SaveAllActionTest" time="0.056"/>
+  <testcase name="executeShouldNotifyAboutSavingProcess" classname="org.jabref.gui.exporter.SaveAllActionTest" time="0.015"/>
+  <system-out><![CDATA[15:23:38.509 [Test worker] ERROR org.jabref.logic.l10n.Localization - Messages are not initialized before accessing key: Saving all libraries... -  
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

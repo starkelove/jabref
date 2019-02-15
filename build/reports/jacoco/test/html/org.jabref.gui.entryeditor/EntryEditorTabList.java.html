@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EntryEditorTabList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.entryeditor</a> &gt; <span class="el_source">EntryEditorTabList.java</span></div><h1>EntryEditorTabList.java</h1><pre class="source lang-java linenums">package org.jabref.gui.entryeditor;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.jabref.preferences.JabRefPreferences;
+
+/**
+ * Class for creating the information about customizable entry editor tabs.
+ */
+public final class EntryEditorTabList {
+
+    private EntryEditorTabList() {
+
+    }
+
+    public static Map&lt;String, List&lt;String&gt;&gt; create(JabRefPreferences preferences) {
+<span class="nc" id="L20">        Map&lt;String, List&lt;String&gt;&gt; tabs = new TreeMap&lt;&gt;();</span>
+<span class="nc" id="L21">        int i = 0;</span>
+        String name;
+<span class="nc bnc" id="L23" title="All 2 branches missed.">        if (preferences.hasKey(JabRefPreferences.CUSTOM_TAB_NAME + 0)) {</span>
+            // The user has modified from the default values:
+<span class="nc bnc" id="L25" title="All 2 branches missed.">            while (preferences.hasKey(JabRefPreferences.CUSTOM_TAB_NAME + i)) {</span>
+<span class="nc" id="L26">                name = preferences.get(JabRefPreferences.CUSTOM_TAB_NAME + i);</span>
+<span class="nc" id="L27">                List&lt;String&gt; entry = Arrays</span>
+<span class="nc" id="L28">                        .asList(preferences.get(JabRefPreferences.CUSTOM_TAB_FIELDS + i).split(&quot;;&quot;));</span>
+<span class="nc" id="L29">                tabs.put(name, entry);</span>
+<span class="nc" id="L30">                i++;</span>
+<span class="nc" id="L31">            }</span>
+        } else {
+            // Nothing set, so we use the default values:
+<span class="nc bnc" id="L34" title="All 2 branches missed.">            while (preferences.get(JabRefPreferences.CUSTOM_TAB_NAME + &quot;_def&quot; + i) != null) {</span>
+<span class="nc" id="L35">                name = preferences.get(JabRefPreferences.CUSTOM_TAB_NAME + &quot;_def&quot; + i);</span>
+<span class="nc" id="L36">                List&lt;String&gt; entry = Arrays</span>
+<span class="nc" id="L37">                        .asList(preferences.get(JabRefPreferences.CUSTOM_TAB_FIELDS + &quot;_def&quot; + i).split(&quot;;&quot;));</span>
+<span class="nc" id="L38">                tabs.put(name, entry);</span>
+<span class="nc" id="L39">                i++;</span>
+<span class="nc" id="L40">            }</span>
+        }
+<span class="nc" id="L42">        return tabs;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

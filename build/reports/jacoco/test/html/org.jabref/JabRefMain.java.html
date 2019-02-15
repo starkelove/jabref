@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JabRefMain.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref</a> &gt; <span class="el_source">JabRefMain.java</span></div><h1>JabRefMain.java</h1><pre class="source lang-java linenums">package org.jabref;
+
+import java.net.Authenticator;
+
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.stage.Stage;
+
+import org.jabref.cli.ArgumentProcessor;
+import org.jabref.gui.remote.JabRefMessageHandler;
+import org.jabref.logic.journals.JournalAbbreviationLoader;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.net.ProxyAuthenticator;
+import org.jabref.logic.net.ProxyPreferences;
+import org.jabref.logic.net.ProxyRegisterer;
+import org.jabref.logic.protectedterms.ProtectedTermsLoader;
+import org.jabref.logic.remote.RemotePreferences;
+import org.jabref.logic.remote.client.RemoteClient;
+import org.jabref.logic.util.BuildInfo;
+import org.jabref.logic.util.JavaVersion;
+import org.jabref.logic.util.OS;
+import org.jabref.migrations.PreferencesMigrations;
+import org.jabref.model.EntryTypes;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.InternalBibtexFields;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * JabRef MainClass
+ */
+<span class="nc" id="L37">public class JabRefMain extends Application {</span>
+
+<span class="nc" id="L39">    private static final Logger LOGGER = LoggerFactory.getLogger(JabRefMain.class);</span>
+
+    private static String[] arguments;
+
+    public static void main(String[] args) {
+<span class="nc" id="L44">        arguments = args;</span>
+<span class="nc" id="L45">        launch(arguments);</span>
+<span class="nc" id="L46">    }</span>
+
+    @Override
+    public void start(Stage mainStage) throws Exception {
+        try {
+            // Fail on unsupported Java versions
+<span class="nc" id="L52">            ensureCorrectJavaVersion();</span>
+<span class="nc" id="L53">            FallbackExceptionHandler.installExceptionHandler();</span>
+
+            // Init preferences
+<span class="nc" id="L56">            final JabRefPreferences preferences = JabRefPreferences.getInstance();</span>
+<span class="nc" id="L57">            Globals.prefs = preferences;</span>
+            // Perform migrations
+<span class="nc" id="L59">            PreferencesMigrations.runMigrations();</span>
+
+<span class="nc" id="L61">            configureProxy(preferences.getProxyPreferences());</span>
+
+<span class="nc" id="L63">            Globals.startBackgroundTasks();</span>
+
+<span class="nc" id="L65">            applyPreferences(preferences);</span>
+
+            // Process arguments
+<span class="nc" id="L68">            ArgumentProcessor argumentProcessor = new ArgumentProcessor(arguments, ArgumentProcessor.Mode.INITIAL_START);</span>
+
+            // Check for running JabRef
+<span class="nc bnc" id="L71" title="All 4 branches missed.">            if (!handleMultipleAppInstances(arguments) || argumentProcessor.shouldShutDown()) {</span>
+<span class="nc" id="L72">                Platform.exit();</span>
+<span class="nc" id="L73">                return;</span>
+            }
+
+            // If not, start GUI
+<span class="nc" id="L77">            new JabRefGUI(mainStage, argumentProcessor.getParserResults(), argumentProcessor.isBlank());</span>
+<span class="nc" id="L78">        } catch (Exception ex) {</span>
+<span class="nc" id="L79">            LOGGER.error(&quot;Unexpected exception&quot;, ex);</span>
+<span class="nc" id="L80">        }</span>
+<span class="nc" id="L81">    }</span>
+  
+    @Override
+    public void stop() {
+<span class="nc" id="L85">        Globals.stopBackgroundTasks();</span>
+<span class="nc" id="L86">        Globals.shutdownThreadPools();</span>
+<span class="nc" id="L87">    }</span>
+  
+    /**
+     * Tests if we are running an acceptable Java and terminates JabRef when we are sure the version is not supported.
+     * This test uses the requirements for the Java version as specified in &lt;code&gt;gradle.build&lt;/code&gt;. It is possible to
+     * define a minimum version including the built number and to indicate whether Java 9 can be use (which it currently
+     * can't). It tries to compare this version number to the version of the currently running JVM. The check is
+     * optimistic and will rather return true even if we could not exactly determine the version.
+     * &lt;p&gt;
+     * Note: Users with an very old version like 1.6 will not profit from this since class versions are incompatible and
+     * JabRef won't even start. Currently, JabRef won't start with Java 9 either, but the warning that it cannot be used
+     * with this version is helpful anyway to prevent users to update from an old 1.8 directly to version 9. Additionally,
+     * we soon might have a JabRef that does start with Java 9 but is not perfectly compatible. Therefore, we should leave
+     * the Java 9 check alive.
+     */
+    private static void ensureCorrectJavaVersion() {
+        // Check if we are running an acceptable version of Java
+<span class="nc" id="L104">        final BuildInfo buildInfo = Globals.BUILD_INFO;</span>
+<span class="nc" id="L105">        JavaVersion checker = new JavaVersion();</span>
+<span class="nc bnc" id="L106" title="All 4 branches missed.">        final boolean java9Fail = !buildInfo.isAllowJava9() &amp;&amp; checker.isJava9();</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        final boolean versionFail = !checker.isAtLeast(buildInfo.getMinRequiredJavaVersion());</span>
+
+<span class="nc bnc" id="L109" title="All 4 branches missed.">        if (java9Fail || versionFail) {</span>
+<span class="nc" id="L110">            StringBuilder versionError = new StringBuilder(</span>
+<span class="nc" id="L111">                                                           Localization.lang(&quot;Your current Java version (%0) is not supported. Please install version %1 or higher.&quot;,</span>
+<span class="nc" id="L112">                                                                             checker.getJavaVersion(),</span>
+<span class="nc" id="L113">                                                                             buildInfo.getMinRequiredJavaVersion()));</span>
+
+<span class="nc" id="L115">            versionError.append(&quot;\n&quot;);</span>
+<span class="nc" id="L116">            versionError.append(Localization.lang(&quot;Your Java Runtime Environment is located at %0.&quot;, checker.getJavaInstallationDirectory()));</span>
+
+<span class="nc bnc" id="L118" title="All 2 branches missed.">            if (!buildInfo.isAllowJava9()) {</span>
+<span class="nc" id="L119">                versionError.append(&quot;\n&quot;);</span>
+<span class="nc" id="L120">                versionError.append(Localization.lang(&quot;Note that currently, JabRef does not run with Java 9.&quot;));</span>
+            }
+<span class="nc" id="L122">            final JFrame frame = new JFrame();</span>
+<span class="nc" id="L123">            JOptionPane.showMessageDialog(null, versionError, Localization.lang(&quot;Error&quot;), JOptionPane.ERROR_MESSAGE);</span>
+<span class="nc" id="L124">            frame.dispose();</span>
+
+            // We exit on Java 9 error since this will definitely not work
+<span class="nc bnc" id="L127" title="All 2 branches missed.">            if (java9Fail) {</span>
+<span class="nc" id="L128">                System.exit(0);</span>
+            }
+        }
+<span class="nc" id="L131">    }</span>
+
+    private static boolean handleMultipleAppInstances(String[] args) {
+<span class="nc" id="L134">        RemotePreferences remotePreferences = Globals.prefs.getRemotePreferences();</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        if (remotePreferences.useRemoteServer()) {</span>
+            // Try to contact already running JabRef
+<span class="nc" id="L137">            RemoteClient remoteClient = new RemoteClient(remotePreferences.getPort());</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">            if (remoteClient.ping()) {</span>
+                // We are not alone, there is already a server out there, send command line arguments to other instance
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                if (remoteClient.sendCommandLineArguments(args)) {</span>
+                    // So we assume it's all taken care of, and quit.
+<span class="nc" id="L142">                    LOGGER.info(Localization.lang(&quot;Arguments passed on to running JabRef instance. Shutting down.&quot;));</span>
+<span class="nc" id="L143">                    return false;</span>
+                }
+            } else {
+                // We are alone, so we start the server
+<span class="nc" id="L147">                Globals.REMOTE_LISTENER.openAndStart(new JabRefMessageHandler(), remotePreferences.getPort());</span>
+            }
+        }
+<span class="nc" id="L150">        return true;</span>
+    }
+
+    private static void applyPreferences(JabRefPreferences preferences) {
+        // Update handling of special fields based on preferences
+<span class="nc" id="L155">        InternalBibtexFields.updateSpecialFields(Globals.prefs.getBoolean(JabRefPreferences.SERIALIZESPECIALFIELDS));</span>
+        // Update name of the time stamp field based on preferences
+<span class="nc" id="L157">        InternalBibtexFields.updateTimeStampField(Globals.prefs.getTimestampPreferences().getTimestampField());</span>
+        // Update which fields should be treated as numeric, based on preferences:
+<span class="nc" id="L159">        InternalBibtexFields.setNumericFields(Globals.prefs.getStringList(JabRefPreferences.NUMERIC_FIELDS));</span>
+
+        // Read list(s) of journal names and abbreviations
+<span class="nc" id="L162">        Globals.journalAbbreviationLoader = new JournalAbbreviationLoader();</span>
+
+        /* Build list of Import and Export formats */
+<span class="nc" id="L165">        Globals.IMPORT_FORMAT_READER.resetImportFormats(Globals.prefs.getImportFormatPreferences(),</span>
+<span class="nc" id="L166">                                                        Globals.prefs.getXMPPreferences(), Globals.getFileUpdateMonitor());</span>
+<span class="nc" id="L167">        EntryTypes.loadCustomEntryTypes(preferences.loadCustomEntryTypes(BibDatabaseMode.BIBTEX),</span>
+<span class="nc" id="L168">                                        preferences.loadCustomEntryTypes(BibDatabaseMode.BIBLATEX));</span>
+<span class="nc" id="L169">        Globals.exportFactory = Globals.prefs.getExporterFactory(Globals.journalAbbreviationLoader);</span>
+
+        // Initialize protected terms loader
+<span class="nc" id="L172">        Globals.protectedTermsLoader = new ProtectedTermsLoader(Globals.prefs.getProtectedTermsPreferences());</span>
+
+        // override used newline character with the one stored in the preferences
+        // The preferences return the system newline character sequence as default
+<span class="nc" id="L176">        OS.NEWLINE = Globals.prefs.get(JabRefPreferences.NEWLINE);</span>
+<span class="nc" id="L177">    }</span>
+
+    private static void configureProxy(ProxyPreferences proxyPreferences) {
+<span class="nc" id="L180">        ProxyRegisterer.register(proxyPreferences);</span>
+<span class="nc bnc" id="L181" title="All 4 branches missed.">        if (proxyPreferences.isUseProxy() &amp;&amp; proxyPreferences.isUseAuthentication()) {</span>
+<span class="nc" id="L182">            Authenticator.setDefault(new ProxyAuthenticator());</span>
+        }
+<span class="nc" id="L184">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

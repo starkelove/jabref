@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExportCustomizationDialogViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.exporter</a> &gt; <span class="el_source">ExportCustomizationDialogViewModel.java</span></div><h1>ExportCustomizationDialogViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.exporter;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.SimpleListProperty;
+import javafx.collections.FXCollections;
+
+import org.jabref.gui.AbstractViewModel;
+import org.jabref.gui.DialogService;
+import org.jabref.logic.exporter.TemplateExporter;
+import org.jabref.logic.journals.JournalAbbreviationLoader;
+import org.jabref.preferences.PreferencesService;
+
+public class ExportCustomizationDialogViewModel extends AbstractViewModel {
+
+<span class="nc" id="L19">    private final ListProperty&lt;ExporterViewModel&gt; exporters = new SimpleListProperty&lt;&gt;(FXCollections.observableArrayList());</span>
+<span class="nc" id="L20">    private final ListProperty&lt;ExporterViewModel&gt; selectedExporters = new SimpleListProperty&lt;&gt;(FXCollections.observableArrayList());</span>
+
+    private final PreferencesService preferences;
+    private final DialogService dialogService;
+    private final JournalAbbreviationLoader loader;
+
+<span class="nc" id="L26">    public ExportCustomizationDialogViewModel(PreferencesService preferences, DialogService dialogService, JournalAbbreviationLoader loader) {</span>
+<span class="nc" id="L27">        this.preferences = preferences;</span>
+<span class="nc" id="L28">        this.dialogService = dialogService;</span>
+<span class="nc" id="L29">        this.loader = loader;</span>
+<span class="nc" id="L30">        loadExporters();</span>
+<span class="nc" id="L31">    }</span>
+
+    private void loadExporters() {
+<span class="nc" id="L34">        List&lt;TemplateExporter&gt; exportersLogic = preferences.getCustomExportFormats(loader);</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        for (TemplateExporter exporter : exportersLogic) {</span>
+<span class="nc" id="L36">            exporters.add(new ExporterViewModel(exporter));</span>
+<span class="nc" id="L37">        }</span>
+<span class="nc" id="L38">    }</span>
+
+    public void addExporter() {
+<span class="nc" id="L41">        CreateModifyExporterDialogView dialog = new CreateModifyExporterDialogView(null, dialogService, preferences,</span>
+                loader);
+<span class="nc" id="L43">        Optional&lt;ExporterViewModel&gt; exporter = dialogService.showCustomDialogAndWait(dialog);</span>
+<span class="nc bnc" id="L44" title="All 4 branches missed.">        if ((exporter != null) &amp;&amp; exporter.isPresent()) {</span>
+<span class="nc" id="L45">            exporters.add(exporter.get());</span>
+        }
+<span class="nc" id="L47">    }</span>
+
+    public void modifyExporter() {
+        CreateModifyExporterDialogView dialog;
+<span class="nc" id="L51">        ExporterViewModel exporterToModify = null;</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (selectedExporters.isEmpty()) {</span>
+<span class="nc" id="L53">            return;</span>
+        }
+<span class="nc" id="L55">        exporterToModify = selectedExporters.get(0);</span>
+<span class="nc" id="L56">        dialog = new CreateModifyExporterDialogView(exporterToModify, dialogService, preferences, loader);</span>
+<span class="nc" id="L57">        Optional&lt;ExporterViewModel&gt; exporter = dialogService.showCustomDialogAndWait(dialog);</span>
+<span class="nc bnc" id="L58" title="All 4 branches missed.">        if ((exporter != null) &amp;&amp; exporter.isPresent()) {</span>
+<span class="nc" id="L59">            exporters.remove(exporterToModify);</span>
+<span class="nc" id="L60">            exporters.add(exporter.get());</span>
+        }
+<span class="nc" id="L62">    }</span>
+
+    public void removeExporters() {
+<span class="nc" id="L65">        exporters.removeAll(selectedExporters);</span>
+<span class="nc" id="L66">    }</span>
+
+    public void saveToPrefs() {
+<span class="nc" id="L69">        List&lt;TemplateExporter&gt; exportersLogic = exporters.stream().map(ExporterViewModel::getLogic).collect(Collectors.toList());</span>
+<span class="nc" id="L70">        preferences.storeCustomExportFormats(exportersLogic);</span>
+<span class="nc" id="L71">    }</span>
+
+    public ListProperty&lt;ExporterViewModel&gt; selectedExportersProperty() {
+<span class="nc" id="L74">        return selectedExporters;</span>
+    }
+
+    public ListProperty&lt;ExporterViewModel&gt; exportersProperty() {
+<span class="nc" id="L78">        return exporters;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

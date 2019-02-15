@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.model.entry.EntryLinkListTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:25" hostname="n184-p67.eduroam.kth.se" time="0.008">
+  <properties/>
+  <testcase name="givenFieldValueAndDatabaseWhenParsingThenExpectLink()" classname="org.jabref.model.entry.EntryLinkListTest" time="0.003"/>
+  <testcase name="givenTargetAndSourceWhenSourceCrossrefTargetThenSourceCrossrefsTarget()" classname="org.jabref.model.entry.EntryLinkListTest" time="0.001"/>
+  <testcase name="givenFieldValueAndDatabaseWhenParsingThenExpectEmptyLinkedEntry()" classname="org.jabref.model.entry.EntryLinkListTest" time="0.001"/>
+  <testcase name="givenFieldValueAndDatabaseWhenParsingThenExpectKey()" classname="org.jabref.model.entry.EntryLinkListTest" time="0.001"/>
+  <testcase name="givenNullFieldValueAndDatabaseWhenParsingThenExpectLinksIsEmpty()" classname="org.jabref.model.entry.EntryLinkListTest" time="0.001"/>
+  <testcase name="givenFieldValueAndDatabaseWhenParsingThenExpectDataBase()" classname="org.jabref.model.entry.EntryLinkListTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

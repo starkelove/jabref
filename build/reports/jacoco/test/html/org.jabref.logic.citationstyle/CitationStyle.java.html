@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CitationStyle.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.citationstyle</a> &gt; <span class="el_source">CitationStyle.java</span></div><h1>CitationStyle.java</h1><pre class="source lang-java linenums">package org.jabref.logic.citationstyle;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.jabref.logic.util.StandardFileType;
+
+import de.undercouch.citeproc.helper.CSLUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.CharacterData;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
+/**
+ * Representation of a CitationStyle. Stores its name, the file path and the style itself
+ */
+public class CitationStyle {
+
+    public static final String DEFAULT = &quot;/ieee.csl&quot;;
+<span class="fc" id="L45">    private static final Logger LOGGER = LoggerFactory.getLogger(CitationStyle.class);</span>
+    private static final String STYLES_ROOT = &quot;/csl-styles&quot;;
+
+<span class="fc" id="L48">    private static final List&lt;CitationStyle&gt; STYLES = new ArrayList&lt;&gt;();</span>
+
+    private final String filePath;
+    private final String title;
+    private final String source;
+
+<span class="fc" id="L54">    private CitationStyle(final String filename, final String title, final String source) {</span>
+<span class="fc" id="L55">        this.filePath = Objects.requireNonNull(filename);</span>
+<span class="fc" id="L56">        this.title = Objects.requireNonNull(title);</span>
+<span class="fc" id="L57">        this.source = Objects.requireNonNull(source);</span>
+<span class="fc" id="L58">    }</span>
+
+    /**
+     * Creates an CitationStyle instance out of the style string
+     */
+    private static Optional&lt;CitationStyle&gt; createCitationStyleFromSource(final String source, final String filename) {
+<span class="nc bnc" id="L64" title="All 8 branches missed.">        if ((filename != null) &amp;&amp; !filename.isEmpty() &amp;&amp; (source != null) &amp;&amp; !source.isEmpty()) {</span>
+            try {
+<span class="nc" id="L66">                DocumentBuilder db = DocumentBuilderFactory.newInstance().newDocumentBuilder();</span>
+<span class="nc" id="L67">                InputSource is = new InputSource();</span>
+<span class="nc" id="L68">                is.setCharacterStream(new StringReader(stripInvalidProlog(source)));</span>
+
+<span class="nc" id="L70">                Document doc = db.parse(is);</span>
+<span class="nc" id="L71">                NodeList nodes = doc.getElementsByTagName(&quot;info&quot;);</span>
+
+<span class="nc" id="L73">                NodeList titleNode = ((Element) nodes.item(0)).getElementsByTagName(&quot;title&quot;);</span>
+<span class="nc" id="L74">                String title = ((CharacterData) titleNode.item(0).getFirstChild()).getData();</span>
+
+<span class="nc" id="L76">                return Optional.of(new CitationStyle(filename, title, source));</span>
+<span class="nc" id="L77">            } catch (ParserConfigurationException | SAXException | IOException e) {</span>
+<span class="nc" id="L78">                LOGGER.error(&quot;Error while parsing source&quot;, e);</span>
+            }
+        }
+<span class="nc" id="L81">        return Optional.empty();</span>
+    }
+
+    private static String stripInvalidProlog(String source) {
+<span class="nc" id="L85">        int startIndex = source.indexOf(&quot;&lt;&quot;);</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (startIndex &gt; 0) {</span>
+<span class="nc" id="L87">            return source.substring(startIndex);</span>
+        } else {
+<span class="nc" id="L89">            return source;</span>
+        }
+    }
+
+    /**
+     * Loads the CitationStyle from the given file
+     */
+    public static Optional&lt;CitationStyle&gt; createCitationStyleFromFile(final String styleFile) {
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        if (!isCitationStyleFile(styleFile)) {</span>
+<span class="nc" id="L98">            LOGGER.error(&quot;Can only load style files: {}&quot;, styleFile);</span>
+<span class="nc" id="L99">            return Optional.empty();</span>
+        }
+
+        try {
+            String text;
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">            String internalFile = STYLES_ROOT + (styleFile.startsWith(&quot;/&quot;) ? &quot;&quot; : &quot;/&quot;) + styleFile;</span>
+<span class="nc" id="L105">            URL url = CitationStyle.class.getResource(internalFile);</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">            if (url != null) {</span>
+<span class="nc" id="L107">                text = CSLUtils.readURLToString(url, StandardCharsets.UTF_8.toString());</span>
+            } else {
+                // if the url is null then the style is located outside the classpath
+<span class="nc" id="L110">                text = new String(Files.readAllBytes(Paths.get(styleFile)), StandardCharsets.UTF_8);</span>
+            }
+<span class="nc" id="L112">            return createCitationStyleFromSource(text, styleFile);</span>
+<span class="fc" id="L113">        } catch (NoSuchFileException e) {</span>
+<span class="fc" id="L114">            LOGGER.error(&quot;Could not find file: &quot; + styleFile, e);</span>
+<span class="nc" id="L115">        } catch (IOException e) {</span>
+<span class="nc" id="L116">            LOGGER.error(&quot;Error reading source file&quot;, e);</span>
+<span class="fc" id="L117">        }</span>
+<span class="fc" id="L118">        return Optional.empty();</span>
+    }
+
+    /**
+     * Provides the default citation style which is currently IEEE
+     *
+     * @return default citation style
+     */
+    public static CitationStyle getDefault() {
+<span class="fc" id="L127">        return createCitationStyleFromFile(DEFAULT).orElse(new CitationStyle(&quot;&quot;, &quot;Empty&quot;, &quot;&quot;));</span>
+    }
+
+    /**
+     * Provides the citation styles that come with JabRef.
+     *
+     * @return list of available citation styles
+     */
+    public static List&lt;CitationStyle&gt; discoverCitationStyles() {
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (!STYLES.isEmpty()) {</span>
+<span class="nc" id="L137">            return STYLES;</span>
+        }
+
+<span class="nc" id="L140">        URL url = CitationStyle.class.getResource(STYLES_ROOT);</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        if (url == null) {</span>
+<span class="nc" id="L142">            return Collections.emptyList();</span>
+        }
+        try {
+<span class="nc" id="L145">            URI uri = url.toURI();</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            if (&quot;jar&quot;.equals(uri.getScheme())) {</span>
+<span class="nc" id="L147">                try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {</span>
+<span class="nc" id="L148">                    Path path = fs.getPath(STYLES_ROOT);</span>
+<span class="nc" id="L149">                    STYLES.addAll(discoverCitationStylesInPath(path));</span>
+<span class="nc" id="L150">                }</span>
+            } else {
+<span class="nc" id="L152">                STYLES.addAll(discoverCitationStylesInPath(Paths.get(uri)));</span>
+            }
+<span class="nc" id="L154">            return STYLES;</span>
+<span class="nc" id="L155">        } catch (URISyntaxException | IOException e) {</span>
+<span class="nc" id="L156">            LOGGER.error(&quot;something went wrong while searching available CitationStyles. Are you running directly from source code?&quot;, e);</span>
+<span class="nc" id="L157">            return Collections.emptyList();</span>
+        }
+    }
+
+    private static List&lt;CitationStyle&gt; discoverCitationStylesInPath(Path path) throws IOException {
+<span class="nc" id="L162">        try (Stream&lt;Path&gt; stream = Files.find(path, 1, (file, attr) -&gt; file.toString().endsWith(&quot;csl&quot;))) {</span>
+<span class="nc" id="L163">            return stream.map(Path::getFileName)</span>
+<span class="nc" id="L164">                         .map(Path::toString)</span>
+<span class="nc" id="L165">                         .map(CitationStyle::createCitationStyleFromFile)</span>
+<span class="nc" id="L166">                         .filter(Optional::isPresent)</span>
+<span class="nc" id="L167">                         .map(Optional::get)</span>
+<span class="nc" id="L168">                         .collect(Collectors.toList());</span>
+<span class="nc" id="L169">        }</span>
+    }
+
+    /**
+     * Checks if the given style file is a CitationStyle
+     */
+    public static boolean isCitationStyleFile(String styleFile) {
+<span class="fc" id="L176">        return StandardFileType.CITATION_STYLE.getExtensions().stream().anyMatch(styleFile::endsWith);</span>
+    }
+
+    public String getTitle() {
+<span class="nc" id="L180">        return title;</span>
+    }
+
+    public String getSource() {
+<span class="nc" id="L184">        return source;</span>
+    }
+
+    public String getFilePath() {
+<span class="nc" id="L188">        return filePath;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L193">        return title;</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L199">            return true;</span>
+        }
+<span class="nc bnc" id="L201" title="All 4 branches missed.">        if ((o == null) || (getClass() != o.getClass())) {</span>
+<span class="nc" id="L202">            return false;</span>
+        }
+
+<span class="nc" id="L205">        CitationStyle other = (CitationStyle) o;</span>
+<span class="nc" id="L206">        return Objects.equals(source, other.source);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L211">        return Objects.hash(source);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

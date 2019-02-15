@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.migrations.PreferencesMigrationsTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:23:40" hostname="n184-p67.eduroam.kth.se" time="0.358">
+  <properties/>
+  <testcase name="testPreviewStyle()" classname="org.jabref.migrations.PreferencesMigrationsTest" time="0.336"/>
+  <testcase name="testOldStyleBibtexkeyPattern0()" classname="org.jabref.migrations.PreferencesMigrationsTest" time="0.008"/>
+  <testcase name="testOldStyleBibtexkeyPattern1()" classname="org.jabref.migrations.PreferencesMigrationsTest" time="0.007"/>
+  <testcase name="testArbitraryBibtexkeyPattern()" classname="org.jabref.migrations.PreferencesMigrationsTest" time="0.004"/>
+  <system-out><![CDATA[15:23:40.344 [Test worker] INFO  org.jabref.migrations.PreferencesMigrations - migrated old style importFileNamePattern value "\bibtexkey" to new value "[bibtexkey]" in the preference file -  
+15:23:40.345 [Test worker] INFO  org.jabref.migrations.PreferencesMigrations - migrated old style importFileNamePattern value "\bibtexkey" to new value "[bibtexkey]" in the running application -  
+15:23:40.352 [Test worker] INFO  org.jabref.migrations.PreferencesMigrations - migrated old style importFileNamePattern value "\bibtexkey\begin{title} - \format[RemoveBrackets]{\title}\end{title}" to new value "[bibtexkey] - [fulltitle]" in the preference file -  
+15:23:40.353 [Test worker] INFO  org.jabref.migrations.PreferencesMigrations - migrated old style importFileNamePattern value "\bibtexkey\begin{title} - \format[RemoveBrackets]{\title}\end{title}" to new value "[bibtexkey] - [fulltitle]" in the running application -  
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

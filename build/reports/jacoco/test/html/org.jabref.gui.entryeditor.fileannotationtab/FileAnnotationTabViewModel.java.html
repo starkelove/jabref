@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileAnnotationTabViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.entryeditor.fileannotationtab</a> &gt; <span class="el_source">FileAnnotationTabViewModel.java</span></div><h1>FileAnnotationTabViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.entryeditor.fileannotationtab;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
+
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.SimpleListProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+
+import org.jabref.Globals;
+import org.jabref.gui.AbstractViewModel;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.pdf.FileAnnotationCache;
+import org.jabref.logic.util.OS;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.pdf.FileAnnotation;
+import org.jabref.model.util.FileUpdateListener;
+import org.jabref.model.util.FileUpdateMonitor;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class FileAnnotationTabViewModel extends AbstractViewModel {
+<span class="nc" id="L34">    private static final Logger LOGGER = LoggerFactory.getLogger(FileAnnotationTabViewModel.class);</span>
+
+<span class="nc" id="L36">    private final ListProperty&lt;FileAnnotationViewModel&gt; annotations = new SimpleListProperty&lt;&gt;(FXCollections.observableArrayList());</span>
+<span class="nc" id="L37">    private final ListProperty&lt;Path&gt; files = new SimpleListProperty&lt;&gt;(FXCollections.observableArrayList());</span>
+<span class="nc" id="L38">    private final ObjectProperty&lt;FileAnnotationViewModel&gt; currentAnnotation = new SimpleObjectProperty&lt;&gt;();</span>
+<span class="nc" id="L39">    private final ReadOnlyBooleanProperty annotationEmpty = annotations.emptyProperty();</span>
+
+    private final FileAnnotationCache cache;
+    private final BibEntry entry;
+    private Map&lt;Path, List&lt;FileAnnotation&gt;&gt; fileAnnotations;
+    private Path currentFile;
+    private final FileUpdateMonitor fileMonitor;
+<span class="nc" id="L46">    private final FileUpdateListener fileListener = this::reloadAnnotations;</span>
+
+<span class="nc" id="L48">    public FileAnnotationTabViewModel(FileAnnotationCache cache, BibEntry entry, FileUpdateMonitor fileMonitor) {</span>
+<span class="nc" id="L49">        this.cache = cache;</span>
+<span class="nc" id="L50">        this.entry = entry;</span>
+<span class="nc" id="L51">        this.fileMonitor = fileMonitor;</span>
+
+<span class="nc" id="L53">        fileAnnotations = this.cache.getFromCache(this.entry);</span>
+<span class="nc" id="L54">        files.setAll(fileAnnotations.keySet());</span>
+<span class="nc" id="L55">    }</span>
+
+    public ObjectProperty&lt;FileAnnotationViewModel&gt; currentAnnotationProperty() {
+<span class="nc" id="L58">        return currentAnnotation;</span>
+    }
+
+    public ReadOnlyBooleanProperty isAnnotationsEmpty() {
+<span class="nc" id="L62">        return annotationEmpty;</span>
+    }
+
+    public ListProperty&lt;FileAnnotationViewModel&gt; annotationsProperty() {
+<span class="nc" id="L66">        return annotations;</span>
+    }
+
+    public ListProperty&lt;Path&gt; filesProperty() {
+<span class="nc" id="L70">        return files;</span>
+    }
+
+    public void notifyNewSelectedAnnotation(FileAnnotationViewModel newAnnotation) {
+<span class="nc" id="L74">        currentAnnotation.set(newAnnotation);</span>
+<span class="nc" id="L75">    }</span>
+
+    public void notifyNewSelectedFile(Path newFile) {
+<span class="nc" id="L78">        fileMonitor.removeListener(currentFile, fileListener);</span>
+<span class="nc" id="L79">        currentFile = newFile;</span>
+
+<span class="nc" id="L81">        Comparator&lt;FileAnnotation&gt; byPage = Comparator.comparingInt(FileAnnotation::getPage);</span>
+
+<span class="nc" id="L83">        List&lt;FileAnnotationViewModel&gt; newAnnotations = fileAnnotations.getOrDefault(currentFile, new ArrayList&lt;&gt;())</span>
+<span class="nc" id="L84">                .stream()</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">                .filter(annotation -&gt; (null != annotation.getContent()))</span>
+<span class="nc" id="L86">                .sorted(byPage)</span>
+<span class="nc" id="L87">                .map(FileAnnotationViewModel::new)</span>
+<span class="nc" id="L88">                .collect(Collectors.toList());</span>
+<span class="nc" id="L89">        annotations.setAll(newAnnotations);</span>
+
+        try {
+<span class="nc" id="L92">            fileMonitor.addListenerForFile(currentFile, fileListener);</span>
+<span class="nc" id="L93">        } catch (IOException e) {</span>
+<span class="nc" id="L94">            LOGGER.error(&quot;Problem while watching file for changes &quot; + currentFile, e);</span>
+<span class="nc" id="L95">        }</span>
+<span class="nc" id="L96">    }</span>
+
+    private void reloadAnnotations() {
+        // Make sure to always run this in the JavaFX thread as the file monitor (and its notifications) live in a different thread
+<span class="nc" id="L100">        DefaultTaskExecutor.runInJavaFXThread(() -&gt; {</span>
+            // Remove annotations for the current entry and reinitialize annotation/cache
+<span class="nc" id="L102">            cache.remove(entry);</span>
+<span class="nc" id="L103">            fileAnnotations = cache.getFromCache(entry);</span>
+<span class="nc" id="L104">            files.setAll(fileAnnotations.keySet());</span>
+
+            // Pretend that we just switched to the current file in order to refresh the display
+<span class="nc" id="L107">            notifyNewSelectedFile(currentFile);</span>
+<span class="nc" id="L108">        });</span>
+<span class="nc" id="L109">    }</span>
+
+    /**
+     * Copies the meta and content information of the pdf annotation to the clipboard
+     */
+    public void copyCurrentAnnotation() {
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        if (null == getCurrentAnnotation()) {</span>
+<span class="nc" id="L116">            return;</span>
+        }
+<span class="nc" id="L118">        StringJoiner sj = new StringJoiner(&quot;,&quot; + OS.NEWLINE);</span>
+<span class="nc" id="L119">        sj.add(Localization.lang(&quot;Author&quot;) + &quot;: &quot; + getCurrentAnnotation().getAuthor());</span>
+<span class="nc" id="L120">        sj.add(Localization.lang(&quot;Date&quot;) + &quot;: &quot; + getCurrentAnnotation().getDate());</span>
+<span class="nc" id="L121">        sj.add(Localization.lang(&quot;Page&quot;) + &quot;: &quot; + getCurrentAnnotation().getPage());</span>
+<span class="nc" id="L122">        sj.add(Localization.lang(&quot;Content&quot;) + &quot;: &quot; + getCurrentAnnotation().getContent());</span>
+<span class="nc" id="L123">        sj.add(Localization.lang(&quot;Marking&quot;) + &quot;: &quot; + getCurrentAnnotation().markingProperty().get());</span>
+
+<span class="nc" id="L125">        Globals.clipboardManager.setContent(sj.toString());</span>
+<span class="nc" id="L126">    }</span>
+
+    private FileAnnotationViewModel getCurrentAnnotation() {
+<span class="nc" id="L129">        return currentAnnotation.get();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

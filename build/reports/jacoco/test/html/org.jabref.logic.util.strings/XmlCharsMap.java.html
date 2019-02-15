@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XmlCharsMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util.strings</a> &gt; <span class="el_source">XmlCharsMap.java</span></div><h1>XmlCharsMap.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util.strings;
+
+import java.util.HashMap;
+
+public class XmlCharsMap extends HashMap&lt;String, String&gt; {
+<span class="fc" id="L6">    public XmlCharsMap() {</span>
+<span class="fc" id="L7">        put(&quot;\\{\\\\\\\&quot;\\{a\\}\\}&quot;, &quot;&amp;#x00E4;&quot;);</span>
+<span class="fc" id="L8">        put(&quot;\\{\\\\\\\&quot;\\{A\\}\\}&quot;, &quot;&amp;#x00C4;&quot;);</span>
+<span class="fc" id="L9">        put(&quot;\\{\\\\\\\&quot;\\{e\\}\\}&quot;, &quot;&amp;#x00EB;&quot;);</span>
+<span class="fc" id="L10">        put(&quot;\\{\\\\\\\&quot;\\{E\\}\\}&quot;, &quot;&amp;#x00CB;&quot;);</span>
+<span class="fc" id="L11">        put(&quot;\\{\\\\\\\&quot;\\{i\\}\\}&quot;, &quot;&amp;#x00EF;&quot;);</span>
+<span class="fc" id="L12">        put(&quot;\\{\\\\\\\&quot;\\{I\\}\\}&quot;, &quot;&amp;#x00CF;&quot;);</span>
+<span class="fc" id="L13">        put(&quot;\\{\\\\\\\&quot;\\{o\\}\\}&quot;, &quot;&amp;#x00F6;&quot;);</span>
+<span class="fc" id="L14">        put(&quot;\\{\\\\\\\&quot;\\{O\\}\\}&quot;, &quot;&amp;#x00D6;&quot;);</span>
+<span class="fc" id="L15">        put(&quot;\\{\\\\\\\&quot;\\{u\\}\\}&quot;, &quot;&amp;#x00FC;&quot;);</span>
+<span class="fc" id="L16">        put(&quot;\\{\\\\\\\&quot;\\{U\\}\\}&quot;, &quot;&amp;#x00DC;&quot;);</span>
+
+        //next 2 rows were missing...
+<span class="fc" id="L19">        put(&quot;\\{\\\\\\`\\{a\\}\\}&quot;, &quot;&amp;#x00E0;&quot;);</span>
+<span class="fc" id="L20">        put(&quot;\\{\\\\\\`\\{A\\}\\}&quot;, &quot;&amp;#x00C0;&quot;);</span>
+
+<span class="fc" id="L22">        put(&quot;\\{\\\\\\`\\{e\\}\\}&quot;, &quot;&amp;#x00E8;&quot;);</span>
+<span class="fc" id="L23">        put(&quot;\\{\\\\\\`\\{E\\}\\}&quot;, &quot;&amp;#x00C8;&quot;);</span>
+<span class="fc" id="L24">        put(&quot;\\{\\\\\\`\\{i\\}\\}&quot;, &quot;&amp;#x00EC;&quot;);</span>
+<span class="fc" id="L25">        put(&quot;\\{\\\\\\`\\{I\\}\\}&quot;, &quot;&amp;#x00CC;&quot;);</span>
+<span class="fc" id="L26">        put(&quot;\\{\\\\\\`\\{o\\}\\}&quot;, &quot;&amp;#x00F2;&quot;);</span>
+<span class="fc" id="L27">        put(&quot;\\{\\\\\\`\\{O\\}\\}&quot;, &quot;&amp;#x00D2;&quot;);</span>
+<span class="fc" id="L28">        put(&quot;\\{\\\\\\`\\{u\\}\\}&quot;, &quot;&amp;#x00F9;&quot;);</span>
+<span class="fc" id="L29">        put(&quot;\\{\\\\\\`\\{U\\}\\}&quot;, &quot;&amp;#x00D9;&quot;);</span>
+
+        //corrected these 10 lines below...
+<span class="fc" id="L32">        put(&quot;\\{\\\\\\'\\{a\\}\\}&quot;, &quot;&amp;#x00E1;&quot;);</span>
+<span class="fc" id="L33">        put(&quot;\\{\\\\\\'\\{A\\}\\}&quot;, &quot;&amp;#x00C1;&quot;);</span>
+<span class="fc" id="L34">        put(&quot;\\{\\\\\\'\\{e\\}\\}&quot;, &quot;&amp;#x00E9;&quot;);</span>
+<span class="fc" id="L35">        put(&quot;\\{\\\\\\'\\{E\\}\\}&quot;, &quot;&amp;#x00C9;&quot;);</span>
+<span class="fc" id="L36">        put(&quot;\\{\\\\\\'\\{i\\}\\}&quot;, &quot;&amp;#x00ED;&quot;);</span>
+<span class="fc" id="L37">        put(&quot;\\{\\\\\\'\\{I\\}\\}&quot;, &quot;&amp;#x00CD;&quot;);</span>
+<span class="fc" id="L38">        put(&quot;\\{\\\\\\'\\{o\\}\\}&quot;, &quot;&amp;#x00F3;&quot;);</span>
+<span class="fc" id="L39">        put(&quot;\\{\\\\\\'\\{O\\}\\}&quot;, &quot;&amp;#x00D3;&quot;);</span>
+<span class="fc" id="L40">        put(&quot;\\{\\\\\\'\\{u\\}\\}&quot;, &quot;&amp;#x00FA;&quot;);</span>
+<span class="fc" id="L41">        put(&quot;\\{\\\\\\'\\{U\\}\\}&quot;, &quot;&amp;#x00DA;&quot;);</span>
+        //added next four chars...
+<span class="fc" id="L43">        put(&quot;\\{\\\\\\'\\{c\\}\\}&quot;, &quot;&amp;#x0107;&quot;);</span>
+<span class="fc" id="L44">        put(&quot;\\{\\\\\\'\\{C\\}\\}&quot;, &quot;&amp;#x0106;&quot;);</span>
+<span class="fc" id="L45">        put(&quot;\\{\\\\c\\{c\\}\\}&quot;, &quot;&amp;#x00E7;&quot;);</span>
+<span class="fc" id="L46">        put(&quot;\\{\\\\c\\{C\\}\\}&quot;, &quot;&amp;#x00C7;&quot;);</span>
+
+<span class="fc" id="L48">        put(&quot;\\{\\\\\\\uFFFD\\{E\\}\\}&quot;, &quot;&amp;#x00C9;&quot;);</span>
+<span class="fc" id="L49">        put(&quot;\\{\\\\\\\uFFFD\\{i\\}\\}&quot;, &quot;&amp;#x00ED;&quot;);</span>
+<span class="fc" id="L50">        put(&quot;\\{\\\\\\\uFFFD\\{I\\}\\}&quot;, &quot;&amp;#x00CD;&quot;);</span>
+<span class="fc" id="L51">        put(&quot;\\{\\\\\\\uFFFD\\{o\\}\\}&quot;, &quot;&amp;#x00F3;&quot;);</span>
+<span class="fc" id="L52">        put(&quot;\\{\\\\\\\uFFFD\\{O\\}\\}&quot;, &quot;&amp;#x00D3;&quot;);</span>
+<span class="fc" id="L53">        put(&quot;\\{\\\\\\\uFFFD\\{u\\}\\}&quot;, &quot;&amp;#x00FA;&quot;);</span>
+<span class="fc" id="L54">        put(&quot;\\{\\\\\\\uFFFD\\{U\\}\\}&quot;, &quot;&amp;#x00DA;&quot;);</span>
+<span class="fc" id="L55">        put(&quot;\\{\\\\\\\uFFFD\\{a\\}\\}&quot;, &quot;&amp;#x00E1;&quot;);</span>
+<span class="fc" id="L56">        put(&quot;\\{\\\\\\\uFFFD\\{A\\}\\}&quot;, &quot;&amp;#x00C1;&quot;);</span>
+
+        //next 2 rows were missing...
+<span class="fc" id="L59">        put(&quot;\\{\\\\\\^\\{a\\}\\}&quot;, &quot;&amp;#x00E2;&quot;);</span>
+<span class="fc" id="L60">        put(&quot;\\{\\\\\\^\\{A\\}\\}&quot;, &quot;&amp;#x00C2;&quot;);</span>
+
+<span class="fc" id="L62">        put(&quot;\\{\\\\\\^\\{o\\}\\}&quot;, &quot;&amp;#x00F4;&quot;);</span>
+<span class="fc" id="L63">        put(&quot;\\{\\\\\\^\\{O\\}\\}&quot;, &quot;&amp;#x00D4;&quot;);</span>
+<span class="fc" id="L64">        put(&quot;\\{\\\\\\^\\{u\\}\\}&quot;, &quot;&amp;#x00F9;&quot;);</span>
+<span class="fc" id="L65">        put(&quot;\\{\\\\\\^\\{U\\}\\}&quot;, &quot;&amp;#x00D9;&quot;);</span>
+<span class="fc" id="L66">        put(&quot;\\{\\\\\\^\\{e\\}\\}&quot;, &quot;&amp;#x00EA;&quot;);</span>
+<span class="fc" id="L67">        put(&quot;\\{\\\\\\^\\{E\\}\\}&quot;, &quot;&amp;#x00CA;&quot;);</span>
+<span class="fc" id="L68">        put(&quot;\\{\\\\\\^\\{i\\}\\}&quot;, &quot;&amp;#x00EE;&quot;);</span>
+<span class="fc" id="L69">        put(&quot;\\{\\\\\\^\\{I\\}\\}&quot;, &quot;&amp;#x00CE;&quot;);</span>
+
+<span class="fc" id="L71">        put(&quot;\\{\\\\\\~\\{o\\}\\}&quot;, &quot;&amp;#x00F5;&quot;);</span>
+<span class="fc" id="L72">        put(&quot;\\{\\\\\\~\\{O\\}\\}&quot;, &quot;&amp;#x00D5;&quot;);</span>
+<span class="fc" id="L73">        put(&quot;\\{\\\\\\~\\{n\\}\\}&quot;, &quot;&amp;#x00F1;&quot;);</span>
+<span class="fc" id="L74">        put(&quot;\\{\\\\\\~\\{N\\}\\}&quot;, &quot;&amp;#x00D1;&quot;);</span>
+<span class="fc" id="L75">        put(&quot;\\{\\\\\\~\\{a\\}\\}&quot;, &quot;&amp;#x00E3;&quot;);</span>
+<span class="fc" id="L76">        put(&quot;\\{\\\\\\~\\{A\\}\\}&quot;, &quot;&amp;#x00C3;&quot;);</span>
+
+<span class="fc" id="L78">        put(&quot;\\{\\\\\\\&quot;a\\}&quot;, &quot;&amp;#x00E4;&quot;);</span>
+<span class="fc" id="L79">        put(&quot;\\{\\\\\\\&quot;A\\}&quot;, &quot;&amp;#x00C4;&quot;);</span>
+<span class="fc" id="L80">        put(&quot;\\{\\\\\\\&quot;e\\}&quot;, &quot;&amp;#x00EB;&quot;);</span>
+<span class="fc" id="L81">        put(&quot;\\{\\\\\\\&quot;E\\}&quot;, &quot;&amp;#x00CB;&quot;);</span>
+<span class="fc" id="L82">        put(&quot;\\{\\\\\\\&quot;i\\}&quot;, &quot;&amp;#x00EF;&quot;);</span>
+<span class="fc" id="L83">        put(&quot;\\{\\\\\\\&quot;I\\}&quot;, &quot;&amp;#x00CF;&quot;);</span>
+<span class="fc" id="L84">        put(&quot;\\{\\\\\\\&quot;o\\}&quot;, &quot;&amp;#x00F6;&quot;);</span>
+<span class="fc" id="L85">        put(&quot;\\{\\\\\\\&quot;O\\}&quot;, &quot;&amp;#x00D6;&quot;);</span>
+<span class="fc" id="L86">        put(&quot;\\{\\\\\\\&quot;u\\}&quot;, &quot;&amp;#x00FC;&quot;);</span>
+<span class="fc" id="L87">        put(&quot;\\{\\\\\\\&quot;U\\}&quot;, &quot;&amp;#x00DC;&quot;);</span>
+
+        //next 2 rows were missing...
+<span class="fc" id="L90">        put(&quot;\\{\\\\\\`a\\}&quot;, &quot;&amp;#x00E0;&quot;);</span>
+<span class="fc" id="L91">        put(&quot;\\{\\\\\\`A\\}&quot;, &quot;&amp;#x00C0;&quot;);</span>
+
+<span class="fc" id="L93">        put(&quot;\\{\\\\\\`e\\}&quot;, &quot;&amp;#x00E8;&quot;);</span>
+<span class="fc" id="L94">        put(&quot;\\{\\\\\\`E\\}&quot;, &quot;&amp;#x00C8;&quot;);</span>
+<span class="fc" id="L95">        put(&quot;\\{\\\\\\`i\\}&quot;, &quot;&amp;#x00EC;&quot;);</span>
+<span class="fc" id="L96">        put(&quot;\\{\\\\\\`I\\}&quot;, &quot;&amp;#x00CC;&quot;);</span>
+<span class="fc" id="L97">        put(&quot;\\{\\\\\\`o\\}&quot;, &quot;&amp;#x00F2;&quot;);</span>
+<span class="fc" id="L98">        put(&quot;\\{\\\\\\`O\\}&quot;, &quot;&amp;#x00D2;&quot;);</span>
+<span class="fc" id="L99">        put(&quot;\\{\\\\\\`u\\}&quot;, &quot;&amp;#x00F9;&quot;);</span>
+<span class="fc" id="L100">        put(&quot;\\{\\\\\\`U\\}&quot;, &quot;&amp;#x00D9;&quot;);</span>
+<span class="fc" id="L101">        put(&quot;\\{\\\\\\'e\\}&quot;, &quot;&amp;#x00E9;&quot;);</span>
+<span class="fc" id="L102">        put(&quot;\\{\\\\\\'E\\}&quot;, &quot;&amp;#x00C9;&quot;);</span>
+<span class="fc" id="L103">        put(&quot;\\{\\\\\\'i\\}&quot;, &quot;&amp;#x00ED;&quot;);</span>
+<span class="fc" id="L104">        put(&quot;\\{\\\\\\'I\\}&quot;, &quot;&amp;#x00CD;&quot;);</span>
+<span class="fc" id="L105">        put(&quot;\\{\\\\\\'o\\}&quot;, &quot;&amp;#x00F3;&quot;);</span>
+<span class="fc" id="L106">        put(&quot;\\{\\\\\\'O\\}&quot;, &quot;&amp;#x00D3;&quot;);</span>
+<span class="fc" id="L107">        put(&quot;\\{\\\\\\'u\\}&quot;, &quot;&amp;#x00FA;&quot;);</span>
+<span class="fc" id="L108">        put(&quot;\\{\\\\\\'U\\}&quot;, &quot;&amp;#x00DA;&quot;);</span>
+<span class="fc" id="L109">        put(&quot;\\{\\\\\\'a\\}&quot;, &quot;&amp;#x00E1;&quot;);</span>
+<span class="fc" id="L110">        put(&quot;\\{\\\\\\'A\\}&quot;, &quot;&amp;#x00C1;&quot;);</span>
+        //added next two chars...
+<span class="fc" id="L112">        put(&quot;\\{\\\\\\'c\\}&quot;, &quot;&amp;#x0107;&quot;);</span>
+<span class="fc" id="L113">        put(&quot;\\{\\\\\\'C\\}&quot;, &quot;&amp;#x0106;&quot;);</span>
+
+        //next two lines were wrong...
+<span class="fc" id="L116">        put(&quot;\\{\\\\\\^a\\}&quot;, &quot;&amp;#x00E2;&quot;);</span>
+<span class="fc" id="L117">        put(&quot;\\{\\\\\\^A\\}&quot;, &quot;&amp;#x00C2;&quot;);</span>
+
+<span class="fc" id="L119">        put(&quot;\\{\\\\\\^o\\}&quot;, &quot;&amp;#x00F4;&quot;);</span>
+<span class="fc" id="L120">        put(&quot;\\{\\\\\\^O\\}&quot;, &quot;&amp;#x00D4;&quot;);</span>
+<span class="fc" id="L121">        put(&quot;\\{\\\\\\^u\\}&quot;, &quot;&amp;#x00F9;&quot;);</span>
+<span class="fc" id="L122">        put(&quot;\\{\\\\\\^U\\}&quot;, &quot;&amp;#x00D9;&quot;);</span>
+<span class="fc" id="L123">        put(&quot;\\{\\\\\\^e\\}&quot;, &quot;&amp;#x00EA;&quot;);</span>
+<span class="fc" id="L124">        put(&quot;\\{\\\\\\^E\\}&quot;, &quot;&amp;#x00CA;&quot;);</span>
+<span class="fc" id="L125">        put(&quot;\\{\\\\\\^i\\}&quot;, &quot;&amp;#x00EE;&quot;);</span>
+<span class="fc" id="L126">        put(&quot;\\{\\\\\\^I\\}&quot;, &quot;&amp;#x00CE;&quot;);</span>
+<span class="fc" id="L127">        put(&quot;\\{\\\\\\~o\\}&quot;, &quot;&amp;#x00F5;&quot;);</span>
+<span class="fc" id="L128">        put(&quot;\\{\\\\\\~O\\}&quot;, &quot;&amp;#x00D5;&quot;);</span>
+<span class="fc" id="L129">        put(&quot;\\{\\\\\\~n\\}&quot;, &quot;&amp;#x00F1;&quot;);</span>
+<span class="fc" id="L130">        put(&quot;\\{\\\\\\~N\\}&quot;, &quot;&amp;#x00D1;&quot;);</span>
+<span class="fc" id="L131">        put(&quot;\\{\\\\\\~a\\}&quot;, &quot;&amp;#x00E3;&quot;);</span>
+<span class="fc" id="L132">        put(&quot;\\{\\\\\\~A\\}&quot;, &quot;&amp;#x00C3;&quot;);</span>
+<span class="fc" id="L133">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

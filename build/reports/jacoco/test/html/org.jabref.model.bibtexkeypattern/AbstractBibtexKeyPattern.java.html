@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractBibtexKeyPattern.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.bibtexkeypattern</a> &gt; <span class="el_source">AbstractBibtexKeyPattern.java</span></div><h1>AbstractBibtexKeyPattern.java</h1><pre class="source lang-java linenums">package org.jabref.model.bibtexkeypattern;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.stream.Collectors;
+
+/**
+ * A small table, where an entry type is associated with a Bibtex key pattern (an
+ * &lt;code&gt;ArrayList&lt;/code&gt;). A parent BibtexKeyPattern can be set.
+ */
+<span class="fc" id="L16">public abstract class AbstractBibtexKeyPattern {</span>
+
+<span class="fc" id="L18">    protected List&lt;String&gt; defaultPattern = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L20">    protected Map&lt;String, List&lt;String&gt;&gt; data = new HashMap&lt;&gt;();</span>
+
+    public void addBibtexKeyPattern(String type, String pattern) {
+<span class="fc" id="L23">        data.put(type, AbstractBibtexKeyPattern.split(pattern));</span>
+<span class="fc" id="L24">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L28">        final StringBuilder sb = new StringBuilder(&quot;AbstractBibtexKeyPattern{&quot;);</span>
+<span class="nc" id="L29">        sb.append(&quot;defaultPattern=&quot;).append(defaultPattern);</span>
+<span class="nc" id="L30">        sb.append(&quot;, data=&quot;).append(data);</span>
+<span class="nc" id="L31">        sb.append('}');</span>
+<span class="nc" id="L32">        return sb.toString();</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L38">            return true;</span>
+        }
+<span class="pc bpc" id="L40" title="2 of 4 branches missed.">        if ((o == null) || (getClass() != o.getClass())) {</span>
+<span class="nc" id="L41">            return false;</span>
+        }
+<span class="fc" id="L43">        AbstractBibtexKeyPattern that = (AbstractBibtexKeyPattern) o;</span>
+<span class="pc bpc" id="L44" title="2 of 4 branches missed.">        return Objects.equals(defaultPattern, that.defaultPattern) &amp;&amp; Objects.equals(data, that.data);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L49">        return Objects.hash(defaultPattern, data);</span>
+    }
+
+    /**
+     * Remove a Bibtex key pattern from the BibtexKeyPattern.
+     *
+     * @param type a &lt;code&gt;String&lt;/code&gt;
+     */
+    public void removeBibtexKeyPattern(String type) {
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (data.containsKey(type)) {</span>
+<span class="nc" id="L59">            data.remove(type);</span>
+        }
+<span class="nc" id="L61">    }</span>
+
+    /**
+     * Gets an object for a desired key from this BibtexKeyPattern or one of it's
+     * parents (in the case of DatabaseBibtexKeyPattern). This method first tries to obtain the object from this
+     * BibtexKeyPattern via the &lt;code&gt;get&lt;/code&gt; method of &lt;code&gt;Hashtable&lt;/code&gt;.
+     * If this fails, we try the default.&lt;br /&gt;
+     * If that fails, we try the parent.&lt;br /&gt;
+     * If that fails, we return the DEFAULT_LABELPATTERN&lt;br /&gt;
+     *
+     * @param key a &lt;code&gt;String&lt;/code&gt;
+     * @return the list of Strings for the given key. First entry: the complete key
+     */
+    public List&lt;String&gt; getValue(String key) {
+<span class="fc" id="L75">        List&lt;String&gt; result = data.get(key);</span>
+        //  Test to see if we found anything
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (result == null) {</span>
+            // check default value
+<span class="fc" id="L79">            result = getDefaultValue();</span>
+<span class="pc bpc" id="L80" title="1 of 4 branches missed.">            if (result == null || result.isEmpty()) {</span>
+                // we are the &quot;last&quot; to ask
+                // we don't have anything left
+<span class="fc" id="L83">                return getLastLevelBibtexKeyPattern(key);</span>
+            }
+        }
+<span class="fc" id="L86">        return result;</span>
+
+    }
+
+    /**
+     * This method takes a string of the form [field1]spacer[field2]spacer[field3]...,
+     * where the fields are the (required) fields of a BibTex entry. The string is split
+     * into fields and spacers by recognizing the [ and ].
+     *
+     * @param bibtexKeyPattern a &lt;code&gt;String&lt;/code&gt;
+     * @return an &lt;code&gt;ArrayList&lt;/code&gt; The first item of the list
+     * is a string representation of the key pattern (the parameter),
+     * the remaining items are the fields
+     */
+    public static List&lt;String&gt; split(String bibtexKeyPattern) {
+        // A holder for fields of the entry to be used for the key
+<span class="fc" id="L102">        List&lt;String&gt; fieldList = new ArrayList&lt;&gt;();</span>
+
+        // Before we do anything, we add the parameter to the ArrayLIst
+<span class="fc" id="L105">        fieldList.add(bibtexKeyPattern);</span>
+
+<span class="fc" id="L107">        StringTokenizer tok = new StringTokenizer(bibtexKeyPattern, &quot;[]&quot;, true);</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        while (tok.hasMoreTokens()) {</span>
+<span class="fc" id="L109">            fieldList.add(tok.nextToken());</span>
+        }
+<span class="fc" id="L111">        return fieldList;</span>
+    }
+
+    /**
+     * Checks whether this pattern is customized or the default value.
+     */
+    public final boolean isDefaultValue(String key) {
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        return data.get(key) == null;</span>
+    }
+
+    /**
+     * This method is called &quot;...Value&quot; to be in line with the other methods
+     *
+     * @return null if not available.
+     */
+    public List&lt;String&gt; getDefaultValue() {
+<span class="fc" id="L127">        return this.defaultPattern;</span>
+    }
+
+    /**
+     * Sets the DEFAULT PATTERN for this key pattern
+     * @param bibtexKeyPattern the pattern to store
+     */
+    public void setDefaultValue(String bibtexKeyPattern) {
+<span class="fc" id="L135">        Objects.requireNonNull(bibtexKeyPattern);</span>
+<span class="fc" id="L136">        this.defaultPattern = AbstractBibtexKeyPattern.split(bibtexKeyPattern);</span>
+<span class="fc" id="L137">    }</span>
+
+    public Set&lt;String&gt; getAllKeys() {
+<span class="fc" id="L140">        return data.keySet();</span>
+    }
+
+    public Map&lt;String, List&lt;String&gt;&gt; getPatterns() {
+<span class="fc" id="L144">        return data.entrySet().stream().collect(</span>
+<span class="fc" id="L145">                Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));</span>
+    }
+
+    public abstract List&lt;String&gt; getLastLevelBibtexKeyPattern(String key);
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

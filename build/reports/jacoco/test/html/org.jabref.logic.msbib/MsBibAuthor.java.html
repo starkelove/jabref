@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MsBibAuthor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.msbib</a> &gt; <span class="el_source">MsBibAuthor.java</span></div><h1>MsBibAuthor.java</h1><pre class="source lang-java linenums">package org.jabref.logic.msbib;
+
+import org.jabref.model.entry.Author;
+
+public class MsBibAuthor {
+
+    private String firstName;
+    private String middleName;
+    private final Author author;
+    private boolean isCorporate;
+
+<span class="fc" id="L12">    public MsBibAuthor(Author author) {</span>
+<span class="fc" id="L13">        this.author = author;</span>
+
+<span class="fc" id="L15">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L16">        author.getFirst().ifPresent(firstNames -&gt; {</span>
+
+<span class="fc" id="L18">            String[] names = firstNames.split(&quot; &quot;);</span>
+<span class="fc bfc" id="L19" title="All 2 branches covered.">            for (int i = 1; i &lt; names.length; i++) {</span>
+<span class="fc" id="L20">                sb.append(names[i]);</span>
+<span class="fc" id="L21">                sb.append(&quot; &quot;);</span>
+            }
+<span class="fc" id="L23">            this.middleName = sb.toString().trim();</span>
+<span class="fc" id="L24">            this.firstName = names[0];</span>
+<span class="fc" id="L25">        });</span>
+
+<span class="fc" id="L27">    }</span>
+
+    public MsBibAuthor(Author author, boolean isCorporate) {
+<span class="fc" id="L30">        this(author);</span>
+<span class="fc" id="L31">        this.isCorporate = isCorporate;</span>
+
+<span class="fc" id="L33">    }</span>
+
+    public String getFirstName() {
+
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        if (!&quot;&quot;.equals(firstName)) {</span>
+<span class="fc" id="L38">            return firstName;</span>
+        }
+<span class="nc" id="L40">        return author.getFirst().orElse(null);</span>
+    }
+
+    public String getMiddleName() {
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (&quot;&quot;.equals(middleName)) {</span>
+<span class="fc" id="L45">            return null;</span>
+        }
+<span class="fc" id="L47">        return middleName;</span>
+    }
+
+    public String getLastName() {
+<span class="fc" id="L51">        return author.getLast().orElse(null);</span>
+    }
+
+    public String getFirstLast() {
+<span class="fc" id="L55">        return author.getFirstLast(false);</span>
+    }
+
+    public String getLastFirst() {
+<span class="fc" id="L59">        return author.getLastFirst(false);</span>
+    }
+
+    public boolean isCorporate() {
+<span class="fc" id="L63">        return isCorporate;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

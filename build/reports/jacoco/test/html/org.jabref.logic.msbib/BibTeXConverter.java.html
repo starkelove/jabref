@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibTeXConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.msbib</a> &gt; <span class="el_source">BibTeXConverter.java</span></div><h1>BibTeXConverter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.msbib;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BibtexEntryTypes;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.Month;
+
+public class BibTeXConverter {
+
+    private static final String MSBIB_PREFIX = &quot;msbib-&quot;;
+
+    private BibTeXConverter() {
+    }
+
+    /**
+     * Converts an {@link MSBibEntry} to a {@link BibEntry} for import
+     * @param entry The MsBibEntry to convert
+     * @return The bib entry
+     */
+    public static BibEntry convert(MSBibEntry entry) {
+        BibEntry result;
+<span class="fc" id="L30">        Map&lt;String, String&gt; fieldValues = new HashMap&lt;&gt;();</span>
+
+<span class="fc" id="L32">        String bibTexEntryType = MSBibMapping.getBiblatexEntryType(entry.getType());</span>
+<span class="fc" id="L33">        result = new BibEntry(BibtexEntryTypes.getTypeOrDefault(bibTexEntryType));</span>
+
+        // add String fields
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        for (Map.Entry&lt;String, String&gt; field : entry.fields.entrySet()) {</span>
+<span class="fc" id="L37">            String msField = field.getKey();</span>
+<span class="fc" id="L38">            String value = field.getValue();</span>
+
+<span class="pc bpc" id="L40" title="1 of 4 branches missed.">            if ((value != null) &amp;&amp; (MSBibMapping.getBibTeXField(msField) != null)) {</span>
+<span class="fc" id="L41">                fieldValues.put(MSBibMapping.getBibTeXField(msField), value);</span>
+            }
+<span class="fc" id="L43">        }</span>
+
+        // Value must be converted
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (fieldValues.containsKey(FieldName.LANGUAGE)) {</span>
+<span class="fc" id="L47">            int lcid = Integer.valueOf(fieldValues.get(FieldName.LANGUAGE));</span>
+<span class="fc" id="L48">            fieldValues.put(FieldName.LANGUAGE, MSBibMapping.getLanguage(lcid));</span>
+        }
+
+<span class="fc" id="L51">        addAuthor(fieldValues, FieldName.AUTHOR, entry.authors);</span>
+<span class="fc" id="L52">        addAuthor(fieldValues, FieldName.BOOKAUTHOR, entry.bookAuthors);</span>
+<span class="fc" id="L53">        addAuthor(fieldValues, FieldName.EDITOR, entry.editors);</span>
+<span class="fc" id="L54">        addAuthor(fieldValues, FieldName.TRANSLATOR, entry.translators);</span>
+<span class="fc" id="L55">        addAuthor(fieldValues, MSBIB_PREFIX + &quot;producername&quot;, entry.producerNames);</span>
+<span class="fc" id="L56">        addAuthor(fieldValues, MSBIB_PREFIX + &quot;composer&quot;, entry.composers);</span>
+<span class="fc" id="L57">        addAuthor(fieldValues, MSBIB_PREFIX + &quot;conductor&quot;, entry.conductors);</span>
+<span class="fc" id="L58">        addAuthor(fieldValues, MSBIB_PREFIX + &quot;performer&quot;, entry.performers);</span>
+<span class="fc" id="L59">        addAuthor(fieldValues, MSBIB_PREFIX + &quot;writer&quot;, entry.writers);</span>
+<span class="fc" id="L60">        addAuthor(fieldValues, MSBIB_PREFIX + &quot;director&quot;, entry.directors);</span>
+<span class="fc" id="L61">        addAuthor(fieldValues, MSBIB_PREFIX + &quot;compiler&quot;, entry.compilers);</span>
+<span class="fc" id="L62">        addAuthor(fieldValues, MSBIB_PREFIX + &quot;interviewer&quot;, entry.interviewers);</span>
+<span class="fc" id="L63">        addAuthor(fieldValues, MSBIB_PREFIX + &quot;interviewee&quot;, entry.interviewees);</span>
+<span class="fc" id="L64">        addAuthor(fieldValues, MSBIB_PREFIX + &quot;inventor&quot;, entry.inventors);</span>
+<span class="fc" id="L65">        addAuthor(fieldValues, MSBIB_PREFIX + &quot;counsel&quot;, entry.counsels);</span>
+
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        if (entry.pages != null) {</span>
+<span class="fc" id="L68">            fieldValues.put(FieldName.PAGES, entry.pages.toString(&quot;--&quot;));</span>
+        }
+
+<span class="fc" id="L71">        parseStandardNumber(entry.standardNumber, fieldValues);</span>
+
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        if (entry.address != null) {</span>
+<span class="fc" id="L74">            fieldValues.put(FieldName.LOCATION, entry.address);</span>
+        }
+        // TODO: ConferenceName is saved as booktitle when converting from MSBIB to BibTeX
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">        if (entry.conferenceName != null) {</span>
+<span class="nc" id="L78">            fieldValues.put(FieldName.ORGANIZATION, entry.conferenceName);</span>
+        }
+
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (entry.dateAccessed != null) {</span>
+<span class="fc" id="L82">            fieldValues.put(MSBIB_PREFIX + &quot;accessed&quot;, entry.dateAccessed);</span>
+        }
+
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        if (entry.journalName != null) {</span>
+<span class="fc" id="L86">            fieldValues.put(FieldName.JOURNAL, entry.journalName);</span>
+        }
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (entry.month != null) {</span>
+<span class="fc" id="L89">            Optional&lt;Month&gt; month = Month.parse(entry.month);</span>
+<span class="fc" id="L90">            month.ifPresent(parsedMonth -&gt;  result.setMonth(parsedMonth));</span>
+        }
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        if (entry.number != null) {</span>
+<span class="fc" id="L93">            fieldValues.put(FieldName.NUMBER, entry.number);</span>
+        }
+
+        // set all fields
+<span class="fc" id="L97">        result.setField(fieldValues);</span>
+
+<span class="fc" id="L99">        return result;</span>
+    }
+
+    private static void addAuthor(Map&lt;String, String&gt; map, String type, List&lt;MsBibAuthor&gt; authors) {
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (authors == null) {</span>
+<span class="fc" id="L104">            return;</span>
+        }
+<span class="fc" id="L106">        String allAuthors = authors.stream().map(MsBibAuthor::getLastFirst).collect(Collectors.joining(&quot; and &quot;));</span>
+
+<span class="fc" id="L108">        map.put(type, allAuthors);</span>
+<span class="fc" id="L109">    }</span>
+
+    private static void parseSingleStandardNumber(String type, String bibtype, String standardNum,
+            Map&lt;String, String&gt; map) {
+<span class="fc" id="L113">        Pattern pattern = Pattern.compile(':' + type + &quot;:(.[^:]+)&quot;);</span>
+<span class="fc" id="L114">        Matcher matcher = pattern.matcher(standardNum);</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        if (matcher.matches()) {</span>
+<span class="fc" id="L116">            map.put(bibtype, matcher.group(1));</span>
+        }
+<span class="fc" id="L118">    }</span>
+
+    private static void parseStandardNumber(String standardNum, Map&lt;String, String&gt; map) {
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        if (standardNum == null) {</span>
+<span class="fc" id="L122">            return;</span>
+        }
+<span class="fc" id="L124">        parseSingleStandardNumber(&quot;ISBN&quot;, FieldName.ISBN, standardNum, map);</span>
+<span class="fc" id="L125">        parseSingleStandardNumber(&quot;ISSN&quot;, FieldName.ISSN, standardNum, map);</span>
+<span class="fc" id="L126">        parseSingleStandardNumber(&quot;LCCN&quot;, &quot;lccn&quot;, standardNum, map);</span>
+<span class="fc" id="L127">        parseSingleStandardNumber(&quot;MRN&quot;, &quot;mrnumber&quot;, standardNum, map);</span>
+<span class="fc" id="L128">        parseSingleStandardNumber(&quot;DOI&quot;, FieldName.DOI, standardNum, map);</span>
+<span class="fc" id="L129">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

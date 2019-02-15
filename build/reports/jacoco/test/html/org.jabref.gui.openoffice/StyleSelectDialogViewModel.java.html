@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StyleSelectDialogViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.openoffice</a> &gt; <span class="el_source">StyleSelectDialogViewModel.java</span></div><h1>StyleSelectDialogViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.openoffice;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleListProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+
+import org.jabref.gui.DialogService;
+import org.jabref.gui.desktop.JabRefDesktop;
+import org.jabref.gui.externalfiletype.ExternalFileType;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.gui.util.FileDialogConfiguration;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.openoffice.OOBibStyle;
+import org.jabref.logic.openoffice.OpenOfficePreferences;
+import org.jabref.logic.openoffice.StyleLoader;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.preferences.PreferencesService;
+
+public class StyleSelectDialogViewModel {
+
+    private final DialogService dialogService;
+    private final StyleLoader loader;
+    private final OpenOfficePreferences preferences;
+    private final PreferencesService preferencesService;
+<span class="nc" id="L38">    private final ListProperty&lt;StyleSelectItemViewModel&gt; styles = new SimpleListProperty&lt;&gt;(FXCollections.observableArrayList());</span>
+<span class="nc" id="L39">    private final ObjectProperty&lt;StyleSelectItemViewModel&gt; selectedItem = new SimpleObjectProperty&lt;&gt;();</span>
+
+<span class="nc" id="L41">    public StyleSelectDialogViewModel(DialogService dialogService, StyleLoader loader, PreferencesService preferencesService) {</span>
+<span class="nc" id="L42">        this.dialogService = dialogService;</span>
+<span class="nc" id="L43">        this.preferences = preferencesService.getOpenOfficePreferences();</span>
+<span class="nc" id="L44">        this.loader = loader;</span>
+<span class="nc" id="L45">        this.preferencesService = preferencesService;</span>
+
+<span class="nc" id="L47">        styles.addAll(loadStyles());</span>
+
+<span class="nc" id="L49">        String currentStyle = preferences.getCurrentStyle();</span>
+<span class="nc" id="L50">        Optional&lt;StyleSelectItemViewModel&gt; lastUsedStyle = styles.stream().filter(style -&gt; style.getStylePath().equals(currentStyle)).findFirst();</span>
+
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (lastUsedStyle.isPresent()) {</span>
+<span class="nc" id="L53">            selectedItem.setValue(lastUsedStyle.get());</span>
+        } else {
+<span class="nc" id="L55">            selectedItem.setValue(styles.get(0));</span>
+        }
+<span class="nc" id="L57">    }</span>
+
+    public StyleSelectItemViewModel fromOOBibStyle(OOBibStyle style) {
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        return new StyleSelectItemViewModel(style.getName(), String.join(&quot;, &quot;, style.getJournals()), style.isFromResource() ? Localization.lang(&quot;Internal style&quot;) : style.getPath(), style);</span>
+    }
+
+    public OOBibStyle toOOBibStyle(StyleSelectItemViewModel item) {
+<span class="nc" id="L64">        return item.getStyle();</span>
+    }
+
+    public void addStyleFile() {
+<span class="nc" id="L68">        FileDialogConfiguration fileDialogConfiguration = new FileDialogConfiguration.Builder()</span>
+<span class="nc" id="L69">                .addExtensionFilter(Localization.lang(&quot;Style file&quot;), StandardFileType.JSTYLE)</span>
+<span class="nc" id="L70">                .withDefaultExtension(Localization.lang(&quot;Style file&quot;), StandardFileType.JSTYLE)</span>
+<span class="nc" id="L71">                .withInitialDirectory(preferencesService.getWorkingDir())</span>
+<span class="nc" id="L72">                .build();</span>
+<span class="nc" id="L73">        Optional&lt;Path&gt; path = dialogService.showFileOpenDialog(fileDialogConfiguration);</span>
+<span class="nc" id="L74">        path.map(Path::toAbsolutePath).map(Path::toString).ifPresent(stylePath -&gt; {</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">            if (loader.addStyleIfValid(stylePath)) {</span>
+<span class="nc" id="L76">                preferences.setCurrentStyle(stylePath);</span>
+<span class="nc" id="L77">                styles.setAll(loadStyles());</span>
+            } else {
+<span class="nc" id="L79">                dialogService.showErrorDialogAndWait(Localization.lang(&quot;Invalid style selected&quot;), Localization.lang(&quot;You must select a valid style file.&quot;));</span>
+            }
+<span class="nc" id="L81">        });</span>
+<span class="nc" id="L82">    }</span>
+
+    public List&lt;StyleSelectItemViewModel&gt; loadStyles() {
+<span class="nc" id="L85">        return loader.getStyles().stream().map(this::fromOOBibStyle).collect(Collectors.toList());</span>
+    }
+
+    public ListProperty&lt;StyleSelectItemViewModel&gt; stylesProperty() {
+<span class="nc" id="L89">        return styles;</span>
+    }
+
+    public void deleteStyle() {
+
+<span class="nc" id="L94">        OOBibStyle style = selectedItem.getValue().getStyle();</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (loader.removeStyle(style)) {</span>
+<span class="nc" id="L96">            styles.remove(selectedItem.get());</span>
+        }
+<span class="nc" id="L98">    }</span>
+
+    public void editStyle() {
+<span class="nc" id="L101">        OOBibStyle style = selectedItem.getValue().getStyle();</span>
+
+<span class="nc" id="L103">        Optional&lt;ExternalFileType&gt; type = ExternalFileTypes.getInstance().getExternalFileTypeByExt(&quot;jstyle&quot;);</span>
+
+        try {
+<span class="nc" id="L106">            JabRefDesktop.openExternalFileAnyFormat(new BibDatabaseContext(), style.getPath(), type);</span>
+<span class="nc" id="L107">        } catch (IOException e) {</span>
+<span class="nc" id="L108">            dialogService.showErrorDialogAndWait(e);</span>
+<span class="nc" id="L109">        }</span>
+<span class="nc" id="L110">    }</span>
+
+    public void viewStyle(StyleSelectItemViewModel item) {
+
+<span class="nc" id="L114">        DialogPane pane = new DialogPane();</span>
+<span class="nc" id="L115">        ScrollPane scrollPane = new ScrollPane();</span>
+<span class="nc" id="L116">        scrollPane.setFitToHeight(true);</span>
+<span class="nc" id="L117">        scrollPane.setFitToWidth(true);</span>
+<span class="nc" id="L118">        TextArea styleView = new TextArea(item.getStyle().getLocalCopy());</span>
+<span class="nc" id="L119">        scrollPane.setContent(styleView);</span>
+<span class="nc" id="L120">        pane.setContent(scrollPane);</span>
+<span class="nc" id="L121">        dialogService.showCustomDialogAndWait(item.getStyle().getName(), pane, ButtonType.OK);</span>
+<span class="nc" id="L122">    }</span>
+
+    public ObjectProperty&lt;StyleSelectItemViewModel&gt; selectedItemProperty() {
+<span class="nc" id="L125">        return selectedItem;</span>
+    }
+
+    public void storePrefs() {
+<span class="nc" id="L129">        preferences.setCurrentStyle(selectedItem.getValue().getStylePath());</span>
+<span class="nc" id="L130">        preferencesService.setOpenOfficePreferences(preferences);</span>
+<span class="nc" id="L131">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

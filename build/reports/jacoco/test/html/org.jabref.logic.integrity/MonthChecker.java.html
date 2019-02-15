@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MonthChecker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.integrity</a> &gt; <span class="el_source">MonthChecker.java</span></div><h1>MonthChecker.java</h1><pre class="source lang-java linenums">package org.jabref.logic.integrity;
+
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.strings.StringUtil;
+
+public class MonthChecker implements ValueChecker {
+
+<span class="fc" id="L14">    private static final Predicate&lt;String&gt; ONLY_AN_INTEGER = Pattern.compile(&quot;[1-9]|10|11|12&quot;)</span>
+<span class="fc" id="L15">            .asPredicate();</span>
+<span class="fc" id="L16">    private static final Predicate&lt;String&gt; MONTH_NORMALIZED = Pattern</span>
+<span class="fc" id="L17">            .compile(&quot;#jan#|#feb#|#mar#|#apr#|#may#|#jun#|#jul#|#aug#|#sep#|#oct#|#nov#|#dec#&quot;)</span>
+<span class="fc" id="L18">            .asPredicate();</span>
+
+    private final BibDatabaseContext bibDatabaseContextMonth;
+
+
+<span class="fc" id="L23">    public MonthChecker(BibDatabaseContext bibDatabaseContext) {</span>
+<span class="fc" id="L24">        this.bibDatabaseContextMonth = Objects.requireNonNull(bibDatabaseContext);</span>
+<span class="fc" id="L25">    }</span>
+
+    /**
+     * biblatex package documentation (Section 2.3.9):
+     * The month field is an integer field.
+     * The bibliography style converts the month to a language-dependent string as required.
+     * For backwards compatibility, you may also use the following three-letter abbreviations in the month field:
+     * jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec.
+     * Note that these abbreviations are BibTeX strings which must be given without any braces or quotes.
+     */
+    @Override
+    public Optional&lt;String&gt; checkValue(String value) {
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        if (StringUtil.isBlank(value)) {</span>
+<span class="nc" id="L38">            return Optional.empty();</span>
+        }
+
+        //biblatex
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (bibDatabaseContextMonth.isBiblatexMode()</span>
+<span class="fc bfc" id="L43" title="All 4 branches covered.">                &amp;&amp; !(ONLY_AN_INTEGER.test(value.trim()) || MONTH_NORMALIZED.test(value.trim()))) {</span>
+<span class="fc" id="L44">            return Optional.of(Localization.lang(&quot;should be an integer or normalized&quot;));</span>
+        }
+
+        //BibTeX
+<span class="fc bfc" id="L48" title="All 4 branches covered.">        if (!bibDatabaseContextMonth.isBiblatexMode() &amp;&amp; !MONTH_NORMALIZED.test(value.trim())) {</span>
+<span class="fc" id="L49">            return Optional.of(Localization.lang(&quot;should be normalized&quot;));</span>
+        }
+
+<span class="fc" id="L52">        return Optional.empty();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

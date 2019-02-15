@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>INSPIREFetcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fetcher</a> &gt; <span class="el_source">INSPIREFetcher.java</span></div><h1>INSPIREFetcher.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fetcher;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import org.jabref.logic.formatter.bibtexfields.ClearFormatter;
+import org.jabref.logic.formatter.bibtexfields.RemoveBracesFormatter;
+import org.jabref.logic.help.HelpFile;
+import org.jabref.logic.importer.FetcherException;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.Parser;
+import org.jabref.logic.importer.SearchBasedParserFetcher;
+import org.jabref.logic.importer.fileformat.BibtexParser;
+import org.jabref.logic.util.OS;
+import org.jabref.model.cleanup.FieldFormatterCleanup;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.util.DummyFileUpdateMonitor;
+
+import org.apache.http.client.utils.URIBuilder;
+
+/**
+ * Fetches data from the INSPIRE database.
+ *
+ * @implNote We just use the normal search interface since it provides direct BibTeX export while the API (http://inspirehep.net/info/hep/api) currently only supports JSON and XML
+ */
+public class INSPIREFetcher implements SearchBasedParserFetcher {
+
+    private static final String INSPIRE_HOST = &quot;https://inspirehep.net/search&quot;;
+
+    private final ImportFormatPreferences preferences;
+
+<span class="fc" id="L42">    public INSPIREFetcher(ImportFormatPreferences preferences) {</span>
+<span class="fc" id="L43">        this.preferences = preferences;</span>
+<span class="fc" id="L44">    }</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L48">        return &quot;INSPIRE&quot;;</span>
+    }
+
+    @Override
+    public Optional&lt;HelpFile&gt; getHelpPage() {
+<span class="nc" id="L53">        return Optional.of(HelpFile.FETCHER_INSPIRE);</span>
+    }
+
+    @Override
+    public URL getURLForQuery(String query) throws URISyntaxException, MalformedURLException, FetcherException {
+<span class="nc" id="L58">        URIBuilder uriBuilder = new URIBuilder(INSPIRE_HOST);</span>
+<span class="nc" id="L59">        uriBuilder.addParameter(&quot;p&quot;, query); // Query</span>
+        //uriBuilder.addParameter(&quot;jrec&quot;, &quot;1&quot;); // Start index (not needed at the moment)
+<span class="nc" id="L61">        uriBuilder.addParameter(&quot;rg&quot;, &quot;100&quot;); // Should return up to 100 items (instead of default 25)</span>
+<span class="nc" id="L62">        uriBuilder.addParameter(&quot;of&quot;, &quot;hx&quot;); // BibTeX format</span>
+<span class="nc" id="L63">        return uriBuilder.build().toURL();</span>
+    }
+
+    @Override
+    public Parser getParser() {
+        // Inspire returns the BibTeX result embedded in HTML
+        // So we extract the BibTeX string from the &lt;pre&gt;bibtex&lt;/pre&gt; tags and pass the content to the BibTeX parser
+<span class="nc" id="L70">        return inputStream -&gt; {</span>
+<span class="nc" id="L71">            String response = new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining(OS.NEWLINE));</span>
+
+<span class="nc" id="L73">            List&lt;BibEntry&gt; entries = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L74">            BibtexParser bibtexParser = new BibtexParser(preferences, new DummyFileUpdateMonitor());</span>
+<span class="nc" id="L75">            Pattern pattern = Pattern.compile(&quot;&lt;pre&gt;(?s)(.*)&lt;/pre&gt;&quot;);</span>
+<span class="nc" id="L76">            Matcher matcher = pattern.matcher(response);</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            while (matcher.find()) {</span>
+<span class="nc" id="L78">                String bibtexEntryString = matcher.group(1);</span>
+<span class="nc" id="L79">                entries.addAll(bibtexParser.parseEntries(bibtexEntryString));</span>
+<span class="nc" id="L80">            }</span>
+<span class="nc" id="L81">            return entries;</span>
+        };
+    }
+
+    @Override
+    public void doPostCleanup(BibEntry entry) {
+        // Remove strange &quot;SLACcitation&quot; field
+<span class="nc" id="L88">        new FieldFormatterCleanup(&quot;SLACcitation&quot;, new ClearFormatter()).cleanup(entry);</span>
+
+        // Remove braces around content of &quot;title&quot; field
+<span class="nc" id="L91">        new FieldFormatterCleanup(FieldName.TITLE, new RemoveBracesFormatter()).cleanup(entry);</span>
+<span class="nc" id="L92">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

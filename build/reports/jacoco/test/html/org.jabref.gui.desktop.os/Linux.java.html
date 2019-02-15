@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Linux.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.desktop.os</a> &gt; <span class="el_source">Linux.java</span></div><h1>Linux.java</h1><pre class="source lang-java linenums">package org.jabref.gui.desktop.os;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.StringJoiner;
+
+import org.jabref.gui.externalfiletype.ExternalFileType;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.preferences.JabRefPreferences;
+
+import static org.jabref.preferences.JabRefPreferences.ADOBE_ACROBAT_COMMAND;
+import static org.jabref.preferences.JabRefPreferences.USE_PDF_READER;
+
+<span class="nc" id="L21">public class Linux implements NativeDesktop {</span>
+    @Override
+    public void openFile(String filePath, String fileType) throws IOException {
+<span class="nc" id="L24">        Optional&lt;ExternalFileType&gt; type = ExternalFileTypes.getInstance().getExternalFileTypeByExt(fileType);</span>
+        String viewer;
+
+<span class="nc bnc" id="L27" title="All 4 branches missed.">        if (type.isPresent() &amp;&amp; !type.get().getOpenWithApplication().isEmpty()) {</span>
+<span class="nc" id="L28">            viewer = type.get().getOpenWithApplication();</span>
+        } else {
+<span class="nc" id="L30">            viewer = &quot;xdg-open&quot;;</span>
+        }
+<span class="nc" id="L32">        String[] cmdArray = { viewer, filePath };</span>
+<span class="nc" id="L33">        Runtime.getRuntime().exec(cmdArray);</span>
+<span class="nc" id="L34">    }</span>
+
+    @Override
+    public void openFileWithApplication(String filePath, String application) throws IOException {
+        // Use the given app if specified, and the universal &quot;xdg-open&quot; otherwise:
+        String[] openWith;
+<span class="nc bnc" id="L40" title="All 4 branches missed.">        if ((application != null) &amp;&amp; !application.isEmpty()) {</span>
+<span class="nc" id="L41">            openWith = application.split(&quot; &quot;);</span>
+        } else {
+<span class="nc" id="L43">            openWith = new String[] {&quot;xdg-open&quot;};</span>
+        }
+
+<span class="nc" id="L46">        String[] cmdArray = new String[openWith.length + 1];</span>
+<span class="nc" id="L47">        System.arraycopy(openWith, 0, cmdArray, 0, openWith.length);</span>
+<span class="nc" id="L48">        cmdArray[cmdArray.length - 1] = filePath;</span>
+<span class="nc" id="L49">        Runtime.getRuntime().exec(cmdArray);</span>
+<span class="nc" id="L50">    }</span>
+
+    @Override
+    public void openFolderAndSelectFile(Path filePath) throws IOException {
+<span class="nc" id="L54">        String desktopSession = System.getenv(&quot;DESKTOP_SESSION&quot;).toLowerCase(Locale.ROOT);</span>
+
+        String cmd;
+
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (desktopSession.contains(&quot;gnome&quot;)) {</span>
+<span class="nc" id="L59">            cmd = &quot;nautilus&quot; + filePath.toString().replace(&quot; &quot;, &quot;\\ &quot;);</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        } else if (desktopSession.contains(&quot;kde&quot;)) {</span>
+<span class="nc" id="L61">            cmd = &quot;dolphin --select &quot; + filePath.toString().replace(&quot; &quot;, &quot;\\ &quot;);</span>
+        } else {
+<span class="nc" id="L63">            cmd = &quot;xdg-open &quot; + filePath.toAbsolutePath().getParent().toString();</span>
+        }
+
+<span class="nc" id="L66">        Runtime.getRuntime().exec(cmd);</span>
+<span class="nc" id="L67">    }</span>
+
+    @Override
+    public void openConsole(String absolutePath) throws IOException {
+<span class="nc" id="L71">        Runtime runtime = Runtime.getRuntime();</span>
+<span class="nc" id="L72">        Process p = runtime.exec(&quot;readlink /etc/alternatives/x-terminal-emulator&quot;);</span>
+<span class="nc" id="L73">        BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));</span>
+
+<span class="nc" id="L75">        String emulatorName = reader.readLine();</span>
+
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (emulatorName != null) {</span>
+<span class="nc" id="L78">            emulatorName = emulatorName.substring(emulatorName.lastIndexOf(File.separator) + 1);</span>
+
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            if (emulatorName.contains(&quot;gnome&quot;)) {</span>
+<span class="nc" id="L81">                runtime.exec(&quot;gnome-terminal --working-directory=&quot; + absolutePath);</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            } else if (emulatorName.contains(&quot;xfce4&quot;)) {</span>
+<span class="nc" id="L83">                runtime.exec(&quot;xfce4-terminal --working-directory=&quot; + absolutePath);</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            } else if (emulatorName.contains(&quot;konsole&quot;)) {</span>
+<span class="nc" id="L85">                runtime.exec(&quot;konsole --workdir=&quot; + absolutePath);</span>
+            } else {
+<span class="nc" id="L87">                runtime.exec(emulatorName, null, new File(absolutePath));</span>
+            }
+        }
+<span class="nc" id="L90">    }</span>
+
+    @Override
+    public void openPdfWithParameters(String filePath, List&lt;String&gt; parameters) throws IOException {
+
+        String application;
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        if (JabRefPreferences.getInstance().get(USE_PDF_READER).equals(JabRefPreferences.getInstance().get(ADOBE_ACROBAT_COMMAND))) {</span>
+<span class="nc" id="L97">            application = &quot;acroread&quot;;</span>
+
+<span class="nc" id="L99">            StringJoiner sj = new StringJoiner(&quot; &quot;);</span>
+<span class="nc" id="L100">            sj.add(application);</span>
+<span class="nc" id="L101">            parameters.forEach((param) -&gt; sj.add(param));</span>
+
+<span class="nc" id="L103">            openFileWithApplication(filePath, sj.toString());</span>
+<span class="nc" id="L104">        } else {</span>
+<span class="nc" id="L105">            openFile( filePath, &quot;PDF&quot;);</span>
+        }
+<span class="nc" id="L107">    }</span>
+
+    @Override
+    public String detectProgramPath(String programName, String directoryName) {
+<span class="nc" id="L111">        return programName;</span>
+    }
+
+    @Override
+    public Path getApplicationDirectory() {
+<span class="nc" id="L116">        return Paths.get(&quot;/usr/lib/&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

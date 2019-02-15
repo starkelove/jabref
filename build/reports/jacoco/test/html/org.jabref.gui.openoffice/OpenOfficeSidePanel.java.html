@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenOfficeSidePanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.openoffice</a> &gt; <span class="el_source">OpenOfficeSidePanel.java</span></div><h1>OpenOfficeSidePanel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.openoffice;
+
+import javafx.scene.Node;
+import javafx.scene.layout.Priority;
+
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.SidePaneComponent;
+import org.jabref.gui.SidePaneManager;
+import org.jabref.gui.SidePaneType;
+import org.jabref.gui.actions.Action;
+import org.jabref.gui.actions.StandardActions;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.logic.openoffice.OpenOfficePreferences;
+import org.jabref.preferences.JabRefPreferences;
+
+public class OpenOfficeSidePanel extends SidePaneComponent {
+
+    private final JabRefPreferences preferences;
+    private final JabRefFrame frame;
+    private final OpenOfficePreferences ooPrefs;
+
+    public OpenOfficeSidePanel(SidePaneManager sidePaneManager, JabRefPreferences preferences, JabRefFrame frame) {
+<span class="nc" id="L23">        super(sidePaneManager, IconTheme.JabRefIcons.FILE_OPENOFFICE, &quot;OpenOffice/LibreOffice&quot;);</span>
+<span class="nc" id="L24">        this.frame = frame;</span>
+<span class="nc" id="L25">        this.preferences = preferences;</span>
+<span class="nc" id="L26">        this.ooPrefs = preferences.getOpenOfficePreferences();</span>
+<span class="nc" id="L27">    }</span>
+
+    @Override
+    public void beforeClosing() {
+<span class="nc" id="L31">        ooPrefs.setShowPanel(false);</span>
+<span class="nc" id="L32">        preferences.setOpenOfficePreferences(ooPrefs);</span>
+<span class="nc" id="L33">    }</span>
+
+    @Override
+    public void afterOpening() {
+<span class="nc" id="L37">        ooPrefs.setShowPanel(true);</span>
+<span class="nc" id="L38">        preferences.setOpenOfficePreferences(ooPrefs);</span>
+<span class="nc" id="L39">    }</span>
+
+    @Override
+    public Priority getResizePolicy() {
+<span class="nc" id="L43">        return Priority.NEVER;</span>
+    }
+
+    @Override
+    public Action getToggleAction() {
+<span class="nc" id="L48">        return StandardActions.TOOGLE_OO;</span>
+    }
+
+    @Override
+    protected Node createContentPane() {
+<span class="nc" id="L53">        return new OpenOfficePanel(frame, preferences, ooPrefs, preferences.getKeyBindingRepository()).getContent();</span>
+    }
+
+    @Override
+    public SidePaneType getType() {
+<span class="nc" id="L58">        return SidePaneType.OPEN_OFFICE;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

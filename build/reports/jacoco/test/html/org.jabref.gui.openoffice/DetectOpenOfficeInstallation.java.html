@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DetectOpenOfficeInstallation.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.openoffice</a> &gt; <span class="el_source">DetectOpenOfficeInstallation.java</span></div><h1>DetectOpenOfficeInstallation.java</h1><pre class="source lang-java linenums">package org.jabref.gui.openoffice;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
+
+import org.jabref.gui.DialogService;
+import org.jabref.gui.desktop.JabRefDesktop;
+import org.jabref.gui.desktop.os.NativeDesktop;
+import org.jabref.gui.util.DirectoryDialogConfiguration;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.openoffice.OpenOfficeFileSearch;
+import org.jabref.logic.openoffice.OpenOfficePreferences;
+import org.jabref.logic.util.OS;
+import org.jabref.logic.util.io.FileUtil;
+import org.jabref.model.strings.StringUtil;
+import org.jabref.preferences.JabRefPreferences;
+
+/**
+ * Tools for automatically detecting OpenOffice or LibreOffice installations.
+ */
+public class DetectOpenOfficeInstallation {
+
+    private final OpenOfficePreferences ooPrefs;
+    private final DialogService dialogService;
+    private final JabRefPreferences preferences;
+
+<span class="nc" id="L30">    public DetectOpenOfficeInstallation(JabRefPreferences preferences, DialogService dialogService) {</span>
+<span class="nc" id="L31">        this.preferences = preferences;</span>
+<span class="nc" id="L32">        this.dialogService = dialogService;</span>
+<span class="nc" id="L33">        this.ooPrefs = preferences.getOpenOfficePreferences();</span>
+<span class="nc" id="L34">    }</span>
+
+    public boolean isInstalled() {
+<span class="nc" id="L37">        return autoDetectPaths();</span>
+    }
+
+    public boolean isExecutablePathDefined() {
+<span class="nc" id="L41">        return checkAutoDetectedPaths(ooPrefs);</span>
+    }
+
+    private Optional&lt;Path&gt; selectInstallationPath() {
+
+<span class="nc" id="L46">        final NativeDesktop nativeDesktop = JabRefDesktop.getNativeDesktop();</span>
+
+<span class="nc" id="L48">        dialogService.showInformationDialogAndWait(Localization.lang(&quot;Could not find OpenOffice/LibreOffice installation&quot;),</span>
+<span class="nc" id="L49">                Localization.lang(&quot;Unable to autodetect OpenOffice/LibreOffice installation. Please choose the installation directory manually.&quot;));</span>
+<span class="nc" id="L50">        DirectoryDialogConfiguration dirDialogConfiguration = new DirectoryDialogConfiguration.Builder()</span>
+<span class="nc" id="L51">                .withInitialDirectory(nativeDesktop.getApplicationDirectory())</span>
+<span class="nc" id="L52">                .build();</span>
+<span class="nc" id="L53">        return dialogService.showDirectorySelectionDialog(dirDialogConfiguration);</span>
+
+    }
+
+    private boolean autoDetectPaths() {
+<span class="nc" id="L58">        List&lt;Path&gt; installations = OpenOfficeFileSearch.detectInstallations();</span>
+
+        // manually add installation path
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        if (installations.isEmpty()) {</span>
+<span class="nc" id="L62">            selectInstallationPath().ifPresent(installations::add);</span>
+        }
+
+        // select among multiple installations
+<span class="nc" id="L66">        Optional&lt;Path&gt; actualFile = chooseAmongInstallations(installations);</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (actualFile.isPresent()) {</span>
+<span class="nc" id="L68">            return setOpenOfficePreferences(actualFile.get());</span>
+        }
+
+<span class="nc" id="L71">        return false;</span>
+    }
+
+    /**
+     * Checks whether the executablePath exists
+     */
+    private boolean checkAutoDetectedPaths(OpenOfficePreferences openOfficePreferences) {
+<span class="nc" id="L78">        String executablePath = openOfficePreferences.getExecutablePath();</span>
+<span class="nc bnc" id="L79" title="All 4 branches missed.">        return !StringUtil.isNullOrEmpty(executablePath) &amp;&amp; Files.exists(Paths.get(executablePath));</span>
+    }
+
+    private boolean setOpenOfficePreferences(Path installDir) {
+<span class="nc" id="L83">        Optional&lt;Path&gt; execPath = Optional.empty();</span>
+
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (OS.WINDOWS) {</span>
+<span class="nc" id="L86">            execPath = FileUtil.find(OpenOfficePreferences.WINDOWS_EXECUTABLE, installDir);</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        } else if (OS.OS_X) {</span>
+<span class="nc" id="L88">            execPath = FileUtil.find(OpenOfficePreferences.OSX_EXECUTABLE, installDir);</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        } else if (OS.LINUX) {</span>
+<span class="nc" id="L90">            execPath = FileUtil.find(OpenOfficePreferences.LINUX_EXECUTABLE, installDir);</span>
+        }
+
+<span class="nc" id="L93">        Optional&lt;Path&gt; jarFilePath = FileUtil.find(OpenOfficePreferences.OO_JARS.get(0), installDir);</span>
+
+<span class="nc bnc" id="L95" title="All 4 branches missed.">        if (execPath.isPresent() &amp;&amp; jarFilePath.isPresent()) {</span>
+<span class="nc" id="L96">            ooPrefs.setInstallationPath(installDir.toString());</span>
+<span class="nc" id="L97">            ooPrefs.setExecutablePath(execPath.get().toString());</span>
+<span class="nc" id="L98">            ooPrefs.setJarsPath(jarFilePath.get().getParent().toString());</span>
+<span class="nc" id="L99">            preferences.setOpenOfficePreferences(ooPrefs);</span>
+<span class="nc" id="L100">            return true;</span>
+        }
+
+<span class="nc" id="L103">        return false;</span>
+    }
+
+    private Optional&lt;Path&gt; chooseAmongInstallations(List&lt;Path&gt; installDirs) {
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (installDirs.isEmpty()) {</span>
+<span class="nc" id="L108">            return Optional.empty();</span>
+        }
+
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (installDirs.size() == 1) {</span>
+<span class="nc" id="L112">            return Optional.of(installDirs.get(0).toAbsolutePath());</span>
+        }
+
+<span class="nc" id="L115">        String content = Localization.lang(&quot;Found more than one OpenOffice/LibreOffice executable.&quot;)</span>
+<span class="nc" id="L116">                + &quot;\n&quot; + Localization.lang(&quot;Please choose which one to connect to:&quot;);</span>
+
+<span class="nc" id="L118">        Optional&lt;Path&gt; selectedPath = dialogService.showChoiceDialogAndWait(Localization.lang(&quot;Choose OpenOffice/LibreOffice executable&quot;),</span>
+<span class="nc" id="L119">                content, Localization.lang(&quot;Use selected instance&quot;), installDirs);</span>
+
+<span class="nc" id="L121">        return selectedPath;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

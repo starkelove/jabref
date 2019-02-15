@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FXDialogService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui</a> &gt; <span class="el_source">FXDialogService.java</span></div><h1>FXDialogService.java</h1><pre class="source lang-java linenums">package org.jabref.gui;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import javafx.concurrent.Task;
+import javafx.print.PrinterJob;
+import javafx.scene.Group;
+import javafx.scene.Node;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.DialogPane;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.layout.Region;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import javafx.stage.Window;
+
+import org.jabref.JabRefGUI;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.util.DirectoryDialogConfiguration;
+import org.jabref.gui.util.FileDialogConfiguration;
+import org.jabref.gui.util.ZipFileChooser;
+import org.jabref.logic.l10n.Localization;
+
+import org.controlsfx.dialog.ExceptionDialog;
+import org.controlsfx.dialog.ProgressDialog;
+
+/**
+ * This class provides methods to create default
+ * JavaFX dialogs which will also work on top of Swing
+ * windows. The created dialogs are instances of the
+ * {@link FXDialog} class. The available dialogs in this class
+ * are useful for displaying small information graphic dialogs
+ * rather than complex windows. For more complex dialogs it is
+ * advised to rather create a new sub class of {@link FXDialog}.
+ */
+public class FXDialogService implements DialogService {
+
+    private final Window mainWindow;
+
+    /**
+     * @deprecated try not to initialize a new dialog service but reuse the one constructed in {@link org.jabref.gui.JabRefFrame}.
+     */
+    @Deprecated
+    public FXDialogService() {
+<span class="fc" id="L61">        this(null);</span>
+<span class="fc" id="L62">    }</span>
+
+<span class="fc" id="L64">    public FXDialogService(Window mainWindow) {</span>
+<span class="fc" id="L65">        this.mainWindow = mainWindow;</span>
+<span class="fc" id="L66">    }</span>
+
+    private static FXDialog createDialog(AlertType type, String title, String content) {
+<span class="nc" id="L69">        FXDialog alert = new FXDialog(type, title, true);</span>
+<span class="nc" id="L70">        alert.setHeaderText(null);</span>
+<span class="nc" id="L71">        alert.setContentText(content);</span>
+<span class="nc" id="L72">        alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);</span>
+<span class="nc" id="L73">        return alert;</span>
+    }
+
+    private static FXDialog createDialogWithOptOut(AlertType type, String title, String content,
+                                                   String optOutMessage, Consumer&lt;Boolean&gt; optOutAction) {
+<span class="nc" id="L78">        FXDialog alert = new FXDialog(type, title, true);</span>
+        // Need to force the alert to layout in order to grab the graphic as we are replacing the dialog pane with a custom pane
+<span class="nc" id="L80">        alert.getDialogPane().applyCss();</span>
+<span class="nc" id="L81">        Node graphic = alert.getDialogPane().getGraphic();</span>
+
+        // Create a new dialog pane that has a checkbox instead of the hide/show details button
+        // Use the supplied callback for the action of the checkbox
+<span class="nc" id="L85">        alert.setDialogPane(new DialogPane() {</span>
+
+            @Override
+            protected Node createDetailsButton() {
+<span class="nc" id="L89">                CheckBox optOut = new CheckBox();</span>
+<span class="nc" id="L90">                optOut.setText(optOutMessage);</span>
+<span class="nc" id="L91">                optOut.setOnAction(e -&gt; optOutAction.accept(optOut.isSelected()));</span>
+<span class="nc" id="L92">                return optOut;</span>
+            }
+        });
+
+        // Fool the dialog into thinking there is some expandable content; a group won't take up any space if it has no children
+<span class="nc" id="L97">        alert.getDialogPane().setExpandableContent(new Group());</span>
+<span class="nc" id="L98">        alert.getDialogPane().setExpanded(true);</span>
+
+        // Reset the dialog graphic using the default style
+<span class="nc" id="L101">        alert.getDialogPane().setGraphic(graphic);</span>
+
+<span class="nc" id="L103">        alert.setHeaderText(null);</span>
+<span class="nc" id="L104">        alert.setContentText(content);</span>
+<span class="nc" id="L105">        alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);</span>
+<span class="nc" id="L106">        return alert;</span>
+    }
+
+    @Override
+    public &lt;T&gt; Optional&lt;T&gt; showChoiceDialogAndWait(String title, String content, String okButtonLabel, T defaultChoice, Collection&lt;T&gt; choices) {
+<span class="nc" id="L111">        ChoiceDialog&lt;T&gt; choiceDialog = new ChoiceDialog&lt;&gt;(defaultChoice, choices);</span>
+<span class="nc" id="L112">        ButtonType okButtonType = new ButtonType(okButtonLabel, ButtonBar.ButtonData.OK_DONE);</span>
+<span class="nc" id="L113">        choiceDialog.getDialogPane().getButtonTypes().setAll(ButtonType.CANCEL, okButtonType);</span>
+<span class="nc" id="L114">        choiceDialog.setHeaderText(title);</span>
+<span class="nc" id="L115">        choiceDialog.setContentText(content);</span>
+<span class="nc" id="L116">        return choiceDialog.showAndWait();</span>
+
+    }
+
+    @Override
+    public Optional&lt;String&gt; showInputDialogAndWait(String title, String content) {
+<span class="nc" id="L122">        TextInputDialog inputDialog = new TextInputDialog();</span>
+<span class="nc" id="L123">        inputDialog.setHeaderText(title);</span>
+<span class="nc" id="L124">        inputDialog.setContentText(content);</span>
+<span class="nc" id="L125">        return inputDialog.showAndWait();</span>
+    }
+
+    @Override
+    public void showInformationDialogAndWait(String title, String content) {
+<span class="nc" id="L130">        FXDialog alert = createDialog(AlertType.INFORMATION, title, content);</span>
+<span class="nc" id="L131">        alert.showAndWait();</span>
+<span class="nc" id="L132">    }</span>
+
+    @Override
+    public void showWarningDialogAndWait(String title, String content) {
+<span class="nc" id="L136">        FXDialog alert = createDialog(AlertType.WARNING, title, content);</span>
+<span class="nc" id="L137">        alert.showAndWait();</span>
+<span class="nc" id="L138">    }</span>
+
+    @Override
+    public void showErrorDialogAndWait(String title, String content) {
+<span class="nc" id="L142">        FXDialog alert = createDialog(AlertType.ERROR, title, content);</span>
+<span class="nc" id="L143">        alert.showAndWait();</span>
+<span class="nc" id="L144">    }</span>
+
+    @Override
+    public void showErrorDialogAndWait(String message, Throwable exception) {
+<span class="nc" id="L148">        ExceptionDialog exceptionDialog = new ExceptionDialog(exception);</span>
+<span class="nc" id="L149">        exceptionDialog.setHeaderText(message);</span>
+<span class="nc" id="L150">        exceptionDialog.showAndWait();</span>
+<span class="nc" id="L151">    }</span>
+
+    @Override
+    public void showErrorDialogAndWait(String title, String content, Throwable exception) {
+<span class="nc" id="L155">        ExceptionDialog exceptionDialog = new ExceptionDialog(exception);</span>
+<span class="nc" id="L156">        exceptionDialog.setHeaderText(title);</span>
+<span class="nc" id="L157">        exceptionDialog.setContentText(content);</span>
+<span class="nc" id="L158">        exceptionDialog.showAndWait();</span>
+<span class="nc" id="L159">    }</span>
+
+    @Override
+    public void showErrorDialogAndWait(String message) {
+<span class="nc" id="L163">        FXDialog alert = createDialog(AlertType.ERROR, Localization.lang(&quot;Error Occurred&quot;), message);</span>
+<span class="nc" id="L164">        alert.showAndWait();</span>
+<span class="nc" id="L165">    }</span>
+
+    @Override
+    public boolean showConfirmationDialogAndWait(String title, String content) {
+<span class="nc" id="L169">        FXDialog alert = createDialog(AlertType.CONFIRMATION, title, content);</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">        return alert.showAndWait().filter(buttonType -&gt; buttonType == ButtonType.OK).isPresent();</span>
+    }
+
+    @Override
+    public boolean showConfirmationDialogAndWait(String title, String content, String okButtonLabel) {
+<span class="nc" id="L175">        FXDialog alert = createDialog(AlertType.CONFIRMATION, title, content);</span>
+<span class="nc" id="L176">        ButtonType okButtonType = new ButtonType(okButtonLabel, ButtonBar.ButtonData.OK_DONE);</span>
+<span class="nc" id="L177">        alert.getButtonTypes().setAll(ButtonType.CANCEL, okButtonType);</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">        return alert.showAndWait().filter(buttonType -&gt; buttonType == okButtonType).isPresent();</span>
+    }
+
+    @Override
+    public boolean showConfirmationDialogAndWait(String title, String content,
+                                                 String okButtonLabel, String cancelButtonLabel) {
+<span class="nc" id="L184">        FXDialog alert = createDialog(AlertType.CONFIRMATION, title, content);</span>
+<span class="nc" id="L185">        ButtonType okButtonType = new ButtonType(okButtonLabel, ButtonBar.ButtonData.OK_DONE);</span>
+<span class="nc" id="L186">        ButtonType cancelButtonType = new ButtonType(cancelButtonLabel, ButtonBar.ButtonData.NO);</span>
+<span class="nc" id="L187">        alert.getButtonTypes().setAll(okButtonType, cancelButtonType);</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        return alert.showAndWait().filter(buttonType -&gt; buttonType == okButtonType).isPresent();</span>
+    }
+
+    @Override
+    public boolean showConfirmationDialogWithOptOutAndWait(String title, String content,
+                                                           String optOutMessage, Consumer&lt;Boolean&gt; optOutAction) {
+<span class="nc" id="L194">        FXDialog alert = createDialogWithOptOut(AlertType.CONFIRMATION, title, content, optOutMessage, optOutAction);</span>
+<span class="nc" id="L195">        alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">        return alert.showAndWait().filter(buttonType -&gt; buttonType == ButtonType.YES).isPresent();</span>
+    }
+
+    @Override
+    public boolean showConfirmationDialogWithOptOutAndWait(String title, String content,
+                                                           String okButtonLabel, String cancelButtonLabel,
+                                                           String optOutMessage, Consumer&lt;Boolean&gt; optOutAction) {
+<span class="nc" id="L203">        FXDialog alert = createDialogWithOptOut(AlertType.CONFIRMATION, title, content, optOutMessage, optOutAction);</span>
+<span class="nc" id="L204">        ButtonType okButtonType = new ButtonType(okButtonLabel, ButtonBar.ButtonData.YES);</span>
+<span class="nc" id="L205">        ButtonType cancelButtonType = new ButtonType(cancelButtonLabel, ButtonBar.ButtonData.NO);</span>
+<span class="nc" id="L206">        alert.getButtonTypes().setAll(okButtonType, cancelButtonType);</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">        return alert.showAndWait().filter(buttonType -&gt; buttonType == okButtonType).isPresent();</span>
+    }
+
+    @Override
+    public Optional&lt;ButtonType&gt; showCustomButtonDialogAndWait(AlertType type, String title, String content,
+                                                              ButtonType... buttonTypes) {
+<span class="nc" id="L213">        FXDialog alert = createDialog(type, title, content);</span>
+<span class="nc" id="L214">        alert.getButtonTypes().setAll(buttonTypes);</span>
+<span class="nc" id="L215">        return alert.showAndWait();</span>
+    }
+
+    @Override
+    public Optional&lt;ButtonType&gt; showCustomDialogAndWait(String title, DialogPane contentPane,
+                                                        ButtonType... buttonTypes) {
+<span class="nc" id="L221">        FXDialog alert = new FXDialog(AlertType.NONE, title);</span>
+<span class="nc" id="L222">        alert.setDialogPane(contentPane);</span>
+<span class="nc" id="L223">        alert.getButtonTypes().setAll(buttonTypes);</span>
+<span class="nc" id="L224">        alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);</span>
+<span class="nc" id="L225">        alert.setResizable(true);</span>
+<span class="nc" id="L226">        return alert.showAndWait();</span>
+    }
+
+    @Override
+    public &lt;R&gt; Optional&lt;R&gt; showCustomDialogAndWait(Dialog&lt;R&gt; dialog) {
+<span class="nc" id="L231">        return dialog.showAndWait();</span>
+    }
+
+    @Override
+    public &lt;V&gt; void showProgressDialogAndWait(String title, String content, Task&lt;V&gt; task) {
+<span class="nc" id="L236">        ProgressDialog progressDialog = new ProgressDialog(task);</span>
+<span class="nc" id="L237">        progressDialog.setHeaderText(null);</span>
+<span class="nc" id="L238">        progressDialog.setTitle(title);</span>
+<span class="nc" id="L239">        progressDialog.setContentText(content);</span>
+<span class="nc" id="L240">        progressDialog.setGraphic(null);</span>
+<span class="nc" id="L241">        ((Stage) progressDialog.getDialogPane().getScene().getWindow()).getIcons().add(IconTheme.getJabRefImageFX());</span>
+<span class="nc" id="L242">        progressDialog.setOnCloseRequest(evt -&gt; task.cancel());</span>
+<span class="nc" id="L243">        DialogPane dialogPane = progressDialog.getDialogPane();</span>
+<span class="nc" id="L244">        dialogPane.getButtonTypes().add(ButtonType.CANCEL);</span>
+<span class="nc" id="L245">        Button cancelButton = (Button) dialogPane.lookupButton(ButtonType.CANCEL);</span>
+<span class="nc" id="L246">        cancelButton.setOnAction(evt -&gt; {</span>
+<span class="nc" id="L247">            task.cancel();</span>
+<span class="nc" id="L248">            progressDialog.close();</span>
+<span class="nc" id="L249">        });</span>
+<span class="nc" id="L250">        progressDialog.show();</span>
+<span class="nc" id="L251">    }</span>
+
+    @Override
+    public void notify(String message) {
+<span class="nc" id="L255">        JabRefGUI.getMainFrame().output(message);</span>
+<span class="nc" id="L256">    }</span>
+
+    @Override
+    public Optional&lt;Path&gt; showFileSaveDialog(FileDialogConfiguration fileDialogConfiguration) {
+<span class="nc" id="L260">        FileChooser chooser = getConfiguredFileChooser(fileDialogConfiguration);</span>
+<span class="nc" id="L261">        File file = chooser.showSaveDialog(mainWindow);</span>
+<span class="nc" id="L262">        Optional.ofNullable(chooser.getSelectedExtensionFilter()).ifPresent(fileDialogConfiguration::setSelectedExtensionFilter);</span>
+<span class="nc" id="L263">        return Optional.ofNullable(file).map(File::toPath);</span>
+    }
+
+    @Override
+    public Optional&lt;Path&gt; showFileOpenDialog(FileDialogConfiguration fileDialogConfiguration) {
+<span class="nc" id="L268">        FileChooser chooser = getConfiguredFileChooser(fileDialogConfiguration);</span>
+<span class="nc" id="L269">        File file = chooser.showOpenDialog(mainWindow);</span>
+<span class="nc" id="L270">        Optional.ofNullable(chooser.getSelectedExtensionFilter()).ifPresent(fileDialogConfiguration::setSelectedExtensionFilter);</span>
+<span class="nc" id="L271">        return Optional.ofNullable(file).map(File::toPath);</span>
+    }
+
+    @Override
+    public Optional&lt;Path&gt; showDirectorySelectionDialog(DirectoryDialogConfiguration directoryDialogConfiguration) {
+<span class="nc" id="L276">        DirectoryChooser chooser = getConfiguredDirectoryChooser(directoryDialogConfiguration);</span>
+<span class="nc" id="L277">        File file = chooser.showDialog(mainWindow);</span>
+<span class="nc" id="L278">        return Optional.ofNullable(file).map(File::toPath);</span>
+    }
+
+    @Override
+    public List&lt;Path&gt; showFileOpenDialogAndGetMultipleFiles(FileDialogConfiguration fileDialogConfiguration) {
+<span class="nc" id="L283">        FileChooser chooser = getConfiguredFileChooser(fileDialogConfiguration);</span>
+<span class="nc" id="L284">        List&lt;File&gt; files = chooser.showOpenMultipleDialog(mainWindow);</span>
+<span class="nc bnc" id="L285" title="All 2 branches missed.">        return files != null ? files.stream().map(File::toPath).collect(Collectors.toList()) : Collections.emptyList();</span>
+    }
+
+    private DirectoryChooser getConfiguredDirectoryChooser(DirectoryDialogConfiguration directoryDialogConfiguration) {
+<span class="nc" id="L289">        DirectoryChooser chooser = new DirectoryChooser();</span>
+<span class="nc" id="L290">        directoryDialogConfiguration.getInitialDirectory().map(Path::toFile).ifPresent(chooser::setInitialDirectory);</span>
+<span class="nc" id="L291">        return chooser;</span>
+    }
+
+    private FileChooser getConfiguredFileChooser(FileDialogConfiguration fileDialogConfiguration) {
+<span class="nc" id="L295">        FileChooser chooser = new FileChooser();</span>
+<span class="nc" id="L296">        chooser.getExtensionFilters().addAll(fileDialogConfiguration.getExtensionFilters());</span>
+<span class="nc" id="L297">        chooser.setSelectedExtensionFilter(fileDialogConfiguration.getDefaultExtension());</span>
+<span class="nc" id="L298">        chooser.setInitialFileName(fileDialogConfiguration.getInitialFileName());</span>
+<span class="nc" id="L299">        fileDialogConfiguration.getInitialDirectory().map(Path::toFile).ifPresent(chooser::setInitialDirectory);</span>
+<span class="nc" id="L300">        return chooser;</span>
+    }
+
+    @Override
+    public boolean showPrintDialog(PrinterJob job) {
+<span class="nc" id="L305">        return job.showPrintDialog(mainWindow);</span>
+    }
+
+    @Override
+    public Optional&lt;Path&gt; showFileOpenFromArchiveDialog(Path archivePath) throws IOException {
+<span class="nc" id="L310">        try (FileSystem zipFile = FileSystems.newFileSystem(archivePath, null)) {</span>
+<span class="nc" id="L311">            return new ZipFileChooser(zipFile).showAndWait();</span>
+<span class="nc" id="L312">        } catch (NoClassDefFoundError exc) {</span>
+<span class="nc" id="L313">            throw new IOException(&quot;Could not instantiate ZIP-archive reader.&quot;, exc);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

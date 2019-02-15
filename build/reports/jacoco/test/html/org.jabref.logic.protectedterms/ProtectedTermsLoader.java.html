@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProtectedTermsLoader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.protectedterms</a> &gt; <span class="el_source">ProtectedTermsLoader.java</span></div><h1>ProtectedTermsLoader.java</h1><pre class="source lang-java linenums">package org.jabref.logic.protectedterms;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Supplier;
+
+import org.jabref.logic.l10n.Localization;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class ProtectedTermsLoader {
+
+<span class="fc" id="L22">    private static final Map&lt;String, Supplier&lt;String&gt;&gt; INTERNAL_LISTS = new HashMap&lt;&gt;();</span>
+
+<span class="fc" id="L24">    private static final Logger LOGGER = LoggerFactory.getLogger(ProtectedTermsLoader.class);</span>
+
+<span class="fc" id="L26">    private final List&lt;ProtectedTermsList&gt; mainList = new ArrayList&lt;&gt;();</span>
+
+    static {
+<span class="fc" id="L29">        INTERNAL_LISTS.put(&quot;/protectedterms/months_weekdays.terms&quot;, () -&gt; Localization.lang(&quot;Months and weekdays in English&quot;));</span>
+<span class="fc" id="L30">        INTERNAL_LISTS.put(&quot;/protectedterms/countries_territories.terms&quot;, () -&gt; Localization.lang(&quot;Countries and territories in English&quot;));</span>
+<span class="fc" id="L31">        INTERNAL_LISTS.put(&quot;/protectedterms/electrical_engineering.terms&quot;, () -&gt; Localization.lang(&quot;Electrical engineering terms&quot;));</span>
+<span class="fc" id="L32">    }</span>
+
+<span class="fc" id="L34">    public ProtectedTermsLoader(ProtectedTermsPreferences preferences) {</span>
+<span class="fc" id="L35">        update(preferences);</span>
+<span class="fc" id="L36">    }</span>
+
+    public static List&lt;String&gt; getInternalLists() {
+<span class="fc" id="L39">        return new ArrayList&lt;&gt;(INTERNAL_LISTS.keySet());</span>
+    }
+
+    public void update(ProtectedTermsPreferences preferences) {
+<span class="fc" id="L43">        mainList.clear();</span>
+
+        // Read internal lists
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        for (String filename : preferences.getEnabledInternalTermLists()) {</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">            if (INTERNAL_LISTS.containsKey(filename)) {</span>
+<span class="fc" id="L48">                mainList.add(readProtectedTermsListFromResource(filename, INTERNAL_LISTS.get(filename).get(), true));</span>
+            } else {
+<span class="nc" id="L50">                LOGGER.warn(&quot;Protected terms resource '&quot; + filename + &quot;' is no longer available.&quot;);</span>
+            }
+<span class="fc" id="L52">        }</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        for (String filename : preferences.getDisabledInternalTermLists()) {</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">            if (INTERNAL_LISTS.containsKey(filename)) {</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                if (!preferences.getEnabledInternalTermLists().contains(filename)) {</span>
+<span class="fc" id="L56">                    mainList.add(readProtectedTermsListFromResource(filename, INTERNAL_LISTS.get(filename).get(), false));</span>
+                }
+            } else {
+<span class="nc" id="L59">                LOGGER.warn(&quot;Protected terms resource '&quot; + filename + &quot;' is no longer available.&quot;);</span>
+            }
+<span class="fc" id="L61">        }</span>
+
+        // Check if any new internal lists have emerged
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        for (String filename : INTERNAL_LISTS.keySet()) {</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">            if (!preferences.getEnabledInternalTermLists().contains(filename)</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                    &amp;&amp; !preferences.getDisabledInternalTermLists().contains(filename)) {</span>
+                // New internal list, add it
+<span class="fc" id="L68">                mainList.add(readProtectedTermsListFromResource(filename, INTERNAL_LISTS.get(filename).get(), true));</span>
+<span class="fc" id="L69">                LOGGER.warn(&quot;New protected terms resource '&quot; + filename + &quot;' is available and enabled by default.&quot;);</span>
+            }
+<span class="fc" id="L71">        }</span>
+
+        // Read external lists
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        for (String filename : preferences.getEnabledExternalTermLists()) {</span>
+            try {
+<span class="nc" id="L76">                mainList.add(readProtectedTermsListFromFile(new File(filename), true));</span>
+<span class="fc" id="L77">            } catch (FileNotFoundException e) {</span>
+                // The file couldn't be found...
+<span class="fc" id="L79">                LOGGER.warn(&quot;Cannot find protected terms file &quot; + filename, e);</span>
+<span class="nc" id="L80">            }</span>
+<span class="fc" id="L81">        }</span>
+
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        for (String filename : preferences.getDisabledExternalTermLists()) {</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            if (!preferences.getEnabledExternalTermLists().contains(filename)) {</span>
+                try {
+<span class="nc" id="L86">                    mainList.add(readProtectedTermsListFromFile(new File(filename), false));</span>
+<span class="nc" id="L87">                } catch (FileNotFoundException e) {</span>
+                    // The file couldn't be found...
+<span class="nc" id="L89">                    LOGGER.warn(&quot;Cannot find protected terms file &quot; + filename, e);</span>
+<span class="nc" id="L90">                }</span>
+            }
+<span class="nc" id="L92">        }</span>
+<span class="fc" id="L93">    }</span>
+
+    public void reloadProtectedTermsList(ProtectedTermsList list) {
+        try {
+<span class="nc" id="L97">            ProtectedTermsList newList = readProtectedTermsListFromFile(new File(list.getLocation()), list.isEnabled());</span>
+<span class="nc" id="L98">            int index = mainList.indexOf(list);</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            if (index &gt;= 0) {</span>
+<span class="nc" id="L100">                mainList.set(index, newList);</span>
+            } else {
+<span class="nc" id="L102">                LOGGER.warn(&quot;Problem reloading protected terms file&quot;);</span>
+            }
+<span class="nc" id="L104">        } catch (IOException e) {</span>
+<span class="nc" id="L105">            LOGGER.warn(&quot;Problem with protected terms file '&quot; + list.getLocation() + &quot;'&quot;, e);</span>
+<span class="nc" id="L106">        }</span>
+<span class="nc" id="L107">    }</span>
+
+    public List&lt;ProtectedTermsList&gt; getProtectedTermsLists() {
+<span class="fc" id="L110">        return mainList;</span>
+    }
+
+    public List&lt;String&gt; getProtectedTerms() {
+<span class="fc" id="L114">        Set&lt;String&gt; result = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        for (ProtectedTermsList list : mainList) {</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">            if (list.isEnabled()) {</span>
+<span class="fc" id="L117">                result.addAll(list.getTermList());</span>
+            }
+<span class="fc" id="L119">        }</span>
+
+<span class="fc" id="L121">        return new ArrayList&lt;&gt;(result);</span>
+    }
+
+    public void addProtectedTermsListFromFile(String fileName, boolean enabled) {
+        try {
+<span class="fc" id="L126">            mainList.add(readProtectedTermsListFromFile(new File(fileName), enabled));</span>
+<span class="nc" id="L127">        } catch (FileNotFoundException e) {</span>
+            // The file couldn't be found...
+<span class="nc" id="L129">            LOGGER.warn(&quot;Cannot find protected terms file &quot; + fileName, e);</span>
+<span class="fc" id="L130">        }</span>
+<span class="fc" id="L131">    }</span>
+
+    public static ProtectedTermsList readProtectedTermsListFromResource(String resource, String description, boolean enabled) {
+<span class="fc" id="L134">        ProtectedTermsParser parser = new ProtectedTermsParser();</span>
+<span class="fc" id="L135">        parser.readTermsFromResource(Objects.requireNonNull(resource), Objects.requireNonNull(description));</span>
+<span class="fc" id="L136">        return parser.getProtectTermsList(enabled, true);</span>
+    }
+
+    public static ProtectedTermsList readProtectedTermsListFromFile(File file, boolean enabled) throws FileNotFoundException {
+<span class="fc" id="L140">        LOGGER.debug(&quot;Reading term list from file &quot; + file);</span>
+<span class="fc" id="L141">        ProtectedTermsParser parser = new ProtectedTermsParser();</span>
+<span class="fc" id="L142">        parser.readTermsFromFile(Objects.requireNonNull(file));</span>
+<span class="fc" id="L143">        return parser.getProtectTermsList(enabled, false);</span>
+    }
+
+    public boolean removeProtectedTermsList(ProtectedTermsList termList) {
+<span class="fc" id="L147">        termList.setEnabled(false);</span>
+<span class="fc" id="L148">        return mainList.remove(termList);</span>
+    }
+
+    public ProtectedTermsList addNewProtectedTermsList(String newDescription, String newLocation, boolean enabled) {
+<span class="fc" id="L152">        Objects.requireNonNull(newDescription);</span>
+<span class="fc" id="L153">        Objects.requireNonNull(newLocation);</span>
+<span class="fc" id="L154">        ProtectedTermsList resultingList = new ProtectedTermsList(newDescription, new ArrayList&lt;&gt;(), newLocation);</span>
+<span class="fc" id="L155">        resultingList.setEnabled(enabled);</span>
+<span class="fc" id="L156">        resultingList.createAndWriteHeading(newDescription);</span>
+<span class="fc" id="L157">        mainList.add(resultingList);</span>
+<span class="fc" id="L158">        return resultingList;</span>
+    }
+
+    public ProtectedTermsList addNewProtectedTermsList(String newDescription, String newLocation) {
+<span class="fc" id="L162">        return addNewProtectedTermsList(newDescription, newLocation, true);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

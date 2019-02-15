@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PreferencesMigrations.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.migrations</a> &gt; <span class="el_source">PreferencesMigrations.java</span></div><h1>PreferencesMigrations.java</h1><pre class="source lang-java linenums">package org.jabref.migrations;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.UnaryOperator;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
+
+import org.jabref.Globals;
+import org.jabref.JabRefMain;
+import org.jabref.model.bibtexkeypattern.GlobalBibtexKeyPattern;
+import org.jabref.model.entry.FieldName;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class PreferencesMigrations {
+
+<span class="fc" id="L24">    private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesMigrations.class);</span>
+
+    private PreferencesMigrations() {
+    }
+
+    /**
+     * Perform checks and changes for users with a preference set from an older JabRef version.
+     */
+    public static void runMigrations() {
+
+<span class="nc" id="L34">        Preferences mainPrefsNode = Preferences.userNodeForPackage(JabRefMain.class);</span>
+
+<span class="nc" id="L36">        upgradePrefsToOrgJabRef(mainPrefsNode);</span>
+<span class="nc" id="L37">        upgradeSortOrder(Globals.prefs);</span>
+<span class="nc" id="L38">        upgradeFaultyEncodingStrings(Globals.prefs);</span>
+<span class="nc" id="L39">        upgradeLabelPatternToBibtexKeyPattern(Globals.prefs);</span>
+<span class="nc" id="L40">        upgradeImportFileAndDirePatterns(Globals.prefs, mainPrefsNode);</span>
+<span class="nc" id="L41">        upgradeStoredCustomEntryTypes(Globals.prefs, mainPrefsNode);</span>
+<span class="nc" id="L42">        upgradeKeyBindingsToJavaFX(Globals.prefs);</span>
+<span class="nc" id="L43">        addCrossRefRelatedFieldsForAutoComplete(Globals.prefs);</span>
+<span class="nc" id="L44">        upgradePreviewStyleFromReviewToComment(Globals.prefs);</span>
+<span class="nc" id="L45">    }</span>
+
+    /**
+     * Migrate all preferences from net/sf/jabref to org/jabref
+     */
+    private static void upgradePrefsToOrgJabRef(Preferences mainPrefsNode) {
+        try {
+<span class="nc bnc" id="L52" title="All 2 branches missed.">            if (mainPrefsNode.childrenNames().length != 0) {</span>
+                // skip further processing as prefs already have been migrated
+<span class="nc" id="L54">                LOGGER.debug(&quot;New prefs node already exists with content - skipping migration&quot;);</span>
+            } else {
+<span class="nc bnc" id="L56" title="All 2 branches missed.">                if (mainPrefsNode.parent().parent().nodeExists(&quot;net/sf/jabref&quot;)) {</span>
+<span class="nc" id="L57">                    LOGGER.info(&quot;Migrating old preferences.&quot;);</span>
+<span class="nc" id="L58">                    Preferences oldNode = mainPrefsNode.parent().parent().node(&quot;net/sf/jabref&quot;);</span>
+<span class="nc" id="L59">                    copyPrefsRecursively(oldNode, mainPrefsNode);</span>
+                }
+            }
+<span class="nc" id="L62">        } catch (BackingStoreException ex) {</span>
+<span class="nc" id="L63">            LOGGER.error(&quot;Migrating old preferences failed.&quot;, ex);</span>
+<span class="nc" id="L64">        }</span>
+<span class="nc" id="L65">    }</span>
+
+    private static void copyPrefsRecursively(Preferences from, Preferences to) throws BackingStoreException {
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        for (String key : from.keys()) {</span>
+<span class="nc" id="L69">            String newValue = from.get(key, &quot;&quot;);</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (newValue.contains(&quot;net.sf&quot;)) {</span>
+<span class="nc" id="L71">                newValue = newValue.replaceAll(&quot;net\\.sf&quot;, &quot;org&quot;);</span>
+            }
+<span class="nc" id="L73">            to.put(key, newValue);</span>
+        }
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        for (String child : from.childrenNames()) {</span>
+<span class="nc" id="L76">            Preferences childNode = from.node(child);</span>
+<span class="nc" id="L77">            Preferences newChildNode = to.node(child);</span>
+<span class="nc" id="L78">            copyPrefsRecursively(childNode, newChildNode);</span>
+        }
+<span class="nc" id="L80">    }</span>
+
+    /**
+     * Added from Jabref 2.11 beta 4 onwards to fix wrong encoding names
+     */
+    private static void upgradeFaultyEncodingStrings(JabRefPreferences prefs) {
+<span class="nc" id="L86">        String defaultEncoding = prefs.get(JabRefPreferences.DEFAULT_ENCODING);</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (defaultEncoding == null) {</span>
+<span class="nc" id="L88">            return;</span>
+        }
+
+<span class="nc" id="L91">        Map&lt;String, String&gt; encodingMap = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L92">        encodingMap.put(&quot;UTF8&quot;, &quot;UTF-8&quot;);</span>
+<span class="nc" id="L93">        encodingMap.put(&quot;Cp1250&quot;, &quot;CP1250&quot;);</span>
+<span class="nc" id="L94">        encodingMap.put(&quot;Cp1251&quot;, &quot;CP1251&quot;);</span>
+<span class="nc" id="L95">        encodingMap.put(&quot;Cp1252&quot;, &quot;CP1252&quot;);</span>
+<span class="nc" id="L96">        encodingMap.put(&quot;Cp1253&quot;, &quot;CP1253&quot;);</span>
+<span class="nc" id="L97">        encodingMap.put(&quot;Cp1254&quot;, &quot;CP1254&quot;);</span>
+<span class="nc" id="L98">        encodingMap.put(&quot;Cp1257&quot;, &quot;CP1257&quot;);</span>
+<span class="nc" id="L99">        encodingMap.put(&quot;ISO8859_1&quot;, &quot;ISO8859-1&quot;);</span>
+<span class="nc" id="L100">        encodingMap.put(&quot;ISO8859_2&quot;, &quot;ISO8859-2&quot;);</span>
+<span class="nc" id="L101">        encodingMap.put(&quot;ISO8859_3&quot;, &quot;ISO8859-3&quot;);</span>
+<span class="nc" id="L102">        encodingMap.put(&quot;ISO8859_4&quot;, &quot;ISO8859-4&quot;);</span>
+<span class="nc" id="L103">        encodingMap.put(&quot;ISO8859_5&quot;, &quot;ISO8859-5&quot;);</span>
+<span class="nc" id="L104">        encodingMap.put(&quot;ISO8859_6&quot;, &quot;ISO8859-6&quot;);</span>
+<span class="nc" id="L105">        encodingMap.put(&quot;ISO8859_7&quot;, &quot;ISO8859-7&quot;);</span>
+<span class="nc" id="L106">        encodingMap.put(&quot;ISO8859_8&quot;, &quot;ISO8859-8&quot;);</span>
+<span class="nc" id="L107">        encodingMap.put(&quot;ISO8859_9&quot;, &quot;ISO8859-9&quot;);</span>
+<span class="nc" id="L108">        encodingMap.put(&quot;ISO8859_13&quot;, &quot;ISO8859-13&quot;);</span>
+<span class="nc" id="L109">        encodingMap.put(&quot;ISO8859_15&quot;, &quot;ISO8859-15&quot;);</span>
+<span class="nc" id="L110">        encodingMap.put(&quot;KOI8_R&quot;, &quot;KOI8-R&quot;);</span>
+<span class="nc" id="L111">        encodingMap.put(&quot;Big5_HKSCS&quot;, &quot;Big5-HKSCS&quot;);</span>
+<span class="nc" id="L112">        encodingMap.put(&quot;EUC_JP&quot;, &quot;EUC-JP&quot;);</span>
+
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (encodingMap.containsKey(defaultEncoding)) {</span>
+<span class="nc" id="L115">            prefs.put(JabRefPreferences.DEFAULT_ENCODING, encodingMap.get(defaultEncoding));</span>
+        }
+<span class="nc" id="L117">    }</span>
+
+    /**
+     * Upgrade the sort order preferences for the current version
+     * The old preference is kept in case an old version of JabRef is used with
+     * these preferences, but it is only used when the new preference does not
+     * exist
+     */
+    private static void upgradeSortOrder(JabRefPreferences prefs) {
+
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        if (prefs.get(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, null) == null) {</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">            if (prefs.getBoolean(&quot;exportInStandardOrder&quot;, false)) {</span>
+<span class="nc" id="L129">                prefs.putBoolean(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, true);</span>
+<span class="nc" id="L130">                prefs.put(JabRefPreferences.EXPORT_PRIMARY_SORT_FIELD, FieldName.AUTHOR);</span>
+<span class="nc" id="L131">                prefs.put(JabRefPreferences.EXPORT_SECONDARY_SORT_FIELD, FieldName.EDITOR);</span>
+<span class="nc" id="L132">                prefs.put(JabRefPreferences.EXPORT_TERTIARY_SORT_FIELD, FieldName.YEAR);</span>
+<span class="nc" id="L133">                prefs.putBoolean(JabRefPreferences.EXPORT_PRIMARY_SORT_DESCENDING, false);</span>
+<span class="nc" id="L134">                prefs.putBoolean(JabRefPreferences.EXPORT_SECONDARY_SORT_DESCENDING, false);</span>
+<span class="nc" id="L135">                prefs.putBoolean(JabRefPreferences.EXPORT_TERTIARY_SORT_DESCENDING, false);</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            } else if (prefs.getBoolean(&quot;exportInTitleOrder&quot;, false)) {</span>
+                // exportInTitleOrder =&gt; title, author, editor
+<span class="nc" id="L138">                prefs.putBoolean(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, true);</span>
+<span class="nc" id="L139">                prefs.put(JabRefPreferences.EXPORT_PRIMARY_SORT_FIELD, FieldName.TITLE);</span>
+<span class="nc" id="L140">                prefs.put(JabRefPreferences.EXPORT_SECONDARY_SORT_FIELD, FieldName.AUTHOR);</span>
+<span class="nc" id="L141">                prefs.put(JabRefPreferences.EXPORT_TERTIARY_SORT_FIELD, FieldName.EDITOR);</span>
+<span class="nc" id="L142">                prefs.putBoolean(JabRefPreferences.EXPORT_PRIMARY_SORT_DESCENDING, false);</span>
+<span class="nc" id="L143">                prefs.putBoolean(JabRefPreferences.EXPORT_SECONDARY_SORT_DESCENDING, false);</span>
+<span class="nc" id="L144">                prefs.putBoolean(JabRefPreferences.EXPORT_TERTIARY_SORT_DESCENDING, false);</span>
+            }
+        }
+<span class="nc" id="L147">    }</span>
+
+    /**
+     * Migrate all customized entry types from versions &lt;=3.7
+     */
+    private static void upgradeStoredCustomEntryTypes(JabRefPreferences prefs, Preferences mainPrefsNode) {
+
+        try {
+<span class="nc bnc" id="L155" title="All 2 branches missed.">            if (mainPrefsNode.nodeExists(JabRefPreferences.CUSTOMIZED_BIBTEX_TYPES) ||</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                mainPrefsNode.nodeExists(JabRefPreferences.CUSTOMIZED_BIBLATEX_TYPES)) {</span>
+                // skip further processing as prefs already have been migrated
+            } else {
+<span class="nc" id="L159">                LOGGER.info(&quot;Migrating old custom entry types.&quot;);</span>
+<span class="nc" id="L160">                CustomEntryTypePreferenceMigration.upgradeStoredCustomEntryTypes(prefs.getDefaultBibDatabaseMode());</span>
+            }
+<span class="nc" id="L162">        } catch (BackingStoreException ex) {</span>
+<span class="nc" id="L163">            LOGGER.error(&quot;Migrating old custom entry types failed.&quot;, ex);</span>
+<span class="nc" id="L164">        }</span>
+<span class="nc" id="L165">    }</span>
+
+    /**
+     * Migrate LabelPattern configuration from versions &lt;=3.5 to new BibtexKeyPatterns
+     */
+    private static void upgradeLabelPatternToBibtexKeyPattern(JabRefPreferences prefs) {
+
+        try {
+<span class="nc" id="L173">            Preferences mainPrefsNode = Preferences.userNodeForPackage(JabRefMain.class);</span>
+
+            // Migrate default pattern
+<span class="nc bnc" id="L176" title="All 2 branches missed.">            if (mainPrefsNode.get(JabRefPreferences.DEFAULT_BIBTEX_KEY_PATTERN, null) == null) {</span>
+                // Check whether old defaultLabelPattern is set
+<span class="nc" id="L178">                String oldDefault = mainPrefsNode.get(&quot;defaultLabelPattern&quot;, null);</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">                if (oldDefault != null) {</span>
+<span class="nc" id="L180">                    prefs.put(JabRefPreferences.DEFAULT_BIBTEX_KEY_PATTERN, oldDefault);</span>
+<span class="nc" id="L181">                    LOGGER.info(&quot;Upgraded old default key generator pattern '&quot; + oldDefault + &quot;' to new version.&quot;);</span>
+                }
+            }
+            //Pref node already exists do not migrate from previous version
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            if (mainPrefsNode.nodeExists(JabRefPreferences.BIBTEX_KEY_PATTERNS_NODE)) {</span>
+<span class="nc" id="L186">                return;</span>
+            }
+
+            // Migrate type specific patterns
+            // Check for prefs node for Version 3.3-3.5
+<span class="nc bnc" id="L191" title="All 2 branches missed.">            if (mainPrefsNode.nodeExists(&quot;logic/labelpattern&quot;)) {</span>
+<span class="nc" id="L192">                migrateTypedKeyPrefs(prefs, mainPrefsNode.node(&quot;logic/labelpattern&quot;));</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">            } else if (mainPrefsNode.nodeExists(&quot;logic/labelPattern&quot;)) { // node used for version 3.0-3.2</span>
+<span class="nc" id="L194">                migrateTypedKeyPrefs(prefs, mainPrefsNode.node(&quot;logic/labelPattern&quot;));</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">            } else if (mainPrefsNode.nodeExists(&quot;labelPattern&quot;)) { // node used for version &lt;3.0</span>
+<span class="nc" id="L196">                migrateTypedKeyPrefs(prefs, mainPrefsNode.node(&quot;labelPattern&quot;));</span>
+            }
+<span class="nc" id="L198">        } catch (BackingStoreException e) {</span>
+<span class="nc" id="L199">            LOGGER.error(&quot;Migrating old bibtexKeyPatterns failed.&quot;, e);</span>
+<span class="nc" id="L200">        }</span>
+<span class="nc" id="L201">    }</span>
+
+    /**
+     * Migrate Import File Name and Directory name Patterns from versions &lt;=4.0 to new BracketedPatterns
+     */
+    private static void migrateFileImportPattern(String oldStylePattern, String newStylePattern,
+                                                 JabRefPreferences prefs, Preferences mainPrefsNode) {
+<span class="fc" id="L208">        String preferenceFileNamePattern = mainPrefsNode.get(JabRefPreferences.IMPORT_FILENAMEPATTERN, null);</span>
+
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">        if ((preferenceFileNamePattern != null) &amp;&amp;</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">            oldStylePattern.equals(preferenceFileNamePattern)) {</span>
+            // Upgrade the old-style File Name pattern to new one:
+<span class="fc" id="L213">            mainPrefsNode.put(JabRefPreferences.IMPORT_FILENAMEPATTERN, newStylePattern);</span>
+<span class="fc" id="L214">            LOGGER.info(&quot;migrated old style &quot; + JabRefPreferences.IMPORT_FILENAMEPATTERN +</span>
+                        &quot; value \&quot;&quot; + oldStylePattern + &quot;\&quot; to new value \&quot;&quot; +
+                        newStylePattern + &quot;\&quot; in the preference file&quot;);
+
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">            if (prefs.hasKey(JabRefPreferences.IMPORT_FILENAMEPATTERN)) {</span>
+                // Update also the key in the current application settings, if necessary:
+<span class="fc" id="L220">                String fileNamePattern = prefs.get(JabRefPreferences.IMPORT_FILENAMEPATTERN);</span>
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">                if (oldStylePattern.equals(fileNamePattern)) {</span>
+<span class="fc" id="L222">                    prefs.put(JabRefPreferences.IMPORT_FILENAMEPATTERN, newStylePattern);</span>
+<span class="fc" id="L223">                    LOGGER.info(&quot;migrated old style &quot; + JabRefPreferences.IMPORT_FILENAMEPATTERN +</span>
+                                &quot; value \&quot;&quot; + oldStylePattern + &quot;\&quot; to new value \&quot;&quot; +
+                                newStylePattern + &quot;\&quot; in the running application&quot;);
+                }
+            }
+        }
+<span class="fc" id="L229">    }</span>
+
+    static void upgradeImportFileAndDirePatterns(JabRefPreferences prefs, Preferences mainPrefsNode) {
+
+        // Migrate Import patterns
+        // Check for prefs node for Version &lt;= 4.0
+<span class="pc bpc" id="L235" title="1 of 2 branches missed.">        if (mainPrefsNode.get(JabRefPreferences.IMPORT_FILENAMEPATTERN, null) != null) {</span>
+
+<span class="fc" id="L237">            String[] oldStylePatterns = new String[] {&quot;\\bibtexkey&quot;,</span>
+                                                      &quot;\\bibtexkey\\begin{title} - \\format[RemoveBrackets]{\\title}\\end{title}&quot;};
+<span class="fc" id="L239">            String[] newStylePatterns = new String[] {&quot;[bibtexkey]&quot;,</span>
+                                                      &quot;[bibtexkey] - [fulltitle]&quot;};
+<span class="fc bfc" id="L241" title="All 2 branches covered.">            for (int i = 0; i &lt; oldStylePatterns.length; i++) {</span>
+<span class="fc" id="L242">                migrateFileImportPattern(oldStylePatterns[i], newStylePatterns[i], prefs, mainPrefsNode);</span>
+            }
+        }
+        // Directory preferences are not yet migrated, since it is not quote clear how to parse and reinterpret
+        // the user defined old-style patterns, and the default pattern is &quot;&quot;.
+<span class="fc" id="L247">    }</span>
+
+    private static void upgradeKeyBindingsToJavaFX(JabRefPreferences prefs) {
+<span class="nc" id="L250">        UnaryOperator&lt;String&gt; replaceKeys = (str) -&gt; {</span>
+<span class="nc" id="L251">            String result = str.replace(&quot;ctrl &quot;, &quot;ctrl+&quot;);</span>
+<span class="nc" id="L252">            result = result.replace(&quot;shift &quot;, &quot;shift+&quot;);</span>
+<span class="nc" id="L253">            result = result.replace(&quot;alt &quot;, &quot;alt+&quot;);</span>
+<span class="nc" id="L254">            result = result.replace(&quot;meta &quot;, &quot;meta+&quot;);</span>
+
+<span class="nc" id="L256">            return result;</span>
+        };
+
+<span class="nc" id="L259">        List&lt;String&gt; keys = prefs.getStringList(JabRefPreferences.BINDINGS);</span>
+<span class="nc" id="L260">        keys.replaceAll(replaceKeys);</span>
+<span class="nc" id="L261">        prefs.putStringList(JabRefPreferences.BINDINGS, keys);</span>
+<span class="nc" id="L262">    }</span>
+
+    private static void addCrossRefRelatedFieldsForAutoComplete(JabRefPreferences prefs) {
+        //LinkedHashSet because we want to retain the order and add new fields to the end
+<span class="nc" id="L266">        Set&lt;String&gt; keys = new LinkedHashSet&lt;&gt;(prefs.getStringList(JabRefPreferences.AUTOCOMPLETER_COMPLETE_FIELDS));</span>
+<span class="nc" id="L267">        keys.add(&quot;crossref&quot;);</span>
+<span class="nc" id="L268">        keys.add(&quot;related&quot;);</span>
+<span class="nc" id="L269">        keys.add(&quot;entryset&quot;);</span>
+<span class="nc" id="L270">        prefs.putStringList(JabRefPreferences.AUTOCOMPLETER_COMPLETE_FIELDS, new ArrayList&lt;&gt;(keys));</span>
+<span class="nc" id="L271">    }</span>
+
+    private static void migrateTypedKeyPrefs(JabRefPreferences prefs, Preferences oldPatternPrefs)
+        throws BackingStoreException {
+<span class="nc" id="L275">        LOGGER.info(&quot;Found old Bibtex Key patterns which will be migrated to new version.&quot;);</span>
+
+<span class="nc" id="L277">        GlobalBibtexKeyPattern keyPattern = GlobalBibtexKeyPattern.fromPattern(</span>
+<span class="nc" id="L278">                                                                               prefs.get(JabRefPreferences.DEFAULT_BIBTEX_KEY_PATTERN));</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">        for (String key : oldPatternPrefs.keys()) {</span>
+<span class="nc" id="L280">            keyPattern.addBibtexKeyPattern(key, oldPatternPrefs.get(key, null));</span>
+        }
+<span class="nc" id="L282">        prefs.putKeyPattern(keyPattern);</span>
+<span class="nc" id="L283">    }</span>
+
+    static void upgradePreviewStyleFromReviewToComment(JabRefPreferences prefs) {
+<span class="fc" id="L286">        String currentPreviewStyle = prefs.getPreviewStyle();</span>
+<span class="fc" id="L287">        String migratedStyle = currentPreviewStyle.replace(&quot;\\begin{review}&lt;BR&gt;&lt;BR&gt;&lt;b&gt;Review: &lt;/b&gt; \\format[HTMLChars]{\\review} \\end{review}&quot;, &quot;\\begin{comment}&lt;BR&gt;&lt;BR&gt;&lt;b&gt;Comment: &lt;/b&gt; \\format[HTMLChars]{\\comment} \\end{comment}&quot;);</span>
+<span class="fc" id="L288">        prefs.setPreviewStyle(migratedStyle);</span>
+<span class="fc" id="L289">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SpecialFieldViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.specialfields</a> &gt; <span class="el_source">SpecialFieldViewModel.java</span></div><h1>SpecialFieldViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.specialfields;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import javax.swing.Icon;
+import javax.swing.undo.UndoManager;
+
+import org.jabref.Globals;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.actions.Action;
+import org.jabref.gui.actions.StandardActions;
+import org.jabref.gui.icon.JabRefIcon;
+import org.jabref.gui.undo.UndoableFieldChange;
+import org.jabref.logic.specialfields.SpecialFieldsUtils;
+import org.jabref.model.FieldChange;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.specialfields.SpecialField;
+import org.jabref.model.entry.specialfields.SpecialFieldValue;
+
+public class SpecialFieldViewModel {
+
+    private final SpecialField field;
+    private UndoManager undoManager;
+
+<span class="nc" id="L27">    public SpecialFieldViewModel(SpecialField field, UndoManager undoManager) {</span>
+<span class="nc" id="L28">        this.field = Objects.requireNonNull(field);</span>
+<span class="nc" id="L29">        this.undoManager = Objects.requireNonNull(undoManager);</span>
+<span class="nc" id="L30">    }</span>
+
+    public SpecialField getField() {
+<span class="nc" id="L33">        return field;</span>
+    }
+
+    public SpecialFieldAction getSpecialFieldAction(SpecialFieldValue value, JabRefFrame frame) {
+<span class="nc" id="L37">        return new SpecialFieldAction(frame, field, value.getFieldValue().orElse(null),</span>
+                // if field contains only one value, it has to be nulled
+                // otherwise, another setting does not empty the field
+<span class="nc bnc" id="L40" title="All 2 branches missed.">                field.getValues().size() == 1,</span>
+<span class="nc" id="L41">                getLocalization());</span>
+    }
+
+    public Icon getRepresentingIcon() {
+<span class="nc" id="L45">        return getAction().getIcon().map(JabRefIcon::getSmallIcon).orElse(null);</span>
+    }
+
+    public JabRefIcon getIcon() {
+<span class="nc" id="L49">        return getAction().getIcon().orElse(null);</span>
+    }
+
+    public String getLocalization() {
+<span class="nc" id="L53">        return getAction().getText();</span>
+    }
+
+    public Action getAction() {
+<span class="nc bnc" id="L57" title="All 7 branches missed.">        switch (field) {</span>
+            case PRINTED:
+<span class="nc" id="L59">                return StandardActions.PRINTED;</span>
+            case PRIORITY:
+<span class="nc" id="L61">                return StandardActions.PRIORITY;</span>
+            case QUALITY:
+<span class="nc" id="L63">                return StandardActions.QUALITY;</span>
+            case RANKING:
+<span class="nc" id="L65">                return StandardActions.RANKING;</span>
+            case READ_STATUS:
+<span class="nc" id="L67">                return StandardActions.READ_STATUS;</span>
+            case RELEVANCE:
+<span class="nc" id="L69">                return StandardActions.RELEVANCE;</span>
+            default:
+<span class="nc" id="L71">                throw new IllegalArgumentException(&quot;There is no icon mapping for special field &quot; + field);</span>
+        }
+    }
+
+    public JabRefIcon getEmptyIcon() {
+<span class="nc" id="L76">        return getIcon();</span>
+    }
+
+    public List&lt;SpecialFieldValueViewModel&gt; getValues() {
+<span class="nc" id="L80">        return field.getValues().stream()</span>
+<span class="nc" id="L81">                .map(SpecialFieldValueViewModel::new)</span>
+<span class="nc" id="L82">                .collect(Collectors.toList());</span>
+    }
+
+    public void setSpecialFieldValue(BibEntry be, SpecialFieldValue value) {
+<span class="nc" id="L86">        List&lt;FieldChange&gt; changes = SpecialFieldsUtils.updateField(getField(), value.getFieldValue().orElse(null), be, getField().isSingleValueField(), Globals.prefs.isKeywordSyncEnabled(), Globals.prefs.getKeywordDelimiter());</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        for (FieldChange change : changes) {</span>
+<span class="nc" id="L88">            undoManager.addEdit(new UndoableFieldChange(change));</span>
+<span class="nc" id="L89">        }</span>
+<span class="nc" id="L90">    }</span>
+
+    public void toggle(BibEntry entry) {
+<span class="nc" id="L93">        setSpecialFieldValue(entry, getField().getValues().get(0));</span>
+<span class="nc" id="L94">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

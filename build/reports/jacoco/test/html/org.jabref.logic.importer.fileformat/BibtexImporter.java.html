@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibtexImporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fileformat</a> &gt; <span class="el_source">BibtexImporter.java</span></div><h1>BibtexImporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fileformat;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.logic.exporter.SavePreferences;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.Importer;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.util.FileUpdateMonitor;
+
+/**
+ * This importer exists only to enable `--importToOpen someEntry.bib`
+ *
+ * It is NOT intended to import a BIB file. This is done via the option action, which treats the metadata fields
+ * The metadata is not required to be read here, as this class is NOT called at --import
+ */
+public class BibtexImporter extends Importer {
+
+    // Signature written at the top of the .bib file in earlier versions.
+    private static final String SIGNATURE = &quot;This file was created with JabRef&quot;;
+
+    private final ImportFormatPreferences importFormatPreferences;
+    private final FileUpdateMonitor fileMonitor;
+
+<span class="fc" id="L31">    public BibtexImporter(ImportFormatPreferences importFormatPreferences, FileUpdateMonitor fileMonitor) {</span>
+<span class="fc" id="L32">        this.importFormatPreferences = importFormatPreferences;</span>
+<span class="fc" id="L33">        this.fileMonitor = fileMonitor;</span>
+<span class="fc" id="L34">    }</span>
+    /**
+     * @return true as we have no effective way to decide whether a file is in bibtex format or not. See
+     *         https://github.com/JabRef/jabref/pull/379#issuecomment-158685726 for more details.
+     */
+    @Override
+    public boolean isRecognizedFormat(BufferedReader reader) {
+<span class="fc" id="L41">        Objects.requireNonNull(reader);</span>
+<span class="fc" id="L42">        return true;</span>
+    }
+
+    @Override
+    public ParserResult importDatabase(Path filePath, Charset defaultEncoding) throws IOException {
+        // We want to check if there is a JabRef signature in the file, because that would tell us
+        // which character encoding is used. However, to read the signature we must be using a compatible
+        // encoding in the first place. Since the signature doesn't contain any fancy characters, we can
+        // read it regardless of encoding, with either UTF-8 or UTF-16. That's the hypothesis, at any rate.
+        // 8 bit is most likely, so we try that first:
+        Optional&lt;Charset&gt; suppliedEncoding;
+<span class="fc" id="L53">        try (BufferedReader utf8Reader = getUTF8Reader(filePath)) {</span>
+<span class="fc" id="L54">            suppliedEncoding = getSuppliedEncoding(utf8Reader);</span>
+        }
+        // Now if that did not get us anywhere, we check with the 16 bit encoding:
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        if (!suppliedEncoding.isPresent()) {</span>
+<span class="fc" id="L58">            try (BufferedReader utf16Reader = getUTF16Reader(filePath)) {</span>
+<span class="fc" id="L59">                suppliedEncoding = getSuppliedEncoding(utf16Reader);</span>
+            }
+        }
+
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (suppliedEncoding.isPresent()) {</span>
+<span class="fc" id="L64">            return super.importDatabase(filePath, suppliedEncoding.get());</span>
+        } else {
+<span class="fc" id="L66">            return super.importDatabase(filePath, defaultEncoding);</span>
+        }
+    }
+
+    @Override
+    public ParserResult importDatabase(BufferedReader reader) throws IOException {
+<span class="fc" id="L72">        return new BibtexParser(importFormatPreferences, fileMonitor).parse(reader);</span>
+    }
+
+    @Override
+    public String getName() {
+<span class="fc" id="L77">        return &quot;BibTeX&quot;;</span>
+    }
+
+    @Override
+    public StandardFileType getFileType() {
+<span class="fc" id="L82">        return StandardFileType.BIBTEX_DB;</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L87">        return &quot;This importer exists only to enable `--importToOpen someEntry.bib`\n&quot; +</span>
+                &quot;It is NOT intended to import a BIB file. This is done via the option action, which treats the metadata fields.\n&quot; +
+                &quot;The metadata is not required to be read here, as this class is NOT called at --import.&quot;;
+    }
+
+    /**
+     * Searches the file for &quot;Encoding: myEncoding&quot; and returns the found supplied encoding.
+     */
+    private static Optional&lt;Charset&gt; getSuppliedEncoding(BufferedReader reader) {
+        try {
+            String line;
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">            while ((line = reader.readLine()) != null) {</span>
+<span class="fc" id="L99">                line = line.trim();</span>
+
+                // Line does not start with %, so there are no comment lines for us and we can stop parsing
+<span class="fc bfc" id="L102" title="All 2 branches covered.">                if (!line.startsWith(&quot;%&quot;)) {</span>
+<span class="fc" id="L103">                    return Optional.empty();</span>
+                }
+
+                // Only keep the part after %
+<span class="fc" id="L107">                line = line.substring(1).trim();</span>
+
+<span class="fc bfc" id="L109" title="All 2 branches covered.">                if (line.startsWith(BibtexImporter.SIGNATURE)) {</span>
+                    // Signature line, so keep reading and skip to next line
+<span class="fc bfc" id="L111" title="All 2 branches covered.">                } else if (line.startsWith(SavePreferences.ENCODING_PREFIX)) {</span>
+                    // Line starts with &quot;Encoding: &quot;, so the rest of the line should contain the name of the encoding
+                    // Except if there is already a @ symbol signaling the starting of a BibEntry
+<span class="fc" id="L114">                    Integer atSymbolIndex = line.indexOf('@');</span>
+                    String encoding;
+<span class="fc bfc" id="L116" title="All 2 branches covered.">                    if (atSymbolIndex &gt; 0) {</span>
+<span class="fc" id="L117">                        encoding = line.substring(SavePreferences.ENCODING_PREFIX.length(), atSymbolIndex);</span>
+                    } else {
+<span class="fc" id="L119">                        encoding = line.substring(SavePreferences.ENCODING_PREFIX.length());</span>
+                    }
+
+<span class="fc" id="L122">                    return Optional.of(Charset.forName(encoding));</span>
+                } else {
+                    // Line not recognized so stop parsing
+<span class="fc" id="L125">                    return Optional.empty();</span>
+                }
+            }
+<span class="nc" id="L128">        } catch (IOException ignored) {</span>
+            // Ignored
+<span class="nc" id="L130">        }</span>
+<span class="nc" id="L131">        return Optional.empty();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

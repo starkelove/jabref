@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentInformationExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.xmp</a> &gt; <span class="el_source">DocumentInformationExtractor.java</span></div><h1>DocumentInformationExtractor.java</h1><pre class="source lang-java linenums">package org.jabref.logic.xmp;
+
+import java.util.Map;
+import java.util.Optional;
+
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+
+import org.apache.pdfbox.cos.COSBase;
+import org.apache.pdfbox.cos.COSDictionary;
+import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.pdmodel.PDDocumentInformation;
+
+public class DocumentInformationExtractor {
+
+    private final PDDocumentInformation documentInformation;
+
+    private final BibEntry bibEntry;
+
+<span class="fc" id="L20">    public DocumentInformationExtractor(PDDocumentInformation documentInformation) {</span>
+<span class="fc" id="L21">        this.documentInformation = documentInformation;</span>
+
+<span class="fc" id="L23">        this.bibEntry = new BibEntry();</span>
+<span class="fc" id="L24">    }</span>
+
+    private void extractAuthor() {
+<span class="fc" id="L27">        String s = documentInformation.getAuthor();</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        if (s != null) {</span>
+<span class="fc" id="L29">            bibEntry.setField(FieldName.AUTHOR, s);</span>
+        }
+<span class="fc" id="L31">    }</span>
+
+    private void extractTitle() {
+<span class="fc" id="L34">        String s = documentInformation.getTitle();</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (s != null) {</span>
+<span class="fc" id="L36">            bibEntry.setField(FieldName.TITLE, s);</span>
+        }
+<span class="fc" id="L38">    }</span>
+
+    private void extractKeywords() {
+<span class="fc" id="L41">        String s = documentInformation.getKeywords();</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (s != null) {</span>
+<span class="fc" id="L43">            bibEntry.setField(FieldName.KEYWORDS, s);</span>
+        }
+<span class="fc" id="L45">    }</span>
+
+    private void extractSubject() {
+<span class="fc" id="L48">        String s = documentInformation.getSubject();</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (s != null) {</span>
+<span class="fc" id="L50">            bibEntry.setField(FieldName.ABSTRACT, s);</span>
+        }
+<span class="fc" id="L52">    }</span>
+
+    private void extractOtherFields() {
+<span class="fc" id="L55">        COSDictionary dict = documentInformation.getCOSObject();</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        for (Map.Entry&lt;COSName, COSBase&gt; o : dict.entrySet()) {</span>
+<span class="fc" id="L57">            String key = o.getKey().getName();</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">            if (key.startsWith(&quot;bibtex/&quot;)) {</span>
+<span class="nc" id="L59">                String value = dict.getString(key);</span>
+<span class="nc" id="L60">                key = key.substring(&quot;bibtex/&quot;.length());</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">                if (BibEntry.TYPE_HEADER.equals(key)) {</span>
+<span class="nc" id="L62">                    bibEntry.setType(value);</span>
+                } else {
+<span class="nc" id="L64">                    bibEntry.setField(key, value);</span>
+                }
+            }
+<span class="fc" id="L67">        }</span>
+<span class="fc" id="L68">    }</span>
+
+    /**
+     * Function for retrieving a BibEntry from the
+     * PDDocumentInformation in a PDF file.
+     *
+     * To understand how to get hold of a PDDocumentInformation have a look in
+     * the test cases for XMPUtilTest.
+     *
+     * The BibEntry is build by mapping individual fields in the document
+     * information (like author, title, keywords) to fields in a bibtex entry.
+     *
+     * @param di The document information from which to build a BibEntry.
+     * @return The bibtex entry found in the document information.
+     */
+    public Optional&lt;BibEntry&gt; extractBibtexEntry() {
+
+<span class="fc" id="L85">        bibEntry.setType(BibEntry.DEFAULT_TYPE);</span>
+
+<span class="fc" id="L87">        this.extractAuthor();</span>
+<span class="fc" id="L88">        this.extractTitle();</span>
+<span class="fc" id="L89">        this.extractKeywords();</span>
+<span class="fc" id="L90">        this.extractSubject();</span>
+<span class="fc" id="L91">        this.extractOtherFields();</span>
+
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (bibEntry.getFieldNames().isEmpty()) {</span>
+<span class="fc" id="L94">            return Optional.empty();</span>
+        } else {
+<span class="fc" id="L96">            return Optional.of(bibEntry);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

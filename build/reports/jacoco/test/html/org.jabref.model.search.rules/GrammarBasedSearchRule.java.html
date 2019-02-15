@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GrammarBasedSearchRule.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.search.rules</a> &gt; <span class="el_source">GrammarBasedSearchRule.java</span></div><h1>GrammarBasedSearchRule.java</h1><pre class="source lang-java linenums">package org.jabref.model.search.rules;
+
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.Keyword;
+import org.jabref.search.SearchBaseVisitor;
+import org.jabref.search.SearchLexer;
+import org.jabref.search.SearchParser;
+
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * The search query must be specified in an expression that is acceptable by the Search.g4 grammar.
+ *
+ * This class implements the &quot;Advanced Search Mode&quot; described in the help
+ */
+public class GrammarBasedSearchRule implements SearchRule {
+
+<span class="fc" id="L35">    private static final Logger LOGGER = LoggerFactory.getLogger(GrammarBasedSearchRule.class);</span>
+
+    private final boolean caseSensitiveSearch;
+    private final boolean regExpSearch;
+
+    private ParseTree tree;
+    private String query;
+
+<span class="fc" id="L43">    public static class ThrowingErrorListener extends BaseErrorListener {</span>
+
+<span class="fc" id="L45">        public static final ThrowingErrorListener INSTANCE = new ThrowingErrorListener();</span>
+
+        @Override
+        public void syntaxError(Recognizer&lt;?, ?&gt; recognizer, Object offendingSymbol,
+                int line, int charPositionInLine, String msg, RecognitionException e)
+                throws ParseCancellationException {
+<span class="nc" id="L51">            throw new ParseCancellationException(&quot;line &quot; + line + &quot;:&quot; + charPositionInLine + &quot; &quot; + msg);</span>
+        }
+    }
+
+<span class="fc" id="L55">    public GrammarBasedSearchRule(boolean caseSensitiveSearch, boolean regExpSearch) throws RecognitionException {</span>
+<span class="fc" id="L56">        this.caseSensitiveSearch = caseSensitiveSearch;</span>
+<span class="fc" id="L57">        this.regExpSearch = regExpSearch;</span>
+<span class="fc" id="L58">    }</span>
+
+    public static boolean isValid(boolean caseSensitive, boolean regExp, String query) {
+<span class="nc" id="L61">        return new GrammarBasedSearchRule(caseSensitive, regExp).validateSearchStrings(query);</span>
+    }
+
+    public boolean isCaseSensitiveSearch() {
+<span class="nc" id="L65">        return this.caseSensitiveSearch;</span>
+    }
+
+    public boolean isRegExpSearch() {
+<span class="nc" id="L69">        return this.regExpSearch;</span>
+    }
+
+    public ParseTree getTree() {
+<span class="fc" id="L73">        return this.tree;</span>
+    }
+
+    public String getQuery() {
+<span class="nc" id="L77">        return this.query;</span>
+    }
+
+    private void init(String query) throws ParseCancellationException {
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (Objects.equals(this.query, query)) {</span>
+<span class="fc" id="L82">            return;</span>
+        }
+
+<span class="fc" id="L85">        SearchLexer lexer = new SearchLexer(new ANTLRInputStream(query));</span>
+<span class="fc" id="L86">        lexer.removeErrorListeners(); // no infos on file system</span>
+<span class="fc" id="L87">        lexer.addErrorListener(ThrowingErrorListener.INSTANCE);</span>
+<span class="fc" id="L88">        SearchParser parser = new SearchParser(new CommonTokenStream(lexer));</span>
+<span class="fc" id="L89">        parser.removeErrorListeners(); // no infos on file system</span>
+<span class="fc" id="L90">        parser.addErrorListener(ThrowingErrorListener.INSTANCE);</span>
+<span class="fc" id="L91">        parser.setErrorHandler(new BailErrorStrategy()); // ParseCancelationException on parse errors</span>
+<span class="fc" id="L92">        tree = parser.start();</span>
+<span class="fc" id="L93">        this.query = query;</span>
+<span class="fc" id="L94">    }</span>
+
+    @Override
+    public boolean applyRule(String query, BibEntry bibEntry) {
+        try {
+<span class="fc" id="L99">            return new BibtexSearchVisitor(caseSensitiveSearch, regExpSearch, bibEntry).visit(tree);</span>
+<span class="nc" id="L100">        } catch (Exception e) {</span>
+<span class="nc" id="L101">            LOGGER.debug(&quot;Search failed&quot;, e);</span>
+<span class="nc" id="L102">            return false;</span>
+        }
+    }
+
+    @Override
+    public boolean validateSearchStrings(String query) {
+        try {
+<span class="fc" id="L109">            init(query);</span>
+<span class="fc" id="L110">            return true;</span>
+<span class="nc" id="L111">        } catch (ParseCancellationException e) {</span>
+<span class="nc" id="L112">            LOGGER.debug(&quot;Search query invalid&quot;, e);</span>
+<span class="nc" id="L113">            return false;</span>
+        }
+    }
+
+<span class="fc" id="L117">    public enum ComparisonOperator {</span>
+<span class="fc" id="L118">        EXACT, CONTAINS, DOES_NOT_CONTAIN;</span>
+
+        public static ComparisonOperator build(String value) {
+<span class="pc bpc" id="L121" title="1 of 4 branches missed.">            if (&quot;CONTAINS&quot;.equalsIgnoreCase(value) || &quot;=&quot;.equals(value)) {</span>
+<span class="fc" id="L122">                return CONTAINS;</span>
+<span class="pc bpc" id="L123" title="1 of 4 branches missed.">            } else if (&quot;MATCHES&quot;.equalsIgnoreCase(value) || &quot;==&quot;.equals(value)) {</span>
+<span class="fc" id="L124">                return EXACT;</span>
+            } else {
+<span class="fc" id="L126">                return DOES_NOT_CONTAIN;</span>
+            }
+        }
+    }
+
+    public static class Comparator {
+
+        private final ComparisonOperator operator;
+        private final Pattern fieldPattern;
+        private final Pattern valuePattern;
+
+<span class="fc" id="L137">        public Comparator(String field, String value, ComparisonOperator operator, boolean caseSensitive, boolean regex) {</span>
+<span class="fc" id="L138">            this.operator = operator;</span>
+
+<span class="fc bfc" id="L140" title="All 2 branches covered.">            int option = caseSensitive ? 0 : Pattern.CASE_INSENSITIVE;</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">            this.fieldPattern = Pattern.compile(regex ? field : &quot;\\Q&quot; + field + &quot;\\E&quot;, option);</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">            this.valuePattern = Pattern.compile(regex ? value : &quot;\\Q&quot; + value + &quot;\\E&quot;, option);</span>
+<span class="fc" id="L143">        }</span>
+
+        public boolean compare(BibEntry entry) {
+            // special case for searching for entrytype=phdthesis
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">            if (fieldPattern.matcher(BibEntry.TYPE_HEADER).matches()) {</span>
+<span class="nc" id="L148">                return matchFieldValue(entry.getType());</span>
+            }
+
+            // special case for searching a single keyword
+<span class="fc bfc" id="L152" title="All 2 branches covered.">            if (fieldPattern.matcher(&quot;anykeyword&quot;).matches()) {</span>
+<span class="fc" id="L153">                return entry.getKeywords(',').stream().map(Keyword::toString).anyMatch(this::matchFieldValue);</span>
+            }
+
+            // specification of fieldsKeys to search is done in the search expression itself
+<span class="fc" id="L157">            Set&lt;String&gt; fieldsKeys = entry.getFieldNames();</span>
+
+            // special case for searching allfields=cat and title=dog
+<span class="fc bfc" id="L160" title="All 2 branches covered.">            if (!fieldPattern.matcher(&quot;anyfield&quot;).matches()) {</span>
+                // Filter out the requested fields
+<span class="fc" id="L162">                fieldsKeys = fieldsKeys.stream().filter(matchFieldKey()).collect(Collectors.toSet());</span>
+            }
+
+<span class="fc bfc" id="L165" title="All 2 branches covered.">            for (String field : fieldsKeys) {</span>
+<span class="fc" id="L166">                Optional&lt;String&gt; fieldValue = entry.getLatexFreeField(field);</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">                if (fieldValue.isPresent()) {</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">                    if (matchFieldValue(fieldValue.get())) {</span>
+<span class="fc" id="L169">                        return true;</span>
+                    }
+                }
+<span class="fc" id="L172">            }</span>
+
+            // special case of asdf!=whatever and entry does not contain asdf
+<span class="pc bpc" id="L175" title="3 of 4 branches missed.">            return fieldsKeys.isEmpty() &amp;&amp; (operator == ComparisonOperator.DOES_NOT_CONTAIN);</span>
+        }
+
+        private Predicate&lt;String&gt; matchFieldKey() {
+<span class="fc" id="L179">            return s -&gt; fieldPattern.matcher(s).matches();</span>
+        }
+
+        public boolean matchFieldValue(String content) {
+<span class="fc" id="L183">            Matcher matcher = valuePattern.matcher(content);</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">            if (operator == ComparisonOperator.CONTAINS) {</span>
+<span class="fc" id="L185">                return matcher.find();</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">            } else if (operator == ComparisonOperator.EXACT) {</span>
+<span class="fc" id="L187">                return matcher.matches();</span>
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">            } else if (operator == ComparisonOperator.DOES_NOT_CONTAIN) {</span>
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">                return !matcher.find();</span>
+            } else {
+<span class="nc" id="L191">                throw new IllegalStateException(&quot;MUST NOT HAPPEN&quot;);</span>
+            }
+        }
+
+    }
+
+    /**
+     * Search results in boolean. It may be later on converted to an int.
+     */
+    static class BibtexSearchVisitor extends SearchBaseVisitor&lt;Boolean&gt; {
+
+        private final boolean caseSensitive;
+        private final boolean regex;
+
+        private final BibEntry entry;
+
+<span class="fc" id="L207">        public BibtexSearchVisitor(boolean caseSensitive, boolean regex, BibEntry bibEntry) {</span>
+<span class="fc" id="L208">            this.caseSensitive = caseSensitive;</span>
+<span class="fc" id="L209">            this.regex = regex;</span>
+<span class="fc" id="L210">            this.entry = bibEntry;</span>
+<span class="fc" id="L211">        }</span>
+
+        public boolean comparison(String field, ComparisonOperator operator, String value) {
+<span class="fc" id="L214">            return new Comparator(field, value, operator, caseSensitive, regex).compare(entry);</span>
+        }
+
+        @Override
+        public Boolean visitStart(SearchParser.StartContext ctx) {
+<span class="fc" id="L219">            return visit(ctx.expression());</span>
+        }
+
+        @Override
+        public Boolean visitComparison(SearchParser.ComparisonContext context) {
+            // remove possible enclosing &quot; symbols
+<span class="fc" id="L225">            String right = context.right.getText();</span>
+<span class="pc bpc" id="L226" title="1 of 4 branches missed.">            if (right.startsWith(&quot;\&quot;&quot;) &amp;&amp; right.endsWith(&quot;\&quot;&quot;)) {</span>
+<span class="fc" id="L227">                right = right.substring(1, right.length() - 1);</span>
+            }
+
+<span class="fc" id="L230">            Optional&lt;SearchParser.NameContext&gt; fieldDescriptor = Optional.ofNullable(context.left);</span>
+<span class="fc bfc" id="L231" title="All 2 branches covered.">            if (fieldDescriptor.isPresent()) {</span>
+<span class="fc" id="L232">                return comparison(fieldDescriptor.get().getText(), ComparisonOperator.build(context.operator.getText()), right);</span>
+            } else {
+<span class="fc" id="L234">                return new ContainBasedSearchRule(caseSensitive).applyRule(right, entry);</span>
+            }
+        }
+
+        @Override
+        public Boolean visitUnaryExpression(SearchParser.UnaryExpressionContext ctx) {
+<span class="nc bnc" id="L240" title="All 2 branches missed.">            return !visit(ctx.expression()); // negate</span>
+        }
+
+        @Override
+        public Boolean visitParenExpression(SearchParser.ParenExpressionContext ctx) {
+<span class="nc" id="L245">            return visit(ctx.expression()); // ignore parenthesis</span>
+        }
+
+        @Override
+        public Boolean visitBinaryExpression(SearchParser.BinaryExpressionContext ctx) {
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">            if (&quot;AND&quot;.equalsIgnoreCase(ctx.operator.getText())) {</span>
+<span class="pc bpc" id="L251" title="1 of 4 branches missed.">                return visit(ctx.left) &amp;&amp; visit(ctx.right); // and</span>
+            } else {
+<span class="nc bnc" id="L253" title="All 4 branches missed.">                return visit(ctx.left) || visit(ctx.right); // or</span>
+            }
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

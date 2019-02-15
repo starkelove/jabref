@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ParsedEntryLink.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry</a> &gt; <span class="el_source">ParsedEntryLink.java</span></div><h1>ParsedEntryLink.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry;
+
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.model.database.BibDatabase;
+
+public class ParsedEntryLink {
+
+    private String key;
+    private Optional&lt;BibEntry&gt; linkedEntry;
+    private BibDatabase dataBase;
+
+<span class="fc" id="L14">    public ParsedEntryLink(String key, BibDatabase dataBase) {</span>
+<span class="fc" id="L15">        this.key = key;</span>
+<span class="fc" id="L16">        this.linkedEntry = dataBase.getEntryByKey(this.key);</span>
+<span class="fc" id="L17">        this.dataBase = dataBase;</span>
+<span class="fc" id="L18">    }</span>
+
+<span class="nc" id="L20">    public ParsedEntryLink(BibEntry bibEntry) {</span>
+<span class="nc" id="L21">        this.key = bibEntry.getCiteKeyOptional().orElse(&quot;&quot;);</span>
+<span class="nc" id="L22">        this.linkedEntry = Optional.of(bibEntry);</span>
+<span class="nc" id="L23">    }</span>
+
+    public String getKey() {
+<span class="fc" id="L26">        return key;</span>
+    }
+
+    public Optional&lt;BibEntry&gt; getLinkedEntry() {
+<span class="fc" id="L30">        return linkedEntry;</span>
+    }
+
+    public void setKey(String newKey) {
+<span class="nc" id="L34">        this.key = newKey;</span>
+<span class="nc" id="L35">        this.linkedEntry = getDataBase().getEntryByKey(this.key);</span>
+<span class="nc" id="L36">    }</span>
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L40">        return Objects.hash(key, linkedEntry);</span>
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        if (this == obj) {</span>
+<span class="nc" id="L46">            return true;</span>
+        }
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        if (!(obj instanceof ParsedEntryLink)) {</span>
+<span class="nc" id="L49">            return false;</span>
+        }
+<span class="fc" id="L51">        ParsedEntryLink other = (ParsedEntryLink) obj;</span>
+<span class="pc bpc" id="L52" title="2 of 4 branches missed.">        return Objects.equals(key, other.key) &amp;&amp; Objects.equals(linkedEntry, other.linkedEntry);</span>
+    }
+
+    public BibDatabase getDataBase() {
+<span class="fc" id="L56">        return dataBase;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

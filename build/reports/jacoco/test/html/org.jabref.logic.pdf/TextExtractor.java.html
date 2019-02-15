@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.pdf</a> &gt; <span class="el_source">TextExtractor.java</span></div><h1>TextExtractor.java</h1><pre class="source lang-java linenums">package org.jabref.logic.pdf;
+
+import java.awt.geom.Rectangle2D;
+import java.io.IOException;
+import java.util.Objects;
+
+import org.apache.pdfbox.cos.COSArray;
+import org.apache.pdfbox.cos.COSFloat;
+import org.apache.pdfbox.cos.COSInteger;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.text.PDFTextStripperByArea;
+
+/**
+ * Extracts the text of marked annotations using bounding boxes.
+ */
+public final class TextExtractor {
+
+    private final COSArray boundingBoxes;
+    private final PDPage page;
+
+    /**
+     * @param page       the page the annotation is on, must not be null
+     * @param boundingBoxes the raw annotation, must not be null
+     */
+<span class="fc" id="L26">    public TextExtractor(PDPage page, COSArray boundingBoxes) {</span>
+<span class="fc" id="L27">        this.page = Objects.requireNonNull(page);</span>
+<span class="fc" id="L28">        this.boundingBoxes = Objects.requireNonNull(boundingBoxes);</span>
+<span class="fc" id="L29">    }</span>
+
+    /**
+     * Extracts the text of a marked annotation such as highlights, underlines, strikeouts etc.
+     *
+     * @return The text of the annotation
+     * @throws IOException If the PDFTextStripperByArea fails to initialize.
+     */
+    public String extractMarkedText() throws IOException {
+        // Text has to be extracted by the rectangle calculated from the marking
+<span class="fc" id="L39">        PDFTextStripperByArea stripperByArea = new PDFTextStripperByArea();</span>
+<span class="fc" id="L40">        String markedText = &quot;&quot;;</span>
+
+        // Iterates over the array of segments. Each segment consists of 8 points forming a bounding box.
+<span class="fc" id="L43">        int totalSegments = boundingBoxes.size() / 8;</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        for (int currentSegment = 1, segmentPointer = 0; currentSegment &lt;= totalSegments; currentSegment++, segmentPointer += 8) {</span>
+            try {
+<span class="fc" id="L46">                stripperByArea.addRegion(&quot;markedRegion&quot;, calculateSegmentBoundingBox(boundingBoxes, segmentPointer));</span>
+<span class="fc" id="L47">                stripperByArea.extractRegions(page);</span>
+
+<span class="fc" id="L49">                markedText = markedText.concat(stripperByArea.getTextForRegion(&quot;markedRegion&quot;));</span>
+<span class="nc" id="L50">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L51">                throw new IOException(&quot;Cannot read annotation coordinates!&quot;, e);</span>
+<span class="fc" id="L52">            }</span>
+        }
+
+<span class="fc" id="L55">        return markedText.trim();</span>
+    }
+
+    private Rectangle2D calculateSegmentBoundingBox(COSArray quadsArray, int segmentPointer) {
+        // Extract coordinate values
+<span class="fc" id="L60">        float upperLeftX = toFloat(quadsArray.get(segmentPointer));</span>
+<span class="fc" id="L61">        float upperLeftY = toFloat(quadsArray.get(segmentPointer + 1));</span>
+<span class="fc" id="L62">        float upperRightX = toFloat(quadsArray.get(segmentPointer + 2));</span>
+<span class="fc" id="L63">        float upperRightY = toFloat(quadsArray.get(segmentPointer + 3));</span>
+<span class="fc" id="L64">        float lowerLeftX = toFloat(quadsArray.get(segmentPointer + 4));</span>
+<span class="fc" id="L65">        float lowerLeftY = toFloat(quadsArray.get(segmentPointer + 5));</span>
+
+        // Post-processing of the raw coordinates.
+<span class="fc" id="L68">        PDRectangle pageSize = page.getMediaBox();</span>
+<span class="fc" id="L69">        float ulx = upperLeftX - 1; // It is magic.</span>
+<span class="fc" id="L70">        float uly = pageSize.getHeight() - upperLeftY;</span>
+<span class="fc" id="L71">        float width = upperRightX - lowerLeftX;</span>
+<span class="fc" id="L72">        float height = upperRightY - lowerLeftY;</span>
+
+<span class="fc" id="L74">        return new Rectangle2D.Float(ulx, uly, width, height);</span>
+    }
+
+    private float toFloat(Object cosNumber) {
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        if (cosNumber instanceof COSFloat) {</span>
+<span class="fc" id="L79">            return ((COSFloat) cosNumber).floatValue();</span>
+        }
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (cosNumber instanceof COSInteger) {</span>
+<span class="nc" id="L82">            return ((COSInteger) cosNumber).floatValue();</span>
+        }
+<span class="nc" id="L84">        throw new IllegalArgumentException(&quot;The number type of the annotation is not supported!&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

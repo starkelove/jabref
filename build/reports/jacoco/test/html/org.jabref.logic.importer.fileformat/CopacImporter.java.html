@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CopacImporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fileformat</a> &gt; <span class="el_source">CopacImporter.java</span></div><h1>CopacImporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fileformat;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.importer.Importer;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BibtexEntryTypes;
+import org.jabref.model.entry.FieldName;
+
+/**
+ * Importer for COPAC format.
+ *
+ * Documentation can be found online at:
+ *
+ * http://copac.ac.uk/faq/#format
+ */
+<span class="fc" id="L24">public class CopacImporter extends Importer {</span>
+
+<span class="fc" id="L26">    private static final Pattern COPAC_PATTERN = Pattern.compile(&quot;^\\s*TI- &quot;);</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L30">        return &quot;Copac&quot;;</span>
+    }
+
+    @Override
+    public StandardFileType getFileType() {
+<span class="fc" id="L35">        return StandardFileType.TXT;</span>
+    }
+
+    @Override
+    public String getId() {
+<span class="fc" id="L40">        return &quot;cpc&quot;;</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L45">        return &quot;Importer for COPAC format.&quot;;</span>
+    }
+
+    @Override
+    public boolean isRecognizedFormat(BufferedReader reader) throws IOException {
+        String str;
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        while ((str = reader.readLine()) != null) {</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">            if (CopacImporter.COPAC_PATTERN.matcher(str).find()) {</span>
+<span class="fc" id="L53">                return true;</span>
+            }
+        }
+<span class="fc" id="L56">        return false;</span>
+    }
+
+    @Override
+    public ParserResult importDatabase(BufferedReader reader) throws IOException {
+<span class="fc" id="L61">        Objects.requireNonNull(reader);</span>
+
+<span class="fc" id="L63">        List&lt;String&gt; entries = new LinkedList&lt;&gt;();</span>
+<span class="fc" id="L64">        StringBuilder sb = new StringBuilder();</span>
+
+        // Preprocess entries
+        String str;
+
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        while ((str = reader.readLine()) != null) {</span>
+
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (str.length() &lt; 4) {</span>
+<span class="fc" id="L72">                continue;</span>
+            }
+
+<span class="fc" id="L75">            String code = str.substring(0, 4);</span>
+
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            if (&quot;    &quot;.equals(code)) {</span>
+<span class="fc" id="L78">                sb.append(' ').append(str.trim());</span>
+            } else {
+
+                // begining of a new item
+<span class="fc bfc" id="L82" title="All 2 branches covered.">                if (&quot;TI- &quot;.equals(str.substring(0, 4))) {</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                    if (sb.length() &gt; 0) {</span>
+<span class="fc" id="L84">                        entries.add(sb.toString());</span>
+                    }
+<span class="fc" id="L86">                    sb = new StringBuilder();</span>
+                }
+<span class="fc" id="L88">                sb.append('\n').append(str);</span>
+            }
+<span class="fc" id="L90">        }</span>
+
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        if (sb.length() &gt; 0) {</span>
+<span class="fc" id="L93">            entries.add(sb.toString());</span>
+        }
+
+<span class="fc" id="L96">        List&lt;BibEntry&gt; results = new LinkedList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        for (String entry : entries) {</span>
+
+            // Copac does not contain enough information on the type of the
+            // document. A book is assumed.
+<span class="fc" id="L102">            BibEntry b = new BibEntry(BibtexEntryTypes.BOOK);</span>
+
+<span class="fc" id="L104">            String[] lines = entry.split(&quot;\n&quot;);</span>
+
+<span class="fc bfc" id="L106" title="All 2 branches covered.">            for (String line1 : lines) {</span>
+<span class="fc" id="L107">                String line = line1.trim();</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">                if (line.length() &lt; 4) {</span>
+<span class="fc" id="L109">                    continue;</span>
+                }
+<span class="fc" id="L111">                String code = line.substring(0, 4);</span>
+
+<span class="fc bfc" id="L113" title="All 2 branches covered.">                if (&quot;TI- &quot;.equals(code)) {</span>
+<span class="fc" id="L114">                    setOrAppend(b, FieldName.TITLE, line.substring(4).trim(), &quot;, &quot;);</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">                } else if (&quot;AU- &quot;.equals(code)) {</span>
+<span class="fc" id="L116">                    setOrAppend(b, FieldName.AUTHOR, line.substring(4).trim(), &quot; and &quot;);</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">                } else if (&quot;PY- &quot;.equals(code)) {</span>
+<span class="fc" id="L118">                    setOrAppend(b, FieldName.YEAR, line.substring(4).trim(), &quot;, &quot;);</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">                } else if (&quot;PU- &quot;.equals(code)) {</span>
+<span class="fc" id="L120">                    setOrAppend(b, FieldName.PUBLISHER, line.substring(4).trim(), &quot;, &quot;);</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">                } else if (&quot;SE- &quot;.equals(code)) {</span>
+<span class="fc" id="L122">                    setOrAppend(b, FieldName.SERIES, line.substring(4).trim(), &quot;, &quot;);</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">                } else if (&quot;IS- &quot;.equals(code)) {</span>
+<span class="fc" id="L124">                    setOrAppend(b, FieldName.ISBN, line.substring(4).trim(), &quot;, &quot;);</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">                } else if (&quot;KW- &quot;.equals(code)) {</span>
+<span class="fc" id="L126">                    setOrAppend(b, FieldName.KEYWORDS, line.substring(4).trim(), &quot;, &quot;);</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">                } else if (&quot;NT- &quot;.equals(code)) {</span>
+<span class="fc" id="L128">                    setOrAppend(b, FieldName.NOTE, line.substring(4).trim(), &quot;, &quot;);</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">                } else if (&quot;PD- &quot;.equals(code)) {</span>
+<span class="fc" id="L130">                    setOrAppend(b, &quot;physicaldimensions&quot;, line.substring(4).trim(), &quot;, &quot;);</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">                } else if (&quot;DT- &quot;.equals(code)) {</span>
+<span class="fc" id="L132">                    setOrAppend(b, &quot;documenttype&quot;, line.substring(4).trim(), &quot;, &quot;);</span>
+                } else {
+<span class="fc" id="L134">                    setOrAppend(b, code.substring(0, 2), line.substring(4).trim(), &quot;, &quot;);</span>
+                }
+            }
+<span class="fc" id="L137">            results.add(b);</span>
+<span class="fc" id="L138">        }</span>
+
+<span class="fc" id="L140">        return new ParserResult(results);</span>
+    }
+
+    private static void setOrAppend(BibEntry b, String field, String value, String separator) {
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        if (b.hasField(field)) {</span>
+<span class="fc" id="L145">            b.setField(field, b.getField(field).get() + separator + value);</span>
+        } else {
+<span class="fc" id="L147">            b.setField(field, value);</span>
+        }
+<span class="fc" id="L149">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

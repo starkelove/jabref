@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.bibtex.comparator.FieldComparatorTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:47" hostname="n184-p67.eduroam.kth.se" time="0.045">
+  <properties/>
+  <testcase name="compareMonthFieldEquality()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.03"/>
+  <testcase name="compareStringFieldsBiggerDescending()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.003"/>
+  <testcase name="compareYearFieldBiggerAscending()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.001"/>
+  <testcase name="nameOfComparisonField()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.0"/>
+  <testcase name="compareMonthFieldBiggerAscending()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.001"/>
+  <testcase name="compareTypeFieldBiggerAscending()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.001"/>
+  <testcase name="compareStringFieldsBiggerAscending()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.001"/>
+  <testcase name="compareTypeFieldIdentity()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.0"/>
+  <testcase name="compareStringFieldsIdentity()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.0"/>
+  <testcase name="nameOfComparisonFieldAlias()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.001"/>
+  <testcase name="compareTypeFieldBiggerDescending()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.0"/>
+  <testcase name="compareYearFieldIdentity()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.001"/>
+  <testcase name="compareTypeFieldEquality()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.0"/>
+  <testcase name="compareStringFieldsEquality()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.001"/>
+  <testcase name="compareYearFieldEquality()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.001"/>
+  <testcase name="compareMonthFieldBiggerDescending()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.001"/>
+  <testcase name="compareYearFieldBiggerDescending()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.001"/>
+  <testcase name="compareMonthFieldIdentity()" classname="org.jabref.logic.bibtex.comparator.FieldComparatorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

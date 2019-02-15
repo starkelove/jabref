@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.model.entry.identifier.ISBNTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:26" hostname="n184-p67.eduroam.kth.se" time="0.004">
+  <properties/>
+  <testcase name="testIsValidFormat13Incorrect()" classname="org.jabref.model.entry.identifier.ISBNTest" time="0.0"/>
+  <testcase name="testIsValidChecksum10Correct()" classname="org.jabref.model.entry.identifier.ISBNTest" time="0.0"/>
+  <testcase name="testIsValidFormat10Incorrect()" classname="org.jabref.model.entry.identifier.ISBNTest" time="0.0"/>
+  <testcase name="testIsIsbn13Incorrect()" classname="org.jabref.model.entry.identifier.ISBNTest" time="0.0"/>
+  <testcase name="testIsValidChecksum13Correct()" classname="org.jabref.model.entry.identifier.ISBNTest" time="0.0"/>
+  <testcase name="testIsIsbn10Incorrect()" classname="org.jabref.model.entry.identifier.ISBNTest" time="0.0"/>
+  <testcase name="testIsIsbn10Correct()" classname="org.jabref.model.entry.identifier.ISBNTest" time="0.0"/>
+  <testcase name="testIsValidChecksum13Incorrect()" classname="org.jabref.model.entry.identifier.ISBNTest" time="0.0"/>
+  <testcase name="testIsValidFormat10Correct()" classname="org.jabref.model.entry.identifier.ISBNTest" time="0.001"/>
+  <testcase name="testIsValidChecksum10Incorrect()" classname="org.jabref.model.entry.identifier.ISBNTest" time="0.0"/>
+  <testcase name="testIsIsbn13Correct()" classname="org.jabref.model.entry.identifier.ISBNTest" time="0.0"/>
+  <testcase name="testIsValidFormat13Correct()" classname="org.jabref.model.entry.identifier.ISBNTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

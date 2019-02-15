@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ViewModelTableRowFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">ViewModelTableRowFactory.java</span></div><h1>ViewModelTableRowFactory.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.TableRow;
+import javafx.scene.control.TableView;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.TreeTableCell;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseDragEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.util.Callback;
+
+import org.jabref.model.strings.StringUtil;
+
+import org.reactfx.util.TriConsumer;
+
+/**
+ * Constructs a {@link TreeTableCell} based on the view model of the row and a bunch of specified converter methods.
+ *
+ * @param &lt;S&gt; view model
+ */
+<span class="nc" id="L29">public class ViewModelTableRowFactory&lt;S&gt; implements Callback&lt;TableView&lt;S&gt;, TableRow&lt;S&gt;&gt; {</span>
+
+    private BiConsumer&lt;S, ? super MouseEvent&gt; onMouseClickedEvent;
+    private Function&lt;S, ContextMenu&gt; contextMenuFactory;
+    private TriConsumer&lt;TableRow&lt;S&gt;, S, ? super MouseEvent&gt; toOnDragDetected;
+    private BiConsumer&lt;S, ? super DragEvent&gt; toOnDragDropped;
+    private BiConsumer&lt;S, ? super DragEvent&gt; toOnDragEntered;
+    private BiConsumer&lt;S, ? super DragEvent&gt; toOnDragExited;
+    private BiConsumer&lt;S, ? super DragEvent&gt; toOnDragOver;
+    private TriConsumer&lt;TableRow&lt;S&gt;, S, ? super MouseDragEvent&gt; toOnMouseDragEntered;
+    private Callback&lt;S, String&gt; toTooltip;
+
+    public ViewModelTableRowFactory&lt;S&gt; withOnMouseClickedEvent(BiConsumer&lt;S, ? super MouseEvent&gt; onMouseClickedEvent) {
+<span class="nc" id="L42">        this.onMouseClickedEvent = onMouseClickedEvent;</span>
+<span class="nc" id="L43">        return this;</span>
+    }
+
+    public ViewModelTableRowFactory&lt;S&gt; withContextMenu(Function&lt;S, ContextMenu&gt; contextMenuFactory) {
+<span class="nc" id="L47">        this.contextMenuFactory = contextMenuFactory;</span>
+<span class="nc" id="L48">        return this;</span>
+    }
+
+    public ViewModelTableRowFactory&lt;S&gt; setOnDragDetected(TriConsumer&lt;TableRow&lt;S&gt;, S, ? super MouseEvent&gt; toOnDragDetected) {
+<span class="nc" id="L52">        this.toOnDragDetected = toOnDragDetected;</span>
+<span class="nc" id="L53">        return this;</span>
+    }
+
+    public ViewModelTableRowFactory&lt;S&gt; setOnDragDetected(BiConsumer&lt;S, ? super MouseEvent&gt; toOnDragDetected) {
+<span class="nc" id="L57">        this.toOnDragDetected = (row, viewModel, event) -&gt; toOnDragDetected.accept(viewModel, event);</span>
+<span class="nc" id="L58">        return this;</span>
+    }
+
+    public ViewModelTableRowFactory&lt;S&gt; setOnDragDropped(BiConsumer&lt;S, ? super DragEvent&gt; toOnDragDropped) {
+<span class="nc" id="L62">        this.toOnDragDropped = toOnDragDropped;</span>
+<span class="nc" id="L63">        return this;</span>
+    }
+
+    public ViewModelTableRowFactory&lt;S&gt; setOnDragEntered(BiConsumer&lt;S, ? super DragEvent&gt; toOnDragEntered) {
+<span class="nc" id="L67">        this.toOnDragEntered = toOnDragEntered;</span>
+<span class="nc" id="L68">        return this;</span>
+    }
+
+    public ViewModelTableRowFactory&lt;S&gt; setOnMouseDragEntered(BiConsumer&lt;S, ? super MouseDragEvent&gt; toOnDragEntered) {
+<span class="nc" id="L72">        this.toOnMouseDragEntered = (row, viewModel, event) -&gt; toOnDragEntered.accept(viewModel, event);</span>
+<span class="nc" id="L73">        return this;</span>
+    }
+
+    public ViewModelTableRowFactory&lt;S&gt; setOnMouseDragEntered(TriConsumer&lt;TableRow&lt;S&gt;, S, ? super MouseDragEvent&gt; toOnDragEntered) {
+<span class="nc" id="L77">        this.toOnMouseDragEntered = toOnDragEntered;</span>
+<span class="nc" id="L78">        return this;</span>
+    }
+
+    public ViewModelTableRowFactory&lt;S&gt; setOnDragExited(BiConsumer&lt;S, ? super DragEvent&gt; toOnDragExited) {
+<span class="nc" id="L82">        this.toOnDragExited = toOnDragExited;</span>
+<span class="nc" id="L83">        return this;</span>
+    }
+
+    public ViewModelTableRowFactory&lt;S&gt; setOnDragOver(BiConsumer&lt;S, ? super DragEvent&gt; toOnDragOver) {
+<span class="nc" id="L87">        this.toOnDragOver = toOnDragOver;</span>
+<span class="nc" id="L88">        return this;</span>
+    }
+
+    public ViewModelTableRowFactory&lt;S&gt; withTooltip(Callback&lt;S, String&gt; toTooltip) {
+<span class="nc" id="L92">        this.toTooltip = toTooltip;</span>
+<span class="nc" id="L93">        return this;</span>
+    }
+
+    @Override
+    public TableRow&lt;S&gt; call(TableView&lt;S&gt; tableView) {
+<span class="nc" id="L98">        TableRow&lt;S&gt; row = new TableRow&lt;&gt;();</span>
+
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        if (toTooltip != null) {</span>
+<span class="nc" id="L101">            String tooltipText = toTooltip.call(row.getItem());</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            if (StringUtil.isNotBlank(tooltipText)) {</span>
+<span class="nc" id="L103">                row.setTooltip(new Tooltip(tooltipText));</span>
+            }
+        }
+
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (onMouseClickedEvent != null) {</span>
+<span class="nc" id="L108">            row.setOnMouseClicked(event -&gt; {</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">                if (!row.isEmpty()) {</span>
+<span class="nc" id="L110">                    onMouseClickedEvent.accept(row.getItem(), event);</span>
+                }
+<span class="nc" id="L112">            });</span>
+        }
+
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        if (contextMenuFactory != null) {</span>
+            // We only create the context menu when really necessary
+<span class="nc" id="L117">            row.setOnContextMenuRequested(event -&gt; {</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                if (!row.isEmpty()) {</span>
+<span class="nc" id="L119">                    row.setContextMenu(contextMenuFactory.apply(row.getItem()));</span>
+<span class="nc" id="L120">                    row.getContextMenu().show(row, event.getScreenX(), event.getScreenY());</span>
+                }
+<span class="nc" id="L122">                event.consume();</span>
+<span class="nc" id="L123">            });</span>
+
+            // Activate context menu if user presses the &quot;context menu&quot; key
+<span class="nc" id="L126">            tableView.addEventHandler(KeyEvent.KEY_RELEASED, event -&gt; {</span>
+<span class="nc bnc" id="L127" title="All 4 branches missed.">                boolean rowFocused = !row.isEmpty() &amp;&amp; tableView.getFocusModel().getFocusedIndex() == row.getIndex();</span>
+<span class="nc bnc" id="L128" title="All 4 branches missed.">                if (event.getCode() == KeyCode.CONTEXT_MENU &amp;&amp; rowFocused) {</span>
+                    // Get center of focused cell
+<span class="nc" id="L130">                    Bounds anchorBounds = row.getBoundsInParent();</span>
+<span class="nc" id="L131">                    double x = anchorBounds.getMinX() + anchorBounds.getWidth() / 2;</span>
+<span class="nc" id="L132">                    double y = anchorBounds.getMinY() + anchorBounds.getHeight() / 2;</span>
+<span class="nc" id="L133">                    Point2D screenPosition = row.getParent().localToScreen(x, y);</span>
+
+<span class="nc bnc" id="L135" title="All 2 branches missed.">                    if (row.getContextMenu() == null) {</span>
+<span class="nc" id="L136">                        row.setContextMenu(contextMenuFactory.apply(row.getItem()));</span>
+                    }
+<span class="nc" id="L138">                    row.getContextMenu().show(row, screenPosition.getX(), screenPosition.getY());</span>
+                }
+<span class="nc" id="L140">            });</span>
+        }
+
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (toOnDragDetected != null) {</span>
+<span class="nc" id="L144">            row.setOnDragDetected(event -&gt; {</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">                if (!row.isEmpty()) {</span>
+<span class="nc" id="L146">                    toOnDragDetected.accept(row, row.getItem(), event);</span>
+                }
+<span class="nc" id="L148">            });</span>
+        }
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (toOnDragDropped != null) {</span>
+<span class="nc" id="L151">            row.setOnDragDropped(event -&gt; {</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">                if (!row.isEmpty()) {</span>
+<span class="nc" id="L153">                    toOnDragDropped.accept(row.getItem(), event);</span>
+                }
+<span class="nc" id="L155">            });</span>
+        }
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        if (toOnDragEntered != null) {</span>
+<span class="nc" id="L158">            row.setOnDragEntered(event -&gt; {</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">                if (!row.isEmpty()) {</span>
+<span class="nc" id="L160">                    toOnDragEntered.accept(row.getItem(), event);</span>
+                }
+<span class="nc" id="L162">            });</span>
+        }
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (toOnDragExited != null) {</span>
+<span class="nc" id="L165">            row.setOnDragExited(event -&gt; {</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">                if (!row.isEmpty()) {</span>
+<span class="nc" id="L167">                    toOnDragExited.accept(row.getItem(), event);</span>
+                }
+<span class="nc" id="L169">            });</span>
+        }
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (toOnDragOver != null) {</span>
+<span class="nc" id="L172">            row.setOnDragOver(event -&gt; {</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">                if (!row.isEmpty()) {</span>
+<span class="nc" id="L174">                    toOnDragOver.accept(row.getItem(), event);</span>
+                }
+<span class="nc" id="L176">            });</span>
+        }
+
+<span class="nc bnc" id="L179" title="All 2 branches missed.">        if (toOnMouseDragEntered != null) {</span>
+<span class="nc" id="L180">            row.setOnMouseDragEntered(event -&gt; {</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">                if (!row.isEmpty()) {</span>
+<span class="nc" id="L182">                    toOnMouseDragEntered.accept(row, row.getItem(), event);</span>
+                }
+<span class="nc" id="L184">            });</span>
+        }
+<span class="nc" id="L186">        return row;</span>
+    }
+
+    public void install(TableView&lt;S&gt; table) {
+<span class="nc" id="L190">        table.setRowFactory(this);</span>
+<span class="nc" id="L191">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

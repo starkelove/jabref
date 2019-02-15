@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupDescriptions.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.groups</a> &gt; <span class="el_source">GroupDescriptions.java</span></div><h1>GroupDescriptions.java</h1><pre class="source lang-java linenums">package org.jabref.gui.groups;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.groups.ExplicitGroup;
+import org.jabref.model.groups.KeywordGroup;
+import org.jabref.model.groups.SearchGroup;
+import org.jabref.model.strings.StringUtil;
+
+public class GroupDescriptions {
+
+    private GroupDescriptions() {
+    }
+
+    public static String getDescriptionForPreview(String field, String expr, boolean caseSensitive, boolean regExp) {
+<span class="nc bnc" id="L15" title="All 2 branches missed.">        String header = regExp ? Localization.lang(</span>
+                &quot;This group contains entries whose &lt;b&gt;%0&lt;/b&gt; field contains the regular expression &lt;b&gt;%1&lt;/b&gt;&quot;,
+<span class="nc" id="L17">                field, StringUtil.quoteForHTML(expr)) : Localization.lang(</span>
+                        &quot;This group contains entries whose &lt;b&gt;%0&lt;/b&gt; field contains the keyword &lt;b&gt;%1&lt;/b&gt;&quot;,
+<span class="nc" id="L19">                        field, StringUtil.quoteForHTML(expr));</span>
+<span class="nc bnc" id="L20" title="All 2 branches missed.">        String caseSensitiveText = caseSensitive ? Localization.lang(&quot;case sensitive&quot;) : Localization</span>
+<span class="nc" id="L21">                .lang(&quot;case insensitive&quot;);</span>
+<span class="nc bnc" id="L22" title="All 2 branches missed.">        String footer = regExp ? Localization</span>
+<span class="nc" id="L23">                .lang(&quot;Entries cannot be manually assigned to or removed from this group.&quot;) : Localization.lang(</span>
+                        &quot;Additionally, entries whose &lt;b&gt;%0&lt;/b&gt; field does not contain &quot;
+                                + &quot;&lt;b&gt;%1&lt;/b&gt; can be assigned manually to this group by selecting them &quot;
+                                + &quot;then using either drag and drop or the context menu. &quot;
+                                + &quot;This process adds the term &lt;b&gt;%1&lt;/b&gt; to &quot;
+                                + &quot;each entry's &lt;b&gt;%0&lt;/b&gt; field. &quot;
+                                + &quot;Entries can be removed manually from this group by selecting them &quot;
+                                + &quot;then using the context menu. &quot;
+                                + &quot;This process removes the term &lt;b&gt;%1&lt;/b&gt; from &quot;
+                                + &quot;each entry's &lt;b&gt;%0&lt;/b&gt; field.&quot;,
+<span class="nc" id="L33">                        field, StringUtil.quoteForHTML(expr));</span>
+<span class="nc" id="L34">        return String.format(&quot;%s (%s). %s&quot;, header, caseSensitiveText, footer);</span>
+    }
+
+    public static String getShortDescriptionKeywordGroup(KeywordGroup keywordGroup, boolean showDynamic) {
+<span class="nc" id="L38">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L39">        sb.append(&quot;&lt;b&gt;&quot;);</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        if (showDynamic) {</span>
+<span class="nc" id="L41">            sb.append(&quot;&lt;i&gt;&quot;).append(StringUtil.quoteForHTML(keywordGroup.getName())).append(&quot;&lt;/i&gt;&quot;);</span>
+        } else {
+<span class="nc" id="L43">            sb.append(StringUtil.quoteForHTML(keywordGroup.getName()));</span>
+        }
+<span class="nc" id="L45">        sb.append(&quot;&lt;/b&gt; - &quot;);</span>
+<span class="nc" id="L46">        sb.append(Localization.lang(&quot;dynamic group&quot;));</span>
+<span class="nc" id="L47">        sb.append(&quot; &lt;b&gt;&quot;);</span>
+<span class="nc" id="L48">        sb.append(keywordGroup.getSearchField());</span>
+<span class="nc" id="L49">        sb.append(&quot;&lt;/b&gt; &quot;);</span>
+<span class="nc" id="L50">        sb.append(Localization.lang(&quot;contains&quot;));</span>
+<span class="nc" id="L51">        sb.append(&quot; &lt;b&gt;&quot;);</span>
+<span class="nc" id="L52">        sb.append(StringUtil.quoteForHTML(keywordGroup.getSearchExpression()));</span>
+<span class="nc" id="L53">        sb.append(&quot;&lt;/b&gt;)&quot;);</span>
+<span class="nc bnc" id="L54" title="All 3 branches missed.">        switch (keywordGroup.getHierarchicalContext()) {</span>
+        case INCLUDING:
+<span class="nc" id="L56">            sb.append(&quot;, &quot;).append(Localization.lang(&quot;includes subgroups&quot;));</span>
+<span class="nc" id="L57">            break;</span>
+        case REFINING:
+<span class="nc" id="L59">            sb.append(&quot;, &quot;).append(Localization.lang(&quot;refines supergroup&quot;));</span>
+<span class="nc" id="L60">            break;</span>
+        default:
+            break;
+        }
+<span class="nc" id="L64">        return sb.toString();</span>
+
+    }
+
+    public static String getDescriptionForPreview() {
+<span class="nc" id="L69">        return Localization.lang(&quot;This group contains entries based on manual assignment. &quot;</span>
+                + &quot;Entries can be assigned to this group by selecting them &quot;
+                + &quot;then using either drag and drop or the context menu. &quot;
+                + &quot;Entries can be removed from this group by selecting them &quot;
+                + &quot;then using the context menu.&quot;);
+    }
+
+    public static String getShortDescriptionExplicitGroup(ExplicitGroup explicitGroup) {
+<span class="nc" id="L77">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L78">        sb.append(&quot;&lt;b&gt;&quot;).append(explicitGroup.getName()).append(&quot;&lt;/b&gt; - &quot;).append(Localization.lang(&quot;static group&quot;));</span>
+<span class="nc bnc" id="L79" title="All 3 branches missed.">        switch (explicitGroup.getHierarchicalContext()) {</span>
+        case INCLUDING:
+<span class="nc" id="L81">            sb.append(&quot;, &quot;).append(Localization.lang(&quot;includes subgroups&quot;));</span>
+<span class="nc" id="L82">            break;</span>
+        case REFINING:
+<span class="nc" id="L84">            sb.append(&quot;, &quot;).append(Localization.lang(&quot;refines supergroup&quot;));</span>
+<span class="nc" id="L85">            break;</span>
+        default:
+            break;
+        }
+<span class="nc" id="L89">        return sb.toString();</span>
+    }
+
+    public static String getShortDescriptionAllEntriesGroup() {
+<span class="nc" id="L93">        return Localization.lang(&quot;&lt;b&gt;All Entries&lt;/b&gt; (this group cannot be edited or removed)&quot;);</span>
+    }
+
+    public static String getShortDescription(SearchGroup searchGroup, boolean showDynamic) {
+<span class="nc" id="L97">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L98">        sb.append(&quot;&lt;b&gt;&quot;);</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (showDynamic) {</span>
+<span class="nc" id="L100">            sb.append(&quot;&lt;i&gt;&quot;).append(StringUtil.quoteForHTML(searchGroup.getName())).append(&quot;&lt;/i&gt;&quot;);</span>
+        } else {
+<span class="nc" id="L102">            sb.append(StringUtil.quoteForHTML(searchGroup.getName()));</span>
+        }
+<span class="nc" id="L104">        sb.append(&quot;&lt;/b&gt; - &quot;);</span>
+<span class="nc" id="L105">        sb.append(Localization.lang(&quot;dynamic group&quot;));</span>
+<span class="nc" id="L106">        sb.append(&quot; (&quot;);</span>
+<span class="nc" id="L107">        sb.append(Localization.lang(&quot;search expression&quot;));</span>
+<span class="nc" id="L108">        sb.append(&quot; &lt;b&gt;&quot;).append(StringUtil.quoteForHTML(searchGroup.getSearchExpression())).append(&quot;&lt;/b&gt;)&quot;);</span>
+<span class="nc bnc" id="L109" title="All 3 branches missed.">        switch (searchGroup.getHierarchicalContext()) {</span>
+        case INCLUDING:
+<span class="nc" id="L111">            sb.append(&quot;, &quot;).append(Localization.lang(&quot;includes subgroups&quot;));</span>
+<span class="nc" id="L112">            break;</span>
+        case REFINING:
+<span class="nc" id="L114">            sb.append(&quot;, &quot;).append(Localization.lang(&quot;refines supergroup&quot;));</span>
+<span class="nc" id="L115">            break;</span>
+        default:
+            break;
+        }
+<span class="nc" id="L119">        return sb.toString();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

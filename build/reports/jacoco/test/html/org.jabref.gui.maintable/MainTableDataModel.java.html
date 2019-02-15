@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MainTableDataModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.maintable</a> &gt; <span class="el_source">MainTableDataModel.java</span></div><h1>MainTableDataModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.maintable;
+
+import java.util.List;
+import java.util.Optional;
+
+import javafx.beans.binding.Bindings;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
+
+import org.jabref.Globals;
+import org.jabref.gui.groups.GroupViewMode;
+import org.jabref.gui.util.BindingsHelper;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.groups.GroupTreeNode;
+import org.jabref.model.search.matchers.MatcherSet;
+import org.jabref.model.search.matchers.MatcherSets;
+
+public class MainTableDataModel {
+    private final FilteredList&lt;BibEntryTableViewModel&gt; entriesFiltered;
+    private final SortedList&lt;BibEntryTableViewModel&gt; entriesSorted;
+
+<span class="nc" id="L24">    public MainTableDataModel(BibDatabaseContext context) {</span>
+<span class="nc" id="L25">        ObservableList&lt;BibEntry&gt; allEntries = context.getDatabase().getEntries();</span>
+
+<span class="nc" id="L27">        ObservableList&lt;BibEntryTableViewModel&gt; entriesViewModel = BindingsHelper.mapBacked(allEntries, BibEntryTableViewModel::new);</span>
+
+<span class="nc" id="L29">        entriesFiltered = new FilteredList&lt;&gt;(entriesViewModel);</span>
+<span class="nc" id="L30">        entriesFiltered.predicateProperty().bind(</span>
+<span class="nc" id="L31">                Bindings.createObjectBinding(() -&gt; this::isMatched,</span>
+<span class="nc" id="L32">                        Globals.stateManager.activeGroupProperty(), Globals.stateManager.activeSearchQueryProperty())</span>
+        );
+
+        // We need to wrap the list since otherwise sorting in the table does not work
+<span class="nc" id="L36">        entriesSorted = new SortedList&lt;&gt;(entriesFiltered);</span>
+<span class="nc" id="L37">    }</span>
+
+    private boolean isMatched(BibEntryTableViewModel entry) {
+<span class="nc bnc" id="L40" title="All 4 branches missed.">        return isMatchedByGroup(entry) &amp;&amp; isMatchedBySearch(entry);</span>
+    }
+
+    private boolean isMatchedBySearch(BibEntryTableViewModel entry) {
+<span class="nc" id="L44">        return Globals.stateManager.activeSearchQueryProperty().getValue()</span>
+<span class="nc" id="L45">                .map(matcher -&gt; matcher.isMatch(entry.getEntry()))</span>
+<span class="nc" id="L46">                .orElse(true);</span>
+    }
+
+    private boolean isMatchedByGroup(BibEntryTableViewModel entry) {
+<span class="nc" id="L50">        return createGroupMatcher(Globals.stateManager.activeGroupProperty().getValue())</span>
+<span class="nc" id="L51">                .map(matcher -&gt; matcher.isMatch(entry.getEntry()))</span>
+<span class="nc" id="L52">                .orElse(true);</span>
+    }
+
+    private Optional&lt;MatcherSet&gt; createGroupMatcher(List&lt;GroupTreeNode&gt; selectedGroups) {
+<span class="nc bnc" id="L56" title="All 4 branches missed.">        if ((selectedGroups == null) || selectedGroups.isEmpty()) {</span>
+            // No selected group, show all entries
+<span class="nc" id="L58">            return Optional.empty();</span>
+        }
+
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        final MatcherSet searchRules = MatcherSets.build(Globals.prefs.getGroupViewMode() == GroupViewMode.INTERSECTION ? MatcherSets.MatcherType.AND : MatcherSets.MatcherType.OR);</span>
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        for (GroupTreeNode node : selectedGroups) {</span>
+<span class="nc" id="L64">            searchRules.addRule(node.getSearchMatcher());</span>
+<span class="nc" id="L65">        }</span>
+<span class="nc" id="L66">        return Optional.of(searchRules);</span>
+    }
+
+    public SortedList&lt;BibEntryTableViewModel&gt; getEntriesFilteredAndSorted() {
+<span class="nc" id="L70">        return entriesSorted;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

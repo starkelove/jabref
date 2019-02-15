@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NameFormatterTab.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.preferences</a> &gt; <span class="el_source">NameFormatterTab.java</span></div><h1>NameFormatterTab.java</h1><pre class="source lang-java linenums">package org.jabref.gui.preferences;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+
+import org.jabref.gui.help.HelpAction;
+import org.jabref.logic.help.HelpFile;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.layout.format.NameFormatter;
+import org.jabref.preferences.JabRefPreferences;
+
+public class NameFormatterTab extends Pane implements PrefsTab {
+
+    private final JabRefPreferences prefs;
+    private boolean tableChanged;
+    private final TableView table;
+<span class="nc" id="L35">    private final GridPane builder = new GridPane();</span>
+<span class="nc" id="L36">    private final List&lt;TableRow&gt; tableRows = new ArrayList&lt;&gt;(10);</span>
+<span class="nc" id="L37">    private final ObservableList&lt;TableRow&gt; data = FXCollections.observableArrayList();</span>
+
+    public static class TableRow {
+        private SimpleStringProperty name;
+        private SimpleStringProperty format;
+
+        TableRow() {
+<span class="nc" id="L44">            this(&quot;&quot;);</span>
+<span class="nc" id="L45">        }</span>
+
+        TableRow(String name) {
+<span class="nc" id="L48">            this(name, NameFormatter.DEFAULT_FORMAT);</span>
+<span class="nc" id="L49">        }</span>
+
+<span class="nc" id="L51">        TableRow(String name, String format) {</span>
+<span class="nc" id="L52">            this.name = new SimpleStringProperty(name);</span>
+<span class="nc" id="L53">            this.format = new SimpleStringProperty(format);</span>
+<span class="nc" id="L54">        }</span>
+
+        public String getName() {
+<span class="nc" id="L57">            return name.get();</span>
+        }
+
+        public void setName(String name) {
+<span class="nc" id="L61">            this.name.set(name);</span>
+<span class="nc" id="L62">        }</span>
+
+        public String getFormat() {
+<span class="nc" id="L65">            return format.get();</span>
+        }
+
+        public void setFormat(String format) {
+<span class="nc" id="L69">            this.format.set(format);</span>
+<span class="nc" id="L70">        }</span>
+    }
+
+    /**
+     * Tab to create custom Name Formatters
+     *
+     */
+<span class="nc" id="L77">    public NameFormatterTab(JabRefPreferences prefs) {</span>
+<span class="nc" id="L78">        this.prefs = Objects.requireNonNull(prefs);</span>
+
+<span class="nc" id="L80">        TableColumn&lt;TableRow,String&gt; firstCol = new TableColumn&lt;&gt;(Localization.lang(&quot;Formatter name&quot;));</span>
+<span class="nc" id="L81">        TableColumn&lt;TableRow,String&gt; lastCol = new TableColumn&lt;&gt;(Localization.lang(&quot;Format string&quot;));</span>
+<span class="nc" id="L82">        table = new TableView();</span>
+<span class="nc" id="L83">        table.setEditable(true);</span>
+<span class="nc" id="L84">        firstCol.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;name&quot;));</span>
+<span class="nc" id="L85">        firstCol.setCellFactory(TextFieldTableCell.forTableColumn());</span>
+<span class="nc" id="L86">        firstCol.setOnEditCommit(</span>
+                (TableColumn.CellEditEvent&lt;TableRow, String&gt; t) -&gt; {
+<span class="nc" id="L88">                    t.getTableView().getItems().get(</span>
+<span class="nc" id="L89">                            t.getTablePosition().getRow()).setName(t.getNewValue());</span>
+<span class="nc" id="L90">                });</span>
+<span class="nc" id="L91">        lastCol.setCellValueFactory(new PropertyValueFactory&lt;&gt;(&quot;format&quot;));</span>
+<span class="nc" id="L92">        lastCol.setCellFactory(TextFieldTableCell.forTableColumn());</span>
+<span class="nc" id="L93">        lastCol.setOnEditCommit(</span>
+                (TableColumn.CellEditEvent&lt;TableRow, String&gt; t) -&gt; {
+<span class="nc" id="L95">                    t.getTableView().getItems().get(</span>
+<span class="nc" id="L96">                            t.getTablePosition().getRow()).setFormat(t.getNewValue());</span>
+<span class="nc" id="L97">                });</span>
+<span class="nc" id="L98">        firstCol.setPrefWidth(140);</span>
+<span class="nc" id="L99">        lastCol.setPrefWidth(200);</span>
+<span class="nc" id="L100">        table.setItems(data);</span>
+<span class="nc" id="L101">        table.getColumns().addAll(firstCol, lastCol);</span>
+<span class="nc" id="L102">        final TextField addName = new TextField();</span>
+<span class="nc" id="L103">        addName.setPromptText(&quot;name&quot;);</span>
+<span class="nc" id="L104">        addName.setMaxWidth(100);</span>
+<span class="nc" id="L105">        final TextField addLast = new TextField();</span>
+<span class="nc" id="L106">        addLast.setMaxWidth(100);</span>
+<span class="nc" id="L107">        addLast.setPromptText(&quot;format&quot;);</span>
+
+<span class="nc" id="L109">        BorderPane tabPanel = new BorderPane();</span>
+<span class="nc" id="L110">        ScrollPane scrollPane = new ScrollPane();</span>
+<span class="nc" id="L111">        scrollPane.setMaxHeight(400);</span>
+<span class="nc" id="L112">        scrollPane.setMaxWidth(360);</span>
+<span class="nc" id="L113">        scrollPane.setContent(table);</span>
+<span class="nc" id="L114">        tabPanel.setCenter(scrollPane);</span>
+
+<span class="nc" id="L116">        Label insertRows = new Label(Localization.lang(&quot;Insert rows&quot;));</span>
+<span class="nc" id="L117">        insertRows.setVisible(false);</span>
+<span class="nc" id="L118">        Button add = new Button(&quot;Insert&quot;);</span>
+<span class="nc" id="L119">        add.setOnAction(e-&gt; {</span>
+<span class="nc bnc" id="L120" title="All 4 branches missed.">            if (!addName.getText().isEmpty() &amp;&amp; !addLast.getText().isEmpty()) {</span>
+<span class="nc" id="L121">                TableRow tableRow = new TableRow(addName.getText(), addLast.getText());</span>
+<span class="nc" id="L122">                addName.clear();</span>
+<span class="nc" id="L123">                addLast.clear();</span>
+<span class="nc" id="L124">                data.add(tableRow);</span>
+<span class="nc" id="L125">                tableRows.add(tableRow);</span>
+<span class="nc" id="L126">                table.setItems(data);</span>
+<span class="nc" id="L127">                tableChanged = true;</span>
+<span class="nc" id="L128">                table.refresh();</span>
+            }
+<span class="nc" id="L130">        });</span>
+<span class="nc" id="L131">        Label deleteRows = new Label(Localization.lang(&quot;Delete rows&quot;));</span>
+<span class="nc" id="L132">        deleteRows.setVisible(false);</span>
+<span class="nc" id="L133">        Button delete = new Button(&quot;Delete&quot;);</span>
+<span class="nc" id="L134">        delete.setOnAction(e-&gt; {</span>
+<span class="nc bnc" id="L135" title="All 4 branches missed.">            if (table.getFocusModel() != null &amp;&amp; table.getFocusModel().getFocusedIndex() != -1) {</span>
+<span class="nc" id="L136">                tableChanged = true;</span>
+<span class="nc" id="L137">                int row = table.getFocusModel().getFocusedIndex();</span>
+<span class="nc" id="L138">                TableRow tableRow = tableRows.get(row);</span>
+<span class="nc" id="L139">                tableRows.remove(tableRow);</span>
+<span class="nc" id="L140">                data.remove(tableRow);</span>
+<span class="nc" id="L141">                table.setItems(data);</span>
+<span class="nc" id="L142">                table.refresh();</span>
+<span class="nc" id="L143">            }});</span>
+<span class="nc" id="L144">        Button help = new Button(&quot;?&quot;);</span>
+<span class="nc" id="L145">        help.setOnAction(e-&gt; new HelpAction(Localization.lang(&quot;Help on Name Formatting&quot;),</span>
+<span class="nc" id="L146">                HelpFile.CUSTOM_EXPORTS_NAME_FORMATTER).getHelpButton().doClick());</span>
+<span class="nc" id="L147">        HBox toolbar = new HBox();</span>
+<span class="nc" id="L148">        toolbar.getChildren().addAll(addName, addLast,add,delete,help);</span>
+<span class="nc" id="L149">        tabPanel.setBottom(toolbar);</span>
+
+<span class="nc" id="L151">        Label specialNameFormatters = new Label(Localization.lang(&quot;Special name formatters&quot;));</span>
+<span class="nc" id="L152">        specialNameFormatters.getStyleClass().add(&quot;sectionHeader&quot;);</span>
+<span class="nc" id="L153">        builder.add(specialNameFormatters, 1, 1);</span>
+<span class="nc" id="L154">        builder.add(tabPanel, 1, 2);</span>
+<span class="nc" id="L155">    }</span>
+
+    public Node getBuilder() {
+<span class="nc" id="L158">        return builder;</span>
+    }
+
+    @Override
+    public void setValues() {
+<span class="nc" id="L163">        tableRows.clear();</span>
+<span class="nc" id="L164">        List&lt;String&gt; names = prefs.getStringList(JabRefPreferences.NAME_FORMATER_KEY);</span>
+<span class="nc" id="L165">        List&lt;String&gt; formats = prefs.getStringList(JabRefPreferences.NAME_FORMATTER_VALUE);</span>
+
+<span class="nc bnc" id="L167" title="All 2 branches missed.">        for (int i = 0; i &lt; names.size(); i++) {</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">            if (i &lt; formats.size()) {</span>
+<span class="nc" id="L169">                tableRows.add(new TableRow(names.get(i), formats.get(i)));</span>
+            } else {
+<span class="nc" id="L171">                tableRows.add(new TableRow(names.get(i)));</span>
+            }
+        }
+<span class="nc" id="L174">    }</span>
+
+    /**
+     * Store changes to table preferences. This method is called when the user
+     * clicks Ok.
+     *
+     */
+    @Override
+    public void storeSettings() {
+
+        // Now we need to make sense of the contents the user has made to the
+        // table setup table.
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        if (tableChanged) {</span>
+            // First we remove all rows with empty names.
+<span class="nc" id="L188">            int i = 0;</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">            while (i &lt; tableRows.size()) {</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">                if (tableRows.get(i).getName().isEmpty()) {</span>
+<span class="nc" id="L191">                    tableRows.remove(i);</span>
+                } else {
+<span class="nc" id="L193">                    i++;</span>
+                }
+            }
+            // Then we make lists
+
+<span class="nc" id="L198">            List&lt;String&gt; names = new ArrayList&lt;&gt;(tableRows.size());</span>
+<span class="nc" id="L199">            List&lt;String&gt; formats = new ArrayList&lt;&gt;(tableRows.size());</span>
+
+<span class="nc bnc" id="L201" title="All 2 branches missed.">            for (TableRow tr : tableRows) {</span>
+<span class="nc" id="L202">                names.add(tr.getName());</span>
+<span class="nc" id="L203">                formats.add(tr.getFormat());</span>
+<span class="nc" id="L204">            }</span>
+
+            // Finally, we store the new preferences.
+<span class="nc" id="L207">            prefs.putStringList(JabRefPreferences.NAME_FORMATER_KEY, names);</span>
+<span class="nc" id="L208">            prefs.putStringList(JabRefPreferences.NAME_FORMATTER_VALUE, formats);</span>
+        }
+<span class="nc" id="L210">    }</span>
+
+    @Override
+    public boolean validateSettings() {
+<span class="nc" id="L214">        return true;</span>
+    }
+
+    @Override
+    public String getTabName() {
+<span class="nc" id="L219">        return Localization.lang(&quot;Name formatter&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

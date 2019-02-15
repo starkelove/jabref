@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.exporter.XmpExporterTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:48" hostname="n184-p67.eduroam.kth.se" time="0.091">
+  <properties/>
+  <testcase name="exportSingleEntryWithPrivacyFilter(Path)" classname="org.jabref.logic.exporter.XmpExporterTest" time="0.064"/>
+  <testcase name="writeMultipleEntriesInDifferentFiles(Path)" classname="org.jabref.logic.exporter.XmpExporterTest" time="0.014"/>
+  <testcase name="writeMultipleEntriesInASingleFile(Path)" classname="org.jabref.logic.exporter.XmpExporterTest" time="0.005"/>
+  <testcase name="exportSingleEntry(Path)" classname="org.jabref.logic.exporter.XmpExporterTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

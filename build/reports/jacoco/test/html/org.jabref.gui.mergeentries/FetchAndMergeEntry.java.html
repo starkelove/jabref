@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FetchAndMergeEntry.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.mergeentries</a> &gt; <span class="el_source">FetchAndMergeEntry.java</span></div><h1>FetchAndMergeEntry.java</h1><pre class="source lang-java linenums">package org.jabref.gui.mergeentries;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableChangeType;
+import org.jabref.gui.undo.UndoableFieldChange;
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.gui.util.TaskExecutor;
+import org.jabref.logic.importer.EntryBasedFetcher;
+import org.jabref.logic.importer.IdBasedFetcher;
+import org.jabref.logic.importer.WebFetcher;
+import org.jabref.logic.importer.WebFetchers;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.InternalBibtexFields;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Class for fetching and merging bibliographic information
+ */
+public class FetchAndMergeEntry {
+
+    // A list of all field which are supported
+<span class="nc" id="L36">    public static List&lt;String&gt; SUPPORTED_FIELDS = Arrays.asList(FieldName.DOI, FieldName.EPRINT, FieldName.ISBN);</span>
+<span class="nc" id="L37">    private static final Logger LOGGER = LoggerFactory.getLogger(FetchAndMergeEntry.class);</span>
+    private final BasePanel panel;
+    private final DialogService dialogService;
+    private final TaskExecutor taskExecutor;
+
+<span class="nc" id="L42">    public FetchAndMergeEntry(BasePanel panel, TaskExecutor taskExecutor) {</span>
+<span class="nc" id="L43">        this.dialogService = panel.frame().getDialogService();</span>
+<span class="nc" id="L44">        this.panel = panel;</span>
+<span class="nc" id="L45">        this.taskExecutor = taskExecutor;</span>
+<span class="nc" id="L46">    }</span>
+
+    public void fetchAndMerge(BibEntry entry) {
+<span class="nc" id="L49">        fetchAndMerge(entry, SUPPORTED_FIELDS);</span>
+<span class="nc" id="L50">    }</span>
+
+    public void fetchAndMerge(BibEntry entry, String field) {
+<span class="nc" id="L53">        fetchAndMerge(entry, Collections.singletonList(field));</span>
+<span class="nc" id="L54">    }</span>
+
+    public void fetchAndMerge(BibEntry entry, List&lt;String&gt; fields) {
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        for (String field : fields) {</span>
+<span class="nc" id="L58">            Optional&lt;String&gt; fieldContent = entry.getField(field);</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">            if (fieldContent.isPresent()) {</span>
+<span class="nc" id="L60">                Optional&lt;IdBasedFetcher&gt; fetcher = WebFetchers.getIdBasedFetcherForField(field, Globals.prefs.getImportFormatPreferences());</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">                if (fetcher.isPresent()) {</span>
+<span class="nc" id="L62">                    BackgroundTask.wrap(() -&gt; fetcher.get().performSearchById(fieldContent.get()))</span>
+<span class="nc" id="L63">                                  .onSuccess(fetchedEntry -&gt; {</span>
+<span class="nc" id="L64">                                      String type = FieldName.getDisplayName(field);</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">                                      if (fetchedEntry.isPresent()) {</span>
+<span class="nc" id="L66">                                          showMergeDialog(entry, fetchedEntry.get(), fetcher.get());</span>
+                                      } else {
+<span class="nc" id="L68">                                          panel.frame().setStatus(Localization.lang(&quot;Cannot get info based on given %0: %1&quot;, type, fieldContent.get()));</span>
+                                      }
+<span class="nc" id="L70">                                  })</span>
+<span class="nc" id="L71">                                  .onFailure(exception -&gt; {</span>
+<span class="nc" id="L72">                                      LOGGER.error(&quot;Error while fetching bibliographic information&quot;, exception);</span>
+<span class="nc" id="L73">                                      dialogService.showErrorDialogAndWait(exception);</span>
+<span class="nc" id="L74">                                  })</span>
+<span class="nc" id="L75">                                  .executeWith(Globals.TASK_EXECUTOR);</span>
+                }
+<span class="nc" id="L77">            } else {</span>
+<span class="nc" id="L78">                dialogService.notify(Localization.lang(&quot;No %0 found&quot;, FieldName.getDisplayName(field)));</span>
+            }
+<span class="nc" id="L80">        }</span>
+<span class="nc" id="L81">    }</span>
+
+    private void showMergeDialog(BibEntry originalEntry, BibEntry fetchedEntry, WebFetcher fetcher) {
+<span class="nc" id="L84">        MergeEntriesDialog dialog = new MergeEntriesDialog(originalEntry, fetchedEntry, panel.getBibDatabaseContext().getMode());</span>
+<span class="nc" id="L85">        dialog.setTitle(Localization.lang(&quot;Merge entry with %0 information&quot;, fetcher.getName()));</span>
+<span class="nc" id="L86">        dialog.setLeftHeaderText(Localization.lang(&quot;Original entry&quot;));</span>
+<span class="nc" id="L87">        dialog.setRightHeaderText(Localization.lang(&quot;Entry from %0&quot;, fetcher.getName()));</span>
+<span class="nc" id="L88">        Optional&lt;BibEntry&gt; mergedEntry = dialog.showAndWait();</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        if (mergedEntry.isPresent()) {</span>
+<span class="nc" id="L90">            NamedCompound ce = new NamedCompound(Localization.lang(&quot;Merge entry with %0 information&quot;, fetcher.getName()));</span>
+
+            // Updated the original entry with the new fields
+<span class="nc" id="L93">            Set&lt;String&gt; jointFields = new TreeSet&lt;&gt;(mergedEntry.get().getFieldNames());</span>
+<span class="nc" id="L94">            Set&lt;String&gt; originalFields = new TreeSet&lt;&gt;(originalEntry.getFieldNames());</span>
+<span class="nc" id="L95">            boolean edited = false;</span>
+
+            // entry type
+<span class="nc" id="L98">            String oldType = originalEntry.getType();</span>
+<span class="nc" id="L99">            String newType = mergedEntry.get().getType();</span>
+
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            if (!oldType.equalsIgnoreCase(newType)) {</span>
+<span class="nc" id="L102">                originalEntry.setType(newType);</span>
+<span class="nc" id="L103">                ce.addEdit(new UndoableChangeType(originalEntry, oldType, newType));</span>
+<span class="nc" id="L104">                edited = true;</span>
+            }
+
+            // fields
+<span class="nc bnc" id="L108" title="All 2 branches missed.">            for (String field : jointFields) {</span>
+<span class="nc" id="L109">                Optional&lt;String&gt; originalString = originalEntry.getField(field);</span>
+<span class="nc" id="L110">                Optional&lt;String&gt; mergedString = mergedEntry.get().getField(field);</span>
+<span class="nc bnc" id="L111" title="All 4 branches missed.">                if (!originalString.isPresent() || !originalString.equals(mergedString)) {</span>
+<span class="nc" id="L112">                    originalEntry.setField(field, mergedString.get()); // mergedString always present</span>
+<span class="nc" id="L113">                    ce.addEdit(new UndoableFieldChange(originalEntry, field, originalString.orElse(null),</span>
+<span class="nc" id="L114">                            mergedString.get()));</span>
+<span class="nc" id="L115">                    edited = true;</span>
+                }
+<span class="nc" id="L117">            }</span>
+
+            // Remove fields which are not in the merged entry, unless they are internal fields
+<span class="nc bnc" id="L120" title="All 2 branches missed.">            for (String field : originalFields) {</span>
+<span class="nc bnc" id="L121" title="All 4 branches missed.">                if (!jointFields.contains(field) &amp;&amp; !InternalBibtexFields.isInternalField(field)) {</span>
+<span class="nc" id="L122">                    Optional&lt;String&gt; originalString = originalEntry.getField(field);</span>
+<span class="nc" id="L123">                    originalEntry.clearField(field);</span>
+<span class="nc" id="L124">                    ce.addEdit(new UndoableFieldChange(originalEntry, field, originalString.get(), null)); // originalString always present</span>
+<span class="nc" id="L125">                    edited = true;</span>
+                }
+<span class="nc" id="L127">            }</span>
+
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            if (edited) {</span>
+<span class="nc" id="L130">                ce.end();</span>
+<span class="nc" id="L131">                panel.getUndoManager().addEdit(ce);</span>
+<span class="nc" id="L132">                dialogService.notify(Localization.lang(&quot;Updated entry with info from %0&quot;, fetcher.getName()));</span>
+            } else {
+<span class="nc" id="L134">                dialogService.notify(Localization.lang(&quot;No information added&quot;));</span>
+            }
+<span class="nc" id="L136">        } else {</span>
+<span class="nc" id="L137">            dialogService.notify(Localization.lang(&quot;Canceled merging entries&quot;));</span>
+        }
+<span class="nc" id="L139">    }</span>
+
+    public void fetchAndMerge(BibEntry entry, EntryBasedFetcher fetcher) {
+<span class="nc" id="L142">        BackgroundTask.wrap(() -&gt; fetcher.performSearch(entry).stream().findFirst())</span>
+<span class="nc" id="L143">                      .onSuccess(fetchedEntry -&gt; {</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">                          if (fetchedEntry.isPresent()) {</span>
+<span class="nc" id="L145">                              showMergeDialog(entry, fetchedEntry.get(), fetcher);</span>
+                          } else {
+<span class="nc" id="L147">                              dialogService.notify(Localization.lang(&quot;Could not find any bibliographic information.&quot;));</span>
+                          }
+<span class="nc" id="L149">                      })</span>
+<span class="nc" id="L150">                      .onFailure(exception -&gt; {</span>
+<span class="nc" id="L151">                          LOGGER.error(&quot;Error while fetching entry with &quot; + fetcher.getName(), exception);</span>
+<span class="nc" id="L152">                          dialogService.showErrorDialogAndWait(Localization.lang(&quot;Error while fetching from %0&quot;, fetcher.getName()), exception);</span>
+<span class="nc" id="L153">                      })</span>
+<span class="nc" id="L154">                      .executeWith(taskExecutor);</span>
+<span class="nc" id="L155">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

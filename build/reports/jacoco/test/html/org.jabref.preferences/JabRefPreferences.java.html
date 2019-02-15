@@ -1,0 +1,2052 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JabRefPreferences.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.preferences</a> &gt; <span class="el_source">JabRefPreferences.java</span></div><h1>JabRefPreferences.java</h1><pre class="source lang-java linenums">package org.jabref.preferences;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.InvalidPreferencesFormatException;
+import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javafx.scene.control.TableColumn.SortType;
+
+import org.jabref.Globals;
+import org.jabref.JabRefException;
+import org.jabref.JabRefMain;
+import org.jabref.gui.SidePaneType;
+import org.jabref.gui.autocompleter.AutoCompleteFirstNameMode;
+import org.jabref.gui.autocompleter.AutoCompletePreferences;
+import org.jabref.gui.desktop.JabRefDesktop;
+import org.jabref.gui.entryeditor.EntryEditorPreferences;
+import org.jabref.gui.entryeditor.EntryEditorTabList;
+import org.jabref.gui.entryeditor.FileDragDropPreferenceType;
+import org.jabref.gui.groups.GroupViewMode;
+import org.jabref.gui.keyboard.KeyBindingRepository;
+import org.jabref.gui.maintable.ColumnPreferences;
+import org.jabref.gui.maintable.MainTablePreferences;
+import org.jabref.gui.mergeentries.MergeEntries;
+import org.jabref.gui.preferences.ImportSettingsTab;
+import org.jabref.gui.util.ThemeLoader;
+import org.jabref.logic.bibtex.FieldContentParserPreferences;
+import org.jabref.logic.bibtex.LatexFieldFormatterPreferences;
+import org.jabref.logic.bibtexkeypattern.BibtexKeyPatternPreferences;
+import org.jabref.logic.citationstyle.CitationStyle;
+import org.jabref.logic.cleanup.CleanupPreferences;
+import org.jabref.logic.cleanup.CleanupPreset;
+import org.jabref.logic.cleanup.Cleanups;
+import org.jabref.logic.exporter.ExporterFactory;
+import org.jabref.logic.exporter.SavePreferences;
+import org.jabref.logic.exporter.TemplateExporter;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.fetcher.DoiFetcher;
+import org.jabref.logic.journals.JournalAbbreviationLoader;
+import org.jabref.logic.journals.JournalAbbreviationPreferences;
+import org.jabref.logic.l10n.Language;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.layout.LayoutFormatterPreferences;
+import org.jabref.logic.layout.format.FileLinkPreferences;
+import org.jabref.logic.layout.format.NameFormatterPreferences;
+import org.jabref.logic.net.ProxyPreferences;
+import org.jabref.logic.openoffice.OpenOfficePreferences;
+import org.jabref.logic.openoffice.StyleLoader;
+import org.jabref.logic.preferences.TimestampPreferences;
+import org.jabref.logic.protectedterms.ProtectedTermsList;
+import org.jabref.logic.protectedterms.ProtectedTermsLoader;
+import org.jabref.logic.protectedterms.ProtectedTermsPreferences;
+import org.jabref.logic.remote.RemotePreferences;
+import org.jabref.logic.shared.prefs.SharedDatabasePreferences;
+import org.jabref.logic.util.OS;
+import org.jabref.logic.util.UpdateFieldPreferences;
+import org.jabref.logic.util.Version;
+import org.jabref.logic.util.io.AutoLinkPreferences;
+import org.jabref.logic.util.io.FileHistory;
+import org.jabref.logic.xmp.XmpPreferences;
+import org.jabref.model.bibtexkeypattern.GlobalBibtexKeyPattern;
+import org.jabref.model.cleanup.FieldFormatterCleanups;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BibtexSingleField;
+import org.jabref.model.entry.CustomEntryType;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.InternalBibtexFields;
+import org.jabref.model.entry.specialfields.SpecialField;
+import org.jabref.model.metadata.FilePreferences;
+import org.jabref.model.metadata.SaveOrderConfig;
+import org.jabref.model.strings.StringUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class JabRefPreferences implements PreferencesService {
+
+    // Push to application preferences
+    public static final String EMACS_PATH = &quot;emacsPath&quot;;
+    public static final String EMACS_ADDITIONAL_PARAMETERS = &quot;emacsParameters&quot;;
+
+    /* contents of the defaults HashMap that are defined in this class.
+     * There are more default parameters in this map which belong to separate preference classes.
+    */
+    public static final String TEXSTUDIO_PATH = &quot;TeXstudioPath&quot;;
+    public static final String WIN_EDT_PATH = &quot;winEdtPath&quot;;
+    public static final String TEXMAKER_PATH = &quot;texmakerPath&quot;;
+    public static final String VIM_SERVER = &quot;vimServer&quot;;
+    public static final String VIM = &quot;vim&quot;;
+    public static final String LYXPIPE = &quot;lyxpipe&quot;;
+    public static final String EXTERNAL_FILE_TYPES = &quot;externalFileTypes&quot;;
+    public static final String FONT_FAMILY = &quot;fontFamily&quot;;
+    public static final String FX_FONT_RENDERING_TWEAK = &quot;fxFontRenderingTweak&quot;;
+    public static final String FX_THEME = &quot;fxTheme&quot;;
+    public static final String LANGUAGE = &quot;language&quot;;
+    public static final String NAMES_LAST_ONLY = &quot;namesLastOnly&quot;;
+    public static final String ABBR_AUTHOR_NAMES = &quot;abbrAuthorNames&quot;;
+    public static final String NAMES_NATBIB = &quot;namesNatbib&quot;;
+    public static final String NAMES_FIRST_LAST = &quot;namesFf&quot;;
+    public static final String BIBLATEX_DEFAULT_MODE = &quot;biblatexMode&quot;;
+    public static final String NAMES_AS_IS = &quot;namesAsIs&quot;;
+    public static final String ENTRY_EDITOR_HEIGHT = &quot;entryEditorHeightFX&quot;;
+    public static final String AUTO_RESIZE_MODE = &quot;autoResizeMode&quot;;
+    public static final String WINDOW_MAXIMISED = &quot;windowMaximised&quot;;
+    public static final String USE_DEFAULT_LOOK_AND_FEEL = &quot;useDefaultLookAndFeel&quot;;
+    public static final String PROXY_PORT = &quot;proxyPort&quot;;
+    public static final String PROXY_HOSTNAME = &quot;proxyHostname&quot;;
+    public static final String PROXY_USE = &quot;useProxy&quot;;
+    public static final String PROXY_USERNAME = &quot;proxyUsername&quot;;
+    public static final String PROXY_PASSWORD = &quot;proxyPassword&quot;;
+    public static final String PROXY_USE_AUTHENTICATION = &quot;useProxyAuthentication&quot;;
+
+    public static final String REFORMAT_FILE_ON_SAVE_AND_EXPORT = &quot;reformatFileOnSaveAndExport&quot;;
+    public static final String EXPORT_IN_ORIGINAL_ORDER = &quot;exportInOriginalOrder&quot;;
+    public static final String EXPORT_IN_SPECIFIED_ORDER = &quot;exportInSpecifiedOrder&quot;;
+    public static final String EXPORT_PRIMARY_SORT_FIELD = &quot;exportPriSort&quot;;
+    public static final String EXPORT_PRIMARY_SORT_DESCENDING = &quot;exportPriDescending&quot;;
+    public static final String EXPORT_SECONDARY_SORT_FIELD = &quot;exportSecSort&quot;;
+    public static final String EXPORT_SECONDARY_SORT_DESCENDING = &quot;exportSecDescending&quot;;
+    public static final String EXPORT_TERTIARY_SORT_FIELD = &quot;exportTerSort&quot;;
+    public static final String EXPORT_TERTIARY_SORT_DESCENDING = &quot;exportTerDescending&quot;;
+    public static final String NEWLINE = &quot;newline&quot;;
+    public static final String COLUMN_WIDTHS = &quot;columnWidths&quot;;
+    public static final String COLUMN_NAMES = &quot;columnNames&quot;;
+    public static final String COLUMN_IN_SORT_ORDER = &quot;columnInSortOrder&quot;;
+    public static final String COlUMN_IN_SORT_ORDER_TYPE = &quot;columnInSortOrderType&quot;;
+
+    public static final String SIDE_PANE_COMPONENT_PREFERRED_POSITIONS = &quot;sidePaneComponentPreferredPositions&quot;;
+    public static final String SIDE_PANE_COMPONENT_NAMES = &quot;sidePaneComponentNames&quot;;
+    public static final String XMP_PRIVACY_FILTERS = &quot;xmpPrivacyFilters&quot;;
+    public static final String USE_XMP_PRIVACY_FILTER = &quot;useXmpPrivacyFilter&quot;;
+    public static final String DEFAULT_AUTO_SORT = &quot;defaultAutoSort&quot;;
+    public static final String DEFAULT_SHOW_SOURCE = &quot;defaultShowSource&quot;;
+    // Window sizes
+    public static final String SIZE_Y = &quot;mainWindowSizeY&quot;;
+    public static final String SIZE_X = &quot;mainWindowSizeX&quot;;
+    public static final String POS_Y = &quot;mainWindowPosY&quot;;
+    public static final String POS_X = &quot;mainWindowPosX&quot;;
+    public static final String STRINGS_SIZE_Y = &quot;stringsSizeY&quot;;
+    public static final String STRINGS_SIZE_X = &quot;stringsSizeX&quot;;
+    public static final String STRINGS_POS_Y = &quot;stringsPosY&quot;;
+    public static final String STRINGS_POS_X = &quot;stringsPosX&quot;;
+    public static final String DUPLICATES_SIZE_Y = &quot;duplicatesSizeY&quot;;
+    public static final String DUPLICATES_SIZE_X = &quot;duplicatesSizeX&quot;;
+    public static final String DUPLICATES_POS_Y = &quot;duplicatesPosY&quot;;
+    public static final String DUPLICATES_POS_X = &quot;duplicatesPosX&quot;;
+    public static final String MERGEENTRIES_SIZE_Y = &quot;mergeEntriesSizeY&quot;;
+    public static final String MERGEENTRIES_SIZE_X = &quot;mergeEntriesSizeX&quot;;
+    public static final String MERGEENTRIES_POS_Y = &quot;mergeEntriesPosY&quot;;
+    public static final String MERGEENTRIES_POS_X = &quot;mergeEntriesPosX&quot;;
+    public static final String PREAMBLE_SIZE_Y = &quot;preambleSizeY&quot;;
+    public static final String PREAMBLE_SIZE_X = &quot;preambleSizeX&quot;;
+    public static final String PREAMBLE_POS_Y = &quot;preamblePosY&quot;;
+    public static final String PREAMBLE_POS_X = &quot;preamblePosX&quot;;
+    public static final String TERMS_SIZE_Y = &quot;termsSizeY&quot;;
+    public static final String TERMS_SIZE_X = &quot;termsSizeX&quot;;
+    public static final String TERMS_POS_Y = &quot;termsPosY&quot;;
+    public static final String TERMS_POS_X = &quot;termsPosX&quot;;
+    public static final String SEARCH_DIALOG_HEIGHT = &quot;searchDialogHeight&quot;;
+    public static final String SEARCH_DIALOG_WIDTH = &quot;searchDialogWidth&quot;;
+    public static final String IMPORT_INSPECTION_DIALOG_HEIGHT = &quot;importInspectionDialogHeight&quot;;
+    public static final String IMPORT_INSPECTION_DIALOG_WIDTH = &quot;importInspectionDialogWidth&quot;;
+    public static final String LAST_EDITED = &quot;lastEdited&quot;;
+    public static final String OPEN_LAST_EDITED = &quot;openLastEdited&quot;;
+    public static final String LAST_FOCUSED = &quot;lastFocused&quot;;
+    public static final String BACKUP = &quot;backup&quot;;
+    public static final String AUTO_OPEN_FORM = &quot;autoOpenForm&quot;;
+    public static final String IMPORT_WORKING_DIRECTORY = &quot;importWorkingDirectory&quot;;
+    public static final String EXPORT_WORKING_DIRECTORY = &quot;exportWorkingDirectory&quot;;
+    public static final String WORKING_DIRECTORY = &quot;workingDirectory&quot;;
+    public static final String EDITOR_EMACS_KEYBINDINGS = &quot;editorEMACSkeyBindings&quot;;
+    public static final String EDITOR_EMACS_KEYBINDINGS_REBIND_CA = &quot;editorEMACSkeyBindingsRebindCA&quot;;
+    public static final String EDITOR_EMACS_KEYBINDINGS_REBIND_CF = &quot;editorEMACSkeyBindingsRebindCF&quot;;
+    public static final String GROUPS_DEFAULT_FIELD = &quot;groupsDefaultField&quot;;
+
+    public static final String KEYWORD_SEPARATOR = &quot;groupKeywordSeparator&quot;;
+    public static final String AUTO_ASSIGN_GROUP = &quot;autoAssignGroup&quot;;
+    public static final String LIST_OF_FILE_COLUMNS = &quot;listOfFileColumns&quot;;
+    public static final String EXTRA_FILE_COLUMNS = &quot;extraFileColumns&quot;;
+    public static final String ARXIV_COLUMN = &quot;arxivColumn&quot;;
+    public static final String FILE_COLUMN = &quot;fileColumn&quot;;
+    public static final String PREFER_URL_DOI = &quot;preferUrlDoi&quot;;
+    public static final String URL_COLUMN = &quot;urlColumn&quot;;
+    // Colors
+    public static final String FIELD_EDITOR_TEXT_COLOR = &quot;fieldEditorTextColor&quot;;
+    public static final String ACTIVE_FIELD_EDITOR_BACKGROUND_COLOR = &quot;activeFieldEditorBackgroundColor&quot;;
+    public static final String INVALID_FIELD_BACKGROUND_COLOR = &quot;invalidFieldBackgroundColor&quot;;
+    public static final String VALID_FIELD_BACKGROUND_COLOR = &quot;validFieldBackgroundColor&quot;;
+    public static final String ICON_ENABLED_COLOR = &quot;iconEnabledColor&quot;;
+    public static final String ICON_DISABLED_COLOR = &quot;iconDisabledColor&quot;;
+    public static final String FONT_SIZE = &quot;fontSize&quot;;
+    public static final String OVERRIDE_DEFAULT_FONT_SIZE = &quot;overrideDefaultFontSize&quot;;
+    public static final String MAIN_FONT_SIZE = &quot;mainFontSize&quot;;
+    public static final String FONT_STYLE = &quot;fontStyle&quot;;
+    public static final String RECENT_DATABASES = &quot;recentDatabases&quot;;
+    public static final String RENAME_ON_MOVE_FILE_TO_FILE_DIR = &quot;renameOnMoveFileToFileDir&quot;;
+    public static final String MEMORY_STICK_MODE = &quot;memoryStickMode&quot;;
+    public static final String DEFAULT_OWNER = &quot;defaultOwner&quot;;
+    public static final String DEFAULT_ENCODING = &quot;defaultEncoding&quot;;
+    public static final String TOOLBAR_VISIBLE = &quot;toolbarVisible&quot;;
+    // Timestamp preferences
+    public static final String USE_TIME_STAMP = &quot;useTimeStamp&quot;;
+    public static final String UPDATE_TIMESTAMP = &quot;updateTimestamp&quot;;
+    public static final String TIME_STAMP_FIELD = &quot;timeStampField&quot;;
+    public static final String TIME_STAMP_FORMAT = &quot;timeStampFormat&quot;;
+    public static final String OVERWRITE_TIME_STAMP = &quot;overwriteTimeStamp&quot;;
+
+    public static final String WARN_ABOUT_DUPLICATES_IN_INSPECTION = &quot;warnAboutDuplicatesInInspection&quot;;
+    public static final String GENERATE_KEYS_AFTER_INSPECTION = &quot;generateKeysAfterInspection&quot;;
+    public static final String NON_WRAPPABLE_FIELDS = &quot;nonWrappableFields&quot;;
+    public static final String RESOLVE_STRINGS_ALL_FIELDS = &quot;resolveStringsAllFields&quot;;
+    public static final String DO_NOT_RESOLVE_STRINGS_FOR = &quot;doNotResolveStringsFor&quot;;
+    public static final String MERGE_ENTRIES_DIFF_MODE = &quot;mergeEntriesDiffMode&quot;;
+    public static final String CUSTOM_EXPORT_FORMAT = &quot;customExportFormat&quot;;
+    public static final String CUSTOM_IMPORT_FORMAT = &quot;customImportFormat&quot;;
+    public static final String KEY_PATTERN_REGEX = &quot;KeyPatternRegex&quot;;
+    public static final String KEY_PATTERN_REPLACEMENT = &quot;KeyPatternReplacement&quot;;
+    public static final String CONSOLE_COMMAND = &quot;consoleCommand&quot;;
+    public static final String USE_DEFAULT_CONSOLE_APPLICATION = &quot;useDefaultConsoleApplication&quot;;
+    public static final String ADOBE_ACROBAT_COMMAND = &quot;adobeAcrobatCommand&quot;;
+    public static final String SUMATRA_PDF_COMMAND = &quot;sumatraCommand&quot;;
+    public static final String USE_PDF_READER = &quot;usePDFReader&quot;;
+    // Currently, it is not possible to specify defaults for specific entry types
+    // When this should be made possible, the code to inspect is org.jabref.gui.preferences.BibtexKeyPatternPrefTab.storeSettings() -&gt; LabelPattern keypatterns = getCiteKeyPattern(); etc
+    public static final String DEFAULT_BIBTEX_KEY_PATTERN = &quot;defaultBibtexKeyPattern&quot;;
+    public static final String GRAY_OUT_NON_HITS = &quot;grayOutNonHits&quot;;
+    public static final String CONFIRM_DELETE = &quot;confirmDelete&quot;;
+    public static final String WARN_BEFORE_OVERWRITING_KEY = &quot;warnBeforeOverwritingKey&quot;;
+    public static final String AVOID_OVERWRITING_KEY = &quot;avoidOverwritingKey&quot;;
+    public static final String OVERWRITE_OWNER = &quot;overwriteOwner&quot;;
+    public static final String USE_OWNER = &quot;useOwner&quot;;
+    public static final String AUTOLINK_EXACT_KEY_ONLY = &quot;autolinkExactKeyOnly&quot;;
+    public static final String SHOW_FILE_LINKS_UPGRADE_WARNING = &quot;showFileLinksUpgradeWarning&quot;;
+    public static final String SIDE_PANE_WIDTH = &quot;sidePaneWidthFX&quot;;
+    public static final String LAST_USED_EXPORT = &quot;lastUsedExport&quot;;
+    public static final String CITE_COMMAND = &quot;citeCommand&quot;;
+    public static final String GENERATE_KEYS_BEFORE_SAVING = &quot;generateKeysBeforeSaving&quot;;
+    public static final String EMAIL_SUBJECT = &quot;emailSubject&quot;;
+    public static final String OPEN_FOLDERS_OF_ATTACHED_FILES = &quot;openFoldersOfAttachedFiles&quot;;
+    public static final String KEY_GEN_ALWAYS_ADD_LETTER = &quot;keyGenAlwaysAddLetter&quot;;
+    public static final String KEY_GEN_FIRST_LETTER_A = &quot;keyGenFirstLetterA&quot;;
+    public static final String ENFORCE_LEGAL_BIBTEX_KEY = &quot;enforceLegalBibtexKey&quot;;
+    public static final String LOCAL_AUTO_SAVE = &quot;localAutoSave&quot;;
+    public static final String RUN_AUTOMATIC_FILE_SEARCH = &quot;runAutomaticFileSearch&quot;;
+    public static final String NUMERIC_FIELDS = &quot;numericFields&quot;;
+    public static final String AUTOLINK_REG_EXP_SEARCH_EXPRESSION_KEY = &quot;regExpSearchExpression&quot;;
+    public static final String AUTOLINK_USE_REG_EXP_SEARCH_KEY = &quot;useRegExpSearch&quot;;
+    public static final String BIB_LOC_AS_PRIMARY_DIR = &quot;bibLocAsPrimaryDir&quot;;
+    public static final String SELECTED_FETCHER_INDEX = &quot;selectedFetcherIndex&quot;;
+    public static final String WEB_SEARCH_VISIBLE = &quot;webSearchVisible&quot;;
+    public static final String GROUP_SIDEPANE_VISIBLE = &quot;groupSidepaneVisible&quot;;
+    public static final String ALLOW_FILE_AUTO_OPEN_BROWSE = &quot;allowFileAutoOpenBrowse&quot;;
+    public static final String CUSTOM_TAB_NAME = &quot;customTabName_&quot;;
+    public static final String CUSTOM_TAB_FIELDS = &quot;customTabFields_&quot;;
+    public static final String USE_UNIT_FORMATTER_ON_SEARCH = &quot;useUnitFormatterOnSearch&quot;;
+    public static final String USE_CASE_KEEPER_ON_SEARCH = &quot;useCaseKeeperOnSearch&quot;;
+    public static final String ASK_AUTO_NAMING_PDFS_AGAIN = &quot;AskAutoNamingPDFsAgain&quot;;
+    public static final String CLEANUP = &quot;CleanUp&quot;;
+    public static final String CLEANUP_FORMATTERS = &quot;CleanUpFormatters&quot;;
+    public static final String IMPORT_FILENAMEPATTERN = &quot;importFileNamePattern&quot;;
+    public static final String IMPORT_FILEDIRPATTERN = &quot;importFileDirPattern&quot;;
+    public static final String NAME_FORMATTER_VALUE = &quot;nameFormatterFormats&quot;;
+    public static final String NAME_FORMATER_KEY = &quot;nameFormatterNames&quot;;
+    public static final String PUSH_TO_APPLICATION = &quot;pushToApplication&quot;;
+    public static final String SHOW_RECOMMENDATIONS = &quot;showRecommendations&quot;;
+    public static final String ACCEPT_RECOMMENDATIONS = &quot;acceptRecommendations&quot;;
+    public static final String SEND_LANGUAGE_DATA = &quot;sendLanguageData&quot;;
+    public static final String SEND_OS_DATA = &quot;sendOSData&quot;;
+    public static final String SEND_TIMEZONE_DATA = &quot;sendTimezoneData&quot;;
+    public static final String VALIDATE_IN_ENTRY_EDITOR = &quot;validateInEntryEditor&quot;;
+    // Dropped file handler
+    public static final String DROPPEDFILEHANDLER_RENAME = &quot;DroppedFileHandler_RenameFile&quot;;
+    public static final String DROPPEDFILEHANDLER_MOVE = &quot;DroppedFileHandler_MoveFile&quot;;
+    public static final String DROPPEDFILEHANDLER_COPY = &quot;DroppedFileHandler_CopyFile&quot;;
+    public static final String DROPPEDFILEHANDLER_LEAVE = &quot;DroppedFileHandler_LeaveFileInDir&quot;;
+    // Remote
+    public static final String USE_REMOTE_SERVER = &quot;useRemoteServer&quot;;
+    public static final String REMOTE_SERVER_PORT = &quot;remoteServerPort&quot;;
+
+    /**
+     * The OpenOffice/LibreOffice connection preferences are:
+     * OO_PATH main directory for OO/LO installation, used to detect location on Win/OS X when using manual connect
+     * OO_EXECUTABLE_PATH path to soffice-file
+     * OO_JARS_PATH directory that contains juh.jar, jurt.jar, ridl.jar, unoil.jar
+     * OO_SYNC_WHEN_CITING true if the reference list is updated when adding a new citation
+     * OO_SHOW_PANEL true if the OO panel is shown on startup
+     * OO_USE_ALL_OPEN_DATABASES true if all databases should be used when citing
+     * OO_BIBLIOGRAPHY_STYLE_FILE path to the used style file
+     * OO_EXTERNAL_STYLE_FILES list with paths to external style files
+     * STYLES_*_* size and position of &quot;Select style&quot; dialog
+     */
+    public static final String OO_EXECUTABLE_PATH = &quot;ooExecutablePath&quot;;
+    public static final String OO_PATH = &quot;ooPath&quot;;
+    public static final String OO_JARS_PATH = &quot;ooJarsPath&quot;;
+    public static final String OO_SHOW_PANEL = &quot;showOOPanel&quot;;
+    public static final String OO_SYNC_WHEN_CITING = &quot;syncOOWhenCiting&quot;;
+    public static final String OO_USE_ALL_OPEN_BASES = &quot;useAllOpenBases&quot;;
+    public static final String OO_BIBLIOGRAPHY_STYLE_FILE = &quot;ooBibliographyStyleFile&quot;;
+    public static final String OO_EXTERNAL_STYLE_FILES = &quot;ooExternalStyleFiles&quot;;
+
+    public static final String STYLES_SIZE_Y = &quot;stylesSizeY&quot;;
+    public static final String STYLES_SIZE_X = &quot;stylesSizeX&quot;;
+    public static final String STYLES_POS_Y = &quot;stylesPosY&quot;;
+    public static final String STYLES_POS_X = &quot;stylesPosX&quot;;
+    // Special field preferences
+    public static final String SHOWCOLUMN_RELEVANCE = &quot;showRelevanceColumn&quot;;
+    public static final String SHOWCOLUMN_READ = &quot;showReadColumn&quot;;
+    public static final String SHOWCOLUMN_RANKING = &quot;showRankingColumn&quot;;
+    public static final String SHOWCOLUMN_QUALITY = &quot;showQualityColumn&quot;;
+    public static final String SHOWCOLUMN_PRIORITY = &quot;showPriorityColumn&quot;;
+    public static final String SHOWCOLUMN_PRINTED = &quot;showPrintedColumn&quot;;
+    public static final String SPECIALFIELDSENABLED = &quot;specialFieldsEnabled&quot;;
+    // The choice between AUTOSYNCSPECIALFIELDSTOKEYWORDS and SERIALIZESPECIALFIELDS is mutually exclusive
+    public static final String SERIALIZESPECIALFIELDS = &quot;serializeSpecialFields&quot;;
+    // The choice between AUTOSYNCSPECIALFIELDSTOKEYWORDS and SERIALIZESPECIALFIELDS is mutually exclusive
+    // At least in the settings, not in the implementation. But having both confused the users, therefore, having activated both options at the same time has been disabled
+    public static final String AUTOSYNCSPECIALFIELDSTOKEYWORDS = &quot;autoSyncSpecialFieldsToKeywords&quot;;
+    // Prefs node for BibtexKeyPatterns
+    public static final String BIBTEX_KEY_PATTERNS_NODE = &quot;bibtexkeypatterns&quot;;
+    // Prefs node for customized entry types
+    public static final String CUSTOMIZED_BIBTEX_TYPES = &quot;customizedBibtexTypes&quot;;
+    public static final String CUSTOMIZED_BIBLATEX_TYPES = &quot;customizedBiblatexTypes&quot;;
+    // Version
+    public static final String VERSION_IGNORED_UPDATE = &quot;versionIgnoreUpdate&quot;;
+    //KeyBindings - keys - public because needed for pref migration
+    public static final String BINDINGS = &quot;bindings&quot;;
+
+    //AutcompleteFields - public because needed for pref migration
+    public static final String AUTOCOMPLETER_COMPLETE_FIELDS = &quot;autoCompleteFields&quot;;
+
+    // Id Entry Generator Preferences
+    public static final String ID_ENTRY_GENERATOR = &quot;idEntryGenerator&quot;;
+
+
+    //File linking Options for entry editor
+    public static final String ENTRY_EDITOR_DRAG_DROP_PREFERENCE_TYPE = &quot;DragDropPreferenceType&quot;;
+
+    // Preview
+    private static final String PREVIEW_STYLE = &quot;previewStyle&quot;;
+    private static final String CYCLE_PREVIEW_POS = &quot;cyclePreviewPos&quot;;
+    private static final String CYCLE_PREVIEW = &quot;cyclePreview&quot;;
+    private static final String PREVIEW_PANEL_HEIGHT = &quot;previewPanelHeightFX&quot;;
+    private static final String PREVIEW_ENABLED = &quot;previewEnabled&quot;;
+
+    // Auto completion
+    private static final String AUTO_COMPLETE = &quot;autoComplete&quot;;
+    private static final String AUTOCOMPLETER_FIRSTNAME_MODE = &quot;autoCompFirstNameMode&quot;;
+    private static final String AUTOCOMPLETER_LAST_FIRST = &quot;autoCompLF&quot;;
+    private static final String AUTOCOMPLETER_FIRST_LAST = &quot;autoCompFF&quot;;
+
+    private static final String BIND_NAMES = &quot;bindNames&quot;;
+    // User
+    private static final String USER_ID = &quot;userId&quot;;
+    private static final String EXTERNAL_JOURNAL_LISTS = &quot;externalJournalLists&quot;;
+    private static final String PERSONAL_JOURNAL_LIST = &quot;personalJournalList&quot;;
+    private static final String USE_IEEE_ABRV = &quot;useIEEEAbrv&quot;;
+
+    // Telemetry collection
+    private static final String COLLECT_TELEMETRY = &quot;collectTelemetry&quot;;
+    private static final String ALREADY_ASKED_TO_COLLECT_TELEMETRY = &quot;askedCollectTelemetry&quot;;
+<span class="fc" id="L392">    private static final Logger LOGGER = LoggerFactory.getLogger(JabRefPreferences.class);</span>
+<span class="fc" id="L393">    private static final Class&lt;JabRefMain&gt; PREFS_BASE_CLASS = JabRefMain.class;</span>
+    private static final String DB_CONNECT_USERNAME = &quot;dbConnectUsername&quot;;
+    private static final String DB_CONNECT_DATABASE = &quot;dbConnectDatabase&quot;;
+    private static final String DB_CONNECT_HOSTNAME = &quot;dbConnectHostname&quot;;
+    private static final String DB_CONNECT_SERVER_TYPE = &quot;dbConnectServerType&quot;;
+    private static final String PROTECTED_TERMS_ENABLED_EXTERNAL = &quot;protectedTermsEnabledExternal&quot;;
+    private static final String PROTECTED_TERMS_DISABLED_EXTERNAL = &quot;protectedTermsDisabledExternal&quot;;
+    private static final String PROTECTED_TERMS_ENABLED_INTERNAL = &quot;protectedTermsEnabledInternal&quot;;
+    private static final String PROTECTED_TERMS_DISABLED_INTERNAL = &quot;protectedTermsDisabledInternal&quot;;
+
+    //GroupViewMode
+    private static final String GROUP_INTERSECT_UNION_VIEW_MODE = &quot;groupIntersectUnionViewModes&quot;;
+
+    // Dialog states
+    private static final String PREFS_EXPORT_PATH = &quot;prefsExportPath&quot;;
+
+    // Helper string
+<span class="fc" id="L410">    private static final String USER_HOME = System.getProperty(&quot;user.home&quot;);</span>
+
+    // Indexes for Strings within stored custom export entries
+    private static final int EXPORTER_NAME_INDEX = 0;
+    private static final int EXPORTER_FILENAME_INDEX = 1;
+    private static final int EXPORTER_EXTENSION_INDEX = 2;
+
+    // The only instance of this class:
+    private static JabRefPreferences singleton;
+    /**
+     * HashMap that contains all preferences which are set by default
+     */
+<span class="nc" id="L422">    public final Map&lt;String, Object&gt; defaults = new HashMap&lt;&gt;();</span>
+    /**
+     * Set with all custom {@link org.jabref.logic.importer.Importer}s
+     */
+    public final CustomImportList customImports;
+    // The following field is used as a global variable during the export of a database.
+    // By setting this field to the path of the database's default file directory, formatters
+    // that should resolve external file paths can access this field. This is an ugly hack
+    // to solve the problem of formatters not having access to any context except for the
+    // string to be formatted and possible formatter arguments.
+    public List&lt;String&gt; fileDirForDatabase;
+    private final Preferences prefs;
+    private GlobalBibtexKeyPattern keyPattern;
+    // Object containing info about customized entry editor tabs.
+    private Map&lt;String, List&lt;String&gt;&gt; tabList;
+
+    // The constructor is made private to enforce this as a singleton class:
+<span class="nc" id="L439">    private JabRefPreferences() {</span>
+        try {
+<span class="nc bnc" id="L441" title="All 2 branches missed.">            if (new File(&quot;jabref.xml&quot;).exists()) {</span>
+<span class="nc" id="L442">                importPreferences(&quot;jabref.xml&quot;);</span>
+            }
+<span class="nc" id="L444">        } catch (JabRefException e) {</span>
+<span class="nc" id="L445">            LOGGER.warn(&quot;Could not import preferences from jabref.xml: &quot; + e.getMessage(), e);</span>
+<span class="nc" id="L446">        }</span>
+
+        // load user preferences
+<span class="nc" id="L449">        prefs = Preferences.userNodeForPackage(PREFS_BASE_CLASS);</span>
+
+        // Since some of the preference settings themselves use localized strings, we cannot set the language after
+        // the initialization of the preferences in main
+        // Otherwise that language framework will be instantiated and more importantly, statically initialized preferences
+        // like the SearchDisplayMode will never be translated.
+<span class="nc" id="L455">        Localization.setLanguage(getLanguage());</span>
+
+<span class="nc" id="L457">        SearchPreferences.putDefaults(defaults);</span>
+
+<span class="nc" id="L459">        defaults.put(TEXMAKER_PATH, JabRefDesktop.getNativeDesktop().detectProgramPath(&quot;texmaker&quot;, &quot;Texmaker&quot;));</span>
+<span class="nc" id="L460">        defaults.put(WIN_EDT_PATH, JabRefDesktop.getNativeDesktop().detectProgramPath(&quot;WinEdt&quot;, &quot;WinEdt Team\\WinEdt&quot;));</span>
+<span class="nc" id="L461">        defaults.put(TEXSTUDIO_PATH, JabRefDesktop.getNativeDesktop().detectProgramPath(&quot;texstudio&quot;, &quot;TeXstudio&quot;));</span>
+
+<span class="nc" id="L463">        defaults.put(BIBLATEX_DEFAULT_MODE, Boolean.FALSE);</span>
+
+        // Set DOI to be the default ID entry generator
+<span class="nc" id="L466">        defaults.put(ID_ENTRY_GENERATOR, DoiFetcher.NAME);</span>
+
+<span class="nc bnc" id="L468" title="All 2 branches missed.">        if (OS.OS_X) {</span>
+<span class="nc" id="L469">            defaults.put(FONT_FAMILY, &quot;SansSerif&quot;);</span>
+<span class="nc" id="L470">            defaults.put(EMACS_PATH, &quot;emacsclient&quot;);</span>
+<span class="nc bnc" id="L471" title="All 2 branches missed.">        } else if (OS.WINDOWS) {</span>
+<span class="nc" id="L472">            defaults.put(EMACS_PATH, &quot;emacsclient.exe&quot;);</span>
+        } else {
+            // Linux
+<span class="nc" id="L475">            defaults.put(FONT_FAMILY, &quot;SansSerif&quot;);</span>
+<span class="nc" id="L476">            defaults.put(EMACS_PATH, &quot;emacsclient&quot;);</span>
+        }
+
+<span class="nc" id="L479">        defaults.put(FX_FONT_RENDERING_TWEAK, OS.LINUX); //we turn this on per default on Linux</span>
+<span class="nc" id="L480">        defaults.put(EMACS_ADDITIONAL_PARAMETERS, &quot;-n -e&quot;);</span>
+
+<span class="nc" id="L482">        defaults.put(PUSH_TO_APPLICATION, &quot;TeXstudio&quot;);</span>
+
+<span class="nc" id="L484">        defaults.put(RECENT_DATABASES, &quot;&quot;);</span>
+<span class="nc" id="L485">        defaults.put(EXTERNAL_FILE_TYPES, &quot;&quot;);</span>
+<span class="nc" id="L486">        defaults.put(KEY_PATTERN_REGEX, &quot;&quot;);</span>
+<span class="nc" id="L487">        defaults.put(KEY_PATTERN_REPLACEMENT, &quot;&quot;);</span>
+
+        // Proxy
+<span class="nc" id="L490">        defaults.put(PROXY_USE, Boolean.FALSE);</span>
+<span class="nc" id="L491">        defaults.put(PROXY_HOSTNAME, &quot;&quot;);</span>
+<span class="nc" id="L492">        defaults.put(PROXY_PORT, &quot;80&quot;);</span>
+<span class="nc" id="L493">        defaults.put(PROXY_USE_AUTHENTICATION, Boolean.FALSE);</span>
+<span class="nc" id="L494">        defaults.put(PROXY_USERNAME, &quot;&quot;);</span>
+<span class="nc" id="L495">        defaults.put(PROXY_PASSWORD, &quot;&quot;);</span>
+
+<span class="nc" id="L497">        defaults.put(USE_DEFAULT_LOOK_AND_FEEL, Boolean.TRUE);</span>
+<span class="nc" id="L498">        defaults.put(LYXPIPE, USER_HOME + File.separator + &quot;.lyx/lyxpipe&quot;);</span>
+<span class="nc" id="L499">        defaults.put(VIM, &quot;vim&quot;);</span>
+<span class="nc" id="L500">        defaults.put(VIM_SERVER, &quot;vim&quot;);</span>
+<span class="nc" id="L501">        defaults.put(POS_X, 0);</span>
+<span class="nc" id="L502">        defaults.put(POS_Y, 0);</span>
+<span class="nc" id="L503">        defaults.put(SIZE_X, 1024);</span>
+<span class="nc" id="L504">        defaults.put(SIZE_Y, 768);</span>
+<span class="nc" id="L505">        defaults.put(WINDOW_MAXIMISED, Boolean.TRUE);</span>
+<span class="nc" id="L506">        defaults.put(AUTO_RESIZE_MODE, Boolean.TRUE);</span>
+<span class="nc" id="L507">        defaults.put(ENTRY_EDITOR_HEIGHT, 0.65);</span>
+<span class="nc" id="L508">        defaults.put(NAMES_AS_IS, Boolean.FALSE); // &quot;Show names unchanged&quot;</span>
+<span class="nc" id="L509">        defaults.put(NAMES_FIRST_LAST, Boolean.FALSE); // &quot;Show 'Firstname Lastname'&quot;</span>
+<span class="nc" id="L510">        defaults.put(NAMES_NATBIB, Boolean.TRUE); // &quot;Natbib style&quot;</span>
+<span class="nc" id="L511">        defaults.put(ABBR_AUTHOR_NAMES, Boolean.TRUE); // &quot;Abbreviate names&quot;</span>
+<span class="nc" id="L512">        defaults.put(NAMES_LAST_ONLY, Boolean.TRUE); // &quot;Show last names only&quot;</span>
+        // system locale as default
+<span class="nc" id="L514">        defaults.put(LANGUAGE, Locale.getDefault().getLanguage());</span>
+
+<span class="nc" id="L516">        defaults.put(REFORMAT_FILE_ON_SAVE_AND_EXPORT, Boolean.FALSE);</span>
+
+        // export order
+<span class="nc" id="L519">        defaults.put(EXPORT_IN_ORIGINAL_ORDER, Boolean.FALSE);</span>
+<span class="nc" id="L520">        defaults.put(EXPORT_IN_SPECIFIED_ORDER, Boolean.FALSE);</span>
+
+        // export order: if EXPORT_IN_SPECIFIED_ORDER, then use following criteria
+<span class="nc" id="L523">        defaults.put(EXPORT_PRIMARY_SORT_FIELD, BibEntry.KEY_FIELD);</span>
+<span class="nc" id="L524">        defaults.put(EXPORT_PRIMARY_SORT_DESCENDING, Boolean.FALSE);</span>
+<span class="nc" id="L525">        defaults.put(EXPORT_SECONDARY_SORT_FIELD, FieldName.AUTHOR);</span>
+<span class="nc" id="L526">        defaults.put(EXPORT_SECONDARY_SORT_DESCENDING, Boolean.FALSE);</span>
+<span class="nc" id="L527">        defaults.put(EXPORT_TERTIARY_SORT_FIELD, FieldName.TITLE);</span>
+<span class="nc" id="L528">        defaults.put(EXPORT_TERTIARY_SORT_DESCENDING, Boolean.TRUE);</span>
+
+<span class="nc" id="L530">        defaults.put(NEWLINE, System.lineSeparator());</span>
+
+<span class="nc" id="L532">        defaults.put(SIDE_PANE_COMPONENT_NAMES, &quot;&quot;);</span>
+<span class="nc" id="L533">        defaults.put(SIDE_PANE_COMPONENT_PREFERRED_POSITIONS, &quot;&quot;);</span>
+
+<span class="nc" id="L535">        defaults.put(COLUMN_NAMES, &quot;entrytype;author/editor;title;year;journal/booktitle;bibtexkey&quot;);</span>
+<span class="nc" id="L536">        defaults.put(COLUMN_WIDTHS, &quot;75;300;470;60;130;100&quot;);</span>
+
+<span class="nc" id="L538">        defaults.put(XMP_PRIVACY_FILTERS, &quot;pdf;timestamp;keywords;owner;note;review&quot;);</span>
+<span class="nc" id="L539">        defaults.put(USE_XMP_PRIVACY_FILTER, Boolean.FALSE);</span>
+<span class="nc" id="L540">        defaults.put(WORKING_DIRECTORY, USER_HOME);</span>
+<span class="nc" id="L541">        defaults.put(EXPORT_WORKING_DIRECTORY, USER_HOME);</span>
+        // Remembers working directory of last import
+<span class="nc" id="L543">        defaults.put(IMPORT_WORKING_DIRECTORY, USER_HOME);</span>
+<span class="nc" id="L544">        defaults.put(PREFS_EXPORT_PATH, USER_HOME);</span>
+<span class="nc" id="L545">        defaults.put(AUTO_OPEN_FORM, Boolean.TRUE);</span>
+<span class="nc" id="L546">        defaults.put(BACKUP, Boolean.TRUE);</span>
+<span class="nc" id="L547">        defaults.put(OPEN_LAST_EDITED, Boolean.TRUE);</span>
+<span class="nc" id="L548">        defaults.put(LAST_EDITED, &quot;&quot;);</span>
+<span class="nc" id="L549">        defaults.put(LAST_FOCUSED, &quot;&quot;);</span>
+<span class="nc" id="L550">        defaults.put(STRINGS_POS_X, 0);</span>
+<span class="nc" id="L551">        defaults.put(STRINGS_POS_Y, 0);</span>
+<span class="nc" id="L552">        defaults.put(STRINGS_SIZE_X, 600);</span>
+<span class="nc" id="L553">        defaults.put(STRINGS_SIZE_Y, 400);</span>
+<span class="nc" id="L554">        defaults.put(DUPLICATES_POS_X, 0);</span>
+<span class="nc" id="L555">        defaults.put(DUPLICATES_POS_Y, 0);</span>
+<span class="nc" id="L556">        defaults.put(DUPLICATES_SIZE_X, 800);</span>
+<span class="nc" id="L557">        defaults.put(DUPLICATES_SIZE_Y, 600);</span>
+<span class="nc" id="L558">        defaults.put(MERGEENTRIES_POS_X, 0);</span>
+<span class="nc" id="L559">        defaults.put(MERGEENTRIES_POS_Y, 0);</span>
+<span class="nc" id="L560">        defaults.put(MERGEENTRIES_SIZE_X, 800);</span>
+<span class="nc" id="L561">        defaults.put(MERGEENTRIES_SIZE_Y, 600);</span>
+<span class="nc" id="L562">        defaults.put(PREAMBLE_POS_X, 0);</span>
+<span class="nc" id="L563">        defaults.put(PREAMBLE_POS_Y, 0);</span>
+<span class="nc" id="L564">        defaults.put(PREAMBLE_SIZE_X, 600);</span>
+<span class="nc" id="L565">        defaults.put(PREAMBLE_SIZE_Y, 400);</span>
+<span class="nc" id="L566">        defaults.put(TERMS_POS_X, 0);</span>
+<span class="nc" id="L567">        defaults.put(TERMS_POS_Y, 0);</span>
+<span class="nc" id="L568">        defaults.put(TERMS_SIZE_X, 500);</span>
+<span class="nc" id="L569">        defaults.put(TERMS_SIZE_Y, 500);</span>
+<span class="nc" id="L570">        defaults.put(DEFAULT_SHOW_SOURCE, Boolean.FALSE);</span>
+
+<span class="nc" id="L572">        defaults.put(DEFAULT_AUTO_SORT, Boolean.FALSE);</span>
+
+<span class="nc" id="L574">        defaults.put(MERGE_ENTRIES_DIFF_MODE, MergeEntries.DiffMode.WORD.name());</span>
+
+<span class="nc" id="L576">        defaults.put(SHOW_RECOMMENDATIONS, Boolean.TRUE);</span>
+<span class="nc" id="L577">        defaults.put(ACCEPT_RECOMMENDATIONS, Boolean.FALSE);</span>
+<span class="nc" id="L578">        defaults.put(SEND_LANGUAGE_DATA, Boolean.FALSE);</span>
+<span class="nc" id="L579">        defaults.put(SEND_OS_DATA, Boolean.FALSE);</span>
+<span class="nc" id="L580">        defaults.put(SEND_TIMEZONE_DATA, Boolean.FALSE);</span>
+<span class="nc" id="L581">        defaults.put(VALIDATE_IN_ENTRY_EDITOR, Boolean.TRUE);</span>
+<span class="nc" id="L582">        defaults.put(EDITOR_EMACS_KEYBINDINGS, Boolean.FALSE);</span>
+<span class="nc" id="L583">        defaults.put(EDITOR_EMACS_KEYBINDINGS_REBIND_CA, Boolean.TRUE);</span>
+<span class="nc" id="L584">        defaults.put(EDITOR_EMACS_KEYBINDINGS_REBIND_CF, Boolean.TRUE);</span>
+<span class="nc" id="L585">        defaults.put(AUTO_COMPLETE, Boolean.FALSE);</span>
+<span class="nc" id="L586">        defaults.put(AUTOCOMPLETER_FIRSTNAME_MODE, AutoCompleteFirstNameMode.BOTH.name());</span>
+<span class="nc" id="L587">        defaults.put(AUTOCOMPLETER_FIRST_LAST, Boolean.FALSE); // &quot;Autocomplete names in 'Firstname Lastname' format only&quot;</span>
+<span class="nc" id="L588">        defaults.put(AUTOCOMPLETER_LAST_FIRST, Boolean.FALSE); // &quot;Autocomplete names in 'Lastname, Firstname' format only&quot;</span>
+<span class="nc" id="L589">        defaults.put(AUTOCOMPLETER_COMPLETE_FIELDS, &quot;author;editor;title;journal;publisher;keywords;crossref;related;entryset&quot;);</span>
+<span class="nc" id="L590">        defaults.put(GROUPS_DEFAULT_FIELD, FieldName.KEYWORDS);</span>
+<span class="nc" id="L591">        defaults.put(AUTO_ASSIGN_GROUP, Boolean.TRUE);</span>
+<span class="nc" id="L592">        defaults.put(GROUP_INTERSECT_UNION_VIEW_MODE, GroupViewMode.INTERSECTION.name());</span>
+<span class="nc" id="L593">        defaults.put(KEYWORD_SEPARATOR, &quot;, &quot;);</span>
+<span class="nc" id="L594">        defaults.put(TOOLBAR_VISIBLE, Boolean.TRUE);</span>
+<span class="nc" id="L595">        defaults.put(DEFAULT_ENCODING, StandardCharsets.UTF_8.name());</span>
+<span class="nc" id="L596">        defaults.put(DEFAULT_OWNER, System.getProperty(&quot;user.name&quot;));</span>
+<span class="nc" id="L597">        defaults.put(MEMORY_STICK_MODE, Boolean.FALSE);</span>
+<span class="nc" id="L598">        defaults.put(RENAME_ON_MOVE_FILE_TO_FILE_DIR, Boolean.TRUE);</span>
+
+<span class="nc" id="L600">        defaults.put(FONT_STYLE, Font.PLAIN);</span>
+<span class="nc" id="L601">        defaults.put(FONT_SIZE, 12);</span>
+        // Main table color settings:
+<span class="nc" id="L603">        defaults.put(VALID_FIELD_BACKGROUND_COLOR, &quot;255:255:255&quot;);</span>
+<span class="nc" id="L604">        defaults.put(INVALID_FIELD_BACKGROUND_COLOR, &quot;255:0:0&quot;);</span>
+<span class="nc" id="L605">        defaults.put(ACTIVE_FIELD_EDITOR_BACKGROUND_COLOR, &quot;220:220:255&quot;);</span>
+<span class="nc" id="L606">        defaults.put(FIELD_EDITOR_TEXT_COLOR, &quot;0:0:0&quot;);</span>
+
+        // default icon colors
+<span class="nc" id="L609">        defaults.put(ICON_ENABLED_COLOR, &quot;0:0:0&quot;);</span>
+<span class="nc" id="L610">        defaults.put(ICON_DISABLED_COLOR, &quot;200:200:200&quot;);</span>
+
+<span class="nc" id="L612">        defaults.put(URL_COLUMN, Boolean.TRUE);</span>
+<span class="nc" id="L613">        defaults.put(PREFER_URL_DOI, Boolean.FALSE);</span>
+<span class="nc" id="L614">        defaults.put(FILE_COLUMN, Boolean.TRUE);</span>
+<span class="nc" id="L615">        defaults.put(ARXIV_COLUMN, Boolean.FALSE);</span>
+
+<span class="nc" id="L617">        defaults.put(EXTRA_FILE_COLUMNS, Boolean.FALSE);</span>
+<span class="nc" id="L618">        defaults.put(LIST_OF_FILE_COLUMNS, &quot;&quot;);</span>
+
+<span class="nc" id="L620">        defaults.put(PROTECTED_TERMS_ENABLED_INTERNAL, convertListToString(ProtectedTermsLoader.getInternalLists()));</span>
+<span class="nc" id="L621">        defaults.put(PROTECTED_TERMS_DISABLED_INTERNAL, &quot;&quot;);</span>
+<span class="nc" id="L622">        defaults.put(PROTECTED_TERMS_ENABLED_EXTERNAL, &quot;&quot;);</span>
+<span class="nc" id="L623">        defaults.put(PROTECTED_TERMS_DISABLED_EXTERNAL, &quot;&quot;);</span>
+
+        // OpenOffice/LibreOffice
+<span class="nc bnc" id="L626" title="All 2 branches missed.">        if (OS.WINDOWS) {</span>
+<span class="nc" id="L627">            defaults.put(OO_PATH, OpenOfficePreferences.DEFAULT_WINDOWS_PATH);</span>
+<span class="nc" id="L628">            defaults.put(OO_EXECUTABLE_PATH, OpenOfficePreferences.DEFAULT_WIN_EXEC_PATH);</span>
+<span class="nc" id="L629">            defaults.put(OO_JARS_PATH, OpenOfficePreferences.DEFAULT_WINDOWS_PATH);</span>
+<span class="nc bnc" id="L630" title="All 2 branches missed.">        } else if (OS.OS_X) {</span>
+<span class="nc" id="L631">            defaults.put(OO_PATH, OpenOfficePreferences.DEFAULT_OSX_PATH);</span>
+<span class="nc" id="L632">            defaults.put(OO_EXECUTABLE_PATH, OpenOfficePreferences.DEFAULT_OSX_EXEC_PATH);</span>
+<span class="nc" id="L633">            defaults.put(OO_JARS_PATH, OpenOfficePreferences.DEFAULT_OSX_PATH);</span>
+        } else { // Linux
+<span class="nc" id="L635">            defaults.put(OO_PATH, OpenOfficePreferences.DEFAULT_LINUX_PATH);</span>
+<span class="nc" id="L636">            defaults.put(OO_EXECUTABLE_PATH, OpenOfficePreferences.DEFAULT_LINUX_EXEC_PATH);</span>
+<span class="nc" id="L637">            defaults.put(OO_JARS_PATH, OpenOfficePreferences.DEFAULT_LINUX_PATH);</span>
+        }
+
+<span class="nc" id="L640">        defaults.put(OO_SYNC_WHEN_CITING, Boolean.FALSE);</span>
+<span class="nc" id="L641">        defaults.put(OO_SHOW_PANEL, Boolean.FALSE);</span>
+<span class="nc" id="L642">        defaults.put(OO_USE_ALL_OPEN_BASES, Boolean.TRUE);</span>
+<span class="nc" id="L643">        defaults.put(OO_BIBLIOGRAPHY_STYLE_FILE, StyleLoader.DEFAULT_AUTHORYEAR_STYLE_PATH);</span>
+<span class="nc" id="L644">        defaults.put(OO_EXTERNAL_STYLE_FILES, &quot;&quot;);</span>
+<span class="nc" id="L645">        defaults.put(STYLES_POS_X, 0);</span>
+<span class="nc" id="L646">        defaults.put(STYLES_POS_Y, 0);</span>
+<span class="nc" id="L647">        defaults.put(STYLES_SIZE_X, 600);</span>
+<span class="nc" id="L648">        defaults.put(STYLES_SIZE_Y, 400);</span>
+
+<span class="nc" id="L650">        defaults.put(SPECIALFIELDSENABLED, Boolean.TRUE);</span>
+<span class="nc" id="L651">        defaults.put(SHOWCOLUMN_PRIORITY, Boolean.FALSE);</span>
+<span class="nc" id="L652">        defaults.put(SHOWCOLUMN_QUALITY, Boolean.FALSE);</span>
+<span class="nc" id="L653">        defaults.put(SHOWCOLUMN_RANKING, Boolean.TRUE);</span>
+<span class="nc" id="L654">        defaults.put(SHOWCOLUMN_RELEVANCE, Boolean.FALSE);</span>
+<span class="nc" id="L655">        defaults.put(SHOWCOLUMN_PRINTED, Boolean.FALSE);</span>
+<span class="nc" id="L656">        defaults.put(SHOWCOLUMN_READ, Boolean.FALSE);</span>
+<span class="nc" id="L657">        defaults.put(AUTOSYNCSPECIALFIELDSTOKEYWORDS, Boolean.TRUE);</span>
+<span class="nc" id="L658">        defaults.put(SERIALIZESPECIALFIELDS, Boolean.FALSE);</span>
+
+<span class="nc" id="L660">        defaults.put(USE_OWNER, Boolean.FALSE);</span>
+<span class="nc" id="L661">        defaults.put(OVERWRITE_OWNER, Boolean.FALSE);</span>
+<span class="nc" id="L662">        defaults.put(AVOID_OVERWRITING_KEY, Boolean.FALSE);</span>
+<span class="nc" id="L663">        defaults.put(WARN_BEFORE_OVERWRITING_KEY, Boolean.TRUE);</span>
+<span class="nc" id="L664">        defaults.put(CONFIRM_DELETE, Boolean.TRUE);</span>
+<span class="nc" id="L665">        defaults.put(GRAY_OUT_NON_HITS, Boolean.TRUE);</span>
+<span class="nc" id="L666">        defaults.put(DEFAULT_BIBTEX_KEY_PATTERN, &quot;[auth][year]&quot;);</span>
+<span class="nc" id="L667">        defaults.put(DO_NOT_RESOLVE_STRINGS_FOR, FieldName.URL);</span>
+<span class="nc" id="L668">        defaults.put(RESOLVE_STRINGS_ALL_FIELDS, Boolean.FALSE);</span>
+<span class="nc" id="L669">        defaults.put(NON_WRAPPABLE_FIELDS, &quot;pdf;ps;url;doi;file;isbn;issn&quot;);</span>
+<span class="nc" id="L670">        defaults.put(GENERATE_KEYS_AFTER_INSPECTION, Boolean.TRUE);</span>
+<span class="nc" id="L671">        defaults.put(WARN_ABOUT_DUPLICATES_IN_INSPECTION, Boolean.TRUE);</span>
+<span class="nc" id="L672">        defaults.put(USE_TIME_STAMP, Boolean.FALSE);</span>
+<span class="nc" id="L673">        defaults.put(OVERWRITE_TIME_STAMP, Boolean.FALSE);</span>
+
+        // default time stamp follows ISO-8601. Reason: https://xkcd.com/1179/
+<span class="nc" id="L676">        defaults.put(TIME_STAMP_FORMAT, &quot;yyyy-MM-dd&quot;);</span>
+
+<span class="nc" id="L678">        defaults.put(TIME_STAMP_FIELD, FieldName.TIMESTAMP);</span>
+<span class="nc" id="L679">        defaults.put(UPDATE_TIMESTAMP, Boolean.FALSE);</span>
+
+<span class="nc" id="L681">        defaults.put(GENERATE_KEYS_BEFORE_SAVING, Boolean.FALSE);</span>
+
+<span class="nc" id="L683">        defaults.put(USE_REMOTE_SERVER, Boolean.TRUE);</span>
+<span class="nc" id="L684">        defaults.put(REMOTE_SERVER_PORT, 6050);</span>
+
+<span class="nc" id="L686">        defaults.put(PERSONAL_JOURNAL_LIST, &quot;&quot;);</span>
+<span class="nc" id="L687">        defaults.put(EXTERNAL_JOURNAL_LISTS, &quot;&quot;);</span>
+<span class="nc" id="L688">        defaults.put(CITE_COMMAND, &quot;\\cite&quot;); // obsoleted by the app-specific ones (not any more?)</span>
+
+<span class="nc" id="L690">        defaults.put(LAST_USED_EXPORT, &quot;&quot;);</span>
+<span class="nc" id="L691">        defaults.put(SIDE_PANE_WIDTH, 0.15);</span>
+
+<span class="nc" id="L693">        defaults.put(MAIN_FONT_SIZE, 9);</span>
+<span class="nc" id="L694">        defaults.put(OVERRIDE_DEFAULT_FONT_SIZE, false);</span>
+
+<span class="nc" id="L696">        defaults.put(IMPORT_INSPECTION_DIALOG_WIDTH, 650);</span>
+<span class="nc" id="L697">        defaults.put(IMPORT_INSPECTION_DIALOG_HEIGHT, 650);</span>
+<span class="nc" id="L698">        defaults.put(SHOW_FILE_LINKS_UPGRADE_WARNING, Boolean.TRUE);</span>
+<span class="nc" id="L699">        defaults.put(AUTOLINK_EXACT_KEY_ONLY, Boolean.FALSE);</span>
+<span class="nc" id="L700">        defaults.put(NUMERIC_FIELDS, &quot;mittnum;author&quot;);</span>
+<span class="nc" id="L701">        defaults.put(RUN_AUTOMATIC_FILE_SEARCH, Boolean.FALSE);</span>
+<span class="nc" id="L702">        defaults.put(LOCAL_AUTO_SAVE, Boolean.FALSE);</span>
+<span class="nc" id="L703">        defaults.put(ENFORCE_LEGAL_BIBTEX_KEY, Boolean.TRUE);</span>
+        // Curly brackets ({}) are the default delimiters, not quotes (&quot;) as these cause trouble when they appear within the field value:
+        // Currently, JabRef does not escape them
+<span class="nc" id="L706">        defaults.put(KEY_GEN_FIRST_LETTER_A, Boolean.TRUE);</span>
+<span class="nc" id="L707">        defaults.put(KEY_GEN_ALWAYS_ADD_LETTER, Boolean.FALSE);</span>
+<span class="nc" id="L708">        defaults.put(EMAIL_SUBJECT, Localization.lang(&quot;References&quot;));</span>
+<span class="nc" id="L709">        defaults.put(OPEN_FOLDERS_OF_ATTACHED_FILES, Boolean.FALSE);</span>
+<span class="nc" id="L710">        defaults.put(ALLOW_FILE_AUTO_OPEN_BROWSE, Boolean.TRUE);</span>
+<span class="nc" id="L711">        defaults.put(WEB_SEARCH_VISIBLE, Boolean.TRUE);</span>
+<span class="nc" id="L712">        defaults.put(GROUP_SIDEPANE_VISIBLE, Boolean.TRUE);</span>
+<span class="nc" id="L713">        defaults.put(SELECTED_FETCHER_INDEX, 0);</span>
+<span class="nc" id="L714">        defaults.put(BIB_LOC_AS_PRIMARY_DIR, Boolean.FALSE);</span>
+<span class="nc" id="L715">        defaults.put(DB_CONNECT_SERVER_TYPE, &quot;MySQL&quot;);</span>
+<span class="nc" id="L716">        defaults.put(DB_CONNECT_HOSTNAME, &quot;localhost&quot;);</span>
+<span class="nc" id="L717">        defaults.put(DB_CONNECT_DATABASE, &quot;jabref&quot;);</span>
+<span class="nc" id="L718">        defaults.put(DB_CONNECT_USERNAME, &quot;root&quot;);</span>
+<span class="nc" id="L719">        defaults.put(COLLECT_TELEMETRY, Boolean.FALSE);</span>
+<span class="nc" id="L720">        defaults.put(ALREADY_ASKED_TO_COLLECT_TELEMETRY, Boolean.FALSE);</span>
+
+<span class="nc" id="L722">        defaults.put(ASK_AUTO_NAMING_PDFS_AGAIN, Boolean.TRUE);</span>
+<span class="nc" id="L723">        insertDefaultCleanupPreset(defaults);</span>
+
+        // defaults for DroppedFileHandler UI
+<span class="nc" id="L726">        defaults.put(DROPPEDFILEHANDLER_LEAVE, Boolean.FALSE);</span>
+<span class="nc" id="L727">        defaults.put(DROPPEDFILEHANDLER_COPY, Boolean.TRUE);</span>
+<span class="nc" id="L728">        defaults.put(DROPPEDFILEHANDLER_MOVE, Boolean.FALSE);</span>
+<span class="nc" id="L729">        defaults.put(DROPPEDFILEHANDLER_RENAME, Boolean.FALSE);</span>
+
+        // use BibTeX key appended with filename as default pattern
+<span class="nc" id="L732">        defaults.put(IMPORT_FILENAMEPATTERN, ImportSettingsTab.DEFAULT_FILENAMEPATTERNS[1]);</span>
+        //Default empty String to be backwards compatible
+<span class="nc" id="L734">        defaults.put(IMPORT_FILEDIRPATTERN, &quot;&quot;);</span>
+
+<span class="nc" id="L736">        customImports = new CustomImportList(this);</span>
+
+<span class="nc" id="L738">        String defaultExpression = &quot;**/.*[bibtexkey].*\\\\.[extension]&quot;;</span>
+<span class="nc" id="L739">        defaults.put(AUTOLINK_REG_EXP_SEARCH_EXPRESSION_KEY, defaultExpression);</span>
+<span class="nc" id="L740">        defaults.put(AUTOLINK_USE_REG_EXP_SEARCH_KEY, Boolean.FALSE);</span>
+<span class="nc" id="L741">        defaults.put(USE_IEEE_ABRV, Boolean.FALSE);</span>
+<span class="nc" id="L742">        defaults.put(USE_CASE_KEEPER_ON_SEARCH, Boolean.TRUE);</span>
+<span class="nc" id="L743">        defaults.put(USE_UNIT_FORMATTER_ON_SEARCH, Boolean.TRUE);</span>
+
+<span class="nc" id="L745">        defaults.put(USE_DEFAULT_CONSOLE_APPLICATION, Boolean.TRUE);</span>
+<span class="nc bnc" id="L746" title="All 2 branches missed.">        if (OS.WINDOWS) {</span>
+<span class="nc" id="L747">            defaults.put(CONSOLE_COMMAND, &quot;C:\\Program Files\\ConEmu\\ConEmu64.exe /single /dir \&quot;%DIR\&quot;&quot;);</span>
+<span class="nc" id="L748">            defaults.put(ADOBE_ACROBAT_COMMAND, &quot;C:\\Program Files (x86)\\Adobe\\Acrobat Reader DC\\Reader&quot;);</span>
+<span class="nc" id="L749">            defaults.put(SUMATRA_PDF_COMMAND, &quot;C:\\Program Files\\SumatraPDF&quot;);</span>
+<span class="nc" id="L750">            defaults.put(USE_PDF_READER, ADOBE_ACROBAT_COMMAND);</span>
+        } else {
+<span class="nc" id="L752">            defaults.put(CONSOLE_COMMAND, &quot;&quot;);</span>
+<span class="nc" id="L753">            defaults.put(ADOBE_ACROBAT_COMMAND, &quot;&quot;);</span>
+<span class="nc" id="L754">            defaults.put(SUMATRA_PDF_COMMAND, &quot;&quot;);</span>
+<span class="nc" id="L755">            defaults.put(USE_PDF_READER, &quot;&quot;);</span>
+        }
+
+        //versioncheck defaults
+<span class="nc" id="L759">        defaults.put(VERSION_IGNORED_UPDATE, &quot;&quot;);</span>
+
+        // preview
+<span class="nc" id="L762">        defaults.put(CYCLE_PREVIEW, &quot;Preview;&quot; + CitationStyle.DEFAULT);</span>
+<span class="nc" id="L763">        defaults.put(CYCLE_PREVIEW_POS, 0);</span>
+<span class="nc" id="L764">        defaults.put(PREVIEW_PANEL_HEIGHT, 0.65);</span>
+<span class="nc" id="L765">        defaults.put(PREVIEW_ENABLED, Boolean.TRUE);</span>
+<span class="nc" id="L766">        defaults.put(PREVIEW_STYLE,</span>
+                     &quot;&lt;font face=\&quot;sans-serif\&quot;&gt;&quot;
+                                    + &quot;&lt;b&gt;&lt;i&gt;\\bibtextype&lt;/i&gt;&lt;a name=\&quot;\\bibtexkey\&quot;&gt;\\begin{bibtexkey} (\\bibtexkey)&lt;/a&gt;&quot;
+                                    + &quot;\\end{bibtexkey}&lt;/b&gt;&lt;br&gt;__NEWLINE__&quot;
+                                    + &quot;\\begin{author} \\format[Authors(LastFirst,Initials,Semicolon,Amp),HTMLChars]{\\author}&lt;BR&gt;\\end{author}__NEWLINE__&quot;
+                                    + &quot;\\begin{editor} \\format[Authors(LastFirst,Initials,Semicolon,Amp),HTMLChars]{\\editor} &quot;
+                                    + &quot;&lt;i&gt;(\\format[IfPlural(Eds.,Ed.)]{\\editor})&lt;/i&gt;&lt;BR&gt;\\end{editor}__NEWLINE__&quot;
+                                    + &quot;\\begin{title} \\format[HTMLChars]{\\title} \\end{title}&lt;BR&gt;__NEWLINE__&quot;
+                                    + &quot;\\begin{chapter} \\format[HTMLChars]{\\chapter}&lt;BR&gt;\\end{chapter}__NEWLINE__&quot;
+                                    + &quot;\\begin{journal} &lt;em&gt;\\format[HTMLChars]{\\journal}, &lt;/em&gt;\\end{journal}__NEWLINE__&quot;
+                                    // Include the booktitle field for @inproceedings, @proceedings, etc.
+                                    + &quot;\\begin{booktitle} &lt;em&gt;\\format[HTMLChars]{\\booktitle}, &lt;/em&gt;\\end{booktitle}__NEWLINE__&quot;
+                                    + &quot;\\begin{school} &lt;em&gt;\\format[HTMLChars]{\\school}, &lt;/em&gt;\\end{school}__NEWLINE__&quot;
+                                    + &quot;\\begin{institution} &lt;em&gt;\\format[HTMLChars]{\\institution}, &lt;/em&gt;\\end{institution}__NEWLINE__&quot;
+                                    + &quot;\\begin{publisher} &lt;em&gt;\\format[HTMLChars]{\\publisher}, &lt;/em&gt;\\end{publisher}__NEWLINE__&quot;
+                                    + &quot;\\begin{year}&lt;b&gt;\\year&lt;/b&gt;\\end{year}\\begin{volume}&lt;i&gt;, \\volume&lt;/i&gt;\\end{volume}&quot;
+                                    + &quot;\\begin{pages}, \\format[FormatPagesForHTML]{\\pages} \\end{pages}__NEWLINE__&quot;
+                                    + &quot;\\begin{abstract}&lt;BR&gt;&lt;BR&gt;&lt;b&gt;Abstract: &lt;/b&gt; \\format[HTMLChars]{\\abstract} \\end{abstract}__NEWLINE__&quot;
+                                    + &quot;\\begin{comment}&lt;BR&gt;&lt;BR&gt;&lt;b&gt;Comment: &lt;/b&gt; \\format[HTMLChars]{\\comment} \\end{comment}&quot;
+                                    + &quot;&lt;/dd&gt;__NEWLINE__&lt;p&gt;&lt;/p&gt;&lt;/font&gt;&quot;);
+
+        // set default theme
+<span class="nc" id="L788">        defaults.put(JabRefPreferences.FX_THEME, ThemeLoader.MAIN_CSS);</span>
+
+<span class="nc" id="L790">        defaults.put(ENTRY_EDITOR_DRAG_DROP_PREFERENCE_TYPE, FileDragDropPreferenceType.MOVE.name());</span>
+<span class="nc" id="L791">        setLanguageDependentDefaultValues();</span>
+<span class="nc" id="L792">    }</span>
+
+    public static JabRefPreferences getInstance() {
+<span class="nc bnc" id="L795" title="All 2 branches missed.">        if (JabRefPreferences.singleton == null) {</span>
+<span class="nc" id="L796">            JabRefPreferences.singleton = new JabRefPreferences();</span>
+        }
+<span class="nc" id="L798">        return JabRefPreferences.singleton;</span>
+    }
+
+    private static String convertListToString(List&lt;String&gt; value) {
+<span class="nc" id="L802">        return value.stream().map(val -&gt; StringUtil.quote(val, &quot;;&quot;, '\\')).collect(Collectors.joining(&quot;;&quot;));</span>
+    }
+
+    /**
+     * Looks up a color definition in preferences, and returns an array containing the RGB values.
+     *
+     * @param value The key for this setting.
+     * @return The RGB values corresponding to this color setting.
+     */
+    private static int[] getRgb(String value) {
+<span class="nc" id="L812">        int[] values = new int[3];</span>
+
+<span class="nc bnc" id="L814" title="All 4 branches missed.">        if ((value != null) &amp;&amp; !value.isEmpty()) {</span>
+<span class="nc" id="L815">            String[] elements = value.split(&quot;:&quot;);</span>
+<span class="nc" id="L816">            values[0] = Integer.parseInt(elements[0]);</span>
+<span class="nc" id="L817">            values[1] = Integer.parseInt(elements[1]);</span>
+<span class="nc" id="L818">            values[2] = Integer.parseInt(elements[2]);</span>
+<span class="nc" id="L819">        } else {</span>
+<span class="nc" id="L820">            values[0] = 0;</span>
+<span class="nc" id="L821">            values[1] = 0;</span>
+<span class="nc" id="L822">            values[2] = 0;</span>
+        }
+<span class="nc" id="L824">        return values;</span>
+    }
+
+    private static Preferences getPrefsNodeForCustomizedEntryTypes(BibDatabaseMode mode) {
+<span class="nc bnc" id="L828" title="All 2 branches missed.">        if (mode == BibDatabaseMode.BIBLATEX) {</span>
+<span class="nc" id="L829">            return Preferences.userNodeForPackage(PREFS_BASE_CLASS).node(CUSTOMIZED_BIBLATEX_TYPES);</span>
+        }
+<span class="nc bnc" id="L831" title="All 2 branches missed.">        if (mode == BibDatabaseMode.BIBTEX) {</span>
+<span class="nc" id="L832">            return Preferences.userNodeForPackage(PREFS_BASE_CLASS).node(CUSTOMIZED_BIBTEX_TYPES);</span>
+        }
+
+<span class="nc" id="L835">        throw new IllegalArgumentException(&quot;Unknown BibDatabaseMode: &quot; + mode);</span>
+    }
+
+    private static Optional&lt;String&gt; getNextUnit(Reader data) throws IOException {
+        // character last read
+        // -1 if end of stream
+        // initialization necessary, because of Java compiler
+<span class="nc" id="L842">        int c = -1;</span>
+
+        // last character was escape symbol
+<span class="nc" id="L845">        boolean escape = false;</span>
+
+        // true if a &quot;;&quot; is found
+<span class="nc" id="L848">        boolean done = false;</span>
+
+<span class="nc" id="L850">        StringBuilder res = new StringBuilder();</span>
+<span class="nc bnc" id="L851" title="All 4 branches missed.">        while (!done &amp;&amp; ((c = data.read()) != -1)) {</span>
+<span class="nc bnc" id="L852" title="All 2 branches missed.">            if (c == '\\') {</span>
+<span class="nc bnc" id="L853" title="All 2 branches missed.">                if (escape) {</span>
+<span class="nc" id="L854">                    escape = false;</span>
+<span class="nc" id="L855">                    res.append('\\');</span>
+                } else {
+<span class="nc" id="L857">                    escape = true;</span>
+                }
+            } else {
+<span class="nc bnc" id="L860" title="All 2 branches missed.">                if (c == ';') {</span>
+<span class="nc bnc" id="L861" title="All 2 branches missed.">                    if (escape) {</span>
+<span class="nc" id="L862">                        res.append(';');</span>
+                    } else {
+<span class="nc" id="L864">                        done = true;</span>
+                    }
+                } else {
+<span class="nc" id="L867">                    res.append((char) c);</span>
+                }
+<span class="nc" id="L869">                escape = false;</span>
+            }
+        }
+<span class="nc bnc" id="L872" title="All 2 branches missed.">        if (res.length() &gt; 0) {</span>
+<span class="nc" id="L873">            return Optional.of(res.toString());</span>
+<span class="nc bnc" id="L874" title="All 2 branches missed.">        } else if (c == -1) {</span>
+            // end of stream
+<span class="nc" id="L876">            return Optional.empty();</span>
+        } else {
+<span class="nc" id="L878">            return Optional.of(&quot;&quot;);</span>
+        }
+    }
+
+    private static void insertDefaultCleanupPreset(Map&lt;String, Object&gt; storage) {
+<span class="nc" id="L883">        EnumSet&lt;CleanupPreset.CleanupStep&gt; deactivatedJobs = EnumSet.of(</span>
+                CleanupPreset.CleanupStep.CLEAN_UP_UPGRADE_EXTERNAL_LINKS,
+                CleanupPreset.CleanupStep.MOVE_PDF,
+                CleanupPreset.CleanupStep.RENAME_PDF_ONLY_RELATIVE_PATHS,
+                CleanupPreset.CleanupStep.CONVERT_TO_BIBLATEX,
+                CleanupPreset.CleanupStep.CONVERT_TO_BIBTEX);
+
+<span class="nc bnc" id="L890" title="All 2 branches missed.">        for (CleanupPreset.CleanupStep action : EnumSet.allOf(CleanupPreset.CleanupStep.class)) {</span>
+<span class="nc bnc" id="L891" title="All 2 branches missed.">            storage.put(JabRefPreferences.CLEANUP + action.name(), !deactivatedJobs.contains(action));</span>
+<span class="nc" id="L892">        }</span>
+<span class="nc" id="L893">        storage.put(CLEANUP_FORMATTERS, convertListToString(Cleanups.DEFAULT_SAVE_ACTIONS.getAsStringList(OS.NEWLINE)));</span>
+<span class="nc" id="L894">    }</span>
+
+    public EntryEditorPreferences getEntryEditorPreferences() {
+<span class="nc" id="L897">        return new EntryEditorPreferences(getEntryEditorTabList(),</span>
+<span class="nc" id="L898">                                          getLatexFieldFormatterPreferences(),</span>
+<span class="nc" id="L899">                                          getImportFormatPreferences(),</span>
+<span class="nc" id="L900">                                          getCustomTabFieldNames(),</span>
+<span class="nc" id="L901">                                          getBoolean(SHOW_RECOMMENDATIONS),</span>
+<span class="nc" id="L902">                                          getBoolean(ACCEPT_RECOMMENDATIONS),</span>
+<span class="nc" id="L903">                                          getBoolean(DEFAULT_SHOW_SOURCE),</span>
+<span class="nc" id="L904">                                          getBibtexKeyPatternPreferences(),</span>
+<span class="nc" id="L905">                                          Globals.getKeyPrefs(),</span>
+<span class="nc" id="L906">                                          getBoolean(AVOID_OVERWRITING_KEY));</span>
+    }
+
+    public Map&lt;SidePaneType, Integer&gt; getSidePanePreferredPositions() {
+<span class="nc" id="L910">        Map&lt;SidePaneType, Integer&gt; preferredPositions = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L912">        List&lt;String&gt; componentNames = getStringList(SIDE_PANE_COMPONENT_NAMES);</span>
+<span class="nc" id="L913">        List&lt;String&gt; componentPositions = getStringList(SIDE_PANE_COMPONENT_PREFERRED_POSITIONS);</span>
+
+<span class="nc bnc" id="L915" title="All 2 branches missed.">        for (int i = 0; i &lt; componentNames.size(); ++i) {</span>
+<span class="nc" id="L916">            String name = componentNames.get(i);</span>
+            try {
+<span class="nc" id="L918">                SidePaneType type = Enum.valueOf(SidePaneType.class, name);</span>
+<span class="nc" id="L919">                preferredPositions.put(type, Integer.parseInt(componentPositions.get(i)));</span>
+<span class="nc" id="L920">            } catch (NumberFormatException e) {</span>
+<span class="nc" id="L921">                LOGGER.debug(&quot;Invalid number format for side pane component '&quot; + name + &quot;'&quot;, e);</span>
+<span class="nc" id="L922">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L923">                LOGGER.debug(&quot;Following component is not a side pane: '&quot; + name + &quot;'&quot;, e);</span>
+<span class="nc" id="L924">            }</span>
+        }
+
+<span class="nc" id="L927">        return preferredPositions;</span>
+    }
+
+    public String getUser() {
+        try {
+<span class="nc" id="L932">            return get(DEFAULT_OWNER) + '-' + InetAddress.getLocalHost().getHostName();</span>
+<span class="nc" id="L933">        } catch (UnknownHostException ex) {</span>
+<span class="nc" id="L934">            LOGGER.debug(&quot;Hostname not found.&quot;, ex);</span>
+<span class="nc" id="L935">            return get(DEFAULT_OWNER);</span>
+        }
+    }
+
+    /**
+     * Get a Map of default tab names to deafult tab fields.
+     * The fields are returned as a String with fields separated by ;
+     * They are combined into one string in order to feed into CustomizeGeneralFieldsDialogViewModel.resetFields()
+     * so that they do not have to be parsed in order to fit there
+     *
+     * @return A map of keys with tab names and values as a string containing
+     * fields for the given name separated by ;
+     */
+    @Override
+    public Map&lt;String, String&gt; getCustomTabsNamesAndFields() {
+<span class="nc" id="L950">        Map&lt;String, String&gt; customTabsMap = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L952">        int defNumber = 0;</span>
+        while (true) {
+            //Saved as CUSTOMTABNAME_def{number} and ; separated
+<span class="nc" id="L955">            String name = (String) defaults.get(CUSTOM_TAB_NAME + &quot;_def&quot; + defNumber);</span>
+<span class="nc" id="L956">            String fields = (String) defaults.get(CUSTOM_TAB_FIELDS + &quot;_def&quot; + defNumber);</span>
+
+<span class="nc bnc" id="L958" title="All 4 branches missed.">            if (StringUtil.isNullOrEmpty(name) || StringUtil.isNullOrEmpty(fields)) {</span>
+<span class="nc" id="L959">                break;</span>
+            }
+<span class="nc" id="L961">            customTabsMap.put(name, fields);</span>
+<span class="nc" id="L962">            defNumber++;</span>
+<span class="nc" id="L963">        }</span>
+<span class="nc" id="L964">        return customTabsMap;</span>
+    }
+
+    @Override
+    public void setCustomTabsNameAndFields(String name, String fields, int defNumber) {
+<span class="nc" id="L969">        prefs.put(CUSTOM_TAB_NAME + defNumber, name);</span>
+<span class="nc" id="L970">        prefs.put(CUSTOM_TAB_FIELDS + defNumber, fields);</span>
+<span class="nc" id="L971">    }</span>
+
+    public List&lt;String&gt; getCustomTabFieldNames() {
+<span class="nc" id="L974">        List&lt;String&gt; customFields = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L976">        int defNumber = 0;</span>
+        while (true) {
+            // saved as CUSTOMTABNAME_def{number} and ; separated
+<span class="nc" id="L979">            String fields = (String) defaults.get(CUSTOM_TAB_FIELDS + &quot;_def&quot; + defNumber);</span>
+
+<span class="nc bnc" id="L981" title="All 2 branches missed.">            if (StringUtil.isNullOrEmpty(fields)) {</span>
+<span class="nc" id="L982">                break;</span>
+            }
+
+<span class="nc" id="L985">            customFields.addAll(Arrays.asList(fields.split(&quot;;&quot;)));</span>
+<span class="nc" id="L986">            defNumber++;</span>
+<span class="nc" id="L987">        }</span>
+<span class="nc" id="L988">        return customFields;</span>
+    }
+
+    public void setLanguageDependentDefaultValues() {
+        // Entry editor tab 0:
+<span class="nc" id="L993">        defaults.put(CUSTOM_TAB_NAME + &quot;_def0&quot;, Localization.lang(&quot;General&quot;));</span>
+<span class="nc" id="L994">        String fieldNames = InternalBibtexFields.getDefaultGeneralFields().stream().collect(Collectors.joining(&quot;;&quot;));</span>
+<span class="nc" id="L995">        defaults.put(CUSTOM_TAB_FIELDS + &quot;_def0&quot;, fieldNames);</span>
+
+        // Entry editor tab 1:
+<span class="nc" id="L998">        defaults.put(CUSTOM_TAB_FIELDS + &quot;_def1&quot;, FieldName.ABSTRACT);</span>
+<span class="nc" id="L999">        defaults.put(CUSTOM_TAB_NAME + &quot;_def1&quot;, Localization.lang(&quot;Abstract&quot;));</span>
+
+        // Entry editor tab 2: Comments Field - used for research comments, etc.
+<span class="nc" id="L1002">        defaults.put(CUSTOM_TAB_FIELDS + &quot;_def2&quot;, FieldName.COMMENT);</span>
+<span class="nc" id="L1003">        defaults.put(CUSTOM_TAB_NAME + &quot;_def2&quot;, Localization.lang(&quot;Comments&quot;));</span>
+
+<span class="nc" id="L1005">        defaults.put(EMAIL_SUBJECT, Localization.lang(&quot;References&quot;));</span>
+<span class="nc" id="L1006">    }</span>
+
+    /**
+     * Check whether a key is set (differently from null).
+     *
+     * @param key The key to check.
+     * @return true if the key is set, false otherwise.
+     */
+    public boolean hasKey(String key) {
+<span class="nc bnc" id="L1015" title="All 2 branches missed.">        return prefs.get(key, null) != null;</span>
+    }
+
+    public String get(String key) {
+<span class="nc" id="L1019">        return prefs.get(key, (String) defaults.get(key));</span>
+    }
+
+    public Optional&lt;String&gt; getAsOptional(String key) {
+<span class="nc" id="L1023">        return Optional.ofNullable(prefs.get(key, (String) defaults.get(key)));</span>
+    }
+
+    public String get(String key, String def) {
+<span class="nc" id="L1027">        return prefs.get(key, def);</span>
+    }
+
+    public boolean getBoolean(String key) {
+<span class="nc" id="L1031">        return prefs.getBoolean(key, getBooleanDefault(key));</span>
+    }
+
+    public boolean getBoolean(String key, boolean def) {
+<span class="nc" id="L1035">        return prefs.getBoolean(key, def);</span>
+    }
+
+    private boolean getBooleanDefault(String key) {
+<span class="nc" id="L1039">        return (Boolean) defaults.get(key);</span>
+    }
+
+    public int getInt(String key) {
+<span class="nc" id="L1043">        return prefs.getInt(key, getIntDefault(key));</span>
+    }
+
+    public double getDouble(String key) {
+<span class="nc" id="L1047">        return prefs.getDouble(key, getDoubleDefault(key));</span>
+    }
+
+    public int getIntDefault(String key) {
+<span class="nc" id="L1051">        return (Integer) defaults.get(key);</span>
+    }
+
+    private double getDoubleDefault(String key) {
+<span class="nc" id="L1055">        return ((Number) defaults.get(key)).doubleValue();</span>
+    }
+
+    public void put(String key, String value) {
+<span class="nc" id="L1059">        prefs.put(key, value);</span>
+<span class="nc" id="L1060">    }</span>
+
+    public void putBoolean(String key, boolean value) {
+<span class="nc" id="L1063">        prefs.putBoolean(key, value);</span>
+<span class="nc" id="L1064">    }</span>
+
+    public void putInt(String key, int value) {
+<span class="nc" id="L1067">        prefs.putInt(key, value);</span>
+<span class="nc" id="L1068">    }</span>
+
+    public void putInt(String key, Number value) {
+<span class="nc" id="L1071">        prefs.putInt(key, value.intValue());</span>
+<span class="nc" id="L1072">    }</span>
+
+    public void putDouble(String key, double value) {
+<span class="nc" id="L1075">        prefs.putDouble(key, value);</span>
+<span class="nc" id="L1076">    }</span>
+
+    public void remove(String key) {
+<span class="nc" id="L1079">        prefs.remove(key);</span>
+<span class="nc" id="L1080">    }</span>
+
+    /**
+     * Puts a list of strings into the Preferences, by linking its elements with ';' into a single string. Escape
+     * characters make the process transparent even if strings contain ';'.
+     */
+    public void putStringList(String key, List&lt;String&gt; value) {
+<span class="nc bnc" id="L1087" title="All 2 branches missed.">        if (value == null) {</span>
+<span class="nc" id="L1088">            remove(key);</span>
+<span class="nc" id="L1089">            return;</span>
+        }
+
+<span class="nc" id="L1092">        put(key, convertListToString(value));</span>
+<span class="nc" id="L1093">    }</span>
+
+    /**
+     * Returns a List of Strings containing the chosen columns.
+     */
+    public List&lt;String&gt; getStringList(String key) {
+<span class="nc" id="L1099">        String names = get(key);</span>
+<span class="nc bnc" id="L1100" title="All 2 branches missed.">        if (names == null) {</span>
+<span class="nc" id="L1101">            return new ArrayList&lt;&gt;();</span>
+        }
+
+<span class="nc" id="L1104">        StringReader rd = new StringReader(names);</span>
+<span class="nc" id="L1105">        List&lt;String&gt; res = new ArrayList&lt;&gt;();</span>
+        Optional&lt;String&gt; rs;
+        try {
+<span class="nc bnc" id="L1108" title="All 2 branches missed.">            while ((rs = getNextUnit(rd)).isPresent()) {</span>
+<span class="nc" id="L1109">                res.add(rs.get());</span>
+            }
+<span class="nc" id="L1111">        } catch (IOException ignored) {</span>
+            // Ignored
+<span class="nc" id="L1113">        }</span>
+<span class="nc" id="L1114">        return res;</span>
+    }
+
+    /**
+     * Looks up a color definition in preferences, and returns the Color object.
+     *
+     * @param key The key for this setting.
+     * @return The color corresponding to the setting.
+     */
+    public Color getColor(String key) {
+<span class="nc" id="L1124">        String value = get(key);</span>
+<span class="nc" id="L1125">        int[] rgb = getRgb(value);</span>
+<span class="nc" id="L1126">        return new Color(rgb[0], rgb[1], rgb[2]);</span>
+    }
+
+    public Color getDefaultColor(String key) {
+<span class="nc" id="L1130">        String value = (String) defaults.get(key);</span>
+<span class="nc" id="L1131">        int[] rgb = getRgb(value);</span>
+<span class="nc" id="L1132">        return new Color(rgb[0], rgb[1], rgb[2]);</span>
+    }
+
+    /**
+     * Returns the default BibDatabase mode, which can be either BIBTEX or BIBLATEX.
+     *
+     * @return the default BibDatabaseMode
+     */
+    public BibDatabaseMode getDefaultBibDatabaseMode() {
+<span class="nc bnc" id="L1141" title="All 2 branches missed.">        if (getBoolean(BIBLATEX_DEFAULT_MODE)) {</span>
+<span class="nc" id="L1142">            return BibDatabaseMode.BIBLATEX;</span>
+        } else {
+<span class="nc" id="L1144">            return BibDatabaseMode.BIBTEX;</span>
+        }
+    }
+
+    /**
+     * Set the default value for a key. This is useful for plugins that need to add default values for the prefs keys
+     * they use.
+     *
+     * @param key The preferences key.
+     * @param value The default value.
+     */
+    public void putDefaultValue(String key, Object value) {
+<span class="nc" id="L1156">        defaults.put(key, value);</span>
+<span class="nc" id="L1157">    }</span>
+
+    /**
+     * Stores a color in preferences.
+     *
+     * @param key The key for this setting.
+     * @param color The Color to store.
+     */
+    public void putColor(String key, Color color) {
+<span class="nc" id="L1166">        String rgb = String.valueOf(color.getRed()) + ':' + color.getGreen() + ':' + color.getBlue();</span>
+<span class="nc" id="L1167">        put(key, rgb);</span>
+<span class="nc" id="L1168">    }</span>
+
+    /**
+     * Clear all preferences.
+     *
+     * @throws BackingStoreException
+     */
+    public void clear() throws BackingStoreException {
+<span class="nc" id="L1176">        clearAllCustomEntryTypes();</span>
+<span class="nc" id="L1177">        clearKeyPatterns();</span>
+<span class="nc" id="L1178">        prefs.clear();</span>
+<span class="nc" id="L1179">        new SharedDatabasePreferences().clear();</span>
+<span class="nc" id="L1180">    }</span>
+
+    public void clear(String key) {
+<span class="nc" id="L1183">        prefs.remove(key);</span>
+<span class="nc" id="L1184">    }</span>
+
+    /**
+     * Calling this method will write all preferences into the preference store.
+     */
+    public void flush() {
+<span class="nc bnc" id="L1190" title="All 2 branches missed.">        if (getBoolean(MEMORY_STICK_MODE)) {</span>
+            try {
+<span class="nc" id="L1192">                exportPreferences(&quot;jabref.xml&quot;);</span>
+<span class="nc" id="L1193">            } catch (JabRefException e) {</span>
+<span class="nc" id="L1194">                LOGGER.warn(&quot;Could not export preferences for memory stick mode: &quot; + e.getMessage(), e);</span>
+<span class="nc" id="L1195">            }</span>
+        }
+        try {
+<span class="nc" id="L1198">            prefs.flush();</span>
+<span class="nc" id="L1199">        } catch (BackingStoreException ex) {</span>
+<span class="nc" id="L1200">            LOGGER.warn(&quot;Cannot communicate with backing store&quot;, ex);</span>
+<span class="nc" id="L1201">        }</span>
+<span class="nc" id="L1202">    }</span>
+
+    /**
+     * Fetches key patterns from preferences.
+     * The implementation doesn't cache the results
+     *
+     * @return LabelPattern containing all keys. Returned LabelPattern has no parent
+     */
+    public GlobalBibtexKeyPattern getKeyPattern() {
+<span class="nc" id="L1211">        keyPattern = GlobalBibtexKeyPattern.fromPattern(get(DEFAULT_BIBTEX_KEY_PATTERN));</span>
+<span class="nc" id="L1212">        Preferences pre = Preferences.userNodeForPackage(PREFS_BASE_CLASS).node(BIBTEX_KEY_PATTERNS_NODE);</span>
+        try {
+<span class="nc" id="L1214">            String[] keys = pre.keys();</span>
+<span class="nc bnc" id="L1215" title="All 2 branches missed.">            if (keys.length &gt; 0) {</span>
+<span class="nc bnc" id="L1216" title="All 2 branches missed.">                for (String key : keys) {</span>
+<span class="nc" id="L1217">                    keyPattern.addBibtexKeyPattern(key, pre.get(key, null));</span>
+                }
+            }
+<span class="nc" id="L1220">        } catch (BackingStoreException ex) {</span>
+<span class="nc" id="L1221">            LOGGER.info(&quot;BackingStoreException in JabRefPreferences.getKeyPattern&quot;, ex);</span>
+<span class="nc" id="L1222">        }</span>
+<span class="nc" id="L1223">        return keyPattern;</span>
+    }
+
+    /**
+     * Adds the given key pattern to the preferences
+     *
+     * @param pattern the pattern to store
+     */
+    public void putKeyPattern(GlobalBibtexKeyPattern pattern) {
+<span class="nc" id="L1232">        keyPattern = pattern;</span>
+
+        // Store overridden definitions to Preferences.
+<span class="nc" id="L1235">        Preferences pre = Preferences.userNodeForPackage(PREFS_BASE_CLASS).node(BIBTEX_KEY_PATTERNS_NODE);</span>
+        try {
+<span class="nc" id="L1237">            pre.clear(); // We remove all old entries.</span>
+<span class="nc" id="L1238">        } catch (BackingStoreException ex) {</span>
+<span class="nc" id="L1239">            LOGGER.info(&quot;BackingStoreException in JabRefPreferences.putKeyPattern&quot;, ex);</span>
+<span class="nc" id="L1240">        }</span>
+
+<span class="nc" id="L1242">        Set&lt;String&gt; allKeys = pattern.getAllKeys();</span>
+<span class="nc bnc" id="L1243" title="All 2 branches missed.">        for (String key : allKeys) {</span>
+<span class="nc bnc" id="L1244" title="All 2 branches missed.">            if (!pattern.isDefaultValue(key)) {</span>
+                // no default value
+                // the first entry in the array is the full pattern
+                // see org.jabref.logic.labelPattern.BibtexKeyGenerator.split(String)
+<span class="nc" id="L1248">                pre.put(key, pattern.getValue(key).get(0));</span>
+            }
+<span class="nc" id="L1250">        }</span>
+<span class="nc" id="L1251">    }</span>
+
+    private void clearKeyPatterns() throws BackingStoreException {
+<span class="nc" id="L1254">        Preferences pre = Preferences.userNodeForPackage(PREFS_BASE_CLASS).node(BIBTEX_KEY_PATTERNS_NODE);</span>
+<span class="nc" id="L1255">        pre.clear();</span>
+<span class="nc" id="L1256">    }</span>
+
+    public void storeCustomEntryTypes(List&lt;CustomEntryType&gt; customEntryTypes, BibDatabaseMode bibDatabaseMode) {
+<span class="nc" id="L1259">        Preferences prefsNode = getPrefsNodeForCustomizedEntryTypes(bibDatabaseMode);</span>
+
+        try {
+            // clear old custom types
+<span class="nc" id="L1263">            clearCustomEntryTypes(bibDatabaseMode);</span>
+
+            // store current custom types
+<span class="nc" id="L1266">            customEntryTypes.forEach(type -&gt; prefsNode.put(type.getName(), type.getAsString()));</span>
+
+<span class="nc" id="L1268">            prefsNode.flush();</span>
+<span class="nc" id="L1269">        } catch (BackingStoreException e) {</span>
+<span class="nc" id="L1270">            LOGGER.info(&quot;Updating stored custom entry types failed.&quot;, e);</span>
+<span class="nc" id="L1271">        }</span>
+<span class="nc" id="L1272">    }</span>
+
+    public List&lt;CustomEntryType&gt; loadCustomEntryTypes(BibDatabaseMode bibDatabaseMode) {
+<span class="nc" id="L1275">        List&lt;CustomEntryType&gt; storedEntryTypes = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L1276">        Preferences prefsNode = getPrefsNodeForCustomizedEntryTypes(bibDatabaseMode);</span>
+        try {
+<span class="nc" id="L1278">            Arrays.stream(prefsNode.keys())</span>
+<span class="nc" id="L1279">                  .map(key -&gt; prefsNode.get(key, null))</span>
+<span class="nc" id="L1280">                  .filter(Objects::nonNull)</span>
+<span class="nc" id="L1281">                  .forEach(typeString -&gt; CustomEntryType.parse(typeString).ifPresent(storedEntryTypes::add));</span>
+<span class="nc" id="L1282">        } catch (BackingStoreException e) {</span>
+<span class="nc" id="L1283">            LOGGER.info(&quot;Parsing customized entry types failed.&quot;, e);</span>
+<span class="nc" id="L1284">        }</span>
+<span class="nc" id="L1285">        return storedEntryTypes;</span>
+    }
+
+    private void clearAllCustomEntryTypes() throws BackingStoreException {
+<span class="nc bnc" id="L1289" title="All 2 branches missed.">        for (BibDatabaseMode mode : BibDatabaseMode.values()) {</span>
+<span class="nc" id="L1290">            clearCustomEntryTypes(mode);</span>
+        }
+<span class="nc" id="L1292">    }</span>
+
+    private void clearCustomEntryTypes(BibDatabaseMode mode) throws BackingStoreException {
+<span class="nc" id="L1295">        Preferences prefsNode = getPrefsNodeForCustomizedEntryTypes(mode);</span>
+<span class="nc" id="L1296">        prefsNode.clear();</span>
+<span class="nc" id="L1297">    }</span>
+
+    public Map&lt;String, Object&gt; getPreferences() {
+<span class="nc" id="L1300">        Map&lt;String, Object&gt; result = new HashMap&lt;&gt;();</span>
+        try {
+<span class="nc bnc" id="L1302" title="All 2 branches missed.">            for (String key : this.prefs.keys()) {</span>
+<span class="nc" id="L1303">                Object value = getObject(key);</span>
+<span class="nc" id="L1304">                result.put(key, value);</span>
+            }
+<span class="nc" id="L1306">        } catch (BackingStoreException e) {</span>
+<span class="nc" id="L1307">            LOGGER.info(&quot;could not retrieve preference keys&quot;, e);</span>
+<span class="nc" id="L1308">        }</span>
+<span class="nc" id="L1309">        return result;</span>
+    }
+
+    private Object getObject(String key) {
+        try {
+<span class="nc" id="L1314">            return this.get(key);</span>
+<span class="nc" id="L1315">        } catch (ClassCastException e) {</span>
+            try {
+<span class="nc" id="L1317">                return this.getBoolean(key);</span>
+<span class="nc" id="L1318">            } catch (ClassCastException e2) {</span>
+                try {
+<span class="nc" id="L1320">                    return this.getInt(key);</span>
+<span class="nc" id="L1321">                } catch (ClassCastException e3) {</span>
+<span class="nc" id="L1322">                    return this.getDouble(key);</span>
+                }
+            }
+        }
+    }
+
+    /**
+     * Removes all entries keyed by prefix+number, where number is equal to or higher than the given number.
+     *
+     * @param number or higher.
+     */
+    @Override
+    public void purgeSeries(String prefix, int number) {
+<span class="nc" id="L1335">        int n = number;</span>
+<span class="nc bnc" id="L1336" title="All 2 branches missed.">        while (get(prefix + n) != null) {</span>
+<span class="nc" id="L1337">            remove(prefix + n);</span>
+<span class="nc" id="L1338">            n++;</span>
+        }
+<span class="nc" id="L1340">    }</span>
+
+    @Override
+    public Map&lt;String, List&lt;String&gt;&gt; getEntryEditorTabList() {
+<span class="nc bnc" id="L1344" title="All 2 branches missed.">        if (tabList == null) {</span>
+<span class="nc" id="L1345">            updateEntryEditorTabList();</span>
+        }
+<span class="nc" id="L1347">        return tabList;</span>
+    }
+
+    @Override
+    public Boolean getEnforceLegalKeys() {
+<span class="nc" id="L1352">        return getBoolean(ENFORCE_LEGAL_BIBTEX_KEY);</span>
+    }
+
+    @Override
+    public void updateEntryEditorTabList() {
+<span class="nc" id="L1357">        tabList = EntryEditorTabList.create(this);</span>
+<span class="nc" id="L1358">    }</span>
+
+    /**
+     * Exports Preferences to an XML file.
+     *
+     * @param filename String File to export to
+     */
+    public void exportPreferences(String filename) throws JabRefException {
+<span class="nc" id="L1366">        exportPreferences(Paths.get(filename));</span>
+<span class="nc" id="L1367">    }</span>
+
+    public void exportPreferences(Path file) throws JabRefException {
+<span class="nc" id="L1370">        try (OutputStream os = Files.newOutputStream(file)) {</span>
+<span class="nc" id="L1371">            prefs.exportSubtree(os);</span>
+<span class="nc" id="L1372">        } catch (BackingStoreException | IOException ex) {</span>
+<span class="nc" id="L1373">            throw new JabRefException(&quot;Could not export preferences&quot;, Localization.lang(&quot;Could not export preferences&quot;),</span>
+                                      ex);
+<span class="nc" id="L1375">        }</span>
+<span class="nc" id="L1376">    }</span>
+
+    /**
+     * Imports Preferences from an XML file.
+     *
+     * @param filename String File to import from
+     * @throws JabRefException thrown if importing the preferences failed due to an InvalidPreferencesFormatException
+     *                         or an IOException
+     */
+    public void importPreferences(String filename) throws JabRefException {
+<span class="nc" id="L1386">        importPreferences(Paths.get(filename));</span>
+<span class="nc" id="L1387">    }</span>
+
+    public void importPreferences(Path file) throws JabRefException {
+<span class="nc" id="L1390">        try (InputStream is = Files.newInputStream(file)) {</span>
+<span class="nc" id="L1391">            Preferences.importPreferences(is);</span>
+<span class="nc" id="L1392">        } catch (InvalidPreferencesFormatException | IOException ex) {</span>
+<span class="nc" id="L1393">            throw new JabRefException(&quot;Could not import preferences&quot;, Localization.lang(&quot;Could not import preferences&quot;),</span>
+                                      ex);
+<span class="nc" id="L1395">        }</span>
+<span class="nc" id="L1396">    }</span>
+
+    /**
+     * ONLY FOR TESTING!
+     *
+     * Do not use in production code. Otherwise the singleton pattern is broken and preferences might get lost.
+     *
+     * @param owPrefs
+     */
+    public void overwritePreferences(JabRefPreferences owPrefs) {
+<span class="nc" id="L1406">        singleton = owPrefs;</span>
+<span class="nc" id="L1407">    }</span>
+
+    public String getWrappedUsername() {
+<span class="nc" id="L1410">        return '[' + get(DEFAULT_OWNER) + ']';</span>
+    }
+
+    public Charset getDefaultEncoding() {
+<span class="nc" id="L1414">        return Charset.forName(get(DEFAULT_ENCODING));</span>
+    }
+
+    public void setDefaultEncoding(Charset encoding) {
+<span class="nc" id="L1418">        put(DEFAULT_ENCODING, encoding.name());</span>
+<span class="nc" id="L1419">    }</span>
+
+    public FileHistory getFileHistory() {
+<span class="nc" id="L1422">        return new FileHistory(getStringList(RECENT_DATABASES).stream().map(Paths::get).collect(Collectors.toList()));</span>
+    }
+
+    public void storeFileHistory(FileHistory history) {
+<span class="nc bnc" id="L1426" title="All 2 branches missed.">        if (!history.isEmpty()) {</span>
+<span class="nc" id="L1427">            putStringList(RECENT_DATABASES, history.getHistory().stream().map(Path::toAbsolutePath).map(Path::toString).collect(Collectors.toList()));</span>
+        }
+<span class="nc" id="L1429">    }</span>
+
+    @Override
+    public FilePreferences getFilePreferences() {
+<span class="nc" id="L1433">        Map&lt;String, String&gt; fieldDirectories = Stream.of(FieldName.FILE, FieldName.PDF, FieldName.PS)</span>
+<span class="nc" id="L1434">                                                     .collect(Collectors.toMap(field -&gt; field, field -&gt; get(field + FilePreferences.DIR_SUFFIX, &quot;&quot;)));</span>
+<span class="nc" id="L1435">        return new FilePreferences(</span>
+<span class="nc" id="L1436">                                   getUser(),</span>
+                                   fieldDirectories,
+<span class="nc" id="L1438">                                   getBoolean(JabRefPreferences.BIB_LOC_AS_PRIMARY_DIR),</span>
+<span class="nc" id="L1439">                                   get(IMPORT_FILENAMEPATTERN),</span>
+<span class="nc" id="L1440">                                   get(IMPORT_FILEDIRPATTERN));</span>
+    }
+
+    public UpdateFieldPreferences getUpdateFieldPreferences() {
+<span class="nc" id="L1444">        return new UpdateFieldPreferences(getBoolean(USE_OWNER), getBoolean(OVERWRITE_OWNER), get(DEFAULT_OWNER),</span>
+<span class="nc" id="L1445">                                          getBoolean(USE_TIME_STAMP), getBoolean(OVERWRITE_TIME_STAMP), get(TIME_STAMP_FIELD),</span>
+<span class="nc" id="L1446">                                          get(TIME_STAMP_FORMAT));</span>
+    }
+
+    public LatexFieldFormatterPreferences getLatexFieldFormatterPreferences() {
+<span class="nc" id="L1450">        return new LatexFieldFormatterPreferences(getBoolean(RESOLVE_STRINGS_ALL_FIELDS),</span>
+<span class="nc" id="L1451">                                                  getStringList(DO_NOT_RESOLVE_STRINGS_FOR), getFieldContentParserPreferences());</span>
+    }
+
+    public FieldContentParserPreferences getFieldContentParserPreferences() {
+<span class="nc" id="L1455">        return new FieldContentParserPreferences(getStringList(NON_WRAPPABLE_FIELDS));</span>
+    }
+
+    public boolean isKeywordSyncEnabled() {
+<span class="nc bnc" id="L1459" title="All 2 branches missed.">        return getBoolean(JabRefPreferences.SPECIALFIELDSENABLED)</span>
+<span class="nc bnc" id="L1460" title="All 2 branches missed.">               &amp;&amp; getBoolean(JabRefPreferences.AUTOSYNCSPECIALFIELDSTOKEYWORDS);</span>
+    }
+
+    public ImportFormatPreferences getImportFormatPreferences() {
+<span class="nc" id="L1464">        return new ImportFormatPreferences(customImports, getDefaultEncoding(), getKeywordDelimiter(),</span>
+<span class="nc" id="L1465">                                           getBibtexKeyPatternPreferences(), getFieldContentParserPreferences(), getXMPPreferences(),</span>
+<span class="nc" id="L1466">                                           isKeywordSyncEnabled());</span>
+    }
+
+    @Override
+    public SavePreferences loadForExportFromPreferences() {
+<span class="nc" id="L1471">        Boolean saveInOriginalOrder = this.getBoolean(JabRefPreferences.EXPORT_IN_ORIGINAL_ORDER);</span>
+<span class="nc" id="L1472">        SaveOrderConfig saveOrder = null;</span>
+<span class="nc bnc" id="L1473" title="All 2 branches missed.">        if (!saveInOriginalOrder) {</span>
+<span class="nc bnc" id="L1474" title="All 2 branches missed.">            if (this.getBoolean(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER)) {</span>
+<span class="nc" id="L1475">                saveOrder = this.loadExportSaveOrder();</span>
+            } else {
+<span class="nc" id="L1477">                saveOrder = this.loadTableSaveOrder();</span>
+            }
+        }
+<span class="nc" id="L1480">        return new SavePreferences(</span>
+                saveInOriginalOrder,
+                saveOrder,
+<span class="nc" id="L1483">                this.getDefaultEncoding(),</span>
+<span class="nc" id="L1484">                this.getBoolean(JabRefPreferences.BACKUP),</span>
+                SavePreferences.DatabaseSaveType.ALL,
+<span class="nc" id="L1486">                false,</span>
+<span class="nc" id="L1487">                this.getBoolean(JabRefPreferences.REFORMAT_FILE_ON_SAVE_AND_EXPORT),</span>
+<span class="nc" id="L1488">                this.getLatexFieldFormatterPreferences(),</span>
+<span class="nc" id="L1489">                this.getKeyPattern(),</span>
+<span class="nc" id="L1490">                getBoolean(JabRefPreferences.GENERATE_KEYS_BEFORE_SAVING),</span>
+<span class="nc" id="L1491">                getBibtexKeyPatternPreferences());</span>
+    }
+
+    public SavePreferences loadForSaveFromPreferences() {
+<span class="nc" id="L1495">        return new SavePreferences(</span>
+<span class="nc" id="L1496">                false,</span>
+                null,
+<span class="nc" id="L1498">                this.getDefaultEncoding(),</span>
+<span class="nc" id="L1499">                this.getBoolean(JabRefPreferences.BACKUP),</span>
+                SavePreferences.DatabaseSaveType.ALL,
+<span class="nc" id="L1501">                true,</span>
+<span class="nc" id="L1502">                this.getBoolean(JabRefPreferences.REFORMAT_FILE_ON_SAVE_AND_EXPORT),</span>
+<span class="nc" id="L1503">                this.getLatexFieldFormatterPreferences(),</span>
+<span class="nc" id="L1504">                this.getKeyPattern(),</span>
+<span class="nc" id="L1505">                getBoolean(JabRefPreferences.GENERATE_KEYS_BEFORE_SAVING),</span>
+<span class="nc" id="L1506">                getBibtexKeyPatternPreferences());</span>
+    }
+
+    public ExporterFactory getExporterFactory(JournalAbbreviationLoader abbreviationLoader) {
+<span class="nc" id="L1510">        List&lt;TemplateExporter&gt; customFormats = getCustomExportFormats(abbreviationLoader);</span>
+<span class="nc" id="L1511">        LayoutFormatterPreferences layoutPreferences = this.getLayoutFormatterPreferences(abbreviationLoader);</span>
+<span class="nc" id="L1512">        SavePreferences savePreferences = this.loadForExportFromPreferences();</span>
+<span class="nc" id="L1513">        XmpPreferences xmpPreferences = this.getXMPPreferences();</span>
+<span class="nc" id="L1514">        return ExporterFactory.create(customFormats, layoutPreferences, savePreferences, xmpPreferences);</span>
+    }
+
+    public BibtexKeyPatternPreferences getBibtexKeyPatternPreferences() {
+<span class="nc" id="L1518">        return new BibtexKeyPatternPreferences(</span>
+<span class="nc" id="L1519">                                               get(KEY_PATTERN_REGEX),</span>
+<span class="nc" id="L1520">                                               get(KEY_PATTERN_REPLACEMENT),</span>
+<span class="nc" id="L1521">                                               getBoolean(KEY_GEN_ALWAYS_ADD_LETTER),</span>
+<span class="nc" id="L1522">                                               getBoolean(KEY_GEN_FIRST_LETTER_A),</span>
+<span class="nc" id="L1523">                                               getBoolean(ENFORCE_LEGAL_BIBTEX_KEY),</span>
+<span class="nc" id="L1524">                                               getKeyPattern(),</span>
+<span class="nc" id="L1525">                                               getKeywordDelimiter());</span>
+    }
+
+    public TimestampPreferences getTimestampPreferences() {
+<span class="nc" id="L1529">        return new TimestampPreferences(getBoolean(USE_TIME_STAMP), getBoolean(UPDATE_TIMESTAMP), get(TIME_STAMP_FIELD), get(TIME_STAMP_FORMAT), getBoolean(OVERWRITE_TIME_STAMP));</span>
+    }
+
+    @Override
+    public LayoutFormatterPreferences getLayoutFormatterPreferences(JournalAbbreviationLoader journalAbbreviationLoader) {
+<span class="nc" id="L1534">        Objects.requireNonNull(journalAbbreviationLoader);</span>
+<span class="nc" id="L1535">        return new LayoutFormatterPreferences(getNameFormatterPreferences(), getJournalAbbreviationPreferences(),</span>
+<span class="nc" id="L1536">                                              getFileLinkPreferences(), journalAbbreviationLoader);</span>
+    }
+
+    public XmpPreferences getXMPPreferences() {
+<span class="nc" id="L1540">        return new XmpPreferences(getBoolean(USE_XMP_PRIVACY_FILTER), getStringList(XMP_PRIVACY_FILTERS),</span>
+<span class="nc" id="L1541">                                  getKeywordDelimiter());</span>
+    }
+
+    @Override
+    public OpenOfficePreferences getOpenOfficePreferences() {
+<span class="nc" id="L1546">        return new OpenOfficePreferences(</span>
+<span class="nc" id="L1547">                this.get(JabRefPreferences.OO_JARS_PATH),</span>
+<span class="nc" id="L1548">                this.get(JabRefPreferences.OO_EXECUTABLE_PATH),</span>
+<span class="nc" id="L1549">                this.get(JabRefPreferences.OO_PATH),</span>
+<span class="nc" id="L1550">                this.getBoolean(JabRefPreferences.OO_USE_ALL_OPEN_BASES),</span>
+<span class="nc" id="L1551">                this.getBoolean(JabRefPreferences.OO_SYNC_WHEN_CITING),</span>
+<span class="nc" id="L1552">                this.getBoolean(JabRefPreferences.OO_SHOW_PANEL),</span>
+<span class="nc" id="L1553">                this.getStringList(JabRefPreferences.OO_EXTERNAL_STYLE_FILES),</span>
+<span class="nc" id="L1554">                this.get(JabRefPreferences.OO_BIBLIOGRAPHY_STYLE_FILE));</span>
+    }
+
+    @Override
+    public void setOpenOfficePreferences(OpenOfficePreferences openOfficePreferences) {
+<span class="nc" id="L1559">        this.put(JabRefPreferences.OO_JARS_PATH, openOfficePreferences.getJarsPath());</span>
+<span class="nc" id="L1560">        this.put(JabRefPreferences.OO_EXECUTABLE_PATH, openOfficePreferences.getExecutablePath());</span>
+<span class="nc" id="L1561">        this.put(JabRefPreferences.OO_PATH, openOfficePreferences.getInstallationPath());</span>
+<span class="nc" id="L1562">        this.putBoolean(JabRefPreferences.OO_USE_ALL_OPEN_BASES, openOfficePreferences.getUseAllDatabases());</span>
+<span class="nc" id="L1563">        this.putBoolean(JabRefPreferences.OO_SYNC_WHEN_CITING, openOfficePreferences.getSyncWhenCiting());</span>
+<span class="nc" id="L1564">        this.putBoolean(JabRefPreferences.OO_SHOW_PANEL, openOfficePreferences.getShowPanel());</span>
+<span class="nc" id="L1565">        this.putStringList(JabRefPreferences.OO_EXTERNAL_STYLE_FILES, openOfficePreferences.getExternalStyles());</span>
+<span class="nc" id="L1566">        this.put(JabRefPreferences.OO_BIBLIOGRAPHY_STYLE_FILE, openOfficePreferences.getCurrentStyle());</span>
+<span class="nc" id="L1567">    }</span>
+
+    private NameFormatterPreferences getNameFormatterPreferences() {
+<span class="nc" id="L1570">        return new NameFormatterPreferences(getStringList(NAME_FORMATER_KEY), getStringList(NAME_FORMATTER_VALUE));</span>
+    }
+
+    public FileLinkPreferences getFileLinkPreferences() {
+<span class="nc" id="L1574">        return new FileLinkPreferences(</span>
+<span class="nc" id="L1575">                                       Collections.singletonList(get(FieldName.FILE + FilePreferences.DIR_SUFFIX)),</span>
+                                       fileDirForDatabase);
+    }
+
+    public JabRefPreferences storeVersionPreferences(VersionPreferences versionPreferences) {
+<span class="nc" id="L1580">        put(VERSION_IGNORED_UPDATE, versionPreferences.getIgnoredVersion().toString());</span>
+<span class="nc" id="L1581">        return this;</span>
+    }
+
+    public VersionPreferences getVersionPreferences() {
+<span class="nc" id="L1585">        Version ignoredVersion = Version.parse(get(VERSION_IGNORED_UPDATE));</span>
+<span class="nc" id="L1586">        return new VersionPreferences(ignoredVersion);</span>
+    }
+
+    public JabRefPreferences storePreviewPreferences(PreviewPreferences previewPreferences) {
+<span class="nc" id="L1590">        putInt(CYCLE_PREVIEW_POS, previewPreferences.getPreviewCyclePosition());</span>
+<span class="nc" id="L1591">        putStringList(CYCLE_PREVIEW, previewPreferences.getPreviewCycle());</span>
+<span class="nc" id="L1592">        putDouble(PREVIEW_PANEL_HEIGHT, previewPreferences.getPreviewPanelDividerPosition().doubleValue());</span>
+<span class="nc" id="L1593">        put(PREVIEW_STYLE, previewPreferences.getPreviewStyle());</span>
+<span class="nc" id="L1594">        putBoolean(PREVIEW_ENABLED, previewPreferences.isPreviewPanelEnabled());</span>
+<span class="nc" id="L1595">        return this;</span>
+    }
+
+    @Override
+    public PreviewPreferences getPreviewPreferences() {
+<span class="nc" id="L1600">        int cyclePos = getInt(CYCLE_PREVIEW_POS);</span>
+<span class="nc" id="L1601">        List&lt;String&gt; cycle = getStringList(CYCLE_PREVIEW);</span>
+<span class="nc" id="L1602">        double panelHeight = getDouble(PREVIEW_PANEL_HEIGHT);</span>
+<span class="nc" id="L1603">        String style = get(PREVIEW_STYLE);</span>
+<span class="nc" id="L1604">        String styleDefault = (String) defaults.get(PREVIEW_STYLE);</span>
+<span class="nc" id="L1605">        boolean enabled = getBoolean(PREVIEW_ENABLED);</span>
+<span class="nc" id="L1606">        return new PreviewPreferences(cycle, cyclePos, panelHeight, enabled, style, styleDefault);</span>
+    }
+
+    public void storeProxyPreferences(ProxyPreferences proxyPreferences) {
+<span class="nc" id="L1610">        putBoolean(PROXY_USE, proxyPreferences.isUseProxy());</span>
+<span class="nc" id="L1611">        put(PROXY_HOSTNAME, proxyPreferences.getHostname());</span>
+<span class="nc" id="L1612">        put(PROXY_PORT, proxyPreferences.getPort());</span>
+<span class="nc" id="L1613">        putBoolean(PROXY_USE_AUTHENTICATION, proxyPreferences.isUseAuthentication());</span>
+<span class="nc" id="L1614">        put(PROXY_USERNAME, proxyPreferences.getUsername());</span>
+<span class="nc" id="L1615">        put(PROXY_PASSWORD, proxyPreferences.getPassword());</span>
+<span class="nc" id="L1616">    }</span>
+
+    public ProxyPreferences getProxyPreferences() {
+<span class="nc" id="L1619">        Boolean useProxy = getBoolean(PROXY_USE);</span>
+<span class="nc" id="L1620">        String hostname = get(PROXY_HOSTNAME);</span>
+<span class="nc" id="L1621">        String port = get(PROXY_PORT);</span>
+<span class="nc" id="L1622">        Boolean useAuthentication = getBoolean(PROXY_USE_AUTHENTICATION);</span>
+<span class="nc" id="L1623">        String username = get(PROXY_USERNAME);</span>
+<span class="nc" id="L1624">        String password = get(PROXY_PASSWORD);</span>
+<span class="nc" id="L1625">        return new ProxyPreferences(useProxy, hostname, port, useAuthentication, username, password);</span>
+    }
+
+    public ProtectedTermsPreferences getProtectedTermsPreferences() {
+<span class="nc" id="L1629">        return new ProtectedTermsPreferences(getStringList(PROTECTED_TERMS_ENABLED_INTERNAL),</span>
+<span class="nc" id="L1630">                                             getStringList(PROTECTED_TERMS_ENABLED_EXTERNAL), getStringList(PROTECTED_TERMS_DISABLED_INTERNAL),</span>
+<span class="nc" id="L1631">                                             getStringList(PROTECTED_TERMS_DISABLED_EXTERNAL));</span>
+    }
+
+    public void setProtectedTermsPreferences(ProtectedTermsLoader loader) {
+<span class="nc" id="L1635">        List&lt;String&gt; enabledExternalList = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L1636">        List&lt;String&gt; disabledExternalList = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L1637">        List&lt;String&gt; enabledInternalList = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L1638">        List&lt;String&gt; disabledInternalList = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L1640" title="All 2 branches missed.">        for (ProtectedTermsList list : loader.getProtectedTermsLists()) {</span>
+<span class="nc bnc" id="L1641" title="All 2 branches missed.">            if (list.isInternalList()) {</span>
+<span class="nc bnc" id="L1642" title="All 2 branches missed.">                if (list.isEnabled()) {</span>
+<span class="nc" id="L1643">                    enabledInternalList.add(list.getLocation());</span>
+                } else {
+<span class="nc" id="L1645">                    disabledInternalList.add(list.getLocation());</span>
+                }
+            } else {
+<span class="nc bnc" id="L1648" title="All 2 branches missed.">                if (list.isEnabled()) {</span>
+<span class="nc" id="L1649">                    enabledExternalList.add(list.getLocation());</span>
+                } else {
+<span class="nc" id="L1651">                    disabledExternalList.add(list.getLocation());</span>
+                }
+            }
+<span class="nc" id="L1654">        }</span>
+
+<span class="nc" id="L1656">        putStringList(PROTECTED_TERMS_ENABLED_EXTERNAL, enabledExternalList);</span>
+<span class="nc" id="L1657">        putStringList(PROTECTED_TERMS_DISABLED_EXTERNAL, disabledExternalList);</span>
+<span class="nc" id="L1658">        putStringList(PROTECTED_TERMS_ENABLED_INTERNAL, enabledInternalList);</span>
+<span class="nc" id="L1659">        putStringList(PROTECTED_TERMS_DISABLED_INTERNAL, disabledInternalList);</span>
+
+<span class="nc" id="L1661">    }</span>
+
+    @Override
+    public JournalAbbreviationPreferences getJournalAbbreviationPreferences() {
+<span class="nc" id="L1665">        return new JournalAbbreviationPreferences(getStringList(EXTERNAL_JOURNAL_LISTS), get(PERSONAL_JOURNAL_LIST),</span>
+<span class="nc" id="L1666">                                                  getBoolean(USE_IEEE_ABRV), getDefaultEncoding());</span>
+    }
+
+    public CleanupPreferences getCleanupPreferences(JournalAbbreviationLoader journalAbbreviationLoader) {
+<span class="nc" id="L1670">        return new CleanupPreferences(</span>
+<span class="nc" id="L1671">                                      getLayoutFormatterPreferences(journalAbbreviationLoader),</span>
+<span class="nc" id="L1672">                                      getFilePreferences());</span>
+    }
+
+    public CleanupPreset getCleanupPreset() {
+<span class="nc" id="L1676">        Set&lt;CleanupPreset.CleanupStep&gt; activeJobs = EnumSet.noneOf(CleanupPreset.CleanupStep.class);</span>
+
+<span class="nc bnc" id="L1678" title="All 2 branches missed.">        for (CleanupPreset.CleanupStep action : EnumSet.allOf(CleanupPreset.CleanupStep.class)) {</span>
+<span class="nc bnc" id="L1679" title="All 2 branches missed.">            if (getBoolean(JabRefPreferences.CLEANUP + action.name())) {</span>
+<span class="nc" id="L1680">                activeJobs.add(action);</span>
+            }
+<span class="nc" id="L1682">        }</span>
+
+<span class="nc" id="L1684">        FieldFormatterCleanups formatterCleanups = Cleanups.parse(getStringList(JabRefPreferences.CLEANUP_FORMATTERS));</span>
+
+<span class="nc" id="L1686">        return new CleanupPreset(activeJobs, formatterCleanups);</span>
+    }
+
+    public void setCleanupPreset(CleanupPreset cleanupPreset) {
+<span class="nc bnc" id="L1690" title="All 2 branches missed.">        for (CleanupPreset.CleanupStep action : EnumSet.allOf(CleanupPreset.CleanupStep.class)) {</span>
+<span class="nc" id="L1691">            putBoolean(JabRefPreferences.CLEANUP + action.name(), cleanupPreset.isActive(action));</span>
+<span class="nc" id="L1692">        }</span>
+
+<span class="nc" id="L1694">        putStringList(JabRefPreferences.CLEANUP_FORMATTERS, cleanupPreset.getFormatterCleanups().getAsStringList(OS.NEWLINE));</span>
+<span class="nc" id="L1695">    }</span>
+
+    public RemotePreferences getRemotePreferences() {
+<span class="nc" id="L1698">        return new RemotePreferences(getInt(REMOTE_SERVER_PORT), getBoolean(USE_REMOTE_SERVER));</span>
+    }
+
+    public void setRemotePreferences(RemotePreferences remotePreferences) {
+<span class="nc" id="L1702">        putInt(REMOTE_SERVER_PORT, remotePreferences.getPort());</span>
+<span class="nc" id="L1703">        putBoolean(USE_REMOTE_SERVER, remotePreferences.useRemoteServer());</span>
+<span class="nc" id="L1704">    }</span>
+
+    public void storeExportSaveOrder(SaveOrderConfig config) {
+<span class="nc" id="L1707">        putBoolean(EXPORT_PRIMARY_SORT_DESCENDING, config.getSortCriteria().get(0).descending);</span>
+<span class="nc" id="L1708">        putBoolean(EXPORT_SECONDARY_SORT_DESCENDING, config.getSortCriteria().get(1).descending);</span>
+<span class="nc" id="L1709">        putBoolean(EXPORT_TERTIARY_SORT_DESCENDING, config.getSortCriteria().get(2).descending);</span>
+
+<span class="nc" id="L1711">        put(EXPORT_PRIMARY_SORT_FIELD, config.getSortCriteria().get(0).field);</span>
+<span class="nc" id="L1712">        put(EXPORT_SECONDARY_SORT_FIELD, config.getSortCriteria().get(1).field);</span>
+<span class="nc" id="L1713">        put(EXPORT_TERTIARY_SORT_FIELD, config.getSortCriteria().get(2).field);</span>
+<span class="nc" id="L1714">    }</span>
+
+    private SaveOrderConfig loadTableSaveOrder() {
+<span class="nc" id="L1717">        SaveOrderConfig config = new SaveOrderConfig();</span>
+<span class="nc" id="L1718">        List&lt;String&gt; columns = getStringList(COLUMN_IN_SORT_ORDER);</span>
+<span class="nc bnc" id="L1719" title="All 2 branches missed.">        List&lt;Boolean&gt; sortTypes = getStringList(COlUMN_IN_SORT_ORDER_TYPE).stream().map(SortType::valueOf).map(type -&gt; type == SortType.DESCENDING).collect(Collectors.toList());</span>
+
+<span class="nc bnc" id="L1721" title="All 2 branches missed.">        for (int i = 0; i &lt; columns.size(); i++) {</span>
+<span class="nc" id="L1722">            config.getSortCriteria().add(new SaveOrderConfig.SortCriterion(columns.get(i), sortTypes.get(i)));</span>
+        }
+
+<span class="nc" id="L1725">        return config;</span>
+    }
+
+    public SaveOrderConfig loadExportSaveOrder() {
+<span class="nc" id="L1729">        return new SaveOrderConfig(true,</span>
+<span class="nc" id="L1730">                new SaveOrderConfig.SortCriterion(get(EXPORT_PRIMARY_SORT_FIELD), getBoolean(EXPORT_PRIMARY_SORT_DESCENDING)),</span>
+<span class="nc" id="L1731">                new SaveOrderConfig.SortCriterion(get(EXPORT_SECONDARY_SORT_FIELD), getBoolean(EXPORT_SECONDARY_SORT_DESCENDING)),</span>
+<span class="nc" id="L1732">                new SaveOrderConfig.SortCriterion(get(EXPORT_TERTIARY_SORT_FIELD), getBoolean(EXPORT_TERTIARY_SORT_DESCENDING))</span>
+        );
+    }
+
+    public Character getKeywordDelimiter() {
+<span class="nc" id="L1737">        return get(KEYWORD_SEPARATOR).charAt(0);</span>
+    }
+
+    public String getOrCreateUserId() {
+<span class="nc" id="L1741">        Optional&lt;String&gt; userId = getAsOptional(USER_ID);</span>
+<span class="nc bnc" id="L1742" title="All 2 branches missed.">        if (userId.isPresent()) {</span>
+<span class="nc" id="L1743">            return userId.get();</span>
+        } else {
+<span class="nc" id="L1745">            String newUserId = UUID.randomUUID().toString();</span>
+<span class="nc" id="L1746">            put(USER_ID, newUserId);</span>
+<span class="nc" id="L1747">            return newUserId;</span>
+        }
+    }
+
+    public Boolean shouldCollectTelemetry() {
+<span class="nc" id="L1752">        return getBoolean(COLLECT_TELEMETRY);</span>
+    }
+
+    public void setShouldCollectTelemetry(boolean value) {
+<span class="nc" id="L1756">        putBoolean(COLLECT_TELEMETRY, value);</span>
+<span class="nc" id="L1757">    }</span>
+
+    public Boolean shouldAskToCollectTelemetry() {
+<span class="nc" id="L1760">        return getBoolean(ALREADY_ASKED_TO_COLLECT_TELEMETRY);</span>
+    }
+
+    public void askedToCollectTelemetry() {
+<span class="nc" id="L1764">        putBoolean(ALREADY_ASKED_TO_COLLECT_TELEMETRY, true);</span>
+<span class="nc" id="L1765">    }</span>
+
+    @Override
+    public void storeKeyBindingRepository(KeyBindingRepository keyBindingRepository) {
+<span class="nc" id="L1769">        putStringList(JabRefPreferences.BIND_NAMES, keyBindingRepository.getBindNames());</span>
+<span class="nc" id="L1770">        putStringList(JabRefPreferences.BINDINGS, keyBindingRepository.getBindings());</span>
+<span class="nc" id="L1771">    }</span>
+
+    @Override
+    public KeyBindingRepository getKeyBindingRepository() {
+<span class="nc" id="L1775">        return new KeyBindingRepository(getStringList(BIND_NAMES), getStringList(BINDINGS));</span>
+    }
+
+    @Override
+    public void storeJournalAbbreviationPreferences(JournalAbbreviationPreferences abbreviationsPreferences) {
+<span class="nc" id="L1780">        putStringList(JabRefPreferences.EXTERNAL_JOURNAL_LISTS, abbreviationsPreferences.getExternalJournalLists());</span>
+<span class="nc" id="L1781">        putBoolean(JabRefPreferences.USE_IEEE_ABRV, abbreviationsPreferences.useIEEEAbbreviations());</span>
+<span class="nc" id="L1782">    }</span>
+
+    public AutoLinkPreferences getAutoLinkPreferences() {
+<span class="nc" id="L1785">        return new AutoLinkPreferences(</span>
+<span class="nc" id="L1786">                                       getBoolean(JabRefPreferences.AUTOLINK_USE_REG_EXP_SEARCH_KEY),</span>
+<span class="nc" id="L1787">                                       get(JabRefPreferences.AUTOLINK_REG_EXP_SEARCH_EXPRESSION_KEY),</span>
+<span class="nc" id="L1788">                                       getBoolean(JabRefPreferences.AUTOLINK_EXACT_KEY_ONLY),</span>
+<span class="nc" id="L1789">                                       getKeywordDelimiter());</span>
+    }
+
+    public AutoCompletePreferences getAutoCompletePreferences() {
+<span class="nc" id="L1793">        return new AutoCompletePreferences(</span>
+<span class="nc" id="L1794">                                           getBoolean(AUTO_COMPLETE),</span>
+<span class="nc" id="L1795">                                           AutoCompleteFirstNameMode.parse(get(AUTOCOMPLETER_FIRSTNAME_MODE)),</span>
+<span class="nc" id="L1796">                                           getBoolean(AUTOCOMPLETER_LAST_FIRST),</span>
+<span class="nc" id="L1797">                                           getBoolean(AUTOCOMPLETER_FIRST_LAST),</span>
+<span class="nc" id="L1798">                                           getStringList(AUTOCOMPLETER_COMPLETE_FIELDS),</span>
+<span class="nc" id="L1799">                                           getJournalAbbreviationPreferences());</span>
+    }
+
+    public void storeAutoCompletePreferences(AutoCompletePreferences autoCompletePreferences) {
+<span class="nc" id="L1803">        putBoolean(AUTO_COMPLETE, autoCompletePreferences.shouldAutoComplete());</span>
+<span class="nc" id="L1804">        put(AUTOCOMPLETER_FIRSTNAME_MODE, autoCompletePreferences.getFirstNameMode().name());</span>
+<span class="nc" id="L1805">        putBoolean(AUTOCOMPLETER_LAST_FIRST, autoCompletePreferences.getOnlyCompleteLastFirst());</span>
+<span class="nc" id="L1806">        putBoolean(AUTOCOMPLETER_FIRST_LAST, autoCompletePreferences.getOnlyCompleteFirstLast());</span>
+<span class="nc" id="L1807">        putStringList(AUTOCOMPLETER_COMPLETE_FIELDS, autoCompletePreferences.getCompleteFields());</span>
+<span class="nc" id="L1808">    }</span>
+
+    public void storeSidePanePreferredPositions(Map&lt;SidePaneType, Integer&gt; preferredPositions) {
+        // Split the map into a pair of parallel String lists suitable for storage
+<span class="nc" id="L1812">        List&lt;String&gt; names = preferredPositions.keySet().stream()</span>
+<span class="nc" id="L1813">                                               .map(Enum::toString)</span>
+<span class="nc" id="L1814">                                               .collect(Collectors.toList());</span>
+
+<span class="nc" id="L1816">        List&lt;String&gt; positions = preferredPositions.values().stream()</span>
+<span class="nc" id="L1817">                                                   .map(integer -&gt; Integer.toString(integer))</span>
+<span class="nc" id="L1818">                                                   .collect(Collectors.toList());</span>
+
+<span class="nc" id="L1820">        putStringList(SIDE_PANE_COMPONENT_NAMES, names);</span>
+<span class="nc" id="L1821">        putStringList(SIDE_PANE_COMPONENT_PREFERRED_POSITIONS, positions);</span>
+<span class="nc" id="L1822">    }</span>
+
+    private List&lt;String&gt; createExtraFileColumns() {
+<span class="nc bnc" id="L1825" title="All 2 branches missed.">        if (getBoolean(EXTRA_FILE_COLUMNS)) {</span>
+<span class="nc" id="L1826">            return getStringList(LIST_OF_FILE_COLUMNS);</span>
+        } else {
+<span class="nc" id="L1828">            return Collections.emptyList();</span>
+        }
+    }
+
+    private List&lt;SpecialField&gt; createSpecialFieldColumns() {
+<span class="nc bnc" id="L1833" title="All 2 branches missed.">        if (getBoolean(SPECIALFIELDSENABLED)) {</span>
+<span class="nc" id="L1834">            List&lt;SpecialField&gt; fieldsToShow = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L1835" title="All 2 branches missed.">            if (getBoolean(SHOWCOLUMN_RANKING)) {</span>
+<span class="nc" id="L1836">                fieldsToShow.add(SpecialField.RANKING);</span>
+            }
+<span class="nc bnc" id="L1838" title="All 2 branches missed.">            if (getBoolean(SHOWCOLUMN_RELEVANCE)) {</span>
+<span class="nc" id="L1839">                fieldsToShow.add(SpecialField.RELEVANCE);</span>
+            }
+<span class="nc bnc" id="L1841" title="All 2 branches missed.">            if (getBoolean(SHOWCOLUMN_QUALITY)) {</span>
+<span class="nc" id="L1842">                fieldsToShow.add(SpecialField.QUALITY);</span>
+            }
+
+<span class="nc bnc" id="L1845" title="All 2 branches missed.">            if (getBoolean(SHOWCOLUMN_PRIORITY)) {</span>
+<span class="nc" id="L1846">                fieldsToShow.add(SpecialField.PRIORITY);</span>
+            }
+
+<span class="nc bnc" id="L1849" title="All 2 branches missed.">            if (getBoolean(SHOWCOLUMN_PRINTED)) {</span>
+<span class="nc" id="L1850">                fieldsToShow.add(SpecialField.PRINTED);</span>
+            }
+
+<span class="nc bnc" id="L1853" title="All 2 branches missed.">            if (getBoolean(SHOWCOLUMN_READ)) {</span>
+<span class="nc" id="L1854">                fieldsToShow.add(SpecialField.READ_STATUS);</span>
+            }
+<span class="nc" id="L1856">            return fieldsToShow;</span>
+        } else {
+<span class="nc" id="L1858">            return Collections.emptyList();</span>
+        }
+    }
+
+    private Map&lt;String, Double&gt; createColumnWidths() {
+<span class="nc" id="L1863">        List&lt;String&gt; columns = getStringList(COLUMN_NAMES);</span>
+<span class="nc" id="L1864">        List&lt;Double&gt; widths = getStringList(COLUMN_WIDTHS)</span>
+<span class="nc" id="L1865">                                                          .stream()</span>
+<span class="nc" id="L1866">                                                          .map(string -&gt; {</span>
+                                                              try {
+<span class="nc" id="L1868">                                                                  return Double.parseDouble(string);</span>
+<span class="nc" id="L1869">                                                              } catch (NumberFormatException e) {</span>
+<span class="nc" id="L1870">                                                                  LOGGER.error(&quot;Exception while parsing column widths. Choosing default.&quot;, e);</span>
+<span class="nc" id="L1871">                                                                  return BibtexSingleField.DEFAULT_FIELD_LENGTH;</span>
+                                                              }
+                                                          })
+<span class="nc" id="L1874">                                                          .collect(Collectors.toList());</span>
+
+<span class="nc" id="L1876">        Map&lt;String, Double&gt; map = new TreeMap&lt;&gt;();</span>
+<span class="nc bnc" id="L1877" title="All 2 branches missed.">        for (int i = 0; i &lt; columns.size(); i++) {</span>
+<span class="nc" id="L1878">            map.put(columns.get(i), widths.get(i));</span>
+        }
+<span class="nc" id="L1880">        return map;</span>
+    }
+
+    public ColumnPreferences getColumnPreferences() {
+<span class="nc" id="L1884">        return new ColumnPreferences(</span>
+<span class="nc" id="L1885">                                     getBoolean(FILE_COLUMN),</span>
+<span class="nc" id="L1886">                                     getBoolean(URL_COLUMN),</span>
+<span class="nc" id="L1887">                                     getBoolean(PREFER_URL_DOI),</span>
+<span class="nc" id="L1888">                                     getBoolean(ARXIV_COLUMN),</span>
+<span class="nc" id="L1889">                                     getStringList(COLUMN_NAMES),</span>
+<span class="nc" id="L1890">                                     createSpecialFieldColumns(),</span>
+<span class="nc" id="L1891">                                     createExtraFileColumns(),</span>
+<span class="nc" id="L1892">                                     createColumnWidths(),</span>
+<span class="nc" id="L1893">                                     getMainTableColumnSortTypes());</span>
+    }
+
+    public MainTablePreferences getMainTablePreferences() {
+<span class="nc" id="L1897">        return new MainTablePreferences(</span>
+<span class="nc" id="L1898">                                        getColumnPreferences(),</span>
+<span class="nc" id="L1899">                                        getBoolean(AUTO_RESIZE_MODE));</span>
+    }
+
+    @Override
+    public Path getWorkingDir() {
+<span class="nc" id="L1904">        return Paths.get(get(WORKING_DIRECTORY));</span>
+    }
+
+    @Override
+    public void setWorkingDir(Path dir) {
+<span class="nc" id="L1909">        put(WORKING_DIRECTORY, dir.toString());</span>
+
+<span class="nc" id="L1911">    }</span>
+
+    public GroupViewMode getGroupViewMode() {
+<span class="nc" id="L1914">        return GroupViewMode.valueOf(get(GROUP_INTERSECT_UNION_VIEW_MODE));</span>
+    }
+
+    public void setGroupViewMode(GroupViewMode mode) {
+<span class="nc" id="L1918">        put(GROUP_INTERSECT_UNION_VIEW_MODE, mode.name());</span>
+<span class="nc" id="L1919">    }</span>
+
+    public void setPreviewStyle(String previewStyle) {
+<span class="nc" id="L1922">        put(PREVIEW_STYLE, previewStyle);</span>
+<span class="nc" id="L1923">    }</span>
+
+    public String getPreviewStyle() {
+<span class="nc" id="L1926">        return get(PREVIEW_STYLE);</span>
+    }
+
+    public Optional&lt;Integer&gt; getFontSize() {
+<span class="nc bnc" id="L1930" title="All 2 branches missed.">        if (getBoolean(OVERRIDE_DEFAULT_FONT_SIZE)) {</span>
+<span class="nc" id="L1931">            return Optional.of(getInt(MAIN_FONT_SIZE));</span>
+        } else {
+<span class="nc" id="L1933">            return Optional.empty();</span>
+        }
+    }
+
+    public String setLastPreferencesExportPath() {
+<span class="nc" id="L1938">        return get(PREFS_EXPORT_PATH);</span>
+    }
+
+    public void setLastPreferencesExportPath(Path exportFile) {
+<span class="nc" id="L1942">        put(PREFS_EXPORT_PATH, exportFile.toString());</span>
+<span class="nc" id="L1943">    }</span>
+
+    public Language getLanguage() {
+<span class="nc" id="L1946">        String languageId = get(LANGUAGE);</span>
+<span class="nc" id="L1947">        return Stream.of(Language.values())</span>
+<span class="nc" id="L1948">                     .filter(language -&gt; language.getId().equalsIgnoreCase(languageId))</span>
+<span class="nc" id="L1949">                     .findFirst()</span>
+<span class="nc" id="L1950">                     .orElse(Language.English);</span>
+    }
+
+    public void setLanguage(Language language) {
+<span class="nc" id="L1954">        Language oldLanguage = getLanguage();</span>
+<span class="nc" id="L1955">        put(LANGUAGE, language.getId());</span>
+<span class="nc bnc" id="L1956" title="All 2 branches missed.">        if (language != oldLanguage) {</span>
+            // Update any defaults that might be language dependent:
+<span class="nc" id="L1958">            setLanguageDependentDefaultValues();</span>
+        }
+<span class="nc" id="L1960">    }</span>
+
+    public void setIdBasedFetcherForEntryGenerator(String fetcherName) {
+<span class="nc" id="L1963">        put(ID_ENTRY_GENERATOR, fetcherName);</span>
+<span class="nc" id="L1964">    }</span>
+
+    public String getIdBasedFetcherForEntryGenerator() {
+<span class="nc" id="L1967">        return get(ID_ENTRY_GENERATOR);</span>
+    }
+
+    public void setMainTableColumnSortType(Map&lt;String, SortType&gt; sortOrder) {
+<span class="nc" id="L1971">        putStringList(COLUMN_IN_SORT_ORDER, new ArrayList&lt;&gt;(sortOrder.keySet()));</span>
+<span class="nc" id="L1972">        List&lt;String&gt; sortTypes = sortOrder.values().stream().map(SortType::name).collect(Collectors.toList());</span>
+<span class="nc" id="L1973">        putStringList(COlUMN_IN_SORT_ORDER_TYPE, sortTypes);</span>
+<span class="nc" id="L1974">    }</span>
+
+    public Map&lt;String, SortType&gt; getMainTableColumnSortTypes() {
+<span class="nc" id="L1977">        List&lt;String&gt; columns = getStringList(COLUMN_IN_SORT_ORDER);</span>
+<span class="nc" id="L1978">        List&lt;SortType&gt; sortTypes = getStringList(COlUMN_IN_SORT_ORDER_TYPE).stream().map(SortType::valueOf).collect(Collectors.toList());</span>
+<span class="nc" id="L1979">        Map&lt;String, SortType&gt; map = new LinkedHashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L1980" title="All 2 branches missed.">        for (int i = 0; i &lt; columns.size(); i++) {</span>
+<span class="nc" id="L1981">            map.put(columns.get(i), sortTypes.get(i));</span>
+        }
+<span class="nc" id="L1983">        return map;</span>
+    }
+
+    public FileDragDropPreferenceType getEntryEditorFileLinkPreference() {
+<span class="nc" id="L1987">        return FileDragDropPreferenceType.valueOf(get(ENTRY_EDITOR_DRAG_DROP_PREFERENCE_TYPE));</span>
+    }
+
+    public void storeEntryEditorFileLinkPreference(FileDragDropPreferenceType type) {
+<span class="nc" id="L1991">        put(ENTRY_EDITOR_DRAG_DROP_PREFERENCE_TYPE, type.name());</span>
+<span class="nc" id="L1992">    }</span>
+
+    @Override
+    public List&lt;TemplateExporter&gt; getCustomExportFormats(JournalAbbreviationLoader loader) {
+<span class="nc" id="L1996">        int i = 0;</span>
+<span class="nc" id="L1997">        List&lt;TemplateExporter&gt; formats = new ArrayList&lt;&gt;();</span>
+        String exporterName;
+        String filename;
+        String extension;
+<span class="nc" id="L2001">        LayoutFormatterPreferences layoutPreferences = getLayoutFormatterPreferences(loader);</span>
+<span class="nc" id="L2002">        SavePreferences savePreferences = loadForExportFromPreferences();</span>
+        List&lt;String&gt; formatData;
+<span class="nc bnc" id="L2004" title="All 2 branches missed.">        while (!((formatData = getStringList(CUSTOM_EXPORT_FORMAT + i)).isEmpty())) {</span>
+<span class="nc" id="L2005">            exporterName = formatData.get(EXPORTER_NAME_INDEX);</span>
+<span class="nc" id="L2006">            filename = formatData.get(EXPORTER_FILENAME_INDEX);</span>
+<span class="nc" id="L2007">            extension = formatData.get(EXPORTER_EXTENSION_INDEX);</span>
+<span class="nc" id="L2008">            TemplateExporter format = new TemplateExporter(exporterName, filename, extension,</span>
+                    layoutPreferences, savePreferences);
+<span class="nc" id="L2010">            format.setCustomExport(true);</span>
+<span class="nc" id="L2011">            formats.add(format);</span>
+<span class="nc" id="L2012">            i++;</span>
+<span class="nc" id="L2013">        }</span>
+<span class="nc" id="L2014">        return formats;</span>
+    }
+
+    @Override
+    public void storeCustomExportFormats(List&lt;TemplateExporter&gt; exporters) {
+<span class="nc bnc" id="L2019" title="All 2 branches missed.">        if (exporters.isEmpty()) {</span>
+<span class="nc" id="L2020">            purgeCustomExportFormats(0);</span>
+        } else {
+<span class="nc bnc" id="L2022" title="All 2 branches missed.">            for (int i = 0; i &lt; exporters.size(); i++) {</span>
+<span class="nc" id="L2023">                List&lt;String&gt; exporterData = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L2024">                exporterData.add(EXPORTER_NAME_INDEX, exporters.get(i).getName());</span>
+<span class="nc" id="L2025">                exporterData.add(EXPORTER_FILENAME_INDEX, exporters.get(i).getLayoutFileName());</span>
+                // Only stores the first extension associated with FileType
+<span class="nc" id="L2027">                exporterData.add(EXPORTER_EXTENSION_INDEX, exporters.get(i).getFileType().getExtensions().get(0));</span>
+<span class="nc" id="L2028">                putStringList(CUSTOM_EXPORT_FORMAT + i, exporterData);</span>
+            }
+<span class="nc" id="L2030">            purgeCustomExportFormats(exporters.size());</span>
+        }
+<span class="nc" id="L2032">    }</span>
+
+    private void purgeCustomExportFormats(int from) {
+<span class="nc" id="L2035">        int i = from;</span>
+<span class="nc bnc" id="L2036" title="All 2 branches missed.">        while (!getStringList(CUSTOM_EXPORT_FORMAT + i).isEmpty()) {</span>
+<span class="nc" id="L2037">            remove(CUSTOM_EXPORT_FORMAT + i);</span>
+<span class="nc" id="L2038">            i++;</span>
+        }
+<span class="nc" id="L2040">    }</span>
+
+    @Override
+    public String getExportWorkingDirectory() {
+<span class="nc" id="L2044">        return get(EXPORT_WORKING_DIRECTORY);</span>
+    }
+
+    @Override
+    public void setExportWorkingDirectory(String layoutFileDirString) {
+<span class="nc" id="L2049">        put(EXPORT_WORKING_DIRECTORY, layoutFileDirString);</span>
+<span class="nc" id="L2050">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

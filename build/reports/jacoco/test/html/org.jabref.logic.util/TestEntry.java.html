@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TestEntry.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util</a> &gt; <span class="el_source">TestEntry.java</span></div><h1>TestEntry.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util;
+
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BibtexEntryTypes;
+import org.jabref.model.entry.FieldName;
+
+public class TestEntry {
+
+    private TestEntry() {
+    }
+
+    public static BibEntry getTestEntry() {
+
+<span class="nc" id="L14">        BibEntry entry = new BibEntry(BibtexEntryTypes.ARTICLE);</span>
+<span class="nc" id="L15">        entry.setCiteKey(&quot;Smith2016&quot;);</span>
+<span class="nc" id="L16">        entry.setField(FieldName.AUTHOR, &quot;Smith, Bill and Jones, Bob and Williams, Jeff&quot;);</span>
+<span class="nc" id="L17">        entry.setField(FieldName.EDITOR, &quot;Taylor, Phil&quot;);</span>
+<span class="nc" id="L18">        entry.setField(FieldName.TITLE, &quot;Title of the test entry&quot;);</span>
+<span class="nc" id="L19">        entry.setField(FieldName.NUMBER, &quot;3&quot;);</span>
+<span class="nc" id="L20">        entry.setField(FieldName.VOLUME, &quot;34&quot;);</span>
+<span class="nc" id="L21">        entry.setField(FieldName.YEAR, &quot;2016&quot;);</span>
+<span class="nc" id="L22">        entry.setField(FieldName.PAGES, &quot;45--67&quot;);</span>
+<span class="nc" id="L23">        entry.setField(FieldName.MONTH, &quot;July&quot;);</span>
+<span class="nc" id="L24">        entry.setField(FieldName.FILE, &quot;:testentry.pdf:PDF&quot;);</span>
+<span class="nc" id="L25">        entry.setField(FieldName.JOURNAL, &quot;BibTeX Journal&quot;);</span>
+<span class="nc" id="L26">        entry.setField(FieldName.PUBLISHER, &quot;JabRef Publishing&quot;);</span>
+<span class="nc" id="L27">        entry.setField(FieldName.ADDRESS, &quot;Trondheim&quot;);</span>
+<span class="nc" id="L28">        entry.setField(FieldName.URL, &quot;https://github.com/JabRef&quot;);</span>
+<span class="nc" id="L29">        entry.setField(FieldName.ABSTRACT,</span>
+                &quot;This entry describes a test scenario which may be useful in JabRef. By providing a test entry it is possible to see how certain things will look in this graphical BIB-file mananger.&quot;);
+<span class="nc" id="L31">        return entry;</span>
+    }
+
+    public static BibEntry getTestEntryBook() {
+<span class="nc" id="L35">        BibEntry entry = new BibEntry(BibtexEntryTypes.BOOK);</span>
+<span class="nc" id="L36">        entry.setCiteKey(&quot;Harrer2018&quot;);</span>
+<span class="nc" id="L37">        entry.setField(FieldName.AUTHOR, &quot;Simon Harrer and Jörg Lenhard and Linus Dietz&quot;);</span>
+<span class="nc" id="L38">        entry.setField(FieldName.EDITOR, &quot;Andrea Steward&quot;);</span>
+<span class="nc" id="L39">        entry.setField(FieldName.TITLE, &quot;Java by Comparison&quot;);</span>
+<span class="nc" id="L40">        entry.setField(FieldName.YEAR, &quot;2018&quot;);</span>
+<span class="nc" id="L41">        entry.setField(FieldName.MONTH, &quot;March&quot;);</span>
+<span class="nc" id="L42">        entry.setField(FieldName.PUBLISHER, &quot;Pragmatic Bookshelf&quot;);</span>
+<span class="nc" id="L43">        entry.setField(FieldName.ADDRESS, &quot;Raleigh, NC&quot;);</span>
+<span class="nc" id="L44">        return entry;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

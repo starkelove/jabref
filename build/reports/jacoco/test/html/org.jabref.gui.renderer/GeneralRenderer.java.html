@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GeneralRenderer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.renderer</a> &gt; <span class="el_source">GeneralRenderer.java</span></div><h1>GeneralRenderer.java</h1><pre class="source lang-java linenums">package org.jabref.gui.renderer;
+
+import java.awt.Color;
+import java.awt.Component;
+
+import javax.swing.Icon;
+import javax.swing.JLabel;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableCellRenderer;
+
+/**
+ * Renderer for table cells, which supports both Icons, JLabels and plain text.
+ */
+public class GeneralRenderer extends DefaultTableCellRenderer {
+
+    private final Color rendererBackground;
+    private Color selBackground;
+
+    public GeneralRenderer(Color c) {
+<span class="nc" id="L20">        super();</span>
+<span class="nc" id="L21">        this.rendererBackground = c;</span>
+<span class="nc" id="L22">        setBackground(c);</span>
+<span class="nc" id="L23">    }</span>
+
+    /**
+     * Renderer with specified foreground and background colors, and default selected
+     * background color.
+     * @param c Foreground color
+     * @param fg Background color
+     */
+    public GeneralRenderer(Color c, Color fg) {
+<span class="nc" id="L32">        this(c);</span>
+<span class="nc" id="L33">        setForeground(fg);</span>
+<span class="nc" id="L34">    }</span>
+
+    /**
+     * Renderer with specified foreground, background and selected background colors
+     * @param c Foreground color
+     * @param fg Unselected background color
+     * @param sel Selected background color
+     */
+    public GeneralRenderer(Color c, Color fg, Color sel) {
+<span class="nc" id="L43">        this(c, fg);</span>
+<span class="nc" id="L44">        this.selBackground = sel;</span>
+<span class="nc" id="L45">    }</span>
+
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object o, boolean isSelected,
+            boolean hasFocus, int row, int column) {
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        if (selBackground == null) {</span>
+<span class="nc" id="L51">            return super.getTableCellRendererComponent(table, o, isSelected, hasFocus, row, column);</span>
+        } else {
+<span class="nc" id="L53">            Component c = super.getTableCellRendererComponent(table, o, isSelected, hasFocus, row, column);</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">            if (isSelected) {</span>
+<span class="nc" id="L55">                c.setBackground(selBackground);</span>
+            } else {
+<span class="nc" id="L57">                c.setBackground(rendererBackground);</span>
+            }
+<span class="nc" id="L59">            return c;</span>
+        }
+    }
+
+    @Override
+    public void firePropertyChange(String propertyName, Object old, Object newV) {
+        // disable super.firePropertyChange
+<span class="nc" id="L66">    }</span>
+
+    /* For enabling the renderer to handle icons. */
+    @Override
+    protected void setValue(Object value) {
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (value instanceof Icon) {</span>
+<span class="nc" id="L72">            setIcon((Icon) value);</span>
+<span class="nc" id="L73">            setText(null);</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        } else if (value instanceof JLabel) {</span>
+<span class="nc" id="L75">            JLabel lab = (JLabel) value;</span>
+<span class="nc" id="L76">            setIcon(lab.getIcon());</span>
+<span class="nc" id="L77">            setToolTipText(lab.getToolTipText());</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            if (lab.getIcon() != null) {</span>
+<span class="nc" id="L79">                setText(null);</span>
+            }
+<span class="nc" id="L81">        } else {</span>
+            // this is plain text
+<span class="nc" id="L83">            setIcon(null);</span>
+<span class="nc" id="L84">            setToolTipText(null);</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">            if (value == null) {</span>
+<span class="nc" id="L86">                setText(null);</span>
+            } else {
+<span class="nc" id="L88">                setText(value.toString());</span>
+            }
+        }
+<span class="nc" id="L91">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

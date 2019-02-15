@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileListEntryEditor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.filelist</a> &gt; <span class="el_source">FileListEntryEditor.java</span></div><h1>FileListEntryEditor.java</h1><pre class="source lang-java linenums">package org.jabref.gui.filelist;
+
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Pattern;
+
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JProgressBar;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+import org.jabref.Globals;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.desktop.JabRefDesktop;
+import org.jabref.gui.externalfiletype.ExternalFileType;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.gui.externalfiletype.UnknownExternalFileType;
+import org.jabref.gui.keyboard.KeyBinding;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.gui.util.FileDialogConfiguration;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.io.FileUtil;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.LinkedFile;
+import org.jabref.model.util.FileHelper;
+import org.jabref.preferences.JabRefPreferences;
+
+import com.jgoodies.forms.builder.ButtonBarBuilder;
+import com.jgoodies.forms.builder.FormBuilder;
+import com.jgoodies.forms.layout.FormLayout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * This class produces a dialog box for editing a single file link from a Bibtex entry.
+ *
+ * The information to be edited includes the file description, the link itself and the
+ * file type. The dialog also includes convenience buttons for quick linking.
+ *
+ * For use when downloading files, this class also offers a progress bar and a &quot;Downloading...&quot;
+ * label that can be hidden when the download is complete.
+ * @deprecated Use {@link LinkedFileEditDialogView}
+ */
+@Deprecated
+public class FileListEntryEditor {
+
+<span class="nc" id="L69">    private static final Pattern REMOTE_LINK_PATTERN = Pattern.compile(&quot;[a-z]+://.*&quot;);</span>
+
+<span class="nc" id="L71">    private static final Logger LOGGER = LoggerFactory.getLogger(FileListEntryEditor.class);</span>
+<span class="nc" id="L72">    private final JTextField link = new JTextField();</span>
+<span class="nc" id="L73">    private final JTextField description = new JTextField();</span>
+<span class="nc" id="L74">    private final JButton ok = new JButton(Localization.lang(&quot;OK&quot;));</span>
+    private final JComboBox&lt;ExternalFileType&gt; types;
+<span class="nc" id="L76">    private final JProgressBar prog = new JProgressBar(SwingConstants.HORIZONTAL);</span>
+<span class="nc" id="L77">    private final JLabel downloadLabel = new JLabel(Localization.lang(&quot;Downloading...&quot;));</span>
+    private JDialog dialog;
+    //Do not make this variable final, as then the lambda action listener will fail on compile
+    private JabRefFrame frame;
+    private boolean showSaveDialog;
+    private ConfirmCloseFileListEntryEditor externalConfirm;
+    private LinkedFile entry;
+    //Do not make this variable final, as then the lambda action listener will fail on compiöe
+    private BibDatabaseContext databaseContext;
+<span class="nc" id="L86">    private final ActionListener browsePressed = e -&gt; {</span>
+<span class="nc" id="L87">        String fileText = link.getText().trim();</span>
+<span class="nc" id="L88">        Optional&lt;Path&gt; file = FileHelper.expandFilename(this.databaseContext, fileText,</span>
+<span class="nc" id="L89">                Globals.prefs.getFilePreferences());</span>
+
+<span class="nc" id="L91">        Path workingDir = file.orElse(Paths.get(Globals.prefs.get(JabRefPreferences.WORKING_DIRECTORY)));</span>
+<span class="nc" id="L92">        String fileName = Paths.get(fileText).getFileName().toString();</span>
+
+<span class="nc" id="L94">        FileDialogConfiguration fileDialogConfiguration = new FileDialogConfiguration.Builder()</span>
+<span class="nc" id="L95">                .withInitialDirectory(workingDir)</span>
+<span class="nc" id="L96">                .withInitialFileName(fileName).build();</span>
+
+        Optional&lt;Path&gt; path;
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (showSaveDialog) {</span>
+<span class="nc" id="L100">            path = DefaultTaskExecutor.runInJavaFXThread(() -&gt; frame.getDialogService().showFileSaveDialog(fileDialogConfiguration));</span>
+        } else {
+<span class="nc" id="L102">            path = DefaultTaskExecutor.runInJavaFXThread(() -&gt; frame.getDialogService().showFileOpenDialog(fileDialogConfiguration));</span>
+        }
+
+<span class="nc" id="L105">        path.ifPresent(newFile -&gt; {</span>
+            // Store the directory for next time:
+<span class="nc" id="L107">            Globals.prefs.put(JabRefPreferences.WORKING_DIRECTORY, newFile.toString());</span>
+
+            // If the file is below the file directory, make the path relative:
+<span class="nc" id="L110">            List&lt;Path&gt; fileDirectories = this.databaseContext</span>
+<span class="nc" id="L111">                    .getFileDirectoriesAsPaths(Globals.prefs.getFilePreferences());</span>
+<span class="nc" id="L112">            newFile = FileUtil.relativize(newFile, fileDirectories);</span>
+
+<span class="nc" id="L114">            link.setText(newFile.toString());</span>
+<span class="nc" id="L115">            link.requestFocus();</span>
+<span class="nc" id="L116">        });</span>
+<span class="nc" id="L117">    };</span>
+    private boolean okPressed;
+
+    private boolean okDisabledExternally;
+    private boolean openBrowseWhenShown;
+
+    private boolean dontOpenBrowseUntilDisposed;
+
+    public FileListEntryEditor(LinkedFile entry, boolean showProgressBar, boolean showOpenButton, BibDatabaseContext databaseContext, boolean showSaveDialog) {
+<span class="nc" id="L126">        this(entry, showProgressBar, showOpenButton, databaseContext);</span>
+<span class="nc" id="L127">        this.showSaveDialog = showSaveDialog;</span>
+<span class="nc" id="L128">    }</span>
+
+<span class="nc" id="L130">    public FileListEntryEditor(LinkedFile entry, boolean showProgressBar, boolean showOpenButton, BibDatabaseContext databaseContext) {</span>
+<span class="nc" id="L131">        this.entry = entry;</span>
+<span class="nc" id="L132">        this.databaseContext = databaseContext;</span>
+
+<span class="nc" id="L134">        ActionListener okAction = e -&gt; {</span>
+            // If OK button is disabled, ignore this event:
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            if (!ok.isEnabled()) {</span>
+<span class="nc" id="L137">                return;</span>
+            }
+            // If necessary, ask the external confirm object whether we are ready to close.
+<span class="nc bnc" id="L140" title="All 2 branches missed.">            if (externalConfirm != null) {</span>
+                // Construct an updated FileListEntry:
+<span class="nc" id="L142">                storeSettings(entry);</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">                if (!externalConfirm.confirmClose(entry)) {</span>
+<span class="nc" id="L144">                    return;</span>
+                }
+            }
+<span class="nc" id="L147">            dialog.dispose();</span>
+<span class="nc" id="L148">            storeSettings(FileListEntryEditor.this.entry);</span>
+<span class="nc" id="L149">            okPressed = true;</span>
+<span class="nc" id="L150">        };</span>
+<span class="nc" id="L151">        types = new JComboBox&lt;&gt;();</span>
+<span class="nc" id="L152">        types.addItemListener(itemEvent -&gt; {</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">            if (!okDisabledExternally) {</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                ok.setEnabled(types.getSelectedItem() != null);</span>
+            }
+<span class="nc" id="L156">        });</span>
+
+<span class="nc" id="L158">        FormLayout fileDialog = new FormLayout(</span>
+                &quot;left:pref, 4dlu, fill:400dlu, 4dlu, fill:pref, 4dlu, fill:pref&quot;,
+                &quot;p, 8dlu, p, 8dlu, p&quot;);
+<span class="nc" id="L161">        FormBuilder builder = FormBuilder.create().layout(fileDialog);</span>
+<span class="nc" id="L162">        builder.add(Localization.lang(&quot;Link&quot;)).xy(1, 1);</span>
+<span class="nc" id="L163">        builder.add(link).xy(3, 1);</span>
+
+<span class="nc" id="L165">        final JButton browseBut = new JButton(Localization.lang(&quot;Browse&quot;));</span>
+<span class="nc" id="L166">        browseBut.addActionListener(browsePressed);</span>
+<span class="nc" id="L167">        builder.add(browseBut).xy(5, 1);</span>
+<span class="nc" id="L168">        JButton open = new JButton(Localization.lang(&quot;Open&quot;));</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        if (showOpenButton) {</span>
+<span class="nc" id="L170">            builder.add(open).xy(7, 1);</span>
+        }
+<span class="nc" id="L172">        builder.add(Localization.lang(&quot;Description&quot;)).xy(1, 3);</span>
+<span class="nc" id="L173">        builder.add(description).xyw(3, 3, 5);</span>
+<span class="nc" id="L174">        builder.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));</span>
+<span class="nc" id="L175">        builder.add(Localization.lang(&quot;File type&quot;)).xy(1, 5);</span>
+<span class="nc" id="L176">        builder.add(types).xyw(3, 5, 5);</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        if (showProgressBar) {</span>
+<span class="nc" id="L178">            builder.appendRows(&quot;2dlu, p&quot;);</span>
+<span class="nc" id="L179">            builder.add(downloadLabel).xy(1, 7);</span>
+<span class="nc" id="L180">            builder.add(prog).xyw(3, 7, 3);</span>
+        }
+
+<span class="nc" id="L183">        ButtonBarBuilder bb = new ButtonBarBuilder();</span>
+<span class="nc" id="L184">        bb.addGlue();</span>
+<span class="nc" id="L185">        bb.addRelatedGap();</span>
+<span class="nc" id="L186">        bb.addButton(ok);</span>
+<span class="nc" id="L187">        JButton cancel = new JButton(Localization.lang(&quot;Cancel&quot;));</span>
+<span class="nc" id="L188">        bb.addButton(cancel);</span>
+<span class="nc" id="L189">        bb.addGlue();</span>
+<span class="nc" id="L190">        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));</span>
+
+<span class="nc" id="L192">        ok.addActionListener(okAction);</span>
+        // Add OK action to the two text fields to simplify entering:
+<span class="nc" id="L194">        link.addActionListener(okAction);</span>
+<span class="nc" id="L195">        description.addActionListener(okAction);</span>
+
+<span class="nc" id="L197">        open.addActionListener(e -&gt; openFile());</span>
+
+<span class="nc" id="L199">        AbstractAction cancelAction = new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L203">                dialog.dispose();</span>
+<span class="nc" id="L204">            }</span>
+        };
+<span class="nc" id="L206">        cancel.addActionListener(cancelAction);</span>
+
+        // Key bindings:
+<span class="nc" id="L209">        ActionMap am = builder.getPanel().getActionMap();</span>
+<span class="nc" id="L210">        InputMap im = builder.getPanel().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);</span>
+<span class="nc" id="L211">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.CLOSE), &quot;close&quot;);</span>
+<span class="nc" id="L212">        am.put(&quot;close&quot;, cancelAction);</span>
+
+<span class="nc" id="L214">        link.getDocument().addDocumentListener(new DocumentListener() {</span>
+
+            @Override
+            public void insertUpdate(DocumentEvent documentEvent) {
+<span class="nc" id="L218">                checkExtension();</span>
+<span class="nc" id="L219">            }</span>
+
+            @Override
+            public void removeUpdate(DocumentEvent documentEvent) {
+                // Do nothing
+<span class="nc" id="L224">            }</span>
+
+            @Override
+            public void changedUpdate(DocumentEvent documentEvent) {
+<span class="nc" id="L228">                checkExtension();</span>
+<span class="nc" id="L229">            }</span>
+
+        });
+
+<span class="nc" id="L233">        dialog = new JDialog();</span>
+<span class="nc" id="L234">        dialog.setTitle(Localization.lang(&quot;Select files&quot;));</span>
+<span class="nc" id="L235">        dialog.setModal(true);</span>
+<span class="nc" id="L236">        dialog.getContentPane().add(builder.getPanel(), BorderLayout.CENTER);</span>
+<span class="nc" id="L237">        dialog.getContentPane().add(bb.getPanel(), BorderLayout.SOUTH);</span>
+<span class="nc" id="L238">        dialog.pack();</span>
+<span class="nc" id="L239">        dialog.addWindowListener(new WindowAdapter() {</span>
+
+            @Override
+            public void windowActivated(WindowEvent event) {
+<span class="nc bnc" id="L243" title="All 4 branches missed.">                if (openBrowseWhenShown &amp;&amp; !dontOpenBrowseUntilDisposed) {</span>
+<span class="nc" id="L244">                    dontOpenBrowseUntilDisposed = true;</span>
+<span class="nc" id="L245">                    SwingUtilities.invokeLater(() -&gt; browsePressed.actionPerformed(new ActionEvent(browseBut, 0, &quot;&quot;)));</span>
+                }
+<span class="nc" id="L247">            }</span>
+
+            @Override
+            public void windowClosed(WindowEvent event) {
+<span class="nc" id="L251">                dontOpenBrowseUntilDisposed = false;</span>
+<span class="nc" id="L252">            }</span>
+        });
+<span class="nc" id="L254">        setValues(entry);</span>
+<span class="nc" id="L255">    }</span>
+
+    private void checkExtension() {
+<span class="nc bnc" id="L258" title="All 4 branches missed.">        if ((types.getSelectedIndex() == -1) &amp;&amp; (!link.getText().trim().isEmpty())) {</span>
+
+            // Check if this looks like a remote link:
+<span class="nc bnc" id="L261" title="All 2 branches missed.">            if (FileListEntryEditor.REMOTE_LINK_PATTERN.matcher(link.getText()).matches()) {</span>
+<span class="nc" id="L262">                Optional&lt;ExternalFileType&gt; type = ExternalFileTypes.getInstance().getExternalFileTypeByExt(&quot;html&quot;);</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">                if (type.isPresent()) {</span>
+<span class="nc" id="L264">                    types.setSelectedItem(type.get());</span>
+<span class="nc" id="L265">                    return;</span>
+                }
+            }
+
+            // Try to guess the file type:
+<span class="nc" id="L270">            String theLink = link.getText().trim();</span>
+<span class="nc" id="L271">            ExternalFileTypes.getInstance().getExternalFileTypeForName(theLink).ifPresent(types::setSelectedItem);</span>
+        }
+<span class="nc" id="L273">    }</span>
+
+    private void openFile() {
+<span class="nc" id="L276">        ExternalFileType type = (ExternalFileType) types.getSelectedItem();</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">        if (type != null) {</span>
+            try {
+<span class="nc" id="L279">                JabRefDesktop.openExternalFileAnyFormat(databaseContext, link.getText(), Optional.of(type));</span>
+<span class="nc" id="L280">            } catch (IOException e) {</span>
+<span class="nc" id="L281">                LOGGER.error(&quot;File could not be opened&quot;, e);</span>
+<span class="nc" id="L282">            }</span>
+        }
+<span class="nc" id="L284">    }</span>
+
+    public void setExternalConfirm(ConfirmCloseFileListEntryEditor eC) {
+<span class="nc" id="L287">        this.externalConfirm = eC;</span>
+<span class="nc" id="L288">    }</span>
+
+    public void setOkEnabled(boolean enabled) {
+<span class="nc bnc" id="L291" title="All 2 branches missed.">        okDisabledExternally = !enabled;</span>
+<span class="nc" id="L292">        ok.setEnabled(enabled);</span>
+<span class="nc" id="L293">    }</span>
+
+    public JProgressBar getProgressBar() {
+<span class="nc" id="L296">        return prog;</span>
+    }
+
+    public JLabel getProgressBarLabel() {
+<span class="nc" id="L300">        return downloadLabel;</span>
+    }
+
+    public void setEntry(LinkedFile entry) {
+<span class="nc" id="L304">        this.entry = entry;</span>
+<span class="nc" id="L305">        setValues(entry);</span>
+<span class="nc" id="L306">    }</span>
+
+    public void setVisible(boolean visible, boolean openBrowse) {
+<span class="nc bnc" id="L309" title="All 4 branches missed.">        openBrowseWhenShown = openBrowse &amp;&amp; Globals.prefs.getBoolean(JabRefPreferences.ALLOW_FILE_AUTO_OPEN_BROWSE);</span>
+<span class="nc bnc" id="L310" title="All 2 branches missed.">        if (visible) {</span>
+<span class="nc" id="L311">            okPressed = false;</span>
+        }
+        String title;
+<span class="nc bnc" id="L314" title="All 2 branches missed.">        if (showSaveDialog) {</span>
+<span class="nc" id="L315">            title = Localization.lang(&quot;Save file&quot;);</span>
+        } else {
+<span class="nc" id="L317">            title = Localization.lang(&quot;Select files&quot;);</span>
+        }
+<span class="nc" id="L319">        dialog.setTitle(title);</span>
+<span class="nc" id="L320">        dialog.setVisible(visible);</span>
+<span class="nc" id="L321">    }</span>
+
+    public boolean isVisible() {
+<span class="nc bnc" id="L324" title="All 4 branches missed.">        return (dialog != null) &amp;&amp; dialog.isVisible();</span>
+    }
+
+    private void setValues(LinkedFile entry) {
+<span class="nc" id="L328">        description.setText(entry.getDescription());</span>
+<span class="nc" id="L329">        link.setText(entry.getLink());</span>
+
+<span class="nc" id="L331">        Collection&lt;ExternalFileType&gt; list = ExternalFileTypes.getInstance().getExternalFileTypeSelection();</span>
+
+<span class="nc" id="L333">        types.setModel(new DefaultComboBoxModel&lt;&gt;(list.toArray(new ExternalFileType[list.size()])));</span>
+<span class="nc" id="L334">        types.setSelectedIndex(-1);</span>
+        // See what is a reasonable selection for the type combobox:
+<span class="nc" id="L336">        Optional&lt;ExternalFileType&gt; fileType = ExternalFileTypes.getInstance().fromLinkedFile(entry, false);</span>
+<span class="nc bnc" id="L337" title="All 4 branches missed.">        if (fileType.isPresent() &amp;&amp; !(fileType.get() instanceof UnknownExternalFileType)) {</span>
+<span class="nc" id="L338">            types.setSelectedItem(fileType.get());</span>
+<span class="nc bnc" id="L339" title="All 4 branches missed.">        } else if ((entry.getLink() != null) &amp;&amp; (!entry.getLink().isEmpty())) {</span>
+<span class="nc" id="L340">            checkExtension();</span>
+        }
+<span class="nc" id="L342">    }</span>
+
+    private void storeSettings(LinkedFile listEntry) {
+<span class="nc" id="L345">        String descriptionText = this.description.getText().trim();</span>
+<span class="nc" id="L346">        String fileLink = &quot;&quot;;</span>
+        // See if we should trim the file link to be relative to the file directory:
+        try {
+<span class="nc" id="L349">            List&lt;String&gt; dirs = databaseContext.getFileDirectories(Globals.prefs.getFilePreferences());</span>
+<span class="nc bnc" id="L350" title="All 2 branches missed.">            if (dirs.isEmpty()) {</span>
+<span class="nc" id="L351">                fileLink = this.link.getText().trim();</span>
+            } else {
+<span class="nc" id="L353">                boolean found = false;</span>
+<span class="nc bnc" id="L354" title="All 2 branches missed.">                for (String dir : dirs) {</span>
+<span class="nc" id="L355">                    String canPath = (new File(dir)).getCanonicalPath();</span>
+<span class="nc" id="L356">                    File fl = new File(this.link.getText().trim());</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">                    if (fl.isAbsolute()) {</span>
+<span class="nc" id="L358">                        String flPath = fl.getCanonicalPath();</span>
+<span class="nc bnc" id="L359" title="All 4 branches missed.">                        if ((flPath.length() &gt; canPath.length()) &amp;&amp; (flPath.startsWith(canPath))) {</span>
+<span class="nc" id="L360">                            fileLink = fl.getCanonicalPath().substring(canPath.length() + 1);</span>
+<span class="nc" id="L361">                            found = true;</span>
+<span class="nc" id="L362">                            break;</span>
+                        }
+                    }
+<span class="nc" id="L365">                }</span>
+<span class="nc bnc" id="L366" title="All 2 branches missed.">                if (!found) {</span>
+<span class="nc" id="L367">                    fileLink = this.link.getText().trim();</span>
+                }
+            }
+<span class="nc" id="L370">        } catch (IOException ex) {</span>
+            // Don't think this should happen, but set the file link directly as a fallback:
+<span class="nc" id="L372">            fileLink = this.link.getText().trim();</span>
+<span class="nc" id="L373">        }</span>
+
+<span class="nc" id="L375">        ExternalFileType type = (ExternalFileType) types.getSelectedItem();</span>
+
+<span class="nc" id="L377">        listEntry.setDescription(descriptionText);</span>
+<span class="nc" id="L378">        listEntry.setFileType(type.getName());</span>
+<span class="nc" id="L379">        listEntry.setLink(fileLink);</span>
+<span class="nc" id="L380">    }</span>
+
+    public boolean okPressed() {
+<span class="nc" id="L383">        return okPressed;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

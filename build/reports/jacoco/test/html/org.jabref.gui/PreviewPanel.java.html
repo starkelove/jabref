@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PreviewPanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui</a> &gt; <span class="el_source">PreviewPanel.java</span></div><h1>PreviewPanel.java</h1><pre class="source lang-java linenums">package org.jabref.gui;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.Future;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import javafx.print.PrinterJob;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.TransferMode;
+import javafx.scene.web.WebView;
+
+import org.jabref.Globals;
+import org.jabref.gui.externalfiles.ExternalFilesEntryLinker;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.keyboard.KeyBinding;
+import org.jabref.gui.keyboard.KeyBindingRepository;
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.logic.citationstyle.CitationStyle;
+import org.jabref.logic.exporter.ExporterFactory;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.layout.Layout;
+import org.jabref.logic.layout.LayoutFormatterPreferences;
+import org.jabref.logic.layout.LayoutHelper;
+import org.jabref.logic.search.SearchQueryHighlightListener;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.event.FieldChangedEvent;
+import org.jabref.preferences.PreviewPreferences;
+
+import com.google.common.eventbus.Subscribe;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+/**
+ * Displays an BibEntry using the given layout format.
+ */
+public class PreviewPanel extends ScrollPane implements SearchQueryHighlightListener, EntryContainer {
+
+<span class="nc" id="L58">    private static final Logger LOGGER = LoggerFactory.getLogger(PreviewPanel.class);</span>
+
+    private final ClipBoardManager clipBoardManager;
+    private final DialogService dialogService;
+    private final KeyBindingRepository keyBindingRepository;
+
+<span class="nc" id="L64">    private final String defaultPreviewStyle = &quot;Preview&quot;;</span>
+    private String previewStyle;
+    private CitationStyle citationStyle;
+<span class="nc" id="L67">    private Optional&lt;BasePanel&gt; basePanel = Optional.empty();</span>
+
+    private boolean fixedLayout;
+<span class="nc" id="L70">    private Optional&lt;Layout&gt; layout = Optional.empty();</span>
+    /**
+     * The entry currently shown
+     */
+<span class="nc" id="L74">    private Optional&lt;BibEntry&gt; bibEntry = Optional.empty();</span>
+
+    /**
+     * If a database is set, the preview will attempt to resolve strings in the previewed entry using that database.
+     */
+    private BibDatabaseContext databaseContext;
+    private final WebView previewView;
+<span class="nc" id="L81">    private Optional&lt;Future&lt;?&gt;&gt; citationStyleFuture = Optional.empty();</span>
+
+    private final ExternalFilesEntryLinker fileLinker;
+
+    /**
+     * @param panel           (may be null) Only set this if the preview is associated to the main window.
+     * @param databaseContext Used for resolving pdf directories for links. Must not be null.
+     */
+<span class="nc" id="L89">    public PreviewPanel(BasePanel panel, BibDatabaseContext databaseContext, KeyBindingRepository keyBindingRepository, PreviewPreferences preferences, DialogService dialogService, ExternalFileTypes externalFileTypes) {</span>
+<span class="nc" id="L90">        this.databaseContext = Objects.requireNonNull(databaseContext);</span>
+<span class="nc" id="L91">        this.basePanel = Optional.ofNullable(panel);</span>
+<span class="nc" id="L92">        this.dialogService = dialogService;</span>
+<span class="nc" id="L93">        this.clipBoardManager = Globals.clipboardManager;</span>
+<span class="nc" id="L94">        this.keyBindingRepository = keyBindingRepository;</span>
+
+<span class="nc" id="L96">        fileLinker = new ExternalFilesEntryLinker(externalFileTypes, Globals.prefs.getFilePreferences(), databaseContext);</span>
+
+        // Set up scroll pane for preview pane
+<span class="nc" id="L99">        setFitToHeight(true);</span>
+<span class="nc" id="L100">        setFitToWidth(true);</span>
+<span class="nc" id="L101">        previewView = new WebView();</span>
+<span class="nc" id="L102">        setContent(previewView);</span>
+<span class="nc" id="L103">        previewView.setContextMenuEnabled(false);</span>
+<span class="nc" id="L104">        setContextMenu(createPopupMenu());</span>
+
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (this.basePanel.isPresent()) {</span>
+            // Handler for drag content of preview to different window
+            // only created for main window (not for windows like the search results dialog)
+<span class="nc" id="L109">            setOnDragDetected(event -&gt; {</span>
+<span class="nc" id="L110">                startFullDrag();</span>
+
+<span class="nc" id="L112">                Dragboard dragboard = startDragAndDrop(TransferMode.COPY);</span>
+<span class="nc" id="L113">                ClipboardContent content = new ClipboardContent();</span>
+<span class="nc" id="L114">                content.putHtml((String) previewView.getEngine().executeScript(&quot;window.getSelection().toString()&quot;));</span>
+<span class="nc" id="L115">                dragboard.setContent(content);</span>
+
+<span class="nc" id="L117">                event.consume();</span>
+<span class="nc" id="L118">            });</span>
+        }
+<span class="nc" id="L120">        this.previewView.setOnDragOver(event -&gt; {</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">            if (event.getDragboard().hasFiles()) {</span>
+<span class="nc" id="L122">                event.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK);</span>
+            }
+<span class="nc" id="L124">            event.consume();</span>
+<span class="nc" id="L125">        });</span>
+
+<span class="nc" id="L127">        this.previewView.setOnDragDropped(event -&gt; {</span>
+<span class="nc" id="L128">            BibEntry entry = this.getEntry();</span>
+<span class="nc" id="L129">            boolean success = false;</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">            if (event.getDragboard().hasContent(DataFormat.FILES)) {</span>
+<span class="nc" id="L131">                List&lt;Path&gt; files = event.getDragboard().getFiles().stream().map(File::toPath).collect(Collectors.toList());</span>
+
+<span class="nc bnc" id="L133" title="All 2 branches missed.">                if (event.getTransferMode() == TransferMode.MOVE) {</span>
+<span class="nc" id="L134">                    LOGGER.debug(&quot;Mode MOVE&quot;); //shift on win or no modifier</span>
+<span class="nc" id="L135">                    fileLinker.moveFilesToFileDirAndAddToEntry(entry, files);</span>
+                }
+<span class="nc bnc" id="L137" title="All 2 branches missed.">                if (event.getTransferMode() == TransferMode.LINK) {</span>
+<span class="nc" id="L138">                    LOGGER.debug(&quot;Node LINK&quot;); //alt on win</span>
+<span class="nc" id="L139">                    fileLinker.addFilesToEntry(entry, files);</span>
+                }
+<span class="nc bnc" id="L141" title="All 2 branches missed.">                if (event.getTransferMode() == TransferMode.COPY) {</span>
+<span class="nc" id="L142">                    LOGGER.debug(&quot;Mode Copy&quot;); //ctrl on win, no modifier on Xubuntu</span>
+<span class="nc" id="L143">                    fileLinker.copyFilesToFileDirAndAddToEntry(entry, files);</span>
+                }
+<span class="nc" id="L145">                success = true;</span>
+            }
+
+<span class="nc" id="L148">            event.setDropCompleted(success);</span>
+<span class="nc" id="L149">            event.consume();</span>
+
+<span class="nc" id="L151">        });</span>
+
+<span class="nc" id="L153">        createKeyBindings();</span>
+<span class="nc" id="L154">        updateLayout(preferences, true);</span>
+<span class="nc" id="L155">    }</span>
+
+    private void createKeyBindings() {
+<span class="nc" id="L158">        addEventFilter(KeyEvent.KEY_PRESSED, event -&gt; {</span>
+<span class="nc" id="L159">            Optional&lt;KeyBinding&gt; keyBinding = keyBindingRepository.mapToKeyBinding(event);</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">            if (keyBinding.isPresent()) {</span>
+<span class="nc bnc" id="L161" title="All 3 branches missed.">                switch (keyBinding.get()) {</span>
+                    case COPY_PREVIEW:
+<span class="nc" id="L163">                        copyPreviewToClipBoard();</span>
+<span class="nc" id="L164">                        event.consume();</span>
+<span class="nc" id="L165">                        break;</span>
+                    case CLOSE:
+<span class="nc" id="L167">                        close();</span>
+<span class="nc" id="L168">                        event.consume();</span>
+<span class="nc" id="L169">                        break;</span>
+                    default:
+                }
+            }
+<span class="nc" id="L173">        });</span>
+<span class="nc" id="L174">    }</span>
+
+    private ContextMenu createPopupMenu() {
+<span class="nc" id="L177">        MenuItem copyPreview = new MenuItem(Localization.lang(&quot;Copy preview&quot;), IconTheme.JabRefIcons.COPY.getGraphicNode());</span>
+<span class="nc" id="L178">        copyPreview.setAccelerator(keyBindingRepository.getKeyCombination(KeyBinding.COPY_PREVIEW));</span>
+<span class="nc" id="L179">        copyPreview.setOnAction(event -&gt; copyPreviewToClipBoard());</span>
+<span class="nc" id="L180">        MenuItem printEntryPreview = new MenuItem(Localization.lang(&quot;Print entry preview&quot;), IconTheme.JabRefIcons.PRINTED.getGraphicNode());</span>
+<span class="nc" id="L181">        printEntryPreview.setOnAction(event -&gt; print());</span>
+<span class="nc" id="L182">        MenuItem previousPreviewLayout = new MenuItem(Localization.lang(&quot;Previous preview layout&quot;));</span>
+<span class="nc" id="L183">        previousPreviewLayout.setAccelerator(keyBindingRepository.getKeyCombination(KeyBinding.PREVIOUS_PREVIEW_LAYOUT));</span>
+<span class="nc" id="L184">        previousPreviewLayout.setOnAction(event -&gt; basePanel.ifPresent(BasePanel::previousPreviewStyle));</span>
+<span class="nc" id="L185">        MenuItem nextPreviewLayout = new MenuItem(Localization.lang(&quot;Next preview layout&quot;));</span>
+<span class="nc" id="L186">        nextPreviewLayout.setAccelerator(keyBindingRepository.getKeyCombination(KeyBinding.NEXT_PREVIEW_LAYOUT));</span>
+<span class="nc" id="L187">        nextPreviewLayout.setOnAction(event -&gt; basePanel.ifPresent(BasePanel::nextPreviewStyle));</span>
+
+<span class="nc" id="L189">        ContextMenu menu = new ContextMenu();</span>
+<span class="nc" id="L190">        menu.getItems().add(copyPreview);</span>
+<span class="nc" id="L191">        menu.getItems().add(printEntryPreview);</span>
+<span class="nc" id="L192">        menu.getItems().add(new SeparatorMenuItem());</span>
+<span class="nc" id="L193">        menu.getItems().add(nextPreviewLayout);</span>
+<span class="nc" id="L194">        menu.getItems().add(previousPreviewLayout);</span>
+<span class="nc" id="L195">        return menu;</span>
+    }
+
+    public void setDatabaseContext(BibDatabaseContext databaseContext) {
+<span class="nc" id="L199">        this.databaseContext = databaseContext;</span>
+<span class="nc" id="L200">    }</span>
+
+    public Optional&lt;BasePanel&gt; getBasePanel() {
+<span class="nc" id="L203">        return this.basePanel;</span>
+    }
+
+    public void setBasePanel(BasePanel basePanel) {
+<span class="nc" id="L207">        this.basePanel = Optional.ofNullable(basePanel);</span>
+<span class="nc" id="L208">    }</span>
+
+    public void updateLayout(PreviewPreferences previewPreferences) {
+<span class="nc" id="L211">        updateLayout(previewPreferences, false);</span>
+<span class="nc" id="L212">    }</span>
+
+    private void updateLayout(PreviewPreferences previewPreferences, boolean init) {
+<span class="nc bnc" id="L215" title="All 2 branches missed.">        if (fixedLayout) {</span>
+<span class="nc" id="L216">            LOGGER.debug(&quot;cannot change the layout because the layout is fixed&quot;);</span>
+<span class="nc" id="L217">            return;</span>
+        }
+
+<span class="nc" id="L220">        String style = previewPreferences.getCurrentPreviewStyle();</span>
+<span class="nc bnc" id="L221" title="All 2 branches missed.">        if (previewStyle == null) {</span>
+<span class="nc" id="L222">            previewStyle = style;</span>
+<span class="nc" id="L223">            CitationStyle.createCitationStyleFromFile(style).ifPresent(cs -&gt; citationStyle = cs);</span>
+        }
+<span class="nc bnc" id="L225" title="All 4 branches missed.">        if (basePanel.isPresent() &amp;&amp; !previewStyle.equals(style)) {</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">            if (CitationStyle.isCitationStyleFile(style)) {</span>
+<span class="nc" id="L227">                layout = Optional.empty();</span>
+<span class="nc" id="L228">                CitationStyle.createCitationStyleFromFile(style)</span>
+<span class="nc" id="L229">                             .ifPresent(cs -&gt; {</span>
+<span class="nc" id="L230">                                 citationStyle = cs;</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">                                 if (!init) {</span>
+<span class="nc" id="L232">                                     basePanel.get().output(Localization.lang(&quot;Preview style changed to: %0&quot;, citationStyle.getTitle()));</span>
+                                 }
+<span class="nc" id="L234">                             });</span>
+<span class="nc" id="L235">                previewStyle = style;</span>
+            }
+        } else {
+<span class="nc" id="L238">            previewStyle = defaultPreviewStyle;</span>
+<span class="nc" id="L239">            updatePreviewLayout(previewPreferences.getPreviewStyle(), previewPreferences.getLayoutFormatterPreferences());</span>
+<span class="nc bnc" id="L240" title="All 2 branches missed.">            if (!init) {</span>
+<span class="nc" id="L241">                basePanel.get().output(Localization.lang(&quot;Preview style changed to: %0&quot;, Localization.lang(&quot;Preview&quot;)));</span>
+            }
+        }
+
+<span class="nc" id="L245">        update();</span>
+<span class="nc" id="L246">    }</span>
+
+    private void updatePreviewLayout(String layoutFile, LayoutFormatterPreferences layoutFormatterPreferences) {
+<span class="nc" id="L249">        StringReader sr = new StringReader(layoutFile.replace(&quot;__NEWLINE__&quot;, &quot;\n&quot;));</span>
+        try {
+<span class="nc" id="L251">            layout = Optional.of(new LayoutHelper(sr, layoutFormatterPreferences).getLayoutFromText());</span>
+<span class="nc" id="L252">        } catch (IOException e) {</span>
+<span class="nc" id="L253">            layout = Optional.empty();</span>
+<span class="nc" id="L254">            LOGGER.debug(&quot;no layout could be set&quot;, e);</span>
+<span class="nc" id="L255">        }</span>
+<span class="nc" id="L256">    }</span>
+
+    public void setLayout(Layout layout) {
+<span class="nc" id="L259">        this.layout = Optional.ofNullable(layout);</span>
+<span class="nc" id="L260">        update();</span>
+<span class="nc" id="L261">    }</span>
+
+    public void setEntry(BibEntry newEntry) {
+<span class="nc bnc" id="L264" title="All 2 branches missed.">        bibEntry.filter(e -&gt; e != newEntry).ifPresent(e -&gt; e.unregisterListener(this));</span>
+<span class="nc" id="L265">        bibEntry = Optional.ofNullable(newEntry);</span>
+<span class="nc" id="L266">        newEntry.registerListener(this);</span>
+
+<span class="nc" id="L268">        update();</span>
+<span class="nc" id="L269">    }</span>
+
+    /**
+     * Listener for ChangedFieldEvent.
+     */
+    @SuppressWarnings(&quot;unused&quot;)
+    @Subscribe
+    public void listen(FieldChangedEvent fieldChangedEvent) {
+<span class="nc" id="L277">        update();</span>
+<span class="nc" id="L278">    }</span>
+
+    @Override
+    public BibEntry getEntry() {
+<span class="nc" id="L282">        return this.bibEntry.orElse(null);</span>
+    }
+
+    public void update() {
+<span class="nc" id="L286">        ExporterFactory.entryNumber = 1; // Set entry number in case that is included in the preview layout.</span>
+
+<span class="nc bnc" id="L288" title="All 2 branches missed.">        if (citationStyleFuture.isPresent()) {</span>
+<span class="nc" id="L289">            citationStyleFuture.get().cancel(true);</span>
+<span class="nc" id="L290">            citationStyleFuture = Optional.empty();</span>
+        }
+
+<span class="nc bnc" id="L293" title="All 2 branches missed.">        if (layout.isPresent()) {</span>
+<span class="nc" id="L294">            StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L295">            bibEntry.ifPresent(entry -&gt; sb.append(layout.get()</span>
+<span class="nc" id="L296">                                                        .doLayout(entry, databaseContext.getDatabase())));</span>
+<span class="nc" id="L297">            setPreviewLabel(sb.toString());</span>
+<span class="nc bnc" id="L298" title="All 4 branches missed.">        } else if (basePanel.isPresent() &amp;&amp; bibEntry.isPresent()) {</span>
+<span class="nc bnc" id="L299" title="All 4 branches missed.">            if ((citationStyle != null) &amp;&amp; !previewStyle.equals(defaultPreviewStyle)) {</span>
+<span class="nc" id="L300">                basePanel.get().getCitationStyleCache().setCitationStyle(citationStyle);</span>
+            }
+<span class="nc" id="L302">            Future&lt;?&gt; citationStyleWorker = BackgroundTask</span>
+<span class="nc" id="L303">                                                          .wrap(() -&gt; basePanel.get().getCitationStyleCache().getCitationFor(bibEntry.get()))</span>
+<span class="nc" id="L304">                                                          .onRunning(() -&gt; {</span>
+<span class="nc" id="L305">                                                              CitationStyle citationStyle = basePanel.get().getCitationStyleCache().getCitationStyle();</span>
+<span class="nc" id="L306">                                                              setPreviewLabel(&quot;&lt;i&gt;&quot; + Localization.lang(&quot;Processing %0&quot;, Localization.lang(&quot;Citation Style&quot;)) +</span>
+<span class="nc" id="L307">                                                                              &quot;: &quot; + citationStyle.getTitle() + &quot; ...&quot; + &quot;&lt;/i&gt;&quot;);</span>
+<span class="nc" id="L308">                                                          })</span>
+<span class="nc" id="L309">                                                          .onSuccess(this::setPreviewLabel)</span>
+<span class="nc" id="L310">                                                          .onFailure(exception -&gt; {</span>
+<span class="nc" id="L311">                                                              LOGGER.error(&quot;Error while generating citation style&quot;, exception);</span>
+<span class="nc" id="L312">                                                              setPreviewLabel(Localization.lang(&quot;Error while generating citation style&quot;));</span>
+<span class="nc" id="L313">                                                          })</span>
+<span class="nc" id="L314">                                                          .executeWith(Globals.TASK_EXECUTOR);</span>
+<span class="nc" id="L315">            this.citationStyleFuture = Optional.of(citationStyleWorker);</span>
+        }
+<span class="nc" id="L317">    }</span>
+
+    private void setPreviewLabel(String text) {
+<span class="nc" id="L320">        DefaultTaskExecutor.runInJavaFXThread(() -&gt; {</span>
+<span class="nc" id="L321">            previewView.getEngine().loadContent(text);</span>
+<span class="nc" id="L322">            this.setHvalue(0);</span>
+<span class="nc" id="L323">        });</span>
+<span class="nc" id="L324">    }</span>
+
+    @Override
+    public void highlightPattern(Optional&lt;Pattern&gt; newPattern) {
+        // TODO: Implement that search phrases are highlighted
+<span class="nc" id="L329">        update();</span>
+<span class="nc" id="L330">    }</span>
+
+    /**
+     * this fixes the Layout, the user cannot change it anymore. Useful for testing the styles in the settings
+     *
+     * @param layout should be either a {@link String} (for the old PreviewStyle) or a {@link CitationStyle}.
+     */
+    public void setFixedLayout(String layout) {
+<span class="nc" id="L338">        this.fixedLayout = true;</span>
+<span class="nc" id="L339">        updatePreviewLayout(layout, Globals.prefs.getLayoutFormatterPreferences(Globals.journalAbbreviationLoader));</span>
+<span class="nc" id="L340">    }</span>
+
+    public void print() {
+<span class="nc" id="L343">        PrinterJob job = PrinterJob.createPrinterJob();</span>
+<span class="nc" id="L344">        boolean proceed = dialogService.showPrintDialog(job);</span>
+<span class="nc bnc" id="L345" title="All 2 branches missed.">        if (!proceed) {</span>
+<span class="nc" id="L346">            return;</span>
+        }
+
+<span class="nc" id="L349">        BackgroundTask.wrap(() -&gt; {</span>
+<span class="nc" id="L350">            job.getJobSettings().setJobName(bibEntry.flatMap(BibEntry::getCiteKeyOptional).orElse(&quot;NO ENTRY&quot;));</span>
+<span class="nc" id="L351">            previewView.getEngine().print(job);</span>
+<span class="nc" id="L352">            job.endJob();</span>
+<span class="nc" id="L353">            return null;</span>
+        })
+<span class="nc" id="L355">                      .onFailure(exception -&gt; dialogService.showErrorDialogAndWait(Localization.lang(&quot;Could not print preview&quot;), exception))</span>
+<span class="nc" id="L356">                      .executeWith(Globals.TASK_EXECUTOR);</span>
+<span class="nc" id="L357">    }</span>
+
+    public void close() {
+<span class="nc" id="L360">        basePanel.ifPresent(BasePanel::closeBottomPane);</span>
+<span class="nc" id="L361">    }</span>
+
+    private void copyPreviewToClipBoard() {
+<span class="nc" id="L364">        StringBuilder previewStringContent = new StringBuilder();</span>
+<span class="nc" id="L365">        Document document = previewView.getEngine().getDocument();</span>
+
+<span class="nc" id="L367">        NodeList nodeList = document.getElementsByTagName(&quot;html&quot;);</span>
+
+        //Nodelist does not implement iterable
+<span class="nc bnc" id="L370" title="All 2 branches missed.">        for (int i = 0; i &lt; nodeList.getLength(); i++) {</span>
+<span class="nc" id="L371">            Element element = (Element) nodeList.item(i);</span>
+<span class="nc" id="L372">            previewStringContent.append(element.getTextContent());</span>
+        }
+
+<span class="nc" id="L375">        ClipboardContent content = new ClipboardContent();</span>
+<span class="nc" id="L376">        content.putString(previewStringContent.toString());</span>
+<span class="nc" id="L377">        content.putHtml((String) previewView.getEngine().executeScript(&quot;document.documentElement.outerHTML&quot;));</span>
+
+<span class="nc" id="L379">        clipBoardManager.setContent(content);</span>
+<span class="nc" id="L380">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IdParserFetcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer</a> &gt; <span class="el_source">IdParserFetcher.java</span></div><h1>IdParserFetcher.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer;
+
+import java.io.BufferedInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.model.cleanup.Formatter;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.identifier.Identifier;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Provides a convenient interface for {@link IdFetcher}, which follow the usual three-step procedure:
+ * 1. Open a URL based on the search query
+ * 2. Parse the response to get a list of {@link BibEntry}
+ * 3. Extract identifier
+ */
+public interface IdParserFetcher&lt;T extends Identifier&gt; extends IdFetcher&lt;T&gt; {
+
+<span class="fc" id="L29">    Logger LOGGER = LoggerFactory.getLogger(IdParserFetcher.class);</span>
+
+    /**
+     * Constructs a URL based on the {@link BibEntry}.
+     *
+     * @param entry the entry to look information for
+     */
+    URL getURLForEntry(BibEntry entry) throws URISyntaxException, MalformedURLException, FetcherException;
+
+    /**
+     * Returns the parser used to convert the response to a list of {@link BibEntry}.
+     */
+    Parser getParser();
+
+    /**
+     * Performs a cleanup of the fetched entry.
+     *
+     * Only systematic errors of the fetcher should be corrected here
+     * (i.e. if information is consistently contained in the wrong field or the wrong format)
+     * but not cosmetic issues which may depend on the user's taste (for example, LateX code vs HTML in the abstract).
+     *
+     * Try to reuse existing {@link Formatter} for the cleanup. For example,
+     * {@code new FieldFormatterCleanup(FieldName.TITLE, new RemoveBracesFormatter()).cleanup(entry);}
+     *
+     * By default, no cleanup is done.
+     *
+     * @param entry the entry to be cleaned-up
+     */
+    default void doPostCleanup(BibEntry entry) {
+        // Do nothing by default
+<span class="nc" id="L59">    }</span>
+
+    /**
+     * Extracts the identifier from the list of fetched entries.
+     *
+     * @param inputEntry     the entry for which we are searching the identifier (can be used to find closest match in
+     *                       the result)
+     * @param fetchedEntries list of entries returned by the web service
+     */
+    Optional&lt;T&gt; extractIdentifier(BibEntry inputEntry, List&lt;BibEntry&gt; fetchedEntries) throws FetcherException;
+
+    @Override
+    default Optional&lt;T&gt; findIdentifier(BibEntry entry) throws FetcherException {
+<span class="fc" id="L72">        Objects.requireNonNull(entry);</span>
+
+<span class="fc" id="L74">        try (InputStream stream = new BufferedInputStream(getURLForEntry(entry).openStream())) {</span>
+<span class="fc" id="L75">            List&lt;BibEntry&gt; fetchedEntries = getParser().parseEntries(stream);</span>
+
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">            if (fetchedEntries.isEmpty()) {</span>
+<span class="nc" id="L78">                return Optional.empty();</span>
+            }
+
+            // Post-cleanup
+<span class="fc" id="L82">            fetchedEntries.forEach(this::doPostCleanup);</span>
+
+<span class="fc" id="L84">            return extractIdentifier(entry, fetchedEntries);</span>
+<span class="pc" id="L85">        } catch (URISyntaxException e) {</span>
+<span class="nc" id="L86">            throw new FetcherException(&quot;Search URI is malformed&quot;, e);</span>
+<span class="nc" id="L87">        } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L88">            LOGGER.debug(&quot;Id not found&quot;);</span>
+<span class="nc" id="L89">            return Optional.empty();</span>
+<span class="nc" id="L90">        } catch (IOException e) {</span>
+            // TODO: Catch HTTP Response 401 errors and report that user has no rights to access resource
+            // TODO catch 503 service unavailable and alert user
+<span class="nc" id="L93">            throw new FetcherException(&quot;An I/O exception occurred&quot;, e);</span>
+<span class="nc" id="L94">        } catch (ParseException e) {</span>
+<span class="nc" id="L95">            throw new FetcherException(&quot;An internal parser error occurred&quot;, e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

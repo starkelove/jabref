@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AllEntriesGroup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.groups</a> &gt; <span class="el_source">AllEntriesGroup.java</span></div><h1>AllEntriesGroup.java</h1><pre class="source lang-java linenums">package org.jabref.model.groups;
+
+import java.util.Objects;
+
+import org.jabref.model.entry.BibEntry;
+
+/**
+ * This group contains all entries. Always. At any time!
+ */
+public class AllEntriesGroup extends AbstractGroup {
+
+
+    public AllEntriesGroup(String name) {
+<span class="fc" id="L14">        super(name, GroupHierarchyType.INDEPENDENT);</span>
+<span class="fc" id="L15">    }</span>
+
+    @Override
+    public AbstractGroup deepCopy() {
+<span class="nc" id="L19">        return new AllEntriesGroup(getName());</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L24" title="2 of 4 branches missed.">        return o instanceof AllEntriesGroup &amp;&amp; Objects.equals(((AllEntriesGroup) o).getName(), getName());</span>
+    }
+
+    @Override
+    public boolean contains(BibEntry entry) {
+<span class="fc" id="L29">        return true;</span>
+    }
+
+    @Override
+    public boolean isDynamic() {
+        // this is actually a special case; I define it as non-dynamic
+<span class="nc" id="L35">        return false;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L40">        return getName().hashCode();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

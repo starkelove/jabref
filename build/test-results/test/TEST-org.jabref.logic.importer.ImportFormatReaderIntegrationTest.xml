@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" tests="24" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:24" hostname="n184-p67.eduroam.kth.se" time="0.302">
+  <properties/>
+  <testcase name="testImportUnknownFormat(String, String, int)[1]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.026"/>
+  <testcase name="testImportUnknownFormat(String, String, int)[2]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.024"/>
+  <testcase name="testImportUnknownFormat(String, String, int)[3]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.018"/>
+  <testcase name="testImportUnknownFormat(String, String, int)[4]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.021"/>
+  <testcase name="testImportUnknownFormat(String, String, int)[5]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.025"/>
+  <testcase name="testImportUnknownFormat(String, String, int)[6]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.02"/>
+  <testcase name="testImportUnknownFormat(String, String, int)[7]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.02"/>
+  <testcase name="testImportUnknownFormat(String, String, int)[8]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.011"/>
+  <testcase name="testImportFormatFromFile(String, String, int)[1]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.006"/>
+  <testcase name="testImportFormatFromFile(String, String, int)[2]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.003"/>
+  <testcase name="testImportFormatFromFile(String, String, int)[3]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.004"/>
+  <testcase name="testImportFormatFromFile(String, String, int)[4]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.005"/>
+  <testcase name="testImportFormatFromFile(String, String, int)[5]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.004"/>
+  <testcase name="testImportFormatFromFile(String, String, int)[6]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.005"/>
+  <testcase name="testImportFormatFromFile(String, String, int)[7]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.006"/>
+  <testcase name="testImportFormatFromFile(String, String, int)[8]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.007"/>
+  <testcase name="testImportUnknownFormatFromString(String, String, int)[1]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.011"/>
+  <testcase name="testImportUnknownFormatFromString(String, String, int)[2]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.007"/>
+  <testcase name="testImportUnknownFormatFromString(String, String, int)[3]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.012"/>
+  <testcase name="testImportUnknownFormatFromString(String, String, int)[4]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.009"/>
+  <testcase name="testImportUnknownFormatFromString(String, String, int)[5]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.009"/>
+  <testcase name="testImportUnknownFormatFromString(String, String, int)[6]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.012"/>
+  <testcase name="testImportUnknownFormatFromString(String, String, int)[7]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.011"/>
+  <testcase name="testImportUnknownFormatFromString(String, String, int)[8]" classname="org.jabref.logic.importer.ImportFormatReaderIntegrationTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

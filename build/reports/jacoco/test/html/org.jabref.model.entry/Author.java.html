@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Author.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry</a> &gt; <span class="el_source">Author.java</span></div><h1>Author.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry;
+
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.model.strings.StringUtil;
+
+/**
+ * This is an immutable class that keeps information regarding single
+ * author. It is just a container for the information, with very simple
+ * methods to access it.
+ * &lt;p&gt;
+ * Current usage: only methods &lt;code&gt;getLastOnly&lt;/code&gt;,
+ * &lt;code&gt;getFirstLast&lt;/code&gt;, and &lt;code&gt;getLastFirst&lt;/code&gt; are used;
+ * all other methods are provided for completeness.
+ */
+public class Author {
+
+    private final String firstPart;
+
+    private final String firstAbbr;
+
+    private final String vonPart;
+
+    private final String lastPart;
+
+    private final String jrPart;
+
+    /**
+     * Creates the Author object. If any part of the name is absent, &lt;CODE&gt;null&lt;/CODE&gt;
+     * must be passed; otherwise other methods may return erroneous results.
+     *
+     * @param first     the first name of the author (may consist of several
+     *                  tokens, like &quot;Charles Louis Xavier Joseph&quot; in &quot;Charles
+     *                  Louis Xavier Joseph de la Vall{\'e}e Poussin&quot;)
+     * @param firstabbr the abbreviated first name of the author (may consist of
+     *                  several tokens, like &quot;C. L. X. J.&quot; in &quot;Charles Louis
+     *                  Xavier Joseph de la Vall{\'e}e Poussin&quot;). It is a
+     *                  responsibility of the caller to create a reasonable
+     *                  abbreviation of the first name.
+     * @param von       the von part of the author's name (may consist of several
+     *                  tokens, like &quot;de la&quot; in &quot;Charles Louis Xavier Joseph de la
+     *                  Vall{\'e}e Poussin&quot;)
+     * @param last      the last name of the author (may consist of several
+     *                  tokens, like &quot;Vall{\'e}e Poussin&quot; in &quot;Charles Louis Xavier
+     *                  Joseph de la Vall{\'e}e Poussin&quot;)
+     * @param jr        the junior part of the author's name (may consist of
+     *                  several tokens, like &quot;Jr. III&quot; in &quot;Smith, Jr. III, John&quot;)
+     */
+<span class="fc" id="L50">    public Author(String first, String firstabbr, String von, String last, String jr) {</span>
+<span class="fc" id="L51">        firstPart = addDotIfAbbreviation(removeStartAndEndBraces(first));</span>
+<span class="fc" id="L52">        firstAbbr = removeStartAndEndBraces(firstabbr);</span>
+<span class="fc" id="L53">        vonPart = removeStartAndEndBraces(von);</span>
+<span class="fc" id="L54">        lastPart = removeStartAndEndBraces(last);</span>
+<span class="fc" id="L55">        jrPart = removeStartAndEndBraces(jr);</span>
+<span class="fc" id="L56">    }</span>
+
+    public static String addDotIfAbbreviation(String name) {
+        // Avoid arrayindexoutof.... :
+<span class="pc bpc" id="L60" title="1 of 4 branches missed.">        if ((name == null) || name.isEmpty()) {</span>
+<span class="fc" id="L61">            return name;</span>
+        }
+        // If only one character (uppercase letter), add a dot and return immediately:
+<span class="fc bfc" id="L64" title="All 4 branches covered.">        if ((name.length() == 1) &amp;&amp; Character.isLetter(name.charAt(0)) &amp;&amp;</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">                Character.isUpperCase(name.charAt(0))) {</span>
+<span class="fc" id="L66">            return name + &quot;.&quot;;</span>
+        }
+
+<span class="fc" id="L69">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L70">        char lastChar = name.charAt(0);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        for (int i = 0; i &lt; name.length(); i++) {</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            if (i &gt; 0) {</span>
+<span class="fc" id="L73">                lastChar = name.charAt(i - 1);</span>
+            }
+<span class="fc" id="L75">            char currentChar = name.charAt(i);</span>
+<span class="fc" id="L76">            sb.append(currentChar);</span>
+
+<span class="fc bfc" id="L78" title="All 2 branches covered.">            if (currentChar == '.') {</span>
+                // A.A. -&gt; A. A.
+<span class="fc bfc" id="L80" title="All 4 branches covered.">                if (((i + 1) &lt; name.length()) &amp;&amp; Character.isUpperCase(name.charAt(i + 1))) {</span>
+<span class="fc" id="L81">                    sb.append(' ');</span>
+                }
+            }
+
+<span class="fc bfc" id="L85" title="All 4 branches covered.">            boolean currentIsUppercaseLetter = Character.isLetter(currentChar) &amp;&amp; Character.isUpperCase(currentChar);</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">            if (!currentIsUppercaseLetter) {</span>
+                // No uppercase letter, hence nothing to do
+<span class="fc" id="L88">                continue;</span>
+            }
+
+<span class="fc bfc" id="L91" title="All 4 branches covered.">            boolean lastIsLowercaseLetter = Character.isLetter(lastChar) &amp;&amp; Character.isLowerCase(lastChar);</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">            if (lastIsLowercaseLetter) {</span>
+                // previous character was lowercase (probably an acronym like JabRef) -&gt; don't change anything
+<span class="fc" id="L94">                continue;</span>
+            }
+
+<span class="fc bfc" id="L97" title="All 2 branches covered.">            if ((i + 1) &gt;= name.length()) {</span>
+                // Current character is last character in input, so append dot
+<span class="fc" id="L99">                sb.append('.');</span>
+<span class="fc" id="L100">                continue;</span>
+            }
+
+<span class="fc" id="L103">            char nextChar = name.charAt(i + 1);</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            if ('-' == nextChar) {</span>
+                // A-A -&gt; A.-A.
+<span class="fc" id="L106">                sb.append(&quot;.&quot;);</span>
+<span class="fc" id="L107">                continue;</span>
+            }
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            if ('.' == nextChar) {</span>
+                // Dot already there, so nothing to do
+<span class="fc" id="L111">                continue;</span>
+            }
+
+            // AA -&gt; A. A.
+            // Only append &quot;. &quot; if the rest of the 'word' is uppercase
+<span class="fc" id="L116">            boolean nextWordIsUppercase = true;</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">            for (int j = i + 1; j &lt; name.length(); j++) {</span>
+<span class="fc" id="L118">                char furtherChar = name.charAt(j);</span>
+<span class="pc bpc" id="L119" title="3 of 8 branches missed.">                if (Character.isWhitespace(furtherChar) || (furtherChar == '-') || (furtherChar == '~')</span>
+                        || (furtherChar == '.')) {
+                    // end of word
+<span class="fc" id="L122">                    break;</span>
+                }
+
+<span class="fc bfc" id="L125" title="All 2 branches covered.">                boolean furtherIsUppercaseLetter = Character.isLetter(furtherChar)</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">                        &amp;&amp; Character.isUpperCase(furtherChar);</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">                if (!furtherIsUppercaseLetter) {</span>
+<span class="fc" id="L128">                    nextWordIsUppercase = false;</span>
+<span class="fc" id="L129">                    break;</span>
+                }
+            }
+<span class="fc bfc" id="L132" title="All 2 branches covered.">            if (nextWordIsUppercase) {</span>
+<span class="fc" id="L133">                sb.append(&quot;. &quot;);</span>
+            }
+        }
+
+<span class="fc" id="L137">        return sb.toString().trim();</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L142">        return Objects.hash(firstAbbr, firstPart, jrPart, lastPart, vonPart);</span>
+    }
+
+    /**
+     * Compare this object with the given one.
+     * &lt;p&gt;
+     * Will return true iff the other object is an Author and all fields are identical on a string comparison.
+     */
+    @Override
+    public boolean equals(Object other) {
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">        if (this == other) {</span>
+<span class="nc" id="L153">            return true;</span>
+        }
+
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">        if (other instanceof Author) {</span>
+<span class="fc" id="L157">            Author that = (Author) other;</span>
+<span class="pc bpc" id="L158" title="1 of 4 branches missed.">            return Objects.equals(firstPart, that.firstPart) &amp;&amp; Objects.equals(firstAbbr, that.firstAbbr)</span>
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">                    &amp;&amp; Objects.equals(</span>
+                            vonPart, that.vonPart)
+<span class="pc bpc" id="L161" title="2 of 4 branches missed.">                    &amp;&amp; Objects.equals(lastPart, that.lastPart) &amp;&amp; Objects.equals(jrPart, that.jrPart);</span>
+        }
+<span class="nc" id="L163">        return false;</span>
+    }
+
+    /**
+     * @return true if the brackets in s are properly paired
+     */
+    private boolean properBrackets(String s) {
+        // nested construct is there, check for &quot;proper&quot; nesting
+<span class="fc" id="L171">        int i = 0;</span>
+<span class="fc" id="L172">        int level = 0;</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        while (i &lt; s.length()) {</span>
+<span class="fc" id="L174">            char c = s.charAt(i);</span>
+<span class="fc bfc" id="L175" title="All 3 branches covered.">            switch (c) {</span>
+            case '{':
+<span class="fc" id="L177">                level++;</span>
+<span class="fc" id="L178">                break;</span>
+            case '}':
+<span class="fc" id="L180">                level--;</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">                if (level == -1) { // improper nesting</span>
+<span class="fc" id="L182">                    return false;</span>
+                }
+                break;
+            default:
+                break;
+            }
+<span class="fc" id="L188">            i++;</span>
+<span class="fc" id="L189">        }</span>
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">        return level == 0;</span>
+    }
+
+    /**
+     * Removes start and end brace at a string
+     * &lt;p&gt;
+     * E.g.,
+     * * {Vall{\'e}e Poussin} -&gt; Vall{\'e}e Poussin
+     * * {Vall{\'e}e} {Poussin} -&gt; Vall{\'e}e Poussin
+     * * Vall{\'e}e Poussin -&gt; Vall{\'e}e Poussin
+     */
+    private String removeStartAndEndBraces(String name) {
+<span class="fc bfc" id="L202" title="All 2 branches covered.">        if (StringUtil.isBlank(name)) {</span>
+<span class="fc" id="L203">            return null;</span>
+        }
+
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (!name.contains(&quot;{&quot;)) {</span>
+<span class="fc" id="L207">            return name;</span>
+        }
+
+<span class="fc" id="L210">        String[] split = name.split(&quot; &quot;);</span>
+<span class="fc" id="L211">        StringBuilder b = new StringBuilder();</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        for (String s : split) {</span>
+<span class="fc bfc" id="L213" title="All 6 branches covered.">            if ((s.length() &gt; 2) &amp;&amp; s.startsWith(&quot;{&quot;) &amp;&amp; s.endsWith(&quot;}&quot;)) {</span>
+                // quick solution (which we don't do: just remove first &quot;{&quot; and last &quot;}&quot;
+                // however, it might be that s is like {A}bbb{c}, where braces may not be removed
+
+                // inner
+<span class="fc" id="L218">                String inner = s.substring(1, s.length() - 1);</span>
+
+<span class="fc bfc" id="L220" title="All 2 branches covered.">                if (inner.contains(&quot;}&quot;)) {</span>
+<span class="fc bfc" id="L221" title="All 2 branches covered.">                    if (properBrackets(inner)) {</span>
+<span class="fc" id="L222">                        s = inner;</span>
+                    }
+                } else {
+                    //  no inner curly brackets found, no check needed, inner can just be used as s
+<span class="fc" id="L226">                    s = inner;</span>
+                }
+            }
+<span class="fc" id="L229">            b.append(s).append(' ');</span>
+        }
+        // delete last
+<span class="fc" id="L232">        b.deleteCharAt(b.length() - 1);</span>
+
+        // now, all inner words are cleared
+        // case {word word word} remains
+        // as above, we have to be aware of {w}ord word wor{d} and {{w}ord word word}
+
+<span class="fc" id="L238">        String newName = b.toString();</span>
+
+<span class="fc bfc" id="L240" title="All 4 branches covered.">        if (newName.startsWith(&quot;{&quot;) &amp;&amp; newName.endsWith(&quot;}&quot;)) {</span>
+<span class="fc" id="L241">            String inner = newName.substring(1, newName.length() - 1);</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">            if (properBrackets(inner)) {</span>
+<span class="fc" id="L243">                return inner;</span>
+            } else {
+<span class="fc" id="L245">                return newName;</span>
+            }
+        } else {
+<span class="fc" id="L248">            return newName;</span>
+        }
+    }
+
+    /**
+     * Returns the first name of the author stored in this object (&quot;First&quot;).
+     *
+     * @return first name of the author (may consist of several tokens)
+     */
+    public Optional&lt;String&gt; getFirst() {
+<span class="fc" id="L258">        return Optional.ofNullable(firstPart);</span>
+    }
+
+    /**
+     * Returns the abbreviated first name of the author stored in this
+     * object (&quot;F.&quot;).
+     *
+     * @return abbreviated first name of the author (may consist of several
+     * tokens)
+     */
+    public Optional&lt;String&gt; getFirstAbbr() {
+<span class="fc" id="L269">        return Optional.ofNullable(firstAbbr);</span>
+    }
+
+    /**
+     * Returns the von part of the author's name stored in this object
+     * (&quot;von&quot;).
+     *
+     * @return von part of the author's name (may consist of several tokens)
+     */
+    public Optional&lt;String&gt; getVon() {
+<span class="fc" id="L279">        return Optional.ofNullable(vonPart);</span>
+    }
+
+    /**
+     * Returns the last name of the author stored in this object (&quot;Last&quot;).
+     *
+     * @return last name of the author (may consist of several tokens)
+     */
+    public Optional&lt;String&gt; getLast() {
+<span class="fc" id="L288">        return Optional.ofNullable(lastPart);</span>
+    }
+
+    /**
+     * Returns the junior part of the author's name stored in this object
+     * (&quot;Jr&quot;).
+     *
+     * @return junior part of the author's name (may consist of several
+     * tokens) or null if the author does not have a Jr. Part
+     */
+    public Optional&lt;String&gt; getJr() {
+<span class="fc" id="L299">        return Optional.ofNullable(jrPart);</span>
+    }
+
+    /**
+     * Returns von-part followed by last name (&quot;von Last&quot;). If both fields
+     * were specified as &lt;CODE&gt;null&lt;/CODE&gt;, the empty string &lt;CODE&gt;&quot;&quot;&lt;/CODE&gt;
+     * is returned.
+     *
+     * @return 'von Last'
+     */
+    public String getLastOnly() {
+<span class="fc bfc" id="L310" title="All 2 branches covered.">        if (vonPart == null) {</span>
+<span class="fc" id="L311">            return getLast().orElse(&quot;&quot;);</span>
+        } else {
+<span class="fc bfc" id="L313" title="All 2 branches covered.">            return lastPart == null ? vonPart : vonPart + ' ' + lastPart;</span>
+        }
+    }
+
+    /**
+     * Returns the author's name in form 'von Last, Jr., First' with the
+     * first name full or abbreviated depending on parameter.
+     *
+     * @param abbr &lt;CODE&gt;true&lt;/CODE&gt; - abbreviate first name, &lt;CODE&gt;false&lt;/CODE&gt; -
+     *             do not abbreviate
+     * @return 'von Last, Jr., First' (if &lt;CODE&gt;abbr==false&lt;/CODE&gt;) or
+     * 'von Last, Jr., F.' (if &lt;CODE&gt;abbr==true&lt;/CODE&gt;)
+     */
+    public String getLastFirst(boolean abbr) {
+<span class="fc" id="L327">        StringBuilder res = new StringBuilder(getLastOnly());</span>
+<span class="fc" id="L328">        getJr().ifPresent(jr -&gt; res.append(&quot;, &quot;).append(jr));</span>
+<span class="fc bfc" id="L329" title="All 2 branches covered.">        if (abbr) {</span>
+<span class="fc" id="L330">            getFirstAbbr().ifPresent(firstA -&gt; res.append(&quot;, &quot;).append(firstA));</span>
+        } else {
+<span class="fc" id="L332">            getFirst().ifPresent(first -&gt; res.append(&quot;, &quot;).append(first));</span>
+        }
+<span class="fc" id="L334">        return res.toString();</span>
+    }
+
+    /**
+     * Returns the author's name in form 'First von Last, Jr.' with the
+     * first name full or abbreviated depending on parameter.
+     *
+     * @param abbr &lt;CODE&gt;true&lt;/CODE&gt; - abbreviate first name, &lt;CODE&gt;false&lt;/CODE&gt; -
+     *             do not abbreviate
+     * @return 'First von Last, Jr.' (if &lt;CODE&gt;abbr==false&lt;/CODE&gt;) or 'F.
+     * von Last, Jr.' (if &lt;CODE&gt;abbr==true&lt;/CODE&gt;)
+     */
+    public String getFirstLast(boolean abbr) {
+<span class="fc" id="L347">        StringBuilder res = new StringBuilder();</span>
+<span class="fc bfc" id="L348" title="All 2 branches covered.">        if (abbr) {</span>
+<span class="fc" id="L349">            getFirstAbbr().map(firstA -&gt; firstA + ' ').ifPresent(res::append);</span>
+        } else {
+<span class="fc" id="L351">            getFirst().map(first -&gt; first + ' ').ifPresent(res::append);</span>
+        }
+<span class="fc" id="L353">        res.append(getLastOnly());</span>
+<span class="fc" id="L354">        getJr().ifPresent(jr -&gt; res.append(&quot;, &quot;).append(jr));</span>
+<span class="fc" id="L355">        return res.toString();</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L360">        final StringBuilder sb = new StringBuilder(&quot;Author{&quot;);</span>
+<span class="fc" id="L361">        sb.append(&quot;firstPart='&quot;).append(firstPart).append('\'');</span>
+<span class="fc" id="L362">        sb.append(&quot;, firstAbbr='&quot;).append(firstAbbr).append('\'');</span>
+<span class="fc" id="L363">        sb.append(&quot;, vonPart='&quot;).append(vonPart).append('\'');</span>
+<span class="fc" id="L364">        sb.append(&quot;, lastPart='&quot;).append(lastPart).append('\'');</span>
+<span class="fc" id="L365">        sb.append(&quot;, jrPart='&quot;).append(jrPart).append('\'');</span>
+<span class="fc" id="L366">        sb.append('}');</span>
+<span class="fc" id="L367">        return sb.toString();</span>
+    }
+
+    /**
+     * Returns the name as &quot;Last, Jr, F.&quot; omitting the von-part and removing
+     * starting braces.
+     *
+     * @return &quot;Last, Jr, F.&quot; as described above or &quot;&quot; if all these parts
+     * are empty.
+     */
+    public String getNameForAlphabetization() {
+<span class="fc" id="L378">        StringBuilder res = new StringBuilder();</span>
+<span class="fc" id="L379">        getLast().ifPresent(res::append);</span>
+<span class="fc" id="L380">        getJr().ifPresent(jr -&gt; res.append(&quot;, &quot;).append(jr));</span>
+<span class="fc" id="L381">        getFirstAbbr().ifPresent(firstA -&gt; res.append(&quot;, &quot;).append(firstA));</span>
+<span class="pc bpc" id="L382" title="2 of 4 branches missed.">        while ((res.length() &gt; 0) &amp;&amp; (res.charAt(0) == '{')) {</span>
+<span class="nc" id="L383">            res.deleteCharAt(0);</span>
+        }
+<span class="fc" id="L385">        return res.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

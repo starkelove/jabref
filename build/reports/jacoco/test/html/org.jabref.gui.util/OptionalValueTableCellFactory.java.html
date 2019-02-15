@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OptionalValueTableCellFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">OptionalValueTableCellFactory.java</span></div><h1>OptionalValueTableCellFactory.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.util.Optional;
+import java.util.function.BiFunction;
+
+import javafx.scene.Node;
+import javafx.scene.control.TableCell;
+
+/**
+ * Constructs a {@link TableCell} based on an optional value of the cell and a bunch of specified converter methods.
+ *
+ * @param &lt;S&gt; view model of table row
+ * @param &lt;T&gt; cell value
+ */
+<span class="nc" id="L15">public class OptionalValueTableCellFactory&lt;S, T&gt; extends ValueTableCellFactory&lt;S, Optional&lt;T&gt;&gt; {</span>
+
+    private BiFunction&lt;S, T, Node&gt; toGraphicIfPresent;
+    private Node defaultGraphic;
+
+    public OptionalValueTableCellFactory&lt;S, T&gt; withGraphicIfPresent(BiFunction&lt;S, T, Node&gt; toGraphicIfPresent) {
+<span class="nc" id="L21">        this.toGraphicIfPresent = toGraphicIfPresent;</span>
+<span class="nc" id="L22">        setToGraphic();</span>
+<span class="nc" id="L23">        return this;</span>
+    }
+
+    public OptionalValueTableCellFactory&lt;S, T&gt; withDefaultGraphic(Node defaultGraphic) {
+<span class="nc" id="L27">        this.defaultGraphic = defaultGraphic;</span>
+<span class="nc" id="L28">        setToGraphic();</span>
+<span class="nc" id="L29">        return this;</span>
+    }
+
+    private void setToGraphic() {
+<span class="nc" id="L33">        withGraphic((rowItem, item) -&gt; {</span>
+<span class="nc bnc" id="L34" title="All 4 branches missed.">            if (item.isPresent() &amp;&amp; toGraphicIfPresent != null) {</span>
+<span class="nc" id="L35">                return toGraphicIfPresent.apply(rowItem, item.get());</span>
+            } else {
+<span class="nc" id="L37">                return defaultGraphic;</span>
+            }
+        });
+<span class="nc" id="L40">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

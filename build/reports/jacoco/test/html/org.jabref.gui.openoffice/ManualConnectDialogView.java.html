@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ManualConnectDialogView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.openoffice</a> &gt; <span class="el_source">ManualConnectDialogView.java</span></div><h1>ManualConnectDialogView.java</h1><pre class="source lang-java linenums">package org.jabref.gui.openoffice;
+
+import javax.inject.Inject;
+
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+
+import org.jabref.gui.DialogService;
+import org.jabref.gui.util.BaseDialog;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.OS;
+import org.jabref.preferences.PreferencesService;
+
+import com.airhacks.afterburner.views.ViewLoader;
+
+public class ManualConnectDialogView extends BaseDialog&lt;Boolean&gt; {
+
+    @Inject private final DialogService dialogService;
+    @FXML private Label OOPathLabel;
+    @FXML private TextField ooPath;
+    @FXML private Button browseOOPath;
+    @FXML private Button browseOOExec;
+    @FXML private Button browseOOJars;
+    @FXML private TextField ooExec;
+    @FXML private TextField ooJars;
+    @FXML private Label ooExecLabel;
+    @FXML private Label ooJarsLabel;
+    @Inject private PreferencesService preferencesService;
+    private ManualConnectDialogViewModel viewModel;
+
+<span class="nc" id="L35">    public ManualConnectDialogView(DialogService dialogService) {</span>
+<span class="nc" id="L36">        this.dialogService = dialogService;</span>
+
+<span class="nc" id="L38">        ViewLoader.view(this)</span>
+<span class="nc" id="L39">                  .load()</span>
+<span class="nc" id="L40">                  .setAsDialogPane(this);</span>
+
+<span class="nc" id="L42">        setResultConverter(button -&gt; {</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">            if (button == ButtonType.OK) {</span>
+<span class="nc" id="L44">                viewModel.save();</span>
+<span class="nc" id="L45">                return true;</span>
+            }
+<span class="nc" id="L47">            return null;</span>
+        });
+
+<span class="nc" id="L50">        setTitle(Localization.lang(&quot;Set connection parameters&quot;));</span>
+<span class="nc" id="L51">    }</span>
+
+    @FXML
+    private void initialize() {
+
+<span class="nc" id="L56">        viewModel = new ManualConnectDialogViewModel(preferencesService, dialogService);</span>
+
+<span class="nc" id="L58">        ooPath.textProperty().bindBidirectional(viewModel.ooPathProperty());</span>
+<span class="nc" id="L59">        ooExec.textProperty().bindBidirectional(viewModel.ooExecProperty());</span>
+<span class="nc" id="L60">        ooJars.textProperty().bind(viewModel.ooJarsProperty());</span>
+
+<span class="nc bnc" id="L62" title="All 4 branches missed.">        if (OS.WINDOWS || OS.OS_X) {</span>
+<span class="nc" id="L63">            ooPath.setVisible(true);</span>
+<span class="nc" id="L64">            ooExec.setVisible(false);</span>
+<span class="nc" id="L65">            ooJars.setVisible(false);</span>
+        } else {
+<span class="nc" id="L67">            ooPath.setVisible(false);</span>
+<span class="nc" id="L68">            ooExec.setVisible(false);</span>
+<span class="nc" id="L69">            ooJars.setVisible(true);</span>
+        }
+<span class="nc" id="L71">    }</span>
+
+    @FXML
+    private void browseOOPath(ActionEvent event) {
+<span class="nc" id="L75">        viewModel.browseOOPath();</span>
+<span class="nc" id="L76">    }</span>
+
+    @FXML
+    private void browseOOExec(ActionEvent event) {
+<span class="nc" id="L80">        viewModel.browseOOExec();</span>
+<span class="nc" id="L81">    }</span>
+
+    @FXML
+    private void browseOOJars(ActionEvent event) {
+<span class="nc" id="L85">        viewModel.browseOOJars();</span>
+<span class="nc" id="L86">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TexGroup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.groups</a> &gt; <span class="el_source">TexGroup.java</span></div><h1>TexGroup.java</h1><pre class="source lang-java linenums">package org.jabref.model.groups;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Objects;
+import java.util.Set;
+
+import org.jabref.model.auxparser.AuxParser;
+import org.jabref.model.auxparser.AuxParserResult;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.util.FileUpdateListener;
+import org.jabref.model.util.FileUpdateMonitor;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class TexGroup extends AbstractGroup implements FileUpdateListener {
+
+<span class="fc" id="L19">    private static final Logger LOGGER = LoggerFactory.getLogger(TexGroup.class);</span>
+
+    private Path filePath;
+<span class="fc" id="L22">    private Set&lt;String&gt; keysUsedInAux = null;</span>
+    private final FileUpdateMonitor fileMonitor;
+    private AuxParser auxParser;
+
+    public TexGroup(String name, GroupHierarchyType context, Path filePath, AuxParser auxParser, FileUpdateMonitor fileMonitor) throws IOException {
+<span class="fc" id="L27">        super(name, context);</span>
+<span class="fc" id="L28">        this.filePath = Objects.requireNonNull(filePath);</span>
+<span class="fc" id="L29">        this.auxParser = auxParser;</span>
+<span class="fc" id="L30">        this.fileMonitor = fileMonitor;</span>
+<span class="fc" id="L31">        fileMonitor.addListenerForFile(filePath, this);</span>
+<span class="fc" id="L32">    }</span>
+
+    @Override
+    public boolean contains(BibEntry entry) {
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        if (keysUsedInAux == null) {</span>
+<span class="fc" id="L37">            AuxParserResult auxResult = auxParser.parse(filePath);</span>
+<span class="fc" id="L38">            keysUsedInAux = auxResult.getUniqueKeys();</span>
+        }
+
+<span class="fc" id="L41">        return entry.getCiteKeyOptional().map(keysUsedInAux::contains).orElse(false);</span>
+    }
+
+    @Override
+    public boolean isDynamic() {
+<span class="nc" id="L46">        return false;</span>
+    }
+
+    @Override
+    public AbstractGroup deepCopy() {
+        try {
+<span class="nc" id="L52">            return new TexGroup(name.getValue(), context, filePath, auxParser, fileMonitor);</span>
+<span class="nc" id="L53">        } catch (IOException ex) {</span>
+            // This should never happen because we were able to monitor the file just fine until now
+<span class="nc" id="L55">            LOGGER.error(&quot;Problem creating copy of group&quot;, ex);</span>
+<span class="nc" id="L56">            return null;</span>
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L63">            return true;</span>
+        }
+<span class="pc bpc" id="L65" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L66">            return false;</span>
+        }
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (!super.equals(o)) {</span>
+<span class="nc" id="L69">            return false;</span>
+        }
+<span class="fc" id="L71">        TexGroup group = (TexGroup) o;</span>
+<span class="fc" id="L72">        return Objects.equals(filePath, group.filePath);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L77">        return &quot;TexGroup{&quot; +</span>
+                &quot;filePath=&quot; + filePath +
+                &quot;, keysUsedInAux=&quot; + keysUsedInAux +
+                &quot;, auxParser=&quot; + auxParser +
+                &quot;, fileMonitor=&quot; + fileMonitor +
+<span class="nc" id="L82">                &quot;} &quot; + super.toString();</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L87">        return Objects.hash(super.hashCode(), filePath);</span>
+    }
+
+    public Path getFilePath() {
+<span class="fc" id="L91">        return filePath;</span>
+    }
+
+    @Override
+    public void fileUpdated() {
+        // Reset previous parse result
+<span class="nc" id="L97">        keysUsedInAux = null;</span>
+<span class="nc" id="L98">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

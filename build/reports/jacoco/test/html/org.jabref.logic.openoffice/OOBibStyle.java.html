@@ -1,0 +1,926 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OOBibStyle.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.openoffice</a> &gt; <span class="el_source">OOBibStyle.java</span></div><h1>OOBibStyle.java</h1><pre class="source lang-java linenums">package org.jabref.logic.openoffice;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.layout.Layout;
+import org.jabref.logic.layout.LayoutFormatter;
+import org.jabref.logic.layout.LayoutFormatterPreferences;
+import org.jabref.logic.layout.LayoutHelper;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.Author;
+import org.jabref.model.entry.AuthorList;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.strings.StringUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * This class embodies a bibliography formatting for OpenOffice, which is composed
+ * of the following elements:
+ * &lt;p&gt;
+ * 1) Each OO BIB entry type must have a formatting. A formatting is an array of elements, each
+ * of which is either a piece of constant text, an entry field value, or a tab. Each element has
+ * a character format associated with it.
+ * &lt;p&gt;
+ * 2) Many field values (e.g. author) need to be formatted before input to OpenOffice. The style
+ * has the responsibility of formatting all field values. Formatting is handled by 0-n
+ * JabRef LayoutFormatter classes.
+ * &lt;p&gt;
+ * 3) If the entries are not numbered, a citation marker must be produced for each entry. This
+ * operation is performed for each JabRef BibEntry.
+ */
+public class OOBibStyle implements Comparable&lt;OOBibStyle&gt; {
+
+    public static final String ITALIC_ET_AL = &quot;ItalicEtAl&quot;;
+    public static final String MULTI_CITE_CHRONOLOGICAL = &quot;MultiCiteChronological&quot;;
+    public static final String MINIMUM_GROUPING_COUNT = &quot;MinimumGroupingCount&quot;;
+    public static final String ET_AL_STRING = &quot;EtAlString&quot;;
+    public static final String MAX_AUTHORS_FIRST = &quot;MaxAuthorsFirst&quot;;
+    public static final String REFERENCE_HEADER_PARAGRAPH_FORMAT = &quot;ReferenceHeaderParagraphFormat&quot;;
+    public static final String REFERENCE_PARAGRAPH_FORMAT = &quot;ReferenceParagraphFormat&quot;;
+
+    public static final String TITLE = &quot;Title&quot;;
+    public static final String UNDEFINED_CITATION_MARKER = &quot;??&quot;;
+<span class="fc" id="L66">    private static final Pattern NUM_PATTERN = Pattern.compile(&quot;-?\\d+&quot;);</span>
+    private static final String LAYOUT_MRK = &quot;LAYOUT&quot;;
+    private static final String PROPERTIES_MARK = &quot;PROPERTIES&quot;;
+    private static final String CITATION_MARK = &quot;CITATION&quot;;
+    private static final String NAME_MARK = &quot;NAME&quot;;
+    private static final String JOURNALS_MARK = &quot;JOURNALS&quot;;
+    private static final String DEFAULT_MARK = &quot;default&quot;;
+    private static final String BRACKET_AFTER_IN_LIST = &quot;BracketAfterInList&quot;;
+    private static final String BRACKET_BEFORE_IN_LIST = &quot;BracketBeforeInList&quot;;
+    private static final String UNIQUEFIER_SEPARATOR = &quot;UniquefierSeparator&quot;;
+    private static final String BIBTEX_KEY_CITATIONS = &quot;BibTeXKeyCitations&quot;;
+    private static final String SUBSCRIPT_CITATIONS = &quot;SubscriptCitations&quot;;
+    private static final String SUPERSCRIPT_CITATIONS = &quot;SuperscriptCitations&quot;;
+    private static final String BOLD_CITATIONS = &quot;BoldCitations&quot;;
+    private static final String ITALIC_CITATIONS = &quot;ItalicCitations&quot;;
+    private static final String CITATION_CHARACTER_FORMAT = &quot;CitationCharacterFormat&quot;;
+    private static final String FORMAT_CITATIONS = &quot;FormatCitations&quot;;
+    private static final String GROUPED_NUMBERS_SEPARATOR = &quot;GroupedNumbersSeparator&quot;;
+    private static final String PAGE_INFO_SEPARATOR = &quot;PageInfoSeparator&quot;;
+    private static final String CITATION_SEPARATOR = &quot;CitationSeparator&quot;;
+    private static final String IN_TEXT_YEAR_SEPARATOR = &quot;InTextYearSeparator&quot;;
+    private static final String MAX_AUTHORS = &quot;MaxAuthors&quot;;
+    private static final String YEAR_FIELD = &quot;YearField&quot;;
+    private static final String AUTHOR_FIELD = &quot;AuthorField&quot;;
+    private static final String BRACKET_AFTER = &quot;BracketAfter&quot;;
+    private static final String BRACKET_BEFORE = &quot;BracketBefore&quot;;
+    private static final String IS_NUMBER_ENTRIES = &quot;IsNumberEntries&quot;;
+    private static final String IS_SORT_BY_POSITION = &quot;IsSortByPosition&quot;;
+    private static final String SORT_ALGORITHM = &quot;SortAlgorithm&quot;;
+    private static final String OXFORD_COMMA = &quot;OxfordComma&quot;;
+    private static final String YEAR_SEPARATOR = &quot;YearSeparator&quot;;
+    private static final String AUTHOR_LAST_SEPARATOR_IN_TEXT = &quot;AuthorLastSeparatorInText&quot;;
+    private static final String AUTHOR_LAST_SEPARATOR = &quot;AuthorLastSeparator&quot;;
+
+    private static final String AUTHOR_SEPARATOR = &quot;AuthorSeparator&quot;;
+
+<span class="fc" id="L102">    private static final Pattern QUOTED = Pattern.compile(&quot;\&quot;.*\&quot;&quot;);</span>
+
+<span class="fc" id="L104">    private static final Logger LOGGER = LoggerFactory.getLogger(OOBibStyle.class);</span>
+
+<span class="fc" id="L106">    private String name = &quot;&quot;;</span>
+
+<span class="fc" id="L108">    private final SortedSet&lt;String&gt; journals = new TreeSet&lt;&gt;();</span>
+    // Formatter to be run on fields before they are used as part of citation marker:
+<span class="fc" id="L110">    private final LayoutFormatter fieldFormatter = new OOPreFormatter();</span>
+
+    private Layout defaultBibLayout;
+
+    // reference layout mapped from entry type number:
+<span class="fc" id="L115">    private final Map&lt;String, Layout&gt; bibLayout = new HashMap&lt;&gt;();</span>
+
+<span class="fc" id="L117">    private final Map&lt;String, Object&gt; properties = new HashMap&lt;&gt;();</span>
+
+<span class="fc" id="L119">    private final Map&lt;String, Object&gt; citProperties = new HashMap&lt;&gt;();</span>
+
+    private boolean valid;
+    private final boolean fromResource;
+    private final String path;
+
+<span class="fc" id="L125">    enum BibStyleMode {</span>
+<span class="fc" id="L126">        NONE,</span>
+<span class="fc" id="L127">        LAYOUT,</span>
+<span class="fc" id="L128">        PROPERTIES,</span>
+<span class="fc" id="L129">        CITATION,</span>
+<span class="fc" id="L130">        NAME,</span>
+<span class="fc" id="L131">        JOURNALS</span>
+        }
+
+    private File styleFile;
+    private final Charset encoding;
+<span class="fc" id="L136">    private long styleFileModificationTime = Long.MIN_VALUE;</span>
+    private String localCopy;
+    private final LayoutFormatterPreferences prefs;
+
+
+    public OOBibStyle(File styleFile, LayoutFormatterPreferences prefs,
+<span class="fc" id="L142">            Charset encoding) throws IOException {</span>
+<span class="fc" id="L143">        this.prefs = Objects.requireNonNull(prefs);</span>
+<span class="fc" id="L144">        this.styleFile = Objects.requireNonNull(styleFile);</span>
+<span class="fc" id="L145">        this.encoding = Objects.requireNonNull(encoding);</span>
+<span class="fc" id="L146">        setDefaultProperties();</span>
+<span class="fc" id="L147">        reload();</span>
+<span class="fc" id="L148">        fromResource = false;</span>
+<span class="fc" id="L149">        path = styleFile.getPath();</span>
+<span class="fc" id="L150">    }</span>
+
+<span class="fc" id="L152">    public OOBibStyle(String resourcePath, LayoutFormatterPreferences prefs) throws IOException {</span>
+<span class="fc" id="L153">        this.prefs = Objects.requireNonNull(prefs);</span>
+<span class="fc" id="L154">        Objects.requireNonNull(resourcePath);</span>
+<span class="fc" id="L155">        this.encoding = StandardCharsets.UTF_8;</span>
+<span class="fc" id="L156">        setDefaultProperties();</span>
+<span class="fc" id="L157">        initialize(OOBibStyle.class.getResourceAsStream(resourcePath));</span>
+<span class="fc" id="L158">        fromResource = true;</span>
+<span class="fc" id="L159">        path = resourcePath;</span>
+<span class="fc" id="L160">    }</span>
+
+    private void setDefaultProperties() {
+        // Set default property values:
+<span class="fc" id="L164">        properties.put(TITLE, &quot;Bibliography&quot;);</span>
+<span class="fc" id="L165">        properties.put(SORT_ALGORITHM, &quot;alphanumeric&quot;);</span>
+<span class="fc" id="L166">        properties.put(IS_SORT_BY_POSITION, Boolean.FALSE);</span>
+<span class="fc" id="L167">        properties.put(IS_NUMBER_ENTRIES, Boolean.FALSE);</span>
+<span class="fc" id="L168">        properties.put(BRACKET_BEFORE, &quot;[&quot;);</span>
+<span class="fc" id="L169">        properties.put(BRACKET_AFTER, &quot;]&quot;);</span>
+<span class="fc" id="L170">        properties.put(REFERENCE_PARAGRAPH_FORMAT, &quot;Default&quot;);</span>
+<span class="fc" id="L171">        properties.put(REFERENCE_HEADER_PARAGRAPH_FORMAT, &quot;Heading 1&quot;);</span>
+
+        // Set default properties for the citation marker:
+<span class="fc" id="L174">        citProperties.put(AUTHOR_FIELD, FieldName.orFields(FieldName.AUTHOR, FieldName.EDITOR));</span>
+<span class="fc" id="L175">        citProperties.put(YEAR_FIELD, FieldName.YEAR);</span>
+<span class="fc" id="L176">        citProperties.put(MAX_AUTHORS, 3);</span>
+<span class="fc" id="L177">        citProperties.put(MAX_AUTHORS_FIRST, -1);</span>
+<span class="fc" id="L178">        citProperties.put(AUTHOR_SEPARATOR, &quot;, &quot;);</span>
+<span class="fc" id="L179">        citProperties.put(AUTHOR_LAST_SEPARATOR, &quot; &amp; &quot;);</span>
+<span class="fc" id="L180">        citProperties.put(AUTHOR_LAST_SEPARATOR_IN_TEXT, null);</span>
+<span class="fc" id="L181">        citProperties.put(ET_AL_STRING, &quot; et al.&quot;);</span>
+<span class="fc" id="L182">        citProperties.put(YEAR_SEPARATOR, &quot;, &quot;);</span>
+<span class="fc" id="L183">        citProperties.put(IN_TEXT_YEAR_SEPARATOR, &quot; &quot;);</span>
+<span class="fc" id="L184">        citProperties.put(BRACKET_BEFORE, &quot;(&quot;);</span>
+<span class="fc" id="L185">        citProperties.put(BRACKET_AFTER, &quot;)&quot;);</span>
+<span class="fc" id="L186">        citProperties.put(CITATION_SEPARATOR, &quot;; &quot;);</span>
+<span class="fc" id="L187">        citProperties.put(PAGE_INFO_SEPARATOR, &quot;; &quot;);</span>
+<span class="fc" id="L188">        citProperties.put(GROUPED_NUMBERS_SEPARATOR, &quot;-&quot;);</span>
+<span class="fc" id="L189">        citProperties.put(MINIMUM_GROUPING_COUNT, 3);</span>
+<span class="fc" id="L190">        citProperties.put(FORMAT_CITATIONS, Boolean.FALSE);</span>
+<span class="fc" id="L191">        citProperties.put(CITATION_CHARACTER_FORMAT, &quot;Default&quot;);</span>
+<span class="fc" id="L192">        citProperties.put(ITALIC_CITATIONS, Boolean.FALSE);</span>
+<span class="fc" id="L193">        citProperties.put(BOLD_CITATIONS, Boolean.FALSE);</span>
+<span class="fc" id="L194">        citProperties.put(SUPERSCRIPT_CITATIONS, Boolean.FALSE);</span>
+<span class="fc" id="L195">        citProperties.put(SUBSCRIPT_CITATIONS, Boolean.FALSE);</span>
+<span class="fc" id="L196">        citProperties.put(MULTI_CITE_CHRONOLOGICAL, Boolean.TRUE);</span>
+<span class="fc" id="L197">        citProperties.put(BIBTEX_KEY_CITATIONS, Boolean.FALSE);</span>
+<span class="fc" id="L198">        citProperties.put(ITALIC_ET_AL, Boolean.FALSE);</span>
+<span class="fc" id="L199">        citProperties.put(OXFORD_COMMA, &quot;&quot;);</span>
+<span class="fc" id="L200">    }</span>
+
+    public String getName() {
+<span class="fc" id="L203">        return name;</span>
+    }
+
+    public String getPath() {
+<span class="fc" id="L207">        return path;</span>
+    }
+
+    public File getFile() {
+<span class="nc" id="L211">        return styleFile;</span>
+    }
+
+    public Set&lt;String&gt; getJournals() {
+<span class="fc" id="L215">        return Collections.unmodifiableSet(journals);</span>
+    }
+
+    private void initialize(InputStream stream) throws IOException {
+<span class="fc" id="L219">        Objects.requireNonNull(stream);</span>
+
+<span class="fc" id="L221">        try (Reader reader = new InputStreamReader(stream, encoding)) {</span>
+<span class="fc" id="L222">            readFormatFile(reader);</span>
+        }
+<span class="fc" id="L224">    }</span>
+
+    /**
+     * If this style was initialized from a file on disk, reload the style
+     * if the file has been modified since it was read.
+     *
+     * @throws IOException
+     */
+    public void ensureUpToDate() throws IOException {
+<span class="nc bnc" id="L233" title="All 2 branches missed.">        if (!isUpToDate()) {</span>
+<span class="nc" id="L234">            reload();</span>
+        }
+<span class="nc" id="L236">    }</span>
+
+    /**
+     * If this style was initialized from a file on disk, reload the style
+     * information.
+     *
+     * @throws IOException
+     */
+    private void reload() throws IOException {
+<span class="pc bpc" id="L245" title="1 of 2 branches missed.">        if (styleFile != null) {</span>
+<span class="fc" id="L246">            this.styleFileModificationTime = styleFile.lastModified();</span>
+<span class="fc" id="L247">            try (InputStream stream = new FileInputStream(styleFile)) {</span>
+<span class="fc" id="L248">                initialize(stream);</span>
+            }
+        }
+<span class="fc" id="L251">    }</span>
+
+    /**
+     * If this style was initialized from a file on disk, check whether the file
+     * is unmodified since initialization.
+     *
+     * @return true if the file has not been modified, false otherwise.
+     */
+    private boolean isUpToDate() {
+<span class="nc bnc" id="L260" title="All 2 branches missed.">        if (styleFile == null) {</span>
+<span class="nc" id="L261">            return true;</span>
+        } else {
+<span class="nc bnc" id="L263" title="All 2 branches missed.">            return styleFile.lastModified() == this.styleFileModificationTime;</span>
+        }
+    }
+
+    private void readFormatFile(Reader in) throws IOException {
+
+        // First read all the contents of the file:
+<span class="fc" id="L270">        StringBuilder sb = new StringBuilder();</span>
+        int c;
+<span class="fc bfc" id="L272" title="All 2 branches covered.">        while ((c = in.read()) != -1) {</span>
+<span class="fc" id="L273">            sb.append((char) c);</span>
+        }
+
+        // Store a local copy for viewing
+<span class="fc" id="L277">        localCopy = sb.toString();</span>
+
+        // Break into separate lines:
+<span class="fc" id="L280">        String[] lines = sb.toString().split(&quot;\n&quot;);</span>
+<span class="fc" id="L281">        BibStyleMode mode = BibStyleMode.NONE;</span>
+
+<span class="fc bfc" id="L283" title="All 2 branches covered.">        for (String line1 : lines) {</span>
+<span class="fc" id="L284">            String line = line1;</span>
+<span class="pc bpc" id="L285" title="1 of 4 branches missed.">            if (!line.isEmpty() &amp;&amp; (line.charAt(line.length() - 1) == '\r')) {</span>
+<span class="nc" id="L286">                line = line.substring(0, line.length() - 1);</span>
+            }
+            // Check for empty line or comment:
+<span class="fc bfc" id="L289" title="All 4 branches covered.">            if (line.trim().isEmpty() || (line.charAt(0) == '#')) {</span>
+<span class="fc" id="L290">                continue;</span>
+            }
+            // Check if we should change mode:
+<span class="fc bfc" id="L293" title="All 6 branches covered.">            switch (line) {</span>
+            case NAME_MARK:
+<span class="fc" id="L295">                mode = BibStyleMode.NAME;</span>
+<span class="fc" id="L296">                continue;</span>
+            case LAYOUT_MRK:
+<span class="fc" id="L298">                mode = BibStyleMode.LAYOUT;</span>
+<span class="fc" id="L299">                continue;</span>
+            case PROPERTIES_MARK:
+<span class="fc" id="L301">                mode = BibStyleMode.PROPERTIES;</span>
+<span class="fc" id="L302">                continue;</span>
+            case CITATION_MARK:
+<span class="fc" id="L304">                mode = BibStyleMode.CITATION;</span>
+<span class="fc" id="L305">                continue;</span>
+            case JOURNALS_MARK:
+<span class="fc" id="L307">                mode = BibStyleMode.JOURNALS;</span>
+<span class="fc" id="L308">                continue;</span>
+            default:
+                break;
+
+            }
+
+<span class="pc bpc" id="L314" title="1 of 6 branches missed.">            switch (mode) {</span>
+            case NAME:
+<span class="pc bpc" id="L316" title="1 of 2 branches missed.">                if (!line.trim().isEmpty()) {</span>
+<span class="fc" id="L317">                    name = line.trim();</span>
+                }
+                break;
+            case LAYOUT:
+<span class="fc" id="L321">                handleStructureLine(line);</span>
+<span class="fc" id="L322">                break;</span>
+            case PROPERTIES:
+<span class="fc" id="L324">                handlePropertiesLine(line, properties);</span>
+<span class="fc" id="L325">                break;</span>
+            case CITATION:
+<span class="fc" id="L327">                handlePropertiesLine(line, citProperties);</span>
+<span class="fc" id="L328">                break;</span>
+            case JOURNALS:
+<span class="fc" id="L330">                handleJournalsLine(line);</span>
+<span class="fc" id="L331">                break;</span>
+            default:
+                break;
+            }
+
+        }
+
+        // Set validity boolean based on whether we found anything interesting
+        // in the file:
+<span class="pc bpc" id="L340" title="1 of 2 branches missed.">        if (mode != BibStyleMode.NONE) {</span>
+<span class="fc" id="L341">            valid = true;</span>
+        }
+
+<span class="fc" id="L344">    }</span>
+
+    /**
+     * After initializing this style from a file, this method can be used to check
+     * whether the file appeared to be a proper style file.
+     *
+     * @return true if the file could be parsed as a style file, false otherwise.
+     */
+    public boolean isValid() {
+<span class="fc" id="L353">        return valid;</span>
+    }
+
+    /**
+     * Parse a line providing bibliography structure information for an entry type.
+     *
+     * @param line The string containing the structure description.
+     * @throws IOException
+     */
+    private void handleStructureLine(String line) {
+<span class="fc" id="L363">        int index = line.indexOf('=');</span>
+<span class="pc bpc" id="L364" title="2 of 4 branches missed.">        if ((index &gt; 0) &amp;&amp; (index &lt; (line.length() - 1))) {</span>
+<span class="fc" id="L365">            String formatString = line.substring(index + 1);</span>
+<span class="fc" id="L366">            boolean setDefault = line.substring(0, index).equals(OOBibStyle.DEFAULT_MARK);</span>
+<span class="fc" id="L367">            String type = line.substring(0, index);</span>
+            try {
+<span class="fc" id="L369">                Layout layout = new LayoutHelper(new StringReader(formatString), this.prefs).getLayoutFromText();</span>
+<span class="fc bfc" id="L370" title="All 2 branches covered.">                if (setDefault) {</span>
+<span class="fc" id="L371">                    defaultBibLayout = layout;</span>
+                } else {
+<span class="fc" id="L373">                    bibLayout.put(type.toLowerCase(Locale.ENGLISH), layout);</span>
+                }
+
+<span class="nc" id="L376">            } catch (IOException ex) {</span>
+<span class="nc" id="L377">                LOGGER.warn(&quot;Cannot parse bibliography structure&quot;, ex);</span>
+<span class="fc" id="L378">            }</span>
+        }
+<span class="fc" id="L380">    }</span>
+
+    /**
+     * Parse a line providing a property name and value.
+     *
+     * @param line The line containing the formatter names.
+     * @throws IOException
+     */
+    private void handlePropertiesLine(String line, Map&lt;String, Object&gt; map) {
+<span class="fc" id="L389">        int index = line.indexOf('=');</span>
+<span class="pc bpc" id="L390" title="2 of 4 branches missed.">        if ((index &gt; 0) &amp;&amp; (index &lt;= (line.length() - 1))) {</span>
+<span class="fc" id="L391">            String propertyName = line.substring(0, index).trim();</span>
+<span class="fc" id="L392">            String value = line.substring(index + 1);</span>
+<span class="pc bpc" id="L393" title="1 of 4 branches missed.">            if ((value.trim().length() &gt; 1) &amp;&amp; QUOTED.matcher(value.trim()).matches()) {</span>
+<span class="fc" id="L394">                value = value.trim().substring(1, value.trim().length() - 1);</span>
+            }
+<span class="fc" id="L396">            Object toSet = value;</span>
+<span class="fc bfc" id="L397" title="All 2 branches covered.">            if (NUM_PATTERN.matcher(value).matches()) {</span>
+<span class="fc" id="L398">                toSet = Integer.parseInt(value);</span>
+<span class="fc bfc" id="L399" title="All 2 branches covered.">            } else if (&quot;true&quot;.equalsIgnoreCase(value.trim())) {</span>
+<span class="fc" id="L400">                toSet = Boolean.TRUE;</span>
+<span class="fc bfc" id="L401" title="All 2 branches covered.">            } else if (&quot;false&quot;.equalsIgnoreCase(value.trim())) {</span>
+<span class="fc" id="L402">                toSet = Boolean.FALSE;</span>
+            }
+<span class="fc" id="L404">            map.put(propertyName, toSet);</span>
+        }
+<span class="fc" id="L406">    }</span>
+
+    /**
+     * Parse a line providing a journal name for which this style is valid.
+     *
+     * @param line
+     * @throws IOException
+     */
+    private void handleJournalsLine(String line) {
+<span class="pc bpc" id="L415" title="1 of 2 branches missed.">        if (!line.trim().isEmpty()) {</span>
+<span class="fc" id="L416">            journals.add(line.trim());</span>
+        }
+<span class="fc" id="L418">    }</span>
+
+    public Layout getReferenceFormat(String type) {
+<span class="fc" id="L421">        Layout l = bibLayout.get(type.toLowerCase(Locale.ENGLISH));</span>
+<span class="fc bfc" id="L422" title="All 2 branches covered.">        if (l == null) {</span>
+<span class="fc" id="L423">            return defaultBibLayout;</span>
+        } else {
+<span class="fc" id="L425">            return l;</span>
+        }
+    }
+
+    /**
+     * Format a number-based citation marker for the given number.
+     *
+     * @param number The citation numbers.
+     * @return The text for the citation.
+     */
+    public String getNumCitationMarker(List&lt;Integer&gt; number, int minGroupingCount, boolean inList) {
+<span class="fc" id="L436">        String bracketBefore = getStringCitProperty(BRACKET_BEFORE);</span>
+<span class="pc bpc" id="L437" title="1 of 4 branches missed.">        if (inList &amp;&amp; (citProperties.containsKey(BRACKET_BEFORE_IN_LIST))) {</span>
+<span class="fc" id="L438">            bracketBefore = getStringCitProperty(BRACKET_BEFORE_IN_LIST);</span>
+        }
+<span class="fc" id="L440">        String bracketAfter = getStringCitProperty(BRACKET_AFTER);</span>
+<span class="pc bpc" id="L441" title="1 of 4 branches missed.">        if (inList &amp;&amp; (citProperties.containsKey(BRACKET_AFTER_IN_LIST))) {</span>
+<span class="fc" id="L442">            bracketAfter = getStringCitProperty(BRACKET_AFTER_IN_LIST);</span>
+        }
+        // Sort the numbers:
+<span class="fc" id="L445">        List&lt;Integer&gt; lNum = new ArrayList&lt;&gt;(number);</span>
+<span class="fc" id="L446">        Collections.sort(lNum);</span>
+<span class="fc" id="L447">        StringBuilder sb = new StringBuilder(bracketBefore);</span>
+<span class="fc" id="L448">        int combineFrom = -1;</span>
+<span class="fc" id="L449">        int written = 0;</span>
+<span class="fc bfc" id="L450" title="All 2 branches covered.">        for (int i = 0; i &lt; lNum.size(); i++) {</span>
+<span class="fc" id="L451">            int i1 = lNum.get(i);</span>
+<span class="fc bfc" id="L452" title="All 2 branches covered.">            if (combineFrom &lt; 0) {</span>
+                // Check if next entry is the next in the ref list:
+<span class="fc bfc" id="L454" title="All 6 branches covered.">                if ((i &lt; (lNum.size() - 1)) &amp;&amp; (lNum.get(i + 1) == (i1 + 1)) &amp;&amp; (i1 &gt; 0)) {</span>
+<span class="fc" id="L455">                    combineFrom = i1;</span>
+                } else {
+                    // Add single entry:
+<span class="fc bfc" id="L458" title="All 2 branches covered.">                    if (i &gt; 0) {</span>
+<span class="fc" id="L459">                        sb.append(getStringCitProperty(CITATION_SEPARATOR));</span>
+                    }
+<span class="fc bfc" id="L461" title="All 2 branches covered.">                    sb.append(lNum.get(i) &gt; 0 ? String.valueOf(lNum.get(i)) : OOBibStyle.UNDEFINED_CITATION_MARKER);</span>
+<span class="fc" id="L462">                    written++;</span>
+                }
+            } else {
+                // We are building a list of combined entries.
+                // Check if it ends here:
+<span class="fc bfc" id="L467" title="All 4 branches covered.">                if ((i == (lNum.size() - 1)) || (lNum.get(i + 1) != (i1 + 1))) {</span>
+<span class="fc bfc" id="L468" title="All 2 branches covered.">                    if (written &gt; 0) {</span>
+<span class="fc" id="L469">                        sb.append(getStringCitProperty(CITATION_SEPARATOR));</span>
+                    }
+<span class="fc bfc" id="L471" title="All 4 branches covered.">                    if ((minGroupingCount &gt; 0) &amp;&amp; (((i1 + 1) - combineFrom) &gt;= minGroupingCount)) {</span>
+<span class="fc" id="L472">                        sb.append(combineFrom);</span>
+<span class="fc" id="L473">                        sb.append(getStringCitProperty(GROUPED_NUMBERS_SEPARATOR));</span>
+<span class="fc" id="L474">                        sb.append(i1);</span>
+<span class="fc" id="L475">                        written++;</span>
+                    } else {
+                        // Either we should never group, or there aren't enough
+                        // entries in this case to group. Output all:
+<span class="fc bfc" id="L479" title="All 2 branches covered.">                        for (int jj = combineFrom; jj &lt;= i1; jj++) {</span>
+<span class="fc" id="L480">                            sb.append(jj);</span>
+<span class="fc bfc" id="L481" title="All 2 branches covered.">                            if (jj &lt; i1) {</span>
+<span class="fc" id="L482">                                sb.append(getStringCitProperty(CITATION_SEPARATOR));</span>
+                            }
+<span class="fc" id="L484">                            written++;</span>
+                        }
+                    }
+<span class="fc" id="L487">                    combineFrom = -1;</span>
+
+                }
+                // If it doesn't end here, just keep iterating.
+            }
+
+        }
+<span class="fc" id="L494">        sb.append(bracketAfter);</span>
+<span class="fc" id="L495">        return sb.toString();</span>
+    }
+
+    /**
+     * Format the marker for the in-text citation according to this BIB style. Uniquefier letters are added as
+     * provided by the uniquefiers argument. If successive entries within the citation are uniquefied from each other,
+     * this method will perform a grouping of these entries.
+     *
+     * @param entries       The list of JabRef BibEntry providing the data.
+     * @param database      A map of BibEntry-BibDatabase pairs.
+     * @param inParenthesis Signals whether a parenthesized citation or an in-text citation is wanted.
+     * @param uniquefiers   Strings to add behind the year for each entry in case it's needed to separate similar
+     *                      entries.
+     * @param unlimAuthors  Boolean for each entry. If true, we should not use &quot;et al&quot; formatting regardless
+     *                      of the number of authors. Can be null to indicate that no entries should have unlimited names.
+     * @return The formatted citation.
+     */
+    public String getCitationMarker(List&lt;BibEntry&gt; entries, Map&lt;BibEntry, BibDatabase&gt; database, boolean inParenthesis,
+            String[] uniquefiers, int[] unlimAuthors) {
+        // Look for groups of uniquefied entries that should be combined in the output.
+        // E.g. (Olsen, 2005a, b) should be output instead of (Olsen, 2005a; Olsen, 2005b).
+<span class="fc" id="L516">        int piv = -1;</span>
+<span class="fc" id="L517">        String tmpMarker = null;</span>
+<span class="fc bfc" id="L518" title="All 2 branches covered.">        if (uniquefiers != null) {</span>
+<span class="fc bfc" id="L519" title="All 2 branches covered.">            for (int i = 0; i &lt; uniquefiers.length; i++) {</span>
+
+<span class="pc bpc" id="L521" title="1 of 4 branches missed.">                if ((uniquefiers[i] == null) || uniquefiers[i].isEmpty()) {</span>
+                    // This entry has no uniquefier.
+                    // Check if we just passed a group of more than one entry with uniquefier:
+<span class="pc bpc" id="L524" title="2 of 4 branches missed.">                    if ((piv &gt; -1) &amp;&amp; (i &gt; (piv + 1))) {</span>
+                        // Do the grouping:
+<span class="fc" id="L526">                        group(entries, uniquefiers, piv, i - 1);</span>
+                    }
+
+<span class="fc" id="L529">                    piv = -1;</span>
+                } else {
+<span class="fc" id="L531">                    BibEntry currentEntry = entries.get(i);</span>
+<span class="fc bfc" id="L532" title="All 2 branches covered.">                    if (piv == -1) {</span>
+<span class="fc" id="L533">                        piv = i;</span>
+<span class="fc" id="L534">                        tmpMarker = getAuthorYearParenthesisMarker(Collections.singletonList(currentEntry), database,</span>
+                                null, unlimAuthors);
+                    } else {
+                        // See if this entry can go into a group with the previous one:
+<span class="fc" id="L538">                        String thisMarker = getAuthorYearParenthesisMarker(Collections.singletonList(currentEntry),</span>
+                                database, null, unlimAuthors);
+
+<span class="fc" id="L541">                        String authorField = getStringCitProperty(AUTHOR_FIELD);</span>
+<span class="fc" id="L542">                        int maxAuthors = getIntCitProperty(MAX_AUTHORS);</span>
+<span class="fc" id="L543">                        String author = getCitationMarkerField(currentEntry, database.get(currentEntry),</span>
+                                authorField);
+<span class="fc" id="L545">                        AuthorList al = AuthorList.parse(author);</span>
+<span class="fc" id="L546">                        int prevALim = unlimAuthors[i - 1]; // i always at least 1 here</span>
+<span class="pc bpc" id="L547" title="1 of 2 branches missed.">                        if (!thisMarker.equals(tmpMarker)</span>
+<span class="pc bpc" id="L548" title="3 of 4 branches missed.">                                || ((al.getNumberOfAuthors() &gt; maxAuthors) &amp;&amp; (unlimAuthors[i] != prevALim))) {</span>
+                            // No match. Update piv to exclude the previous entry. But first check if the
+                            // previous entry was part of a group:
+<span class="nc bnc" id="L551" title="All 4 branches missed.">                            if ((piv &gt; -1) &amp;&amp; (i &gt; (piv + 1))) {</span>
+                                // Do the grouping:
+<span class="nc" id="L553">                                group(entries, uniquefiers, piv, i - 1);</span>
+                            }
+<span class="nc" id="L555">                            tmpMarker = thisMarker;</span>
+<span class="nc" id="L556">                            piv = i;</span>
+                        }
+                    }
+                }
+
+            }
+            // Finished with the loop. See if the last entries form a group:
+<span class="fc bfc" id="L563" title="All 2 branches covered.">            if (piv &gt;= 0) {</span>
+                // Do the grouping:
+<span class="fc" id="L565">                group(entries, uniquefiers, piv, uniquefiers.length - 1);</span>
+            }
+        }
+
+<span class="fc bfc" id="L569" title="All 2 branches covered.">        if (inParenthesis) {</span>
+<span class="fc" id="L570">            return getAuthorYearParenthesisMarker(entries, database, uniquefiers, unlimAuthors);</span>
+        } else {
+<span class="fc" id="L572">            return getAuthorYearInTextMarker(entries, database, uniquefiers, unlimAuthors);</span>
+        }
+    }
+
+    /**
+     * Modify entry and uniquefier arrays to facilitate a grouped presentation of uniquefied entries.
+     *
+     * @param entries     The entry array.
+     * @param uniquefiers The uniquefier array.
+     * @param from        The first index to group (inclusive)
+     * @param to          The last index to group (inclusive)
+     */
+    private void group(List&lt;BibEntry&gt; entries, String[] uniquefiers, int from, int to) {
+<span class="fc" id="L585">        String separator = getStringCitProperty(UNIQUEFIER_SEPARATOR);</span>
+<span class="fc" id="L586">        StringBuilder sb = new StringBuilder(uniquefiers[from]);</span>
+<span class="fc bfc" id="L587" title="All 2 branches covered.">        for (int i = from + 1; i &lt;= to; i++) {</span>
+<span class="fc" id="L588">            sb.append(separator);</span>
+<span class="fc" id="L589">            sb.append(uniquefiers[i]);</span>
+<span class="fc" id="L590">            entries.set(i, null);</span>
+        }
+<span class="fc" id="L592">        uniquefiers[from] = sb.toString();</span>
+<span class="fc" id="L593">    }</span>
+
+    /**
+     * This method produces (Author, year) style citation strings in many different forms.
+     *
+     * @param entries           The list of BibEntry to get fields from.
+     * @param database          A map of BibEntry-BibDatabase pairs.
+     * @param uniquifiers       Optional parameter to separate similar citations. Elements can be null if not needed.
+     * @return The formatted citation.
+     */
+    private String getAuthorYearParenthesisMarker(List&lt;BibEntry&gt; entries, Map&lt;BibEntry, BibDatabase&gt; database,
+            String[] uniquifiers, int[] unlimAuthors) {
+
+<span class="fc" id="L606">        String authorField = getStringCitProperty(AUTHOR_FIELD); // The bibtex field providing author names, e.g. &quot;author&quot; or &quot;editor&quot;.</span>
+<span class="fc" id="L607">        int maxA = getIntCitProperty(MAX_AUTHORS); // The maximum number of authors to write out in full without using etal. Set to</span>
+                                                             // -1 to always write out all authors.
+<span class="fc" id="L609">        String yearSep = getStringCitProperty(YEAR_SEPARATOR); // The String to separate authors from year, e.g. &quot;; &quot;.</span>
+<span class="fc" id="L610">        String startBrace = getStringCitProperty(BRACKET_BEFORE); // The opening parenthesis.</span>
+<span class="fc" id="L611">        String endBrace = getStringCitProperty(BRACKET_AFTER); // The closing parenthesis.</span>
+<span class="fc" id="L612">        String citationSeparator = getStringCitProperty(CITATION_SEPARATOR); // The String to separate citations from each other.</span>
+<span class="fc" id="L613">        String yearField = getStringCitProperty(YEAR_FIELD); // The bibtex field providing the year, e.g. &quot;year&quot;.</span>
+<span class="fc" id="L614">        String andString = getStringCitProperty(AUTHOR_LAST_SEPARATOR); // The String to add between the two last author names, e.g. &quot; &amp; &quot;.</span>
+<span class="fc" id="L615">        StringBuilder sb = new StringBuilder(startBrace);</span>
+<span class="fc bfc" id="L616" title="All 2 branches covered.">        for (int j = 0; j &lt; entries.size(); j++) {</span>
+<span class="fc" id="L617">            BibEntry currentEntry = entries.get(j);</span>
+
+            // Check if this entry has been nulled due to grouping with the previous entry(ies):
+<span class="fc bfc" id="L620" title="All 2 branches covered.">            if (currentEntry == null) {</span>
+<span class="fc" id="L621">                continue;</span>
+            }
+
+<span class="fc bfc" id="L624" title="All 2 branches covered.">            if (j &gt; 0) {</span>
+<span class="fc" id="L625">                sb.append(citationSeparator);</span>
+            }
+
+<span class="fc" id="L628">            BibDatabase currentDatabase = database.get(currentEntry);</span>
+<span class="fc bfc" id="L629" title="All 2 branches covered.">            int unlimA = unlimAuthors == null ? -1 : unlimAuthors[j];</span>
+<span class="fc bfc" id="L630" title="All 2 branches covered.">            int maxAuthors = unlimA &gt; 0 ? unlimA : maxA;</span>
+
+<span class="fc" id="L632">            String author = getCitationMarkerField(currentEntry, currentDatabase, authorField);</span>
+<span class="fc" id="L633">            String authorString = createAuthorList(author, maxAuthors, andString, yearSep);</span>
+<span class="fc" id="L634">            sb.append(authorString);</span>
+<span class="fc" id="L635">            String year = getCitationMarkerField(currentEntry, currentDatabase, yearField);</span>
+<span class="pc bpc" id="L636" title="1 of 2 branches missed.">            if (year != null) {</span>
+<span class="fc" id="L637">                sb.append(year);</span>
+            }
+<span class="pc bpc" id="L639" title="1 of 4 branches missed.">            if ((uniquifiers != null) &amp;&amp; (uniquifiers[j] != null)) {</span>
+<span class="fc" id="L640">                sb.append(uniquifiers[j]);</span>
+            }
+        }
+<span class="fc" id="L643">        sb.append(endBrace);</span>
+<span class="fc" id="L644">        return sb.toString();</span>
+
+    }
+
+    /**
+     * This method produces &quot;Author (year)&quot; style citation strings in many different forms.
+     *
+     * @param entries     The list of BibEntry to get fields from.
+     * @param database    A map of BibEntry-BibDatabase pairs.
+     * @param uniquefiers Optional parameters to separate similar citations. Can be null if not needed.
+     * @return The formatted citation.
+     */
+    private String getAuthorYearInTextMarker(List&lt;BibEntry&gt; entries, Map&lt;BibEntry, BibDatabase&gt; database,
+            String[] uniquefiers,
+            int[] unlimAuthors) {
+<span class="fc" id="L659">        String authorField = getStringCitProperty(AUTHOR_FIELD); // The bibtex field providing author names, e.g. &quot;author&quot; or &quot;editor&quot;.</span>
+<span class="fc" id="L660">        int maxA = getIntCitProperty(MAX_AUTHORS); // The maximum number of authors to write out in full without using etal. Set to</span>
+                                                             // -1 to always write out all authors.
+<span class="fc" id="L662">        String yearSep = getStringCitProperty(IN_TEXT_YEAR_SEPARATOR); // The String to separate authors from year, e.g. &quot;; &quot;.</span>
+<span class="fc" id="L663">        String startBrace = getStringCitProperty(BRACKET_BEFORE); // The opening parenthesis.</span>
+<span class="fc" id="L664">        String endBrace = getStringCitProperty(BRACKET_AFTER); // The closing parenthesis.</span>
+<span class="fc" id="L665">        String citationSeparator = getStringCitProperty(CITATION_SEPARATOR); // The String to separate citations from each other.</span>
+<span class="fc" id="L666">        String yearField = getStringCitProperty(YEAR_FIELD); // The bibtex field providing the year, e.g. &quot;year&quot;.</span>
+<span class="fc" id="L667">        String andString = getStringCitProperty(AUTHOR_LAST_SEPARATOR_IN_TEXT); // The String to add between the two last author names, e.g. &quot; &amp; &quot;.</span>
+
+<span class="pc bpc" id="L669" title="1 of 2 branches missed.">        if (andString == null) {</span>
+            // Use the default one if no explicit separator for text is defined
+<span class="fc" id="L671">            andString = getStringCitProperty(AUTHOR_LAST_SEPARATOR);</span>
+        }
+<span class="fc" id="L673">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc bfc" id="L674" title="All 2 branches covered.">        for (int i = 0; i &lt; entries.size(); i++) {</span>
+<span class="fc" id="L675">            BibEntry currentEntry = entries.get(i);</span>
+
+            // Check if this entry has been nulled due to grouping with the previous entry(ies):
+<span class="fc bfc" id="L678" title="All 2 branches covered.">            if (currentEntry == null) {</span>
+<span class="fc" id="L679">                continue;</span>
+            }
+
+<span class="fc" id="L682">            BibDatabase currentDatabase = database.get(currentEntry);</span>
+<span class="fc bfc" id="L683" title="All 2 branches covered.">            int unlimA = unlimAuthors == null ? -1 : unlimAuthors[i];</span>
+<span class="fc bfc" id="L684" title="All 2 branches covered.">            int maxAuthors = unlimA &gt; 0 ? unlimA : maxA;</span>
+
+<span class="fc bfc" id="L686" title="All 2 branches covered.">            if (i &gt; 0) {</span>
+<span class="fc" id="L687">                sb.append(citationSeparator);</span>
+            }
+<span class="fc" id="L689">            String author = getCitationMarkerField(currentEntry, currentDatabase, authorField);</span>
+<span class="fc" id="L690">            String authorString = createAuthorList(author, maxAuthors, andString, yearSep);</span>
+<span class="fc" id="L691">            sb.append(authorString);</span>
+<span class="fc" id="L692">            sb.append(startBrace);</span>
+<span class="fc" id="L693">            String year = getCitationMarkerField(currentEntry, currentDatabase, yearField);</span>
+<span class="pc bpc" id="L694" title="1 of 2 branches missed.">            if (year != null) {</span>
+<span class="fc" id="L695">                sb.append(year);</span>
+            }
+<span class="pc bpc" id="L697" title="1 of 4 branches missed.">            if ((uniquefiers != null) &amp;&amp; (uniquefiers[i] != null)) {</span>
+<span class="fc" id="L698">                sb.append(uniquefiers[i]);</span>
+            }
+<span class="fc" id="L700">            sb.append(endBrace);</span>
+        }
+<span class="fc" id="L702">        return sb.toString();</span>
+
+    }
+
+    /**
+     * This method looks up a field for an entry in a database. Any number of backup fields can be used
+     * if the primary field is empty.
+     *
+     * @param entry    The entry.
+     * @param database The database the entry belongs to.
+     * @param field    The field, or succession of fields, to look up. If backup fields are needed, separate
+     *                 field names by /. E.g. to use &quot;author&quot; with &quot;editor&quot; as backup, specify FieldName.orFields(FieldName.AUTHOR, FieldName.EDITOR).
+     * @return The resolved field content, or an empty string if the field(s) were empty.
+     */
+    private String getCitationMarkerField(BibEntry entry, BibDatabase database, String field) {
+<span class="fc" id="L717">        String authorField = getStringCitProperty(AUTHOR_FIELD);</span>
+<span class="fc" id="L718">        String[] fields = field.split(FieldName.FIELD_SEPARATOR);</span>
+<span class="fc bfc" id="L719" title="All 2 branches covered.">        for (String s : fields) {</span>
+<span class="fc" id="L720">            Optional&lt;String&gt; content = entry.getResolvedFieldOrAlias(s, database);</span>
+
+<span class="pc bpc" id="L722" title="1 of 4 branches missed.">            if ((content.isPresent()) &amp;&amp; !content.get().trim().isEmpty()) {</span>
+<span class="fc bfc" id="L723" title="All 4 branches covered.">                if (field.equals(authorField) &amp;&amp; StringUtil.isInCurlyBrackets(content.get())) {</span>
+<span class="fc" id="L724">                    return &quot;{&quot; + fieldFormatter.format(content.get()) + &quot;}&quot;;</span>
+                }
+<span class="fc" id="L726">                return fieldFormatter.format(content.get());</span>
+            }
+        }
+        // No luck? Return an empty string:
+<span class="fc" id="L730">        return &quot;&quot;;</span>
+    }
+
+
+    /**
+     * Look up the nth author and return the proper last name for citation markers.
+     *
+     * @param al     The author list.
+     * @param number The number of the author to return.
+     * @return The author name, or an empty String if inapplicable.
+     */
+    private String getAuthorLastName(AuthorList al, int number) {
+<span class="fc" id="L742">        StringBuilder sb = new StringBuilder();</span>
+
+<span class="pc bpc" id="L744" title="1 of 2 branches missed.">        if (al.getNumberOfAuthors() &gt; number) {</span>
+<span class="fc" id="L745">            Author a = al.getAuthor(number);</span>
+<span class="pc bpc" id="L746" title="1 of 2 branches missed.">            a.getVon().filter(von -&gt; !von.isEmpty()).ifPresent(von -&gt; sb.append(von).append(' '));</span>
+<span class="fc" id="L747">            sb.append(a.getLast().orElse(&quot;&quot;));</span>
+        }
+
+<span class="fc" id="L750">        return sb.toString();</span>
+    }
+
+    /**
+     * Take a finished citation and insert a string at the end (but inside the end bracket)
+     * separated by &quot;PageInfoSeparator&quot;
+     *
+     * @param citation
+     * @param pageInfo
+     * @return
+     */
+    public String insertPageInfo(String citation, String pageInfo) {
+<span class="fc" id="L762">        String bracketAfter = getStringCitProperty(BRACKET_AFTER);</span>
+<span class="pc bpc" id="L763" title="1 of 2 branches missed.">        if (citation.endsWith(bracketAfter)) {</span>
+<span class="fc" id="L764">            String first = citation.substring(0, citation.length() - bracketAfter.length());</span>
+<span class="fc" id="L765">            return first + getStringCitProperty(PAGE_INFO_SEPARATOR) + pageInfo + bracketAfter;</span>
+        } else {
+<span class="nc" id="L767">            return citation + getStringCitProperty(PAGE_INFO_SEPARATOR) + pageInfo;</span>
+        }
+    }
+
+    /**
+     * Convenience method for checking the property for whether we use number citations or
+     * author-year citations.
+     *
+     * @return true if we use numbered citations, false otherwise.
+     */
+    public boolean isNumberEntries() {
+<span class="fc" id="L778">        return (Boolean) getProperty(IS_NUMBER_ENTRIES);</span>
+    }
+
+    /**
+     * Convenience method for checking the property for whether we sort the bibliography
+     * according to their order of appearance in the text.
+     *
+     * @return true to sort by appearance, false to sort alphabetically.
+     */
+    public boolean isSortByPosition() {
+<span class="fc" id="L788">        return (Boolean) getProperty(IS_SORT_BY_POSITION);</span>
+    }
+
+    /**
+     * Convenience method for checking whether citation markers should be italicized.
+     * Will only be relevant if isFormatCitations() returns true.
+     *
+     * @return true to indicate that citations should be in italics.
+     */
+    public boolean isItalicCitations() {
+<span class="fc" id="L798">        return (Boolean) citProperties.get(ITALIC_CITATIONS);</span>
+    }
+
+    /**
+     * Convenience method for checking whether citation markers should be bold.
+     * Will only be relevant if isFormatCitations() returns true.
+     *
+     * @return true to indicate that citations should be in bold.
+     */
+    public boolean isBoldCitations() {
+<span class="fc" id="L808">        return (Boolean) citProperties.get(BOLD_CITATIONS);</span>
+    }
+
+    /**
+     * Convenience method for checking whether citation markers formatted
+     * according to the results of the isItalicCitations() and
+     * isBoldCitations() methods.
+     *
+     * @return true to indicate that citations should be in italics.
+     */
+    public boolean isFormatCitations() {
+<span class="fc" id="L819">        return (Boolean) citProperties.get(FORMAT_CITATIONS);</span>
+    }
+
+    public boolean isBibtexKeyCiteMarkers() {
+<span class="fc" id="L823">        return (Boolean) citProperties.get(BIBTEX_KEY_CITATIONS);</span>
+    }
+
+    /**
+     * Get boolean property.
+     *
+     * @param key The property key
+     * @return the value
+     */
+    public boolean getBooleanCitProperty(String key) {
+<span class="fc" id="L833">        return (Boolean) citProperties.get(key);</span>
+    }
+
+    public int getIntCitProperty(String key) {
+<span class="fc" id="L837">        return (Integer) citProperties.get(key);</span>
+    }
+
+    public String getStringCitProperty(String key) {
+<span class="fc" id="L841">        return (String) citProperties.get(key);</span>
+    }
+
+    public String getCitationCharacterFormat() {
+<span class="fc" id="L845">        return getStringCitProperty(CITATION_CHARACTER_FORMAT);</span>
+    }
+
+    /**
+     * Get a style property.
+     *
+     * @param propName The property name.
+     * @return The property value, or null if it doesn't exist.
+     */
+    public Object getProperty(String propName) {
+<span class="fc" id="L855">        return properties.get(propName);</span>
+    }
+
+    /**
+     * Indicate if it is an internal style
+     *
+     * @return True if an internal style
+     */
+    public boolean isFromResource() {
+<span class="fc" id="L864">        return fromResource;</span>
+    }
+
+    public String getLocalCopy() {
+<span class="nc" id="L868">        return localCopy;</span>
+    }
+
+    @Override
+    public int compareTo(OOBibStyle other) {
+<span class="fc" id="L873">        return getName().compareTo(other.getName());</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="fc bfc" id="L878" title="All 2 branches covered.">        if (this == o) {</span>
+<span class="fc" id="L879">            return true;</span>
+        }
+<span class="pc bpc" id="L881" title="1 of 2 branches missed.">        if (o instanceof OOBibStyle) {</span>
+<span class="fc" id="L882">            OOBibStyle otherStyle = (OOBibStyle) o;</span>
+<span class="fc bfc" id="L883" title="All 2 branches covered.">            return Objects.equals(path, otherStyle.path)</span>
+<span class="pc bpc" id="L884" title="1 of 2 branches missed.">                    &amp;&amp; Objects.equals(name, otherStyle.name)</span>
+<span class="pc bpc" id="L885" title="1 of 2 branches missed.">                    &amp;&amp; Objects.equals(citProperties, otherStyle.citProperties)</span>
+<span class="pc bpc" id="L886" title="1 of 2 branches missed.">                    &amp;&amp; Objects.equals(properties, otherStyle.properties);</span>
+        }
+<span class="nc" id="L888">        return false;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L893">        return Objects.hash(path, name, citProperties, properties);</span>
+    }
+
+    private String createAuthorList(String author, int maxAuthors, String andString,
+            String yearSep) {
+<span class="fc" id="L898">        Objects.requireNonNull(author);</span>
+<span class="fc" id="L899">        String etAlString = getStringCitProperty(ET_AL_STRING); //  The String to represent authors that are not mentioned, e.g. &quot; et al.&quot;</span>
+<span class="fc" id="L900">        String authorSep = getStringCitProperty(AUTHOR_SEPARATOR); // The String to add between author names except the last two, e.g. &quot;, &quot;.</span>
+<span class="fc" id="L901">        String oxfordComma = getStringCitProperty(OXFORD_COMMA); // The String to put after the second to last author in case of three or more authors</span>
+<span class="fc" id="L902">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L903">        AuthorList al = AuthorList.parse(author);</span>
+<span class="fc bfc" id="L904" title="All 2 branches covered.">        if (!al.isEmpty()) {</span>
+<span class="fc" id="L905">            sb.append(getAuthorLastName(al, 0));</span>
+        }
+<span class="pc bpc" id="L907" title="1 of 6 branches missed.">        if ((al.getNumberOfAuthors() &gt; 1) &amp;&amp; ((al.getNumberOfAuthors() &lt;= maxAuthors) || (maxAuthors &lt; 0))) {</span>
+<span class="fc" id="L908">            int j = 1;</span>
+<span class="fc bfc" id="L909" title="All 2 branches covered.">            while (j &lt; (al.getNumberOfAuthors() - 1)) {</span>
+<span class="fc" id="L910">                sb.append(authorSep);</span>
+<span class="fc" id="L911">                sb.append(getAuthorLastName(al, j));</span>
+<span class="fc" id="L912">                j++;</span>
+            }
+<span class="pc bpc" id="L914" title="1 of 2 branches missed.">            if (al.getNumberOfAuthors() &gt; 2) {</span>
+<span class="fc" id="L915">                sb.append(oxfordComma);</span>
+            }
+<span class="fc" id="L917">            sb.append(andString);</span>
+<span class="fc" id="L918">            sb.append(getAuthorLastName(al, al.getNumberOfAuthors() - 1));</span>
+<span class="fc bfc" id="L919" title="All 2 branches covered.">        } else if (al.getNumberOfAuthors() &gt; maxAuthors) {</span>
+<span class="fc" id="L920">            sb.append(etAlString);</span>
+        }
+<span class="fc" id="L922">        sb.append(yearSep);</span>
+<span class="fc" id="L923">        return sb.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

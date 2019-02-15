@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchPreferences.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.preferences</a> &gt; <span class="el_source">SearchPreferences.java</span></div><h1>SearchPreferences.java</h1><pre class="source lang-java linenums">package org.jabref.preferences;
+
+import java.util.Map;
+import java.util.Objects;
+
+import org.jabref.gui.search.SearchDisplayMode;
+
+public class SearchPreferences {
+
+    private static final String SEARCH_GLOBAL = &quot;searchGlobal&quot;;
+    private static final String SEARCH_DISPLAY_MODE = &quot;searchDisplayMode&quot;;
+    private static final String SEARCH_CASE_SENSITIVE = &quot;caseSensitiveSearch&quot;;
+    private static final String SEARCH_REG_EXP = &quot;regExpSearch&quot;;
+
+    private static final String SEARCH_DIALOG_HEIGHT = &quot;searchDialogHeight&quot;;
+    private static final String SEARCH_DIALOG_WIDTH = &quot;searchDialogWidth&quot;;
+    private static final String SEARCH_DIALOG_POS_X = &quot;searchDialogPosX&quot;;
+    private static final String SEARCH_DIALOG_POS_Y = &quot;searchDialogPosY&quot;;
+
+    private final JabRefPreferences preferences;
+
+
+<span class="nc" id="L23">    public SearchPreferences(JabRefPreferences preferences) {</span>
+<span class="nc" id="L24">        this.preferences = Objects.requireNonNull(preferences);</span>
+<span class="nc" id="L25">    }</span>
+
+    public static void putDefaults(Map&lt;String, Object&gt; defaults) {
+<span class="nc" id="L28">        defaults.put(SEARCH_GLOBAL, Boolean.FALSE);</span>
+<span class="nc" id="L29">        defaults.put(SEARCH_DISPLAY_MODE, SearchDisplayMode.FILTER.toString());</span>
+<span class="nc" id="L30">        defaults.put(SEARCH_CASE_SENSITIVE, Boolean.FALSE);</span>
+<span class="nc" id="L31">        defaults.put(SEARCH_REG_EXP, Boolean.FALSE);</span>
+
+<span class="nc" id="L33">        defaults.put(SEARCH_DIALOG_WIDTH, 650);</span>
+<span class="nc" id="L34">        defaults.put(SEARCH_DIALOG_HEIGHT, 500);</span>
+<span class="nc" id="L35">        defaults.put(SEARCH_DIALOG_POS_X, 0);</span>
+<span class="nc" id="L36">        defaults.put(SEARCH_DIALOG_POS_Y, 0);</span>
+<span class="nc" id="L37">    }</span>
+
+    public boolean isGlobalSearch() {
+<span class="nc" id="L40">        return preferences.getBoolean(SEARCH_GLOBAL);</span>
+    }
+
+    public SearchPreferences setGlobalSearch(boolean isGlobalSearch) {
+<span class="nc" id="L44">        preferences.putBoolean(SEARCH_GLOBAL, isGlobalSearch);</span>
+<span class="nc" id="L45">        return this;</span>
+    }
+
+    public SearchDisplayMode getSearchMode() {
+        try {
+<span class="nc" id="L50">            return SearchDisplayMode.valueOf(preferences.get(SEARCH_DISPLAY_MODE));</span>
+<span class="nc" id="L51">        } catch (IllegalArgumentException ex) {</span>
+            // Should only occur when the searchmode is set directly via preferences.put and the enum was not used
+<span class="nc" id="L53">            return SearchDisplayMode.valueOf((String) preferences.defaults.get(SEARCH_DISPLAY_MODE));</span>
+        }
+    }
+
+    public SearchPreferences setSearchMode(SearchDisplayMode searchDisplayMode) {
+<span class="nc" id="L58">        preferences.put(SEARCH_DISPLAY_MODE, Objects.requireNonNull(searchDisplayMode).toString());</span>
+<span class="nc" id="L59">        return this;</span>
+    }
+
+    public boolean isCaseSensitive() {
+<span class="nc" id="L63">        return preferences.getBoolean(SEARCH_CASE_SENSITIVE);</span>
+    }
+
+    public SearchPreferences setCaseSensitive(boolean isCaseSensitive) {
+<span class="nc" id="L67">        preferences.putBoolean(SEARCH_CASE_SENSITIVE, isCaseSensitive);</span>
+<span class="nc" id="L68">        return this;</span>
+    }
+
+    public boolean isRegularExpression() {
+<span class="nc" id="L72">        return preferences.getBoolean(SEARCH_REG_EXP);</span>
+    }
+
+    public SearchPreferences setRegularExpression(boolean isRegularExpression) {
+<span class="nc" id="L76">        preferences.putBoolean(SEARCH_REG_EXP, isRegularExpression);</span>
+<span class="nc" id="L77">        return this;</span>
+    }
+
+    public int getSeachDialogWidth() {
+<span class="nc" id="L81">        return preferences.getInt(SEARCH_DIALOG_WIDTH);</span>
+    }
+
+    public SearchPreferences setSearchDialogWidth(int width) {
+<span class="nc" id="L85">        preferences.putInt(SEARCH_DIALOG_WIDTH, width);</span>
+<span class="nc" id="L86">        return this;</span>
+    }
+
+    public int getSeachDialogHeight() {
+<span class="nc" id="L90">        return preferences.getInt(SEARCH_DIALOG_HEIGHT);</span>
+    }
+
+    public SearchPreferences setSearchDialogHeight(int height) {
+<span class="nc" id="L94">        preferences.putInt(SEARCH_DIALOG_HEIGHT, height);</span>
+<span class="nc" id="L95">        return this;</span>
+    }
+
+    public int getSearchDialogPosX() {
+<span class="nc" id="L99">        return preferences.getInt(SEARCH_DIALOG_POS_X);</span>
+    }
+
+    public SearchPreferences setSearchDialogPosX(int x) {
+<span class="nc" id="L103">        preferences.putInt(SEARCH_DIALOG_POS_X, x);</span>
+<span class="nc" id="L104">        return this;</span>
+    }
+
+    public int getSearchDialogPosY() {
+<span class="nc" id="L108">        return preferences.getInt(SEARCH_DIALOG_POS_Y);</span>
+    }
+
+    public SearchPreferences setSearchDialogPosY(int y) {
+<span class="nc" id="L112">        preferences.putInt(SEARCH_DIALOG_POS_Y, y);</span>
+<span class="nc" id="L113">        return this;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

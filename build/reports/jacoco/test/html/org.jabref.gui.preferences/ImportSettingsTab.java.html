@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ImportSettingsTab.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.preferences</a> &gt; <span class="el_source">ImportSettingsTab.java</span></div><h1>ImportSettingsTab.java</h1><pre class="source lang-java linenums">package org.jabref.gui.preferences;
+
+import java.util.Objects;
+
+import javafx.collections.FXCollections;
+import javafx.scene.Node;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.preferences.JabRefPreferences;
+
+public class ImportSettingsTab extends Pane implements PrefsTab {
+
+<span class="nc" id="L19">    public static final String[] DEFAULT_FILENAMEPATTERNS = new String[] {&quot;[bibtexkey]&quot;,</span>
+            &quot;[bibtexkey] - [title]&quot;};
+
+<span class="nc" id="L22">    private static final String[] DEFAULT_FILENAMEPATTERNS_DISPLAY = new String[] {&quot;bibtexkey&quot;, &quot;bibtexkey - title&quot;,};</span>
+
+    private final JabRefPreferences prefs;
+<span class="nc" id="L25">    private final GridPane builder = new GridPane();</span>
+    private final TextField fileNamePattern;
+    private final ComboBox&lt;String&gt; selectFileNamePattern;
+
+
+    private final TextField fileDirPattern;
+
+<span class="nc" id="L32">    public ImportSettingsTab(JabRefPreferences prefs) {</span>
+<span class="nc" id="L33">        this.prefs = Objects.requireNonNull(prefs);</span>
+
+<span class="nc" id="L35">        fileNamePattern = new TextField();</span>
+<span class="nc" id="L36">        fileDirPattern = new TextField();</span>
+<span class="nc" id="L37">        selectFileNamePattern = new ComboBox&lt;&gt;();</span>
+<span class="nc" id="L38">        selectFileNamePattern.getItems().addAll(FXCollections.observableArrayList(DEFAULT_FILENAMEPATTERNS_DISPLAY));</span>
+<span class="nc" id="L39">        selectFileNamePattern.setValue(Localization.lang(&quot;Choose pattern&quot;));</span>
+<span class="nc" id="L40">        selectFileNamePattern.setOnAction(e -&gt; {</span>
+<span class="nc" id="L41">            fileNamePattern.setText(selectFileNamePattern.getValue());</span>
+<span class="nc" id="L42">        });</span>
+
+<span class="nc" id="L44">        Label defaultImportStyle = new Label(Localization.lang(&quot;Default import style for drag and drop of PDFs&quot;));</span>
+<span class="nc" id="L45">        defaultImportStyle.getStyleClass().add(&quot;sectionHeader&quot;);</span>
+<span class="nc" id="L46">        builder.add(defaultImportStyle, 1, 1);</span>
+<span class="nc" id="L47">        builder.add(new Separator(), 2, 1);</span>
+<span class="nc" id="L48">        builder.add(new Label(&quot;&quot;), 1, 7);</span>
+
+<span class="nc" id="L50">        Label defaultPdfFileLinkAction = new Label(Localization.lang(&quot;Default PDF file link action&quot;));</span>
+<span class="nc" id="L51">        defaultPdfFileLinkAction.getStyleClass().add(&quot;sectionHeader&quot;);</span>
+<span class="nc" id="L52">        builder.add(defaultPdfFileLinkAction, 1, 8);</span>
+<span class="nc" id="L53">        Label filenameFormatPattern = new Label(Localization.lang(&quot;Filename format pattern&quot;).concat(&quot;:&quot;));</span>
+<span class="nc" id="L54">        builder.add(filenameFormatPattern, 1, 9);</span>
+<span class="nc" id="L55">        builder.add(fileNamePattern, 2, 9);</span>
+<span class="nc" id="L56">        builder.add(selectFileNamePattern, 3, 9);</span>
+
+<span class="nc" id="L58">        Label lbfileDirPattern = new Label(Localization.lang(&quot;File directory pattern&quot;).concat(&quot;:&quot;));</span>
+<span class="nc" id="L59">        builder.add(lbfileDirPattern, 1, 10);</span>
+<span class="nc" id="L60">        builder.add(fileDirPattern, 2, 10);</span>
+<span class="nc" id="L61">    }</span>
+
+    public Node getBuilder() {
+<span class="nc" id="L64">        return builder;</span>
+    }
+
+    @Override
+    public void setValues() {
+<span class="nc" id="L69">        fileNamePattern.setText(prefs.get(JabRefPreferences.IMPORT_FILENAMEPATTERN));</span>
+<span class="nc" id="L70">        fileDirPattern.setText(prefs.get(JabRefPreferences.IMPORT_FILEDIRPATTERN));</span>
+<span class="nc" id="L71">    }</span>
+
+    @Override
+    public void storeSettings() {
+<span class="nc" id="L75">        prefs.put(JabRefPreferences.IMPORT_FILENAMEPATTERN, fileNamePattern.getText());</span>
+<span class="nc" id="L76">        prefs.put(JabRefPreferences.IMPORT_FILEDIRPATTERN, fileDirPattern.getText());</span>
+<span class="nc" id="L77">    }</span>
+
+    @Override
+    public boolean validateSettings() {
+<span class="nc" id="L81">        return true;</span>
+    }
+
+    @Override
+    public String getTabName() {
+<span class="nc" id="L86">        return Localization.lang(&quot;Import&quot;);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

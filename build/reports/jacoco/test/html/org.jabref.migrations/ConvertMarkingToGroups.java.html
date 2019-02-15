@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConvertMarkingToGroups.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.migrations</a> &gt; <span class="el_source">ConvertMarkingToGroups.java</span></div><h1>ConvertMarkingToGroups.java</h1><pre class="source lang-java linenums">package org.jabref.migrations;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javafx.collections.ObservableList;
+
+import org.jabref.logic.groups.DefaultGroupsFactory;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.groups.ExplicitGroup;
+import org.jabref.model.groups.GroupHierarchyType;
+import org.jabref.model.groups.GroupTreeNode;
+
+import com.google.common.collect.Multimap;
+import com.google.common.collect.MultimapBuilder;
+
+/**
+ * Converts legacy explicit groups, where the group contained a list of assigned entries, to the new format,
+ * where the entry stores a list of groups it belongs to.
+ */
+<span class="fc" id="L29">public class ConvertMarkingToGroups implements PostOpenMigration {</span>
+
+<span class="fc" id="L31">    private static final Pattern MARKING_PATTERN = Pattern.compile(&quot;\\[(.*):(\\d+)\\]&quot;);</span>
+
+    @Override
+    public void performMigration(ParserResult parserResult) {
+<span class="fc" id="L35">        Objects.requireNonNull(parserResult);</span>
+
+<span class="fc" id="L37">        ObservableList&lt;BibEntry&gt; entries = parserResult.getDatabase().getEntries();</span>
+<span class="fc" id="L38">        Multimap&lt;String, BibEntry&gt; markings = getMarkingWithEntries(entries);</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (!markings.isEmpty()) {</span>
+<span class="fc" id="L40">            GroupTreeNode markingRoot = GroupTreeNode.fromGroup(</span>
+<span class="fc" id="L41">                    new ExplicitGroup(Localization.lang(&quot;Markings&quot;), GroupHierarchyType.INCLUDING, ','));</span>
+
+<span class="fc bfc" id="L43" title="All 2 branches covered.">            for (Map.Entry&lt;String, Collection&lt;BibEntry&gt;&gt; marking : markings.asMap().entrySet()) {</span>
+<span class="fc" id="L44">                String markingName = marking.getKey();</span>
+<span class="fc" id="L45">                Collection&lt;BibEntry&gt; markingMatchedEntries = marking.getValue();</span>
+
+<span class="fc" id="L47">                GroupTreeNode markingGroup = markingRoot.addSubgroup(</span>
+<span class="fc" id="L48">                        new ExplicitGroup(markingName, GroupHierarchyType.INCLUDING, ','));</span>
+<span class="fc" id="L49">                markingGroup.addEntriesToGroup(markingMatchedEntries);</span>
+<span class="fc" id="L50">            }</span>
+
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">            if (!parserResult.getMetaData().getGroups().isPresent()) {</span>
+<span class="fc" id="L53">                parserResult.getMetaData().setGroups(GroupTreeNode.fromGroup(DefaultGroupsFactory.getAllEntriesGroup()));</span>
+            }
+<span class="fc" id="L55">            GroupTreeNode root = parserResult.getMetaData().getGroups().get();</span>
+<span class="fc" id="L56">            root.addChild(markingRoot, 0);</span>
+<span class="fc" id="L57">            parserResult.getMetaData().setGroups(root);</span>
+
+<span class="fc" id="L59">            clearMarkings(entries);</span>
+        }
+<span class="fc" id="L61">    }</span>
+
+    /**
+     * Looks for markings (such as __markedentry = {[Nicolas:6]}) in the given list of entries.
+     */
+    private Multimap&lt;String, BibEntry&gt; getMarkingWithEntries(List&lt;BibEntry&gt; entries) {
+<span class="fc" id="L67">        Multimap&lt;String, BibEntry&gt; markings = MultimapBuilder.treeKeys().linkedListValues().build();</span>
+
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        for (BibEntry entry : entries) {</span>
+<span class="fc" id="L70">            Optional&lt;String&gt; marking = entry.getField(FieldName.MARKED_INTERNAL);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (!marking.isPresent()) {</span>
+<span class="fc" id="L72">                continue;</span>
+            }
+
+<span class="fc" id="L75">            Matcher matcher = MARKING_PATTERN.matcher(marking.get());</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">            if (matcher.find()) {</span>
+<span class="fc" id="L77">                String owner = matcher.group(1);</span>
+<span class="fc" id="L78">                String number = matcher.group(2);</span>
+<span class="fc" id="L79">                markings.put(owner + &quot;:&quot; + number, entry);</span>
+<span class="fc" id="L80">            } else {</span>
+                // Not in the expected format, so just add it to not loose information
+<span class="nc" id="L82">                markings.put(marking.get(), entry);</span>
+            }
+<span class="fc" id="L84">        }</span>
+
+<span class="fc" id="L86">        return markings;</span>
+    }
+
+    private void clearMarkings(List&lt;BibEntry&gt; entries) {
+<span class="fc" id="L90">        entries.forEach(entry -&gt; entry.clearField(FieldName.MARKED_INTERNAL));</span>
+<span class="fc" id="L91">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

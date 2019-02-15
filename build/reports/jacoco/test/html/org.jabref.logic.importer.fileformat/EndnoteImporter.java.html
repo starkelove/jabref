@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EndnoteImporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fileformat</a> &gt; <span class="el_source">EndnoteImporter.java</span></div><h1>EndnoteImporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fileformat;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.bibtexkeypattern.BibtexKeyGenerator;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.Importer;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.entry.AuthorList;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BibtexEntryTypes;
+import org.jabref.model.entry.FieldName;
+
+/**
+ * Importer for the Refer/Endnote format.
+ * modified to use article number for pages if pages are missing (some
+ * journals, e.g., Physical Review Letters, don't use pages anymore)
+ *
+ * check here for details on the format
+ * http://libguides.csuchico.edu/c.php?g=414245&amp;p=2822898
+ */
+public class EndnoteImporter extends Importer {
+
+    private static final String ENDOFRECORD = &quot;__EOREOR__&quot;;
+
+<span class="fc" id="L33">    private static final Pattern A_PATTERN = Pattern.compile(&quot;%A .*&quot;);</span>
+<span class="fc" id="L34">    private static final Pattern E_PATTERN = Pattern.compile(&quot;%E .*&quot;);</span>
+
+    private final ImportFormatPreferences preferences;
+
+<span class="fc" id="L38">    public EndnoteImporter(ImportFormatPreferences preferences) {</span>
+<span class="fc" id="L39">        this.preferences = preferences;</span>
+<span class="fc" id="L40">    }</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L44">        return &quot;Refer/Endnote&quot;;</span>
+    }
+
+    @Override
+    public StandardFileType getFileType() {
+<span class="fc" id="L49">        return StandardFileType.ENDNOTE;</span>
+    }
+
+    @Override
+    public String getId() {
+<span class="fc" id="L54">        return &quot;refer&quot;;</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L59">        return &quot;Importer for the Refer/Endnote format. Modified to use article number for pages if pages are missing.&quot;;</span>
+    }
+
+    @Override
+    public boolean isRecognizedFormat(BufferedReader reader) throws IOException {
+        // Our strategy is to look for the &quot;%A *&quot; line.
+        String str;
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        while ((str = reader.readLine()) != null) {</span>
+<span class="fc bfc" id="L67" title="All 4 branches covered.">            if (A_PATTERN.matcher(str).matches() || E_PATTERN.matcher(str).matches()) {</span>
+<span class="fc" id="L68">                return true;</span>
+            }
+        }
+<span class="fc" id="L71">        return false;</span>
+    }
+
+    @Override
+    public ParserResult importDatabase(BufferedReader reader) throws IOException {
+<span class="fc" id="L76">        List&lt;BibEntry&gt; bibitems = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L77">        StringBuilder sb = new StringBuilder();</span>
+        String str;
+<span class="fc" id="L79">        boolean first = true;</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        while ((str = reader.readLine()) != null) {</span>
+<span class="fc" id="L81">            str = str.trim();</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            if (str.indexOf(&quot;%0&quot;) == 0) {</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                if (first) {</span>
+<span class="fc" id="L84">                    first = false;</span>
+                } else {
+<span class="fc" id="L86">                    sb.append(ENDOFRECORD);</span>
+                }
+<span class="fc" id="L88">                sb.append(str);</span>
+            } else {
+<span class="fc" id="L90">                sb.append(str);</span>
+            }
+<span class="fc" id="L92">            sb.append('\n');</span>
+        }
+
+<span class="fc" id="L95">        String[] entries = sb.toString().split(ENDOFRECORD);</span>
+<span class="fc" id="L96">        Map&lt;String, String&gt; hm = new HashMap&lt;&gt;();</span>
+        String author;
+        String type;
+        String editor;
+        String artnum;
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        for (String entry : entries) {</span>
+<span class="fc" id="L102">            hm.clear();</span>
+<span class="fc" id="L103">            author = &quot;&quot;;</span>
+<span class="fc" id="L104">            type = BibEntry.DEFAULT_TYPE;</span>
+<span class="fc" id="L105">            editor = &quot;&quot;;</span>
+<span class="fc" id="L106">            artnum = &quot;&quot;;</span>
+
+<span class="fc" id="L108">            boolean isEditedBook = false;</span>
+<span class="fc" id="L109">            String[] fields = entry.trim().substring(1).split(&quot;\n%&quot;);</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">            for (String field : fields) {</span>
+
+<span class="fc bfc" id="L112" title="All 2 branches covered.">                if (field.length() &lt; 3) {</span>
+<span class="fc" id="L113">                    continue;</span>
+                }
+
+                /*
+                 * Details of Refer format for Journal Article and Book:
+                 *
+                 * Generic Ref Journal Article Book Code Author %A Author Author Year %D
+                 * Year Year Title %T Title Title Secondary Author %E Series Editor
+                 * Secondary Title %B Journal Series Title Place Published %C City
+                 * Publisher %I Publisher Volume %V Volume Volume Number of Volumes %6
+                 * Number of Volumes Number %N Issue Pages %P Pages Number of Pages
+                 * Edition %7 Edition Subsidiary Author %? Translator Alternate Title %J
+                 * Alternate Journal Label %F Label Label Keywords %K Keywords Keywords
+                 * Abstract %X Abstract Abstract Notes %O Notes Notes
+                 */
+
+<span class="fc" id="L129">                String prefix = field.substring(0, 1);</span>
+
+<span class="fc" id="L131">                String val = field.substring(2);</span>
+
+<span class="fc bfc" id="L133" title="All 2 branches covered.">                if (&quot;A&quot;.equals(prefix)) {</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">                    if (&quot;&quot;.equals(author)) {</span>
+<span class="fc" id="L135">                        author = val;</span>
+                    } else {
+<span class="fc" id="L137">                        author += &quot; and &quot; + val;</span>
+                    }
+<span class="fc bfc" id="L139" title="All 2 branches covered.">                } else if (&quot;E&quot;.equals(prefix)) {</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">                    if (&quot;&quot;.equals(editor)) {</span>
+<span class="fc" id="L141">                        editor = val;</span>
+                    } else {
+<span class="fc" id="L143">                        editor += &quot; and &quot; + val;</span>
+                    }
+<span class="fc bfc" id="L145" title="All 2 branches covered.">                } else if (&quot;T&quot;.equals(prefix)) {</span>
+<span class="fc" id="L146">                    hm.put(FieldName.TITLE, val);</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">                } else if (&quot;0&quot;.equals(prefix)) {</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">                    if (val.indexOf(&quot;Journal&quot;) == 0) {</span>
+<span class="fc" id="L149">                        type = &quot;article&quot;;</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">                    } else if (val.indexOf(&quot;Book Section&quot;) == 0) {</span>
+<span class="fc" id="L151">                        type = &quot;incollection&quot;;</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">                    } else if (val.indexOf(&quot;Book&quot;) == 0) {</span>
+<span class="fc" id="L153">                        type = &quot;book&quot;;</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">                    } else if (val.indexOf(&quot;Edited Book&quot;) == 0) {</span>
+<span class="fc" id="L155">                        type = &quot;book&quot;;</span>
+<span class="fc" id="L156">                        isEditedBook = true;</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">                    } else if (val.indexOf(&quot;Conference&quot;) == 0) {</span>
+<span class="fc" id="L158">                        type = &quot;inproceedings&quot;;</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">                    } else if (val.indexOf(&quot;Report&quot;) == 0) {</span>
+<span class="fc" id="L160">                        type = &quot;techreport&quot;;</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">                    } else if (val.indexOf(&quot;Review&quot;) == 0) {</span>
+<span class="fc" id="L162">                        type = &quot;article&quot;;</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">                    } else if (val.indexOf(&quot;Thesis&quot;) == 0) {</span>
+<span class="fc" id="L164">                        type = &quot;phdthesis&quot;;</span>
+                    } else {
+<span class="fc" id="L166">                        type = BibEntry.DEFAULT_TYPE; //</span>
+                    }
+<span class="fc bfc" id="L168" title="All 2 branches covered.">                } else if (&quot;7&quot;.equals(prefix)) {</span>
+<span class="fc" id="L169">                    hm.put(FieldName.EDITION, val);</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">                } else if (&quot;C&quot;.equals(prefix)) {</span>
+<span class="fc" id="L171">                    hm.put(FieldName.ADDRESS, val);</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">                } else if (&quot;D&quot;.equals(prefix)) {</span>
+<span class="fc" id="L173">                    hm.put(FieldName.YEAR, val);</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">                } else if (&quot;8&quot;.equals(prefix)) {</span>
+<span class="fc" id="L175">                    hm.put(FieldName.DATE, val);</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">                } else if (&quot;J&quot;.equals(prefix)) {</span>
+                    // &quot;Alternate journal. Let's set it only if no journal
+                    // has been set with %B.
+<span class="fc" id="L179">                    hm.putIfAbsent(FieldName.JOURNAL, val);</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">                } else if (&quot;B&quot;.equals(prefix)) {</span>
+                    // This prefix stands for &quot;journal&quot; in a journal entry, and
+                    // &quot;series&quot; in a book entry.
+<span class="fc bfc" id="L183" title="All 2 branches covered.">                    if (&quot;article&quot;.equals(type)) {</span>
+<span class="fc" id="L184">                        hm.put(FieldName.JOURNAL, val);</span>
+<span class="pc bpc" id="L185" title="1 of 4 branches missed.">                    } else if (&quot;book&quot;.equals(type) || &quot;inbook&quot;.equals(type)) {</span>
+<span class="fc" id="L186">                        hm.put(FieldName.SERIES, val);</span>
+                    } else {
+                        /* type = inproceedings */
+<span class="fc" id="L189">                        hm.put(FieldName.BOOKTITLE, val);</span>
+                    }
+<span class="fc bfc" id="L191" title="All 2 branches covered.">                } else if (&quot;I&quot;.equals(prefix)) {</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">                    if (&quot;phdthesis&quot;.equals(type)) {</span>
+<span class="fc" id="L193">                        hm.put(FieldName.SCHOOL, val);</span>
+                    } else {
+<span class="fc" id="L195">                        hm.put(FieldName.PUBLISHER, val);</span>
+                    }
+                }
+                // replace single dash page ranges (23-45) with double dashes (23--45):
+<span class="fc bfc" id="L199" title="All 2 branches covered.">                else if (&quot;P&quot;.equals(prefix)) {</span>
+<span class="fc" id="L200">                    hm.put(FieldName.PAGES, val.replaceAll(&quot;([0-9]) *- *([0-9])&quot;, &quot;$1--$2&quot;));</span>
+<span class="fc bfc" id="L201" title="All 2 branches covered.">                } else if (&quot;V&quot;.equals(prefix)) {</span>
+<span class="fc" id="L202">                    hm.put(FieldName.VOLUME, val);</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">                } else if (&quot;N&quot;.equals(prefix)) {</span>
+<span class="fc" id="L204">                    hm.put(FieldName.NUMBER, val);</span>
+<span class="fc bfc" id="L205" title="All 2 branches covered.">                } else if (&quot;U&quot;.equals(prefix)) {</span>
+<span class="fc" id="L206">                    hm.put(FieldName.URL, val);</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">                } else if (&quot;R&quot;.equals(prefix)) {</span>
+<span class="fc" id="L208">                    String doi = val;</span>
+<span class="fc bfc" id="L209" title="All 2 branches covered.">                    if (doi.startsWith(&quot;doi:&quot;)) {</span>
+<span class="fc" id="L210">                        doi = doi.substring(4);</span>
+                    }
+<span class="fc" id="L212">                    hm.put(FieldName.DOI, doi);</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">                } else if (&quot;O&quot;.equals(prefix)) {</span>
+                    // Notes may contain Article number
+<span class="fc bfc" id="L215" title="All 2 branches covered.">                    if (val.startsWith(&quot;Artn&quot;)) {</span>
+<span class="fc" id="L216">                        String[] tokens = val.split(&quot;\\s&quot;);</span>
+<span class="fc" id="L217">                        artnum = tokens[1];</span>
+<span class="fc" id="L218">                    } else {</span>
+<span class="fc" id="L219">                        hm.put(FieldName.NOTE, val);</span>
+                    }
+<span class="fc bfc" id="L221" title="All 2 branches covered.">                } else if (&quot;K&quot;.equals(prefix)) {</span>
+<span class="fc" id="L222">                    hm.put(FieldName.KEYWORDS, val);</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">                } else if (&quot;X&quot;.equals(prefix)) {</span>
+<span class="fc" id="L224">                    hm.put(FieldName.ABSTRACT, val);</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">                } else if (&quot;9&quot;.equals(prefix)) {</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">                    if (val.indexOf(&quot;Ph.D.&quot;) == 0) {</span>
+<span class="fc" id="L227">                        type = &quot;phdthesis&quot;;</span>
+                    }
+<span class="fc bfc" id="L229" title="All 2 branches covered.">                    if (val.indexOf(&quot;Masters&quot;) == 0) {</span>
+<span class="fc" id="L230">                        type = &quot;mastersthesis&quot;;</span>
+                    }
+<span class="fc bfc" id="L232" title="All 2 branches covered.">                } else if (&quot;F&quot;.equals(prefix)) {</span>
+<span class="fc" id="L233">                    hm.put(BibEntry.KEY_FIELD, BibtexKeyGenerator.cleanKey(val,</span>
+<span class="fc" id="L234">                            preferences.getBibtexKeyPatternPreferences().isEnforceLegalKey()));</span>
+                }
+            }
+
+            // For Edited Book, EndNote puts the editors in the author field.
+            // We want them in the editor field so that bibtex knows it's an edited book
+<span class="pc bpc" id="L240" title="1 of 4 branches missed.">            if (isEditedBook &amp;&amp; &quot;&quot;.equals(editor)) {</span>
+<span class="fc" id="L241">                editor = author;</span>
+<span class="fc" id="L242">                author = &quot;&quot;;</span>
+            }
+
+            //fixauthorscomma
+<span class="fc bfc" id="L246" title="All 2 branches covered.">            if (!&quot;&quot;.equals(author)) {</span>
+<span class="fc" id="L247">                hm.put(FieldName.AUTHOR, fixAuthor(author));</span>
+            }
+<span class="fc bfc" id="L249" title="All 2 branches covered.">            if (!&quot;&quot;.equals(editor)) {</span>
+<span class="fc" id="L250">                hm.put(FieldName.EDITOR, fixAuthor(editor));</span>
+            }
+            //if pages missing and article number given, use the article number
+<span class="pc bpc" id="L253" title="1 of 6 branches missed.">            if (((hm.get(FieldName.PAGES) == null) || &quot;-&quot;.equals(hm.get(FieldName.PAGES))) &amp;&amp; !&quot;&quot;.equals(artnum)) {</span>
+<span class="fc" id="L254">                hm.put(FieldName.PAGES, artnum);</span>
+            }
+
+<span class="fc" id="L257">            BibEntry b = new BibEntry(BibtexEntryTypes.getTypeOrDefault(type));</span>
+<span class="fc" id="L258">            b.setField(hm);</span>
+<span class="fc bfc" id="L259" title="All 2 branches covered.">            if (!b.getFieldNames().isEmpty()) {</span>
+<span class="fc" id="L260">                bibitems.add(b);</span>
+            }
+
+        }
+
+<span class="fc" id="L265">        return new ParserResult(bibitems);</span>
+
+    }
+
+    /**
+     * We must be careful about the author names, since they can be presented differently
+     * by different sources. Normally each %A tag brings one name, and we get the authors
+     * separated by &quot; and &quot;. This is the correct behaviour.
+     * One source lists the names separated by comma, with a comma at the end. We can detect
+     * this format and fix it.
+     * @param s The author string
+     * @return The fixed author string
+     */
+    private static String fixAuthor(String s) {
+<span class="fc" id="L279">        int index = s.indexOf(&quot; and &quot;);</span>
+<span class="fc bfc" id="L280" title="All 2 branches covered.">        if (index &gt;= 0) {</span>
+<span class="fc" id="L281">            return AuthorList.fixAuthorLastNameFirst(s);</span>
+        }
+        // Look for the comma at the end:
+<span class="fc" id="L284">        index = s.lastIndexOf(',');</span>
+<span class="fc bfc" id="L285" title="All 2 branches covered.">        if (index == (s.length() - 1)) {</span>
+<span class="fc" id="L286">            String mod = s.substring(0, s.length() - 1).replace(&quot;, &quot;, &quot; and &quot;);</span>
+<span class="fc" id="L287">            return AuthorList.fixAuthorLastNameFirst(mod);</span>
+        } else {
+<span class="fc" id="L289">            return AuthorList.fixAuthorLastNameFirst(s);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

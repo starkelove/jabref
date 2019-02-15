@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaVersion.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util</a> &gt; <span class="el_source">JavaVersion.java</span></div><h1>JavaVersion.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util;
+
+import java.util.Scanner;
+import java.util.regex.Pattern;
+
+/**
+ * Provides simple checks to ensure the correct version for JabRef is available. Currently, we need to make sure that we
+ * have Java 1.8 but not Java 9. The functions here are not intended for direct use. Instead, they are called inside
+ * {@link BuildInfo}, which has the required java version string (e.g. 1.8.0_144) available through the build system.
+ * The version check should always happen through the &lt;code&gt;Globals#BUILD_INFO&lt;/code&gt; instance which is available at a
+ * very early stage in the JabRef startup.
+ */
+public class JavaVersion {
+
+    // See http://openjdk.java.net/jeps/223
+<span class="fc" id="L16">    private static final Pattern DELIMITER = Pattern.compile(&quot;[._\\-+]&quot;);</span>
+    private final String JAVA_VERSION;
+
+<span class="nc" id="L19">    public JavaVersion() {</span>
+        // Be adventurous and assume that we can always access this property!
+<span class="nc" id="L21">        JAVA_VERSION = System.getProperty(&quot;java.version&quot;);</span>
+<span class="nc" id="L22">    }</span>
+
+<span class="fc" id="L24">    public JavaVersion(final String version) {</span>
+<span class="fc" id="L25">        JAVA_VERSION = version;</span>
+<span class="fc" id="L26">    }</span>
+
+    /**
+     * Tries to determine if we are running on Java 9. This test should return false, when we cannot extract the correct
+     * Java version. Note that Java 9 has a different version scheme like &quot;9-internal&quot;.
+     *
+     * @return true if Java 9 is used
+     */
+    public boolean isJava9() {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (JAVA_VERSION != null) {</span>
+            // Since isAtLeast is very optimistic, we first need to check if we have a &quot;number&quot; in the version string
+            // at all. Otherwise we would get false-positives.
+<span class="fc" id="L38">            final Scanner scanner = new Scanner(JAVA_VERSION);</span>
+<span class="fc" id="L39">            scanner.useDelimiter(DELIMITER);</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">            if (scanner.hasNextInt()) {</span>
+<span class="fc" id="L41">                return isAtLeast(&quot;1.9&quot;);</span>
+            }
+        }
+<span class="fc" id="L44">        return false;</span>
+    }
+
+    /**
+     * A very optimistic test for ensuring we at least have a minimal required Java version. It will not fail when we
+     * cannot determine the result. In essence, this method splits a version string using {@link
+     * JavaVersion#DELIMITER} and compares two version number by number.
+     *
+     * @param version Should be in the form X.X.X_XXX where X are integers.
+     * @return true if the numbers in version available for comparison are all greater-equals the currently running Java
+     * version.
+     */
+    public boolean isAtLeast(final String version) {
+<span class="fc bfc" id="L57" title="All 4 branches covered.">        if (JAVA_VERSION == null || version == null) {</span>
+<span class="fc" id="L58">            return true;</span>
+        }
+<span class="fc" id="L60">        final Scanner scannerRunningVersion = new Scanner(JAVA_VERSION);</span>
+<span class="fc" id="L61">        final Scanner scannerRequiredVersion = new Scanner(version);</span>
+<span class="fc" id="L62">        scannerRunningVersion.useDelimiter(DELIMITER);</span>
+<span class="fc" id="L63">        scannerRequiredVersion.useDelimiter(DELIMITER);</span>
+<span class="fc bfc" id="L64" title="All 4 branches covered.">        while (scannerRunningVersion.hasNextInt() &amp;&amp; scannerRequiredVersion.hasNextInt()) {</span>
+<span class="fc" id="L65">            final int running = scannerRunningVersion.nextInt();</span>
+<span class="fc" id="L66">            final int required = scannerRequiredVersion.nextInt();</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">            if (running == required) {</span>
+<span class="fc" id="L68">                continue;</span>
+            }
+<span class="fc bfc" id="L70" title="All 2 branches covered.">            return running &gt;= required;</span>
+        }
+<span class="fc" id="L72">        return true;</span>
+    }
+
+    public String getJavaVersion() {
+<span class="nc" id="L76">        return JAVA_VERSION;</span>
+    }
+
+    public String getJavaInstallationDirectory() {
+<span class="nc" id="L80">        return System.getProperty(&quot;java.home&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

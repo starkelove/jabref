@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AutoLinkFilesAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.actions</a> &gt; <span class="el_source">AutoLinkFilesAction.java</span></div><h1>AutoLinkFilesAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.actions;
+
+import java.util.List;
+
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+
+import org.jabref.JabRefExecutorService;
+import org.jabref.JabRefGUI;
+import org.jabref.gui.externalfiles.AutoSetLinks;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+
+/**
+ * This Action may only be used in a menu or button.
+ * Never in the entry editor. FileListEditor and EntryEditor have other ways to update the file links
+ */
+public class AutoLinkFilesAction extends SimpleCommand {
+
+<span class="nc" id="L21">    public AutoLinkFilesAction() {</span>
+
+<span class="nc" id="L23">    }</span>
+
+    @Override
+    public void execute() {
+<span class="nc" id="L27">        List&lt;BibEntry&gt; entries = JabRefGUI.getMainFrame().getCurrentBasePanel().getSelectedEntries();</span>
+<span class="nc bnc" id="L28" title="All 2 branches missed.">        if (entries.isEmpty()) {</span>
+<span class="nc" id="L29">            JabRefGUI.getMainFrame().getCurrentBasePanel()</span>
+<span class="nc" id="L30">                    .output(Localization.lang(&quot;This operation requires one or more entries to be selected.&quot;));</span>
+<span class="nc" id="L31">            return;</span>
+        }
+<span class="nc" id="L33">        JDialog diag = new JDialog((JFrame) null, true);</span>
+<span class="nc" id="L34">        final NamedCompound nc = new NamedCompound(Localization.lang(&quot;Automatically set file links&quot;));</span>
+<span class="nc" id="L35">        Runnable runnable = AutoSetLinks.autoSetLinks(entries, nc, null,</span>
+<span class="nc" id="L36">                JabRefGUI.getMainFrame().getCurrentBasePanel().getBibDatabaseContext(), e -&gt; {</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">                    if (e.getID() &gt; 0) {</span>
+                        // entry has been updated in Util.autoSetLinks, only treat nc and status message
+<span class="nc bnc" id="L39" title="All 2 branches missed.">                        if (nc.hasEdits()) {</span>
+<span class="nc" id="L40">                            nc.end();</span>
+<span class="nc" id="L41">                            JabRefGUI.getMainFrame().getCurrentBasePanel().getUndoManager().addEdit(nc);</span>
+<span class="nc" id="L42">                            JabRefGUI.getMainFrame().getCurrentBasePanel().markBaseChanged();</span>
+                        }
+<span class="nc" id="L44">                        JabRefGUI.getMainFrame().output(Localization.lang(&quot;Finished automatically setting external links.&quot;));</span>
+                    } else {
+<span class="nc" id="L46">                        JabRefGUI.getMainFrame().output(Localization.lang(&quot;Finished automatically setting external links.&quot;) + &quot; &quot;</span>
+<span class="nc" id="L47">                                + Localization.lang(&quot;No files found.&quot;));</span>
+                    }
+<span class="nc" id="L49">                } , diag);</span>
+<span class="nc" id="L50">        JabRefExecutorService.INSTANCE.execute(runnable);</span>
+<span class="nc" id="L51">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

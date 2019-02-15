@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.model.groups.GroupTreeNodeTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:26" hostname="n184-p67.eduroam.kth.se" time="0.019">
+  <properties/>
+  <testcase name="numberOfHitsMatchesOneEntry()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.0"/>
+  <testcase name="getSearchRuleForRefiningGroupReturnsParentAndGroupAsMatcher()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.0"/>
+  <testcase name="setGroupExplicitToSearchDoesNotKeepPreviousAssignments()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.002"/>
+  <testcase name="numberOfHitsWorksForHierarchyOfIndependentGroups()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.0"/>
+  <testcase name="setGroupChangesUnderlyingGroup()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.001"/>
+  <testcase name="setGroupAddsPreviousAssignmentsExplicitToExplicit()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.0"/>
+  <testcase name="setGroupExplicitToExplicitIsRenameAndSoRemovesPreviousAssignment()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.0"/>
+  <testcase name="setGroupWithFalseDoesNotAddsPreviousAssignments()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.0"/>
+  <testcase name="getSearchRuleForIncludingGroupReturnsGroupOrSubgroupAsMatcher()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.0"/>
+  <testcase name="numberOfHitsWorksForRefiningGroups()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.001"/>
+  <testcase name="numberOfHitsReturnsZeroForEmptyList()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.0"/>
+  <testcase name="getChildByPathFindsCorrectChildInSecondLevel()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.001"/>
+  <testcase name="setGroupAddsOnlyPreviousAssignments()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.0"/>
+  <testcase name="getPathSimpleTree()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.001"/>
+  <testcase name="getSearchRuleForIndependentGroupReturnsGroupAsMatcher()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.0"/>
+  <testcase name="numberOfHitsMatchesMultipleEntries()" classname="org.jabref.model.groups.GroupTreeNodeTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

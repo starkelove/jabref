@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultAuxParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.auxparser</a> &gt; <span class="el_source">DefaultAuxParser.java</span></div><h1>DefaultAuxParser.java</h1><pre class="source lang-java linenums">package org.jabref.logic.auxparser;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jabref.model.auxparser.AuxParser;
+import org.jabref.model.auxparser.AuxParserResult;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * LaTeX Aux to BibTeX Parser
+ * &lt;p&gt;
+ * Extracts a subset of BibTeX entries from a BibDatabase that are included in an AUX file.
+ * Also supports nested AUX files (latex \\include).
+ *
+ * There exists no specification of the AUX file.
+ * Every package, class or document can write to the AUX file.
+ * The AUX file consists of LaTeX macros and is read at the \begin{document} and again at the \end{document}.
+ *
+ * BibTeX citation: \citation{x,y,z}
+ * Biblatex citation: \abx@aux@cite{x,y,z}
+ * Nested AUX files: \@input{x}
+ */
+public class DefaultAuxParser implements AuxParser {
+<span class="fc" id="L39">    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAuxParser.class);</span>
+
+<span class="fc" id="L41">    private static final Pattern CITE_PATTERN = Pattern.compile(&quot;\\\\(citation|abx@aux@cite)\\{(.+)\\}&quot;);</span>
+<span class="fc" id="L42">    private static final Pattern INPUT_PATTERN = Pattern.compile(&quot;\\\\@input\\{(.+)\\}&quot;);</span>
+
+    private final BibDatabase masterDatabase;
+
+    /**
+     * Generates a database based on the given AUX file and BibTeX database
+     *
+     * @param database BibTeX database
+     */
+<span class="fc" id="L51">    public DefaultAuxParser(BibDatabase database) {</span>
+<span class="fc" id="L52">        masterDatabase = database;</span>
+<span class="fc" id="L53">    }</span>
+
+    @Override
+    public AuxParserResult parse(Path auxFile) {
+<span class="fc" id="L57">        return parseAuxFile(auxFile);</span>
+    }
+
+    private AuxParserResult parseAuxFile(Path auxFile) {
+<span class="fc" id="L61">        AuxParserResult result = new AuxParserResult(masterDatabase);</span>
+
+        // nested AUX files
+<span class="fc" id="L64">        List&lt;Path&gt; fileList = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L65">        fileList.add(auxFile);</span>
+
+<span class="fc" id="L67">        int fileIndex = 0;</span>
+
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        while (fileIndex &lt; fileList.size()) {</span>
+<span class="fc" id="L70">            Path file = fileList.get(fileIndex);</span>
+
+<span class="fc" id="L72">            try (BufferedReader br = Files.newBufferedReader(file)) {</span>
+                String line;
+
+<span class="fc bfc" id="L75" title="All 2 branches covered.">                while ((line = br.readLine()) != null) {</span>
+<span class="fc" id="L76">                    matchCitation(result, line);</span>
+<span class="fc" id="L77">                    matchNestedAux(auxFile, result, fileList, line);</span>
+                }
+<span class="nc" id="L79">            } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L80">                LOGGER.info(&quot;Cannot locate input file&quot;, e);</span>
+<span class="fc" id="L81">            } catch (IOException e) {</span>
+<span class="fc" id="L82">                LOGGER.warn(&quot;Problem opening file&quot;, e);</span>
+<span class="pc" id="L83">            }</span>
+
+<span class="fc" id="L85">            fileIndex++;</span>
+<span class="fc" id="L86">        }</span>
+<span class="fc" id="L87">        resolveTags(result);</span>
+
+<span class="fc" id="L89">        return result;</span>
+    }
+
+    private void matchNestedAux(Path baseAuxFile, AuxParserResult result, List&lt;Path&gt; fileList, String line) {
+<span class="fc" id="L93">        Matcher inputMatch = INPUT_PATTERN.matcher(line);</span>
+
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        while (inputMatch.find()) {</span>
+<span class="fc" id="L96">            String inputString = inputMatch.group(1);</span>
+
+            Path inputFile;
+<span class="fc" id="L99">            Path rootPath = baseAuxFile.getParent();</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">            if (rootPath != null) {</span>
+<span class="fc" id="L101">                inputFile = rootPath.resolve(inputString);</span>
+            } else {
+<span class="nc" id="L103">                inputFile = Paths.get(inputString);</span>
+            }
+
+<span class="fc bfc" id="L106" title="All 2 branches covered.">            if (!fileList.contains(inputFile)) {</span>
+<span class="fc" id="L107">                fileList.add(inputFile);</span>
+<span class="fc" id="L108">                result.increaseNestedAuxFilesCounter();</span>
+            }
+<span class="fc" id="L110">        }</span>
+<span class="fc" id="L111">    }</span>
+
+    private void matchCitation(AuxParserResult result, String line) {
+<span class="fc" id="L114">        Matcher citeMatch = CITE_PATTERN.matcher(line);</span>
+
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        while (citeMatch.find()) {</span>
+<span class="fc" id="L117">            String keyString = citeMatch.group(2);</span>
+<span class="fc" id="L118">            String[] keys = keyString.split(&quot;,&quot;);</span>
+
+<span class="fc bfc" id="L120" title="All 2 branches covered.">            for (String key : keys) {</span>
+<span class="fc" id="L121">                result.getUniqueKeys().add(key.trim());</span>
+            }
+<span class="fc" id="L123">        }</span>
+<span class="fc" id="L124">    }</span>
+
+    /*
+     * Try to find an equivalent BibTeX entry inside the reference database for all keys inside the AUX file.
+     */
+    private void resolveTags(AuxParserResult result) {
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        for (String key : result.getUniqueKeys()) {</span>
+<span class="fc" id="L131">            Optional&lt;BibEntry&gt; entry = masterDatabase.getEntryByKey(key);</span>
+
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">            if (result.getGeneratedBibDatabase().getEntryByKey(key).isPresent()) {</span>
+                // do nothing, key has already been processed
+<span class="fc bfc" id="L135" title="All 2 branches covered.">            } else if (entry.isPresent()) {</span>
+<span class="fc" id="L136">                insertEntry(entry.get(), result);</span>
+<span class="fc" id="L137">                resolveCrossReferences(entry.get(), result);</span>
+            } else {
+<span class="fc" id="L139">                result.getUnresolvedKeys().add(key);</span>
+            }
+<span class="fc" id="L141">        }</span>
+
+        // Copy database definitions
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        if (result.getGeneratedBibDatabase().hasEntries()) {</span>
+<span class="fc" id="L145">            result.getGeneratedBibDatabase().copyPreamble(masterDatabase);</span>
+<span class="fc" id="L146">            result.insertStrings(masterDatabase.getUsedStrings(result.getGeneratedBibDatabase().getEntries()));</span>
+        }
+<span class="fc" id="L148">    }</span>
+
+    /*
+     * Resolves and adds CrossRef entries
+     */
+    private void resolveCrossReferences(BibEntry entry, AuxParserResult result) {
+<span class="fc" id="L154">        entry.getField(FieldName.CROSSREF).ifPresent(crossref -&gt; {</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">            if (!result.getGeneratedBibDatabase().getEntryByKey(crossref).isPresent()) {</span>
+<span class="fc" id="L156">                Optional&lt;BibEntry&gt; refEntry = masterDatabase.getEntryByKey(crossref);</span>
+
+<span class="fc bfc" id="L158" title="All 2 branches covered.">                if (refEntry.isPresent()) {</span>
+<span class="fc" id="L159">                    insertEntry(refEntry.get(), result);</span>
+<span class="fc" id="L160">                    result.increaseCrossRefEntriesCounter();</span>
+                } else {
+<span class="fc" id="L162">                    result.getUnresolvedKeys().add(crossref);</span>
+                }
+            }
+<span class="fc" id="L165">        });</span>
+<span class="fc" id="L166">    }</span>
+
+    /*
+     * Insert a clone of the given entry. The clone is given a new unique ID.
+     */
+    private void insertEntry(BibEntry entry, AuxParserResult result) {
+<span class="fc" id="L172">        BibEntry clonedEntry = (BibEntry) entry.clone();</span>
+<span class="fc" id="L173">        result.getGeneratedBibDatabase().insertEntry(clonedEntry);</span>
+<span class="fc" id="L174">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CleanupURLFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.formatter.bibtexfields</a> &gt; <span class="el_source">CleanupURLFormatter.java</span></div><h1>CleanupURLFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.formatter.bibtexfields;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.cleanup.Formatter;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+/**
+ * Cleanup URL link
+ */
+<span class="fc" id="L18">public class CleanupURLFormatter extends Formatter {</span>
+
+<span class="fc" id="L20">    private static final Log LOGGER = LogFactory.getLog(CleanupURLFormatter.class);</span>
+    // This regexp find &quot;url=&quot; or &quot;to=&quot; parameter in full link and get text after them
+<span class="fc" id="L22">    private static final Pattern PATTERN_URL = Pattern.compile(&quot;(?:url|to)=([^&amp;]*)&quot;);</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L26">        return Localization.lang(&quot;Cleanup URL link&quot;);</span>
+    }
+
+    @Override
+    public String getKey() {
+<span class="fc" id="L31">        return &quot;cleanup_url&quot;;</span>
+    }
+
+    @Override
+    public String format(String value) {
+<span class="fc" id="L36">        String decodedLink = value;</span>
+<span class="fc" id="L37">        String toDecode = value;</span>
+
+<span class="fc" id="L39">        Matcher matcher = PATTERN_URL.matcher(value);</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (matcher.find()) {</span>
+<span class="fc" id="L41">        toDecode = matcher.group(1);</span>
+
+        }
+        try {
+<span class="fc" id="L45">            decodedLink = URLDecoder.decode(toDecode, StandardCharsets.UTF_8.name());</span>
+        }
+<span class="nc" id="L47">        catch (UnsupportedEncodingException e) {</span>
+<span class="nc" id="L48">            LOGGER.warn(&quot;Used unsupported character encoding&quot;, e);</span>
+<span class="fc" id="L49">        }</span>
+<span class="fc" id="L50">        return decodedLink;</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L55">        return Localization.lang(&quot;Cleanup URL link by removing special symbols and extracting simple link&quot;);</span>
+    }
+
+    @Override
+    public String getExampleInput() {
+<span class="fc" id="L60">        return &quot;https://www.google.de/url?sa=t&amp;rct=j&amp;q=&amp;esrc=s&amp;source=web&amp;cd=11&amp;cad=&quot; +</span>
+                &quot;rja&amp;uact=8&amp;ved=0ahUKEwjg3ZrB_ZPXAhVGuhoKHYdOBOg4ChAWCCYwAA&amp;url=&quot; +
+                &quot;http%3A%2F%2Fwww.focus.de%2Fgesundheit%2Fratgeber%2Fherz%2Ftest%2&quot; +
+                &quot;Flebenserwartung-werden-sie-100-jahre-alt_aid_363828.html&quot; + &quot;&amp;usg=AOvVaw1G6m2jf-pTHYkXceii4hXU&quot;;
+  }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

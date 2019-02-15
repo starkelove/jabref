@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalSearchBar.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.search</a> &gt; <span class="el_source">GlobalSearchBar.java</span></div><h1>GlobalSearchBar.java</h1><pre class="source lang-java linenums">package org.jabref.gui.search;
+
+import java.lang.reflect.Field;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
+import javafx.beans.binding.Bindings;
+import javafx.css.PseudoClass;
+import javafx.event.Event;
+import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Separator;
+import javafx.scene.control.Skin;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToolBar;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.cell.TextFieldListCell;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.text.TextFlow;
+import javafx.util.Duration;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.GUIGlobals;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.autocompleter.AppendPersonNamesStrategy;
+import org.jabref.gui.autocompleter.AutoCompleteFirstNameMode;
+import org.jabref.gui.autocompleter.AutoCompleteSuggestionProvider;
+import org.jabref.gui.autocompleter.AutoCompletionTextInputBinding;
+import org.jabref.gui.autocompleter.PersonNameStringConverter;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.keyboard.KeyBinding;
+import org.jabref.gui.keyboard.KeyBindingRepository;
+import org.jabref.gui.maintable.MainTable;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.search.SearchQuery;
+import org.jabref.logic.search.SearchQueryHighlightObservable;
+import org.jabref.model.entry.Author;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.preferences.SearchPreferences;
+
+import impl.org.controlsfx.skin.AutoCompletePopup;
+import org.controlsfx.control.textfield.AutoCompletionBinding;
+import org.fxmisc.easybind.EasyBind;
+import org.reactfx.util.FxTimer;
+import org.reactfx.util.Timer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class GlobalSearchBar extends HBox {
+
+<span class="nc" id="L69">    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalSearchBar.class);</span>
+
+    private static final int SEARCH_DELAY = 400;
+<span class="nc" id="L72">    private static final PseudoClass CLASS_NO_RESULTS = PseudoClass.getPseudoClass(&quot;emptyResult&quot;);</span>
+<span class="nc" id="L73">    private static final PseudoClass CLASS_RESULTS_FOUND = PseudoClass.getPseudoClass(&quot;emptyResult&quot;);</span>
+
+    private final JabRefFrame frame;
+
+<span class="nc" id="L77">    private final TextField searchField = SearchTextField.create();</span>
+    private final ToggleButton caseSensitive;
+    private final ToggleButton regularExp;
+    private final ToggleButton globalSearch;
+<span class="nc" id="L81">    private final Button searchModeButton = new Button();</span>
+<span class="nc" id="L82">    private final Label currentResults = new Label(&quot;&quot;);</span>
+<span class="nc" id="L83">    private final SearchQueryHighlightObservable searchQueryHighlightObservable = new SearchQueryHighlightObservable();</span>
+<span class="nc" id="L84">    private final Button openCurrentResultsInDialog = IconTheme.JabRefIcons.OPEN_IN_NEW_WINDOW.asButton();</span>
+    private SearchWorker searchWorker;
+    private GlobalSearchWorker globalSearchWorker;
+
+    private SearchResultFrame searchResultFrame;
+
+    private SearchDisplayMode searchDisplayMode;
+
+    /**
+     * if this flag is set the searchbar won't be selected after the next search
+     */
+    private boolean dontSelectSearchBar;
+
+    public GlobalSearchBar(JabRefFrame frame) {
+<span class="nc" id="L98">        super();</span>
+<span class="nc" id="L99">        this.frame = Objects.requireNonNull(frame);</span>
+<span class="nc" id="L100">        SearchPreferences searchPreferences = new SearchPreferences(Globals.prefs);</span>
+<span class="nc" id="L101">        searchDisplayMode = searchPreferences.getSearchMode();</span>
+
+        // fits the standard &quot;found x entries&quot;-message thus hinders the searchbar to jump around while searching if the frame width is too small
+<span class="nc" id="L104">        currentResults.setPrefWidth(150);</span>
+
+<span class="nc" id="L106">        globalSearch = IconTheme.JabRefIcons.GLOBAL_SEARCH.asToggleButton();</span>
+<span class="nc" id="L107">        globalSearch.setSelected(searchPreferences.isGlobalSearch());</span>
+<span class="nc" id="L108">        globalSearch.setTooltip(new Tooltip(Localization.lang(&quot;Search in all open libraries&quot;)));</span>
+
+
+<span class="nc" id="L111">        KeyBindingRepository keyBindingRepository = Globals.getKeyPrefs();</span>
+<span class="nc" id="L112">        searchField.addEventFilter(KeyEvent.KEY_PRESSED, event -&gt; {</span>
+<span class="nc" id="L113">            Optional&lt;KeyBinding&gt; keyBinding = keyBindingRepository.mapToKeyBinding(event);</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">            if (keyBinding.isPresent()) {</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                if (keyBinding.get().equals(KeyBinding.GLOBAL_SEARCH)) {</span>
+<span class="nc" id="L116">                    globalSearch.setSelected(true);</span>
+<span class="nc" id="L117">                    searchPreferences.setGlobalSearch(globalSearch.isSelected());</span>
+<span class="nc" id="L118">                    updateOpenCurrentResultsTooltip(globalSearch.isSelected());</span>
+<span class="nc" id="L119">                    focus();</span>
+<span class="nc" id="L120">                    event.consume();</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">                } else if (keyBinding.get().equals(KeyBinding.CLOSE)) {</span>
+                    // Clear search and select first entry, if available
+<span class="nc" id="L123">                    clearSearch();</span>
+<span class="nc" id="L124">                    frame.getCurrentBasePanel().getMainTable().getSelectionModel().selectFirst();</span>
+<span class="nc" id="L125">                    event.consume();</span>
+                }
+            }
+<span class="nc" id="L128">        });</span>
+
+<span class="nc" id="L130">        globalSearch.setOnAction(event -&gt; {</span>
+<span class="nc" id="L131">            searchPreferences.setGlobalSearch(globalSearch.isSelected());</span>
+<span class="nc" id="L132">            updateOpenCurrentResultsTooltip(globalSearch.isSelected());</span>
+<span class="nc" id="L133">        });</span>
+
+        //openCurrentResultsInDialog.setDisabledIcon(IconTheme.JabRefIcons.OPEN_IN_NEW_WINDOW.disabled().getSmallIcon());
+<span class="nc" id="L136">        openCurrentResultsInDialog.setOnAction(event -&gt; {</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">            if (globalSearch.isSelected()) {</span>
+<span class="nc" id="L138">                performGlobalSearch();</span>
+            } else {
+<span class="nc" id="L140">                openLocalFindingsInExternalPanel();</span>
+            }
+<span class="nc" id="L142">        });</span>
+<span class="nc" id="L143">        openCurrentResultsInDialog.setDisable(true);</span>
+<span class="nc" id="L144">        updateOpenCurrentResultsTooltip(globalSearch.isSelected());</span>
+
+<span class="nc" id="L146">        regularExp = IconTheme.JabRefIcons.REG_EX.asToggleButton();</span>
+<span class="nc" id="L147">        regularExp.setSelected(searchPreferences.isRegularExpression());</span>
+<span class="nc" id="L148">        regularExp.setTooltip(new Tooltip(Localization.lang(&quot;regular expression&quot;)));</span>
+<span class="nc" id="L149">        regularExp.setOnAction(event -&gt; {</span>
+<span class="nc" id="L150">            searchPreferences.setRegularExpression(regularExp.isSelected());</span>
+<span class="nc" id="L151">            performSearch();</span>
+<span class="nc" id="L152">        });</span>
+
+<span class="nc" id="L154">        caseSensitive = IconTheme.JabRefIcons.CASE_SENSITIVE.asToggleButton();</span>
+<span class="nc" id="L155">        caseSensitive.setSelected(searchPreferences.isCaseSensitive());</span>
+<span class="nc" id="L156">        caseSensitive.setTooltip(new Tooltip(Localization.lang(&quot;Case sensitive&quot;)));</span>
+<span class="nc" id="L157">        caseSensitive.setOnAction(event -&gt; {</span>
+<span class="nc" id="L158">            searchPreferences.setCaseSensitive(caseSensitive.isSelected());</span>
+<span class="nc" id="L159">            performSearch();</span>
+<span class="nc" id="L160">        });</span>
+
+<span class="nc" id="L162">        updateSearchModeButtonText();</span>
+<span class="nc" id="L163">        searchModeButton.setOnAction(event -&gt; toggleSearchModeAndSearch());</span>
+
+<span class="nc" id="L165">        int initialSize = 400;</span>
+<span class="nc" id="L166">        int expandedSize = 700;</span>
+<span class="nc" id="L167">        searchField.getStyleClass().add(&quot;search-field&quot;);</span>
+<span class="nc" id="L168">        searchField.setMinWidth(100);</span>
+<span class="nc" id="L169">        searchField.setMaxWidth(initialSize);</span>
+<span class="nc" id="L170">        HBox.setHgrow(searchField, Priority.ALWAYS);</span>
+
+<span class="nc" id="L172">        Timer searchTask = FxTimer.create(java.time.Duration.ofMillis(SEARCH_DELAY), () -&gt; {</span>
+<span class="nc" id="L173">            LOGGER.debug(&quot;Run search &quot; + searchField.getText());</span>
+<span class="nc" id="L174">            performSearch();</span>
+<span class="nc" id="L175">        });</span>
+<span class="nc" id="L176">        searchField.textProperty().addListener((observable, oldValue, newValue) -&gt; searchTask.restart());</span>
+
+<span class="nc" id="L178">        EasyBind.subscribe(searchField.focusedProperty(), isFocused -&gt; {</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">            if (isFocused) {</span>
+<span class="nc" id="L180">                KeyValue widthValue = new KeyValue(searchField.maxWidthProperty(), expandedSize);</span>
+<span class="nc" id="L181">                KeyFrame keyFrame = new KeyFrame(Duration.millis(600), widthValue);</span>
+<span class="nc" id="L182">                Timeline timeline = new Timeline(keyFrame);</span>
+<span class="nc" id="L183">                timeline.play();</span>
+<span class="nc" id="L184">            } else {</span>
+<span class="nc" id="L185">                KeyValue widthValue = new KeyValue(searchField.maxWidthProperty(), initialSize);</span>
+<span class="nc" id="L186">                KeyFrame keyFrame = new KeyFrame(Duration.millis(400), widthValue);</span>
+<span class="nc" id="L187">                Timeline timeline = new Timeline(keyFrame);</span>
+<span class="nc" id="L188">                timeline.play();</span>
+            }
+<span class="nc" id="L190">        });</span>
+
+<span class="nc" id="L192">        this.getChildren().addAll(</span>
+                                  searchField,
+                                  currentResults);
+
+<span class="nc" id="L196">        this.setAlignment(Pos.CENTER_LEFT);</span>
+<span class="nc" id="L197">    }</span>
+
+    private void performGlobalSearch() {
+<span class="nc" id="L200">        BasePanel currentBasePanel = frame.getCurrentBasePanel();</span>
+<span class="nc bnc" id="L201" title="All 4 branches missed.">        if ((currentBasePanel == null) || validateSearchResultFrame(true)) {</span>
+<span class="nc" id="L202">            return;</span>
+        }
+
+<span class="nc bnc" id="L205" title="All 2 branches missed.">        if (globalSearchWorker != null) {</span>
+<span class="nc" id="L206">            globalSearchWorker.cancel(true);</span>
+        }
+
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (searchField.getText().isEmpty()) {</span>
+<span class="nc" id="L210">            focus();</span>
+<span class="nc" id="L211">            return;</span>
+        }
+
+<span class="nc" id="L214">        globalSearchWorker = new GlobalSearchWorker(currentBasePanel.frame(), getSearchQuery());</span>
+<span class="nc" id="L215">        globalSearchWorker.execute();</span>
+<span class="nc" id="L216">    }</span>
+
+    private void openLocalFindingsInExternalPanel() {
+<span class="nc" id="L219">        BasePanel currentBasePanel = frame.getCurrentBasePanel();</span>
+<span class="nc bnc" id="L220" title="All 4 branches missed.">        if ((currentBasePanel == null) || validateSearchResultFrame(false)) {</span>
+<span class="nc" id="L221">            return;</span>
+        }
+
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        if (searchField.getText().isEmpty()) {</span>
+<span class="nc" id="L225">            focus();</span>
+<span class="nc" id="L226">            return;</span>
+        }
+
+<span class="nc" id="L229">        SearchResultFrame searchDialog = new SearchResultFrame(currentBasePanel.frame(), Localization.lang(&quot;Search results in library %0 for %1&quot;, currentBasePanel.getBibDatabaseContext()</span>
+<span class="nc" id="L230">                                                                                                                                                                  .getDatabasePath()</span>
+<span class="nc" id="L231">                                                                                                                                                                  .map(Path::getFileName)</span>
+<span class="nc" id="L232">                                                                                                                                                                  .map(Path::toString)</span>
+<span class="nc" id="L233">                                                                                                                                                                  .orElse(GUIGlobals.UNTITLED_TITLE),</span>
+<span class="nc" id="L234">                                                                                                           this.getSearchQuery().localize()), getSearchQuery(), false);</span>
+<span class="nc" id="L235">        List&lt;BibEntry&gt; entries = currentBasePanel.getDatabase()</span>
+<span class="nc" id="L236">                                                 .getEntries()</span>
+<span class="nc" id="L237">                                                 .stream()</span>
+<span class="nc" id="L238">                                                 .filter(BibEntry::isSearchHit)</span>
+<span class="nc" id="L239">                                                 .collect(Collectors.toList());</span>
+<span class="nc" id="L240">        searchDialog.addEntries(entries, currentBasePanel);</span>
+<span class="nc" id="L241">        searchDialog.selectFirstEntry();</span>
+<span class="nc" id="L242">        searchDialog.setVisible(true);</span>
+<span class="nc" id="L243">    }</span>
+
+    private boolean validateSearchResultFrame(boolean globalSearch) {
+<span class="nc bnc" id="L246" title="All 2 branches missed.">        if (searchResultFrame != null) {</span>
+<span class="nc bnc" id="L247" title="All 4 branches missed.">            if ((searchResultFrame.isGlobalSearch() == globalSearch) &amp;&amp; isStillValidQuery(searchResultFrame.getSearchQuery())) {</span>
+<span class="nc" id="L248">                searchResultFrame.focus();</span>
+<span class="nc" id="L249">                return true;</span>
+            } else {
+<span class="nc" id="L251">                searchResultFrame.dispose();</span>
+<span class="nc" id="L252">                return false;</span>
+            }
+        }
+
+<span class="nc" id="L256">        return false;</span>
+    }
+
+    private void toggleSearchModeAndSearch() {
+<span class="nc" id="L260">        int nextSearchMode = (searchDisplayMode.ordinal() + 1) % SearchDisplayMode.values().length;</span>
+<span class="nc" id="L261">        searchDisplayMode = SearchDisplayMode.values()[nextSearchMode];</span>
+<span class="nc" id="L262">        new SearchPreferences(Globals.prefs).setSearchMode(searchDisplayMode);</span>
+<span class="nc" id="L263">        updateSearchModeButtonText();</span>
+<span class="nc" id="L264">        performSearch();</span>
+<span class="nc" id="L265">    }</span>
+
+    private void updateSearchModeButtonText() {
+<span class="nc" id="L268">        searchModeButton.setText(searchDisplayMode.getDisplayName());</span>
+<span class="nc" id="L269">        searchModeButton.setTooltip(new Tooltip(searchDisplayMode.getToolTipText()));</span>
+<span class="nc" id="L270">    }</span>
+
+    public void endSearch() {
+<span class="nc" id="L273">        BasePanel currentBasePanel = frame.getCurrentBasePanel();</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">        if (currentBasePanel != null) {</span>
+<span class="nc" id="L275">            clearSearch();</span>
+<span class="nc" id="L276">            MainTable mainTable = frame.getCurrentBasePanel().getMainTable();</span>
+<span class="nc" id="L277">            mainTable.requestFocus();</span>
+            //SwingUtilities.invokeLater(() -&gt; mainTable.ensureVisible(mainTable.getSelectedRow()));
+        }
+<span class="nc" id="L280">    }</span>
+
+    /**
+     * Focuses the search field if it is not focused.
+     */
+    public void focus() {
+<span class="nc bnc" id="L286" title="All 2 branches missed.">        if (!searchField.isFocused()) {</span>
+<span class="nc" id="L287">            searchField.requestFocus();</span>
+        }
+<span class="nc" id="L289">        searchField.selectAll();</span>
+<span class="nc" id="L290">    }</span>
+
+    private void clearSearch() {
+<span class="nc" id="L293">        currentResults.setText(&quot;&quot;);</span>
+<span class="nc" id="L294">        searchField.setText(&quot;&quot;);</span>
+<span class="nc" id="L295">        searchQueryHighlightObservable.reset();</span>
+<span class="nc" id="L296">        openCurrentResultsInDialog.setDisable(true);</span>
+
+<span class="nc" id="L298">        Globals.stateManager.clearSearchQuery();</span>
+<span class="nc" id="L299">    }</span>
+
+    public void performSearch() {
+<span class="nc" id="L302">        BasePanel currentBasePanel = frame.getCurrentBasePanel();</span>
+<span class="nc bnc" id="L303" title="All 2 branches missed.">        if (currentBasePanel == null) {</span>
+<span class="nc" id="L304">            return;</span>
+        }
+
+<span class="nc bnc" id="L307" title="All 2 branches missed.">        if (searchWorker != null) {</span>
+<span class="nc" id="L308">            searchWorker.cancel(true);</span>
+        }
+
+        // An empty search field should cause the search to be cleared.
+<span class="nc bnc" id="L312" title="All 2 branches missed.">        if (searchField.getText().isEmpty()) {</span>
+<span class="nc" id="L313">            clearSearch();</span>
+<span class="nc" id="L314">            return;</span>
+        }
+
+<span class="nc" id="L317">        SearchQuery searchQuery = getSearchQuery();</span>
+<span class="nc bnc" id="L318" title="All 2 branches missed.">        if (!searchQuery.isValid()) {</span>
+<span class="nc" id="L319">            informUserAboutInvalidSearchQuery();</span>
+<span class="nc" id="L320">            return;</span>
+        }
+
+<span class="nc" id="L323">        Globals.stateManager.setSearchQuery(searchQuery);</span>
+
+        // TODO: Remove search worker as this is doing the work twice now
+<span class="nc" id="L326">        searchWorker = new SearchWorker(currentBasePanel, searchQuery, searchDisplayMode);</span>
+<span class="nc" id="L327">        searchWorker.execute();</span>
+<span class="nc" id="L328">    }</span>
+
+    private void informUserAboutInvalidSearchQuery() {
+<span class="nc" id="L331">        searchField.pseudoClassStateChanged(CLASS_NO_RESULTS, true);</span>
+
+<span class="nc" id="L333">        searchQueryHighlightObservable.reset();</span>
+
+<span class="nc" id="L335">        Globals.stateManager.clearSearchQuery();</span>
+
+<span class="nc" id="L337">        String illegalSearch = Localization.lang(&quot;Search failed: illegal search expression&quot;);</span>
+<span class="nc" id="L338">        currentResults.setText(illegalSearch);</span>
+<span class="nc" id="L339">        openCurrentResultsInDialog.setDisable(true);</span>
+<span class="nc" id="L340">    }</span>
+
+    public void setAutoCompleter(AutoCompleteSuggestionProvider&lt;Author&gt; searchCompleter) {
+<span class="nc bnc" id="L343" title="All 2 branches missed.">        if (Globals.prefs.getAutoCompletePreferences().shouldAutoComplete()) {</span>
+<span class="nc" id="L344">            AutoCompletionTextInputBinding&lt;Author&gt; autoComplete = AutoCompletionTextInputBinding.autoComplete(searchField,</span>
+                                                                                                              searchCompleter,
+                                                                                                              new PersonNameStringConverter(false, false, AutoCompleteFirstNameMode.BOTH),
+                                                                                                              new AppendPersonNamesStrategy());
+<span class="nc" id="L348">            AutoCompletePopup&lt;Author&gt; popup = getPopup(autoComplete);</span>
+<span class="nc" id="L349">            popup.setSkin(new SearchPopupSkin&lt;&gt;(popup));</span>
+        }
+<span class="nc" id="L351">    }</span>
+
+    /**
+     * The popup has private access in {@link AutoCompletionBinding}, so we use reflection to access it.
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private &lt;T&gt; AutoCompletePopup&lt;T&gt; getPopup(AutoCompletionBinding&lt;T&gt; autoCompletionBinding) {
+        try {
+<span class="nc" id="L359">            Field privatePopup = AutoCompletionBinding.class.getDeclaredField(&quot;autoCompletionPopup&quot;);</span>
+<span class="nc" id="L360">            privatePopup.setAccessible(true);</span>
+<span class="nc" id="L361">            return (AutoCompletePopup&lt;T&gt;) privatePopup.get(autoCompletionBinding);</span>
+<span class="nc" id="L362">        } catch (IllegalAccessException | NoSuchFieldException e) {</span>
+<span class="nc" id="L363">            LOGGER.error(&quot;Could not get access to auto completion popup&quot;, e);</span>
+<span class="nc" id="L364">            return new AutoCompletePopup&lt;&gt;();</span>
+        }
+    }
+
+    public SearchQueryHighlightObservable getSearchQueryHighlightObservable() {
+<span class="nc" id="L369">        return searchQueryHighlightObservable;</span>
+    }
+
+    public boolean isStillValidQuery(SearchQuery query) {
+<span class="nc bnc" id="L373" title="All 2 branches missed.">        return query.getQuery().equals(this.searchField.getText())</span>
+<span class="nc bnc" id="L374" title="All 2 branches missed.">                &amp;&amp; (query.isRegularExpression() == regularExp.isSelected())</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">                &amp;&amp; (query.isCaseSensitive() == caseSensitive.isSelected());</span>
+    }
+
+    private SearchQuery getSearchQuery() {
+<span class="nc" id="L379">        SearchQuery searchQuery = new SearchQuery(this.searchField.getText(), this.caseSensitive.isSelected(), this.regularExp.isSelected());</span>
+<span class="nc" id="L380">        this.frame.getCurrentBasePanel().setCurrentSearchQuery(searchQuery);</span>
+<span class="nc" id="L381">        return searchQuery;</span>
+    }
+
+    public void updateResults(int matched, TextFlow description, boolean grammarBasedSearch) {
+<span class="nc bnc" id="L385" title="All 2 branches missed.">        if (matched == 0) {</span>
+<span class="nc" id="L386">            currentResults.setText(Localization.lang(&quot;No results found.&quot;));</span>
+<span class="nc" id="L387">            searchField.pseudoClassStateChanged(CLASS_NO_RESULTS, true);</span>
+        } else {
+<span class="nc" id="L389">            currentResults.setText(Localization.lang(&quot;Found %0 results.&quot;, String.valueOf(matched)));</span>
+<span class="nc" id="L390">            searchField.pseudoClassStateChanged(CLASS_RESULTS_FOUND, true);</span>
+        }
+<span class="nc bnc" id="L392" title="All 2 branches missed.">        if (grammarBasedSearch) {</span>
+            // TODO: switch Icon color
+            // searchIcon.setIcon(IconTheme.JabRefIcon.ADVANCED_SEARCH.getIcon());
+        } else {
+            // TODO: switch Icon color
+            //searchIcon.setIcon(IconTheme.JabRefIcon.SEARCH.getIcon());
+        }
+<span class="nc" id="L399">        Tooltip tooltip = new Tooltip();</span>
+<span class="nc" id="L400">        tooltip.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);</span>
+<span class="nc" id="L401">        tooltip.setGraphic(description);</span>
+<span class="nc" id="L402">        tooltip.setMaxHeight(10);</span>
+<span class="nc" id="L403">        searchField.setTooltip(tooltip);</span>
+<span class="nc" id="L404">        openCurrentResultsInDialog.setDisable(false);</span>
+<span class="nc" id="L405">    }</span>
+
+    public void setSearchResultFrame(SearchResultFrame searchResultFrame) {
+<span class="nc" id="L408">        this.searchResultFrame = searchResultFrame;</span>
+<span class="nc" id="L409">    }</span>
+
+    public void setSearchTerm(String searchTerm) {
+<span class="nc bnc" id="L412" title="All 2 branches missed.">        if (searchTerm.equals(searchField.getText())) {</span>
+<span class="nc" id="L413">            return;</span>
+        }
+
+<span class="nc" id="L416">        DefaultTaskExecutor.runInJavaFXThread(() -&gt; searchField.setText(searchTerm));</span>
+<span class="nc" id="L417">    }</span>
+
+    private void updateOpenCurrentResultsTooltip(boolean globalSearchEnabled) {
+<span class="nc bnc" id="L420" title="All 2 branches missed.">        if (globalSearchEnabled) {</span>
+<span class="nc" id="L421">            openCurrentResultsInDialog.setTooltip(new Tooltip(Localization.lang(&quot;Show global search results in a window&quot;)));</span>
+        } else {
+<span class="nc" id="L423">            openCurrentResultsInDialog.setTooltip(new Tooltip(Localization.lang(&quot;Show search results in a window&quot;)));</span>
+        }
+<span class="nc" id="L425">    }</span>
+
+    private class SearchPopupSkin&lt;T&gt; implements Skin&lt;AutoCompletePopup&lt;T&gt;&gt; {
+
+        private final AutoCompletePopup&lt;T&gt; control;
+        private final ListView&lt;T&gt; suggestionList;
+        private final BorderPane container;
+
+<span class="nc" id="L433">        public SearchPopupSkin(AutoCompletePopup&lt;T&gt; control) {</span>
+<span class="nc" id="L434">            this.control = control;</span>
+<span class="nc" id="L435">            this.suggestionList = new ListView&lt;&gt;(control.getSuggestions());</span>
+<span class="nc" id="L436">            this.suggestionList.getStyleClass().add(&quot;auto-complete-popup&quot;);</span>
+<span class="nc" id="L437">            this.suggestionList.getStylesheets().add(AutoCompletionBinding.class.getResource(&quot;autocompletion.css&quot;).toExternalForm());</span>
+<span class="nc" id="L438">            this.suggestionList.prefHeightProperty().bind(Bindings.min(control.visibleRowCountProperty(), Bindings.size(this.suggestionList.getItems())).multiply(24).add(18));</span>
+<span class="nc" id="L439">            this.suggestionList.setCellFactory(TextFieldListCell.forListView(control.getConverter()));</span>
+<span class="nc" id="L440">            this.suggestionList.prefWidthProperty().bind(control.prefWidthProperty());</span>
+<span class="nc" id="L441">            this.suggestionList.maxWidthProperty().bind(control.maxWidthProperty());</span>
+<span class="nc" id="L442">            this.suggestionList.minWidthProperty().bind(control.minWidthProperty());</span>
+
+<span class="nc" id="L444">            ToolBar toolBar = new ToolBar(openCurrentResultsInDialog, new Separator(Orientation.VERTICAL), globalSearch, regularExp, caseSensitive, searchModeButton);</span>
+
+<span class="nc" id="L446">            this.container = new BorderPane();</span>
+<span class="nc" id="L447">            this.container.setCenter(suggestionList);</span>
+<span class="nc" id="L448">            this.container.setBottom(toolBar);</span>
+
+<span class="nc" id="L450">            this.registerEventListener();</span>
+<span class="nc" id="L451">        }</span>
+
+        private void registerEventListener() {
+<span class="nc" id="L454">            this.suggestionList.setOnMouseClicked((me) -&gt; {</span>
+<span class="nc bnc" id="L455" title="All 2 branches missed.">                if (me.getButton() == MouseButton.PRIMARY) {</span>
+<span class="nc" id="L456">                    this.onSuggestionChosen(this.suggestionList.getSelectionModel().getSelectedItem());</span>
+                }
+<span class="nc" id="L458">            });</span>
+<span class="nc" id="L459">            this.suggestionList.setOnKeyPressed((ke) -&gt; {</span>
+<span class="nc bnc" id="L460" title="All 3 branches missed.">                switch (ke.getCode()) {</span>
+                    case TAB:
+                    case ENTER:
+<span class="nc" id="L463">                        this.onSuggestionChosen(this.suggestionList.getSelectionModel().getSelectedItem());</span>
+<span class="nc" id="L464">                        break;</span>
+                    case ESCAPE:
+<span class="nc bnc" id="L466" title="All 2 branches missed.">                        if (this.control.isHideOnEscape()) {</span>
+<span class="nc" id="L467">                            this.control.hide();</span>
+                        }
+                        break;
+                    default:
+                        break;
+                }
+<span class="nc" id="L473">            });</span>
+<span class="nc" id="L474">        }</span>
+
+        private void onSuggestionChosen(T suggestion) {
+<span class="nc bnc" id="L477" title="All 2 branches missed.">            if (suggestion != null) {</span>
+<span class="nc" id="L478">                Event.fireEvent(this.control, new AutoCompletePopup.SuggestionEvent&lt;&gt;(suggestion));</span>
+            }
+<span class="nc" id="L480">        }</span>
+
+        @Override
+        public Node getNode() {
+<span class="nc" id="L484">            return this.container;</span>
+        }
+
+        @Override
+        public AutoCompletePopup&lt;T&gt; getSkinnable() {
+<span class="nc" id="L489">            return this.control;</span>
+        }
+
+        @Override
+        public void dispose() {
+<span class="nc" id="L494">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

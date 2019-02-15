@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SuggestionProviders.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.autocompleter</a> &gt; <span class="el_source">SuggestionProviders.java</span></div><h1>SuggestionProviders.java</h1><pre class="source lang-java linenums">package org.jabref.gui.autocompleter;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import org.jabref.logic.journals.JournalAbbreviationLoader;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.FieldProperty;
+import org.jabref.model.entry.InternalBibtexFields;
+
+public class SuggestionProviders {
+
+    /**
+     * key: field name
+     */
+<span class="nc" id="L20">    private final Map&lt;String, AutoCompleteSuggestionProvider&lt;?&gt;&gt; providers = new HashMap&lt;&gt;();</span>
+
+    /**
+     * Empty
+     */
+<span class="nc" id="L25">    public SuggestionProviders() {</span>
+
+<span class="nc" id="L27">    }</span>
+
+    public SuggestionProviders(AutoCompletePreferences preferences,
+<span class="nc" id="L30">            JournalAbbreviationLoader abbreviationLoader) {</span>
+<span class="nc" id="L31">        Objects.requireNonNull(preferences);</span>
+
+<span class="nc" id="L33">        List&lt;String&gt; completeFields = preferences.getCompleteFields();</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        for (String field : completeFields) {</span>
+<span class="nc" id="L35">            AutoCompleteSuggestionProvider&lt;?&gt; autoCompleter = initalizeSuggestionProvider(field, preferences, abbreviationLoader);</span>
+<span class="nc" id="L36">            providers.put(field, autoCompleter);</span>
+<span class="nc" id="L37">        }</span>
+<span class="nc" id="L38">    }</span>
+
+    public AutoCompleteSuggestionProvider&lt;?&gt; getForField(String fieldName) {
+<span class="nc" id="L41">        return providers.get(fieldName);</span>
+    }
+
+    public void indexDatabase(BibDatabase database) {
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        for (BibEntry entry : database.getEntries()) {</span>
+<span class="nc" id="L46">            indexEntry(entry);</span>
+<span class="nc" id="L47">        }</span>
+<span class="nc" id="L48">    }</span>
+
+    /**
+     * This methods assures all information in the given entry is included as suggestions.
+     */
+    public void indexEntry(BibEntry bibEntry) {
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        for (AutoCompleteSuggestionProvider&lt;?&gt; autoCompleter : providers.values()) {</span>
+<span class="nc" id="L55">            autoCompleter.indexEntry(bibEntry);</span>
+<span class="nc" id="L56">        }</span>
+<span class="nc" id="L57">    }</span>
+
+    private AutoCompleteSuggestionProvider&lt;?&gt; initalizeSuggestionProvider(String fieldName, AutoCompletePreferences preferences, JournalAbbreviationLoader abbreviationLoader) {
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (InternalBibtexFields.getFieldProperties(fieldName).contains(FieldProperty.PERSON_NAMES)) {</span>
+<span class="nc" id="L61">            return new PersonNameSuggestionProvider(fieldName);</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        } else if (InternalBibtexFields.getFieldProperties(fieldName).contains(FieldProperty.SINGLE_ENTRY_LINK)) {</span>
+<span class="nc" id="L63">            return new BibEntrySuggestionProvider();</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        } else if (InternalBibtexFields.getFieldProperties(fieldName).contains(FieldProperty.JOURNAL_NAME)</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">                || FieldName.PUBLISHER.equals(fieldName)) {</span>
+<span class="nc" id="L66">            return new JournalsSuggestionProvider(fieldName, preferences, abbreviationLoader);</span>
+        } else {
+<span class="nc" id="L68">            return new WordSuggestionProvider(fieldName);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

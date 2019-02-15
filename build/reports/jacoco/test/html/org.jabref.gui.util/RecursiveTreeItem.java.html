@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RecursiveTreeItem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">RecursiveTreeItem.java</span></div><h1>RecursiveTreeItem.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.util.function.Predicate;
+
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.scene.Node;
+import javafx.scene.control.TreeItem;
+import javafx.util.Callback;
+
+/**
+ * Taken from https://gist.github.com/lestard/011e9ed4433f9eb791a8
+ */
+public class RecursiveTreeItem&lt;T&gt; extends TreeItem&lt;T&gt; {
+
+    private final Callback&lt;T, BooleanProperty&gt; expandedProperty;
+    private Callback&lt;T, ObservableList&lt;T&gt;&gt; childrenFactory;
+<span class="fc" id="L24">    private ObjectProperty&lt;Predicate&lt;T&gt;&gt; filter = new SimpleObjectProperty&lt;&gt;();</span>
+    private FilteredList&lt;RecursiveTreeItem&lt;T&gt;&gt; children;
+
+    public RecursiveTreeItem(final T value, Callback&lt;T, ObservableList&lt;T&gt;&gt; func) {
+<span class="nc" id="L28">        this(value, func, null, null);</span>
+<span class="nc" id="L29">    }</span>
+
+    public RecursiveTreeItem(final T value, Callback&lt;T, ObservableList&lt;T&gt;&gt; func, Callback&lt;T, BooleanProperty&gt; expandedProperty, ObservableValue&lt;Predicate&lt;T&gt;&gt; filter) {
+<span class="nc" id="L32">        this(value, null, func, expandedProperty, filter);</span>
+<span class="nc" id="L33">    }</span>
+
+    public RecursiveTreeItem(final T value, Callback&lt;T, ObservableList&lt;T&gt;&gt; func, ObservableValue&lt;Predicate&lt;T&gt;&gt; filter) {
+<span class="fc" id="L36">        this(value, null, func, null, filter);</span>
+<span class="fc" id="L37">    }</span>
+
+    private RecursiveTreeItem(final T value, Node graphic, Callback&lt;T, ObservableList&lt;T&gt;&gt; func, Callback&lt;T, BooleanProperty&gt; expandedProperty, ObservableValue&lt;Predicate&lt;T&gt;&gt; filter) {
+<span class="fc" id="L40">        super(value, graphic);</span>
+
+<span class="fc" id="L42">        this.childrenFactory = func;</span>
+<span class="fc" id="L43">        this.expandedProperty = expandedProperty;</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        if (filter != null) {</span>
+<span class="fc" id="L45">            this.filter.bind(filter);</span>
+        }
+
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        if (value != null) {</span>
+<span class="fc" id="L49">            addChildrenListener(value);</span>
+<span class="fc" id="L50">            bindExpandedProperty(value, expandedProperty);</span>
+        }
+
+<span class="fc" id="L53">        valueProperty().addListener((obs, oldValue, newValue) -&gt; {</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">            if (newValue != null) {</span>
+<span class="nc" id="L55">                addChildrenListener(newValue);</span>
+<span class="nc" id="L56">                bindExpandedProperty(newValue, expandedProperty);</span>
+            }
+<span class="nc" id="L58">        });</span>
+<span class="fc" id="L59">    }</span>
+
+    private void bindExpandedProperty(T value, Callback&lt;T, BooleanProperty&gt; expandedProperty) {
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (expandedProperty != null) {</span>
+<span class="nc" id="L63">            expandedProperty().bindBidirectional(expandedProperty.call(value));</span>
+        }
+<span class="fc" id="L65">    }</span>
+
+    private void addChildrenListener(T value) {
+<span class="fc" id="L68">        children = new FilteredList&lt;&gt;(</span>
+<span class="fc" id="L69">                BindingsHelper.mapBacked(childrenFactory.call(value),</span>
+<span class="fc" id="L70">                        child -&gt; new RecursiveTreeItem&lt;&gt;(child, getGraphic(), childrenFactory, expandedProperty, filter)));</span>
+<span class="fc" id="L71">        children.predicateProperty().bind(Bindings.createObjectBinding(() -&gt; this::showNode, filter));</span>
+
+<span class="fc" id="L73">        getChildren().addAll(0, children);</span>
+
+<span class="fc" id="L75">        children.addListener((ListChangeListener&lt;RecursiveTreeItem&lt;T&gt;&gt;) change -&gt; {</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            while (change.next()) {</span>
+
+<span class="fc bfc" id="L78" title="All 2 branches covered.">                if (change.wasRemoved()) {</span>
+<span class="fc" id="L79">                    getChildren().removeAll(change.getRemoved());</span>
+                }
+
+<span class="fc bfc" id="L82" title="All 2 branches covered.">                if (change.wasAdded()) {</span>
+<span class="fc" id="L83">                    getChildren().addAll(change.getFrom(), change.getAddedSubList());</span>
+                }
+            }
+<span class="fc" id="L86">        });</span>
+<span class="fc" id="L87">    }</span>
+
+    private boolean showNode(RecursiveTreeItem&lt;T&gt; node) {
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        if (filter.get() == null) {</span>
+<span class="fc" id="L91">            return true;</span>
+        }
+
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        if (filter.get().test(node.getValue())) {</span>
+            // Node is directly matched -&gt; so show it
+<span class="fc" id="L96">            return true;</span>
+        }
+
+        // Are there children (or children of children...) that are matched? If yes we also need to show this node
+<span class="fc" id="L100">        return node.children.getSource().stream().anyMatch(this::showNode);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

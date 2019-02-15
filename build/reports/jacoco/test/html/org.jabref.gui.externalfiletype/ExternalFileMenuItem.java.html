@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExternalFileMenuItem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.externalfiletype</a> &gt; <span class="el_source">ExternalFileMenuItem.java</span></div><h1>ExternalFileMenuItem.java</h1><pre class="source lang-java linenums">package org.jabref.gui.externalfiletype;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import javax.swing.Icon;
+import javax.swing.JMenuItem;
+
+import org.jabref.Globals;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.desktop.JabRefDesktop;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.util.FileHelper;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * The menu item used in the popup menu for opening external resources associated
+ * with an entry. Shows the resource name and icon given, and adds an action listener
+ * to process the request if the user clicks this menu item.
+ */
+public class ExternalFileMenuItem extends JMenuItem implements ActionListener {
+
+<span class="nc" id="L32">    private static final Logger LOGGER = LoggerFactory.getLogger(ExternalFileMenuItem.class);</span>
+
+    private final String link;
+    private final BibDatabaseContext databaseContext;
+    private Optional&lt;ExternalFileType&gt; fileType;
+    private final JabRefFrame frame;
+    private String fieldName;
+
+    public ExternalFileMenuItem(JabRefFrame frame, String name, String link, Icon icon,
+                                BibDatabaseContext databaseContext, Optional&lt;ExternalFileType&gt; fileType) {
+<span class="nc" id="L42">        super(name, icon);</span>
+<span class="nc" id="L43">        this.frame = frame;</span>
+<span class="nc" id="L44">        this.link = link;</span>
+<span class="nc" id="L45">        this.databaseContext = databaseContext;</span>
+<span class="nc" id="L46">        this.fileType = fileType;</span>
+<span class="nc" id="L47">        addActionListener(this);</span>
+<span class="nc" id="L48">    }</span>
+
+    public ExternalFileMenuItem(JabRefFrame frame, String name, String link, Icon icon,
+                                BibDatabaseContext databaseContext, String fieldName) {
+<span class="nc" id="L52">        this(frame, name, link, icon, databaseContext, Optional.empty());</span>
+<span class="nc" id="L53">        this.fieldName = fieldName;</span>
+<span class="nc" id="L54">    }</span>
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L58">        boolean success = openLink();</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        if (!success) {</span>
+<span class="nc" id="L60">            List&lt;Path&gt; searchedDirs = databaseContext.getFileDirectoriesAsPaths(Globals.prefs.getFilePreferences());</span>
+<span class="nc" id="L61">            frame.output(Localization.lang(&quot;Unable to open %0&quot;, link) + &quot; &quot; + Arrays.toString(searchedDirs.toArray()));</span>
+        }
+<span class="nc" id="L63">    }</span>
+
+    private boolean openLink() {
+<span class="nc" id="L66">        frame.output(Localization.lang(&quot;External viewer called&quot;) + &quot;.&quot;);</span>
+        try {
+<span class="nc" id="L68">            Optional&lt;ExternalFileType&gt; type = fileType;</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">            if (!this.fileType.isPresent()) {</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">                if (this.fieldName == null) {</span>
+                    // We don't already know the file type, so we try to deduce it from the extension:
+<span class="nc" id="L72">                    Optional&lt;String&gt; extension = FileHelper.getFileExtension(link);</span>
+                    // Now we know the extension, check if it is one we know about:
+<span class="nc" id="L74">                    type = ExternalFileTypes.getInstance().getExternalFileTypeByExt(extension.orElse(null));</span>
+<span class="nc" id="L75">                    fileType = type;</span>
+<span class="nc" id="L76">                } else {</span>
+<span class="nc" id="L77">                    JabRefDesktop.openExternalViewer(databaseContext, link, fieldName);</span>
+<span class="nc" id="L78">                    return true;</span>
+                }
+            }
+
+<span class="nc" id="L82">            return JabRefDesktop.openExternalFileAnyFormat(databaseContext, link, type);</span>
+
+<span class="nc" id="L84">        } catch (IOException ex) {</span>
+            // See if we should show an error message concerning the application to open the
+            // link with. We check if the file type is set, and if the file type has a non-empty
+            // application link. If that link is referred by the error message, we can assume
+            // that the problem is in the open-with-application setting:
+<span class="nc bnc" id="L89" title="All 4 branches missed.">            if ((fileType.isPresent()) &amp;&amp; (!fileType.get().getOpenWithApplication().isEmpty())</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            &amp;&amp; ex.getMessage().contains(fileType.get().getOpenWithApplication())) {</span>
+
+<span class="nc" id="L92">                DefaultTaskExecutor.runInJavaFXThread(() -&gt; frame.getDialogService().showErrorDialogAndWait(Localization.lang(&quot;Could not open link&quot;),</span>
+<span class="nc" id="L93">                Localization.lang(&quot;Unable to open link. &quot; + &quot;The application '%0' associated with the file type '%1' could not be called.&quot;,</span>
+<span class="nc" id="L94">                fileType.get().getOpenWithApplication(),</span>
+<span class="nc" id="L95">                fileType.get().getName())));</span>
+
+<span class="nc" id="L97">                return false;</span>
+            }
+
+<span class="nc" id="L100">            LOGGER.warn(&quot;Unable to open link&quot;, ex);</span>
+        }
+<span class="nc" id="L102">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OS.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util</a> &gt; <span class="el_source">OS.java</span></div><h1>OS.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util;
+
+import java.util.Locale;
+
+/***
+ * Operating system (OS) detection
+ */
+public class OS {
+    // File separator obtained from system
+<span class="fc" id="L10">    public static final String FILE_SEPARATOR = System.getProperty(&quot;file.separator&quot;);</span>
+
+    // Newlines
+    // will be overridden in initialization due to feature #857 @ JabRef.java
+<span class="fc" id="L14">    public static String NEWLINE = System.lineSeparator();</span>
+
+    // https://commons.apache.org/proper/commons-lang/javadocs/api-2.6/org/apache/commons/lang/SystemUtils.html
+<span class="fc" id="L17">    private static final String OS_NAME = System.getProperty(&quot;os.name&quot;, &quot;unknown&quot;).toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L18">    public static final boolean LINUX = OS_NAME.startsWith(&quot;linux&quot;);</span>
+<span class="fc" id="L19">    public static final boolean WINDOWS = OS_NAME.startsWith(&quot;win&quot;);</span>
+
+<span class="fc" id="L21">    public static final boolean OS_X = OS_NAME.startsWith(&quot;mac&quot;);</span>
+
+    private OS() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

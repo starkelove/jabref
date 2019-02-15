@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Globals.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref</a> &gt; <span class="el_source">Globals.java</span></div><h1>Globals.java</h1><pre class="source lang-java linenums">package org.jabref;
+
+import java.awt.GraphicsEnvironment;
+import java.util.Optional;
+import java.util.UUID;
+
+import javafx.stage.Screen;
+
+import org.jabref.gui.ClipBoardManager;
+import org.jabref.gui.StateManager;
+import org.jabref.gui.keyboard.KeyBindingRepository;
+import org.jabref.gui.util.DefaultFileUpdateMonitor;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.gui.util.TaskExecutor;
+import org.jabref.gui.util.ThemeLoader;
+import org.jabref.logic.exporter.ExporterFactory;
+import org.jabref.logic.importer.ImportFormatReader;
+import org.jabref.logic.journals.JournalAbbreviationLoader;
+import org.jabref.logic.protectedterms.ProtectedTermsLoader;
+import org.jabref.logic.remote.server.RemoteListenerServerLifecycle;
+import org.jabref.logic.util.BuildInfo;
+import org.jabref.model.util.FileUpdateMonitor;
+import org.jabref.preferences.JabRefPreferences;
+
+import com.google.common.base.StandardSystemProperty;
+import com.microsoft.applicationinsights.TelemetryClient;
+import com.microsoft.applicationinsights.TelemetryConfiguration;
+import com.microsoft.applicationinsights.internal.shutdown.SDKShutdownActivity;
+import com.microsoft.applicationinsights.telemetry.SessionState;
+
+public class Globals {
+
+    // JabRef version info
+<span class="nc" id="L34">    public static final BuildInfo BUILD_INFO = new BuildInfo();</span>
+    // Remote listener
+<span class="nc" id="L36">    public static final RemoteListenerServerLifecycle REMOTE_LISTENER = new RemoteListenerServerLifecycle();</span>
+<span class="nc" id="L37">    public static final ImportFormatReader IMPORT_FORMAT_READER = new ImportFormatReader();</span>
+<span class="nc" id="L38">    public static final TaskExecutor TASK_EXECUTOR = new DefaultTaskExecutor();</span>
+    // In the main program, this field is initialized in JabRef.java
+    // Each test case initializes this field if required
+    public static JabRefPreferences prefs;
+    /**
+     * This field is initialized upon startup.
+     * Only GUI code is allowed to access it, logic code should use dependency injection.
+     */
+    public static JournalAbbreviationLoader journalAbbreviationLoader;
+    /**
+     * This field is initialized upon startup.
+     * Only GUI code is allowed to access it, logic code should use dependency injection.
+     */
+    public static ProtectedTermsLoader protectedTermsLoader;
+    /**
+     * Manager for the state of the GUI.
+     */
+
+<span class="nc" id="L56">    public static ClipBoardManager clipboardManager = new ClipBoardManager();</span>
+
+<span class="nc" id="L58">    public static StateManager stateManager = new StateManager();</span>
+    public static ExporterFactory exportFactory;
+    // Key binding preferences
+    private static KeyBindingRepository keyBindingRepository;
+    private static DefaultFileUpdateMonitor fileUpdateMonitor;
+    private static ThemeLoader themeLoader;
+    private static TelemetryClient telemetryClient;
+
+    private Globals() {
+    }
+
+    // Key binding preferences
+    public static synchronized KeyBindingRepository getKeyPrefs() {
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (keyBindingRepository == null) {</span>
+<span class="nc" id="L72">            keyBindingRepository = prefs.getKeyBindingRepository();</span>
+        }
+<span class="nc" id="L74">        return keyBindingRepository;</span>
+    }
+
+    // Background tasks
+    public static void startBackgroundTasks() throws JabRefException {
+<span class="nc" id="L79">        Globals.fileUpdateMonitor = new DefaultFileUpdateMonitor();</span>
+<span class="nc" id="L80">        JabRefExecutorService.INSTANCE.executeInterruptableTask(Globals.fileUpdateMonitor, &quot;FileUpdateMonitor&quot;);</span>
+
+<span class="nc" id="L82">        themeLoader = new ThemeLoader(fileUpdateMonitor, prefs);</span>
+
+<span class="nc bnc" id="L84" title="All 4 branches missed.">        if (Globals.prefs.shouldCollectTelemetry() &amp;&amp; !GraphicsEnvironment.isHeadless()) {</span>
+<span class="nc" id="L85">            startTelemetryClient();</span>
+        }
+<span class="nc" id="L87">    }</span>
+
+    private static void stopTelemetryClient() {
+<span class="nc" id="L90">        getTelemetryClient().ifPresent(client -&gt; {</span>
+<span class="nc" id="L91">            client.trackSessionState(SessionState.End);</span>
+<span class="nc" id="L92">            client.flush();</span>
+
+            //FIXME: Workaround for bug https://github.com/Microsoft/ApplicationInsights-Java/issues/662
+<span class="nc" id="L95">            SDKShutdownActivity.INSTANCE.stopAll();</span>
+<span class="nc" id="L96">        });</span>
+<span class="nc" id="L97">    }</span>
+
+    private static void startTelemetryClient() {
+<span class="nc" id="L100">        TelemetryConfiguration telemetryConfiguration = TelemetryConfiguration.getActive();</span>
+<span class="nc" id="L101">        telemetryConfiguration.setInstrumentationKey(Globals.BUILD_INFO.getAzureInstrumentationKey());</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        telemetryConfiguration.setTrackingIsDisabled(!Globals.prefs.shouldCollectTelemetry());</span>
+<span class="nc" id="L103">        telemetryClient = new TelemetryClient(telemetryConfiguration);</span>
+<span class="nc" id="L104">        telemetryClient.getContext().getProperties().put(&quot;JabRef version&quot;, Globals.BUILD_INFO.getVersion().toString());</span>
+<span class="nc" id="L105">        telemetryClient.getContext().getProperties().put(&quot;Java version&quot;, StandardSystemProperty.JAVA_VERSION.value());</span>
+<span class="nc" id="L106">        telemetryClient.getContext().getUser().setId(Globals.prefs.getOrCreateUserId());</span>
+<span class="nc" id="L107">        telemetryClient.getContext().getSession().setId(UUID.randomUUID().toString());</span>
+<span class="nc" id="L108">        telemetryClient.getContext().getDevice().setOperatingSystem(StandardSystemProperty.OS_NAME.value());</span>
+<span class="nc" id="L109">        telemetryClient.getContext().getDevice().setOperatingSystemVersion(StandardSystemProperty.OS_VERSION.value());</span>
+<span class="nc" id="L110">        telemetryClient.getContext().getDevice().setScreenResolution(Screen.getPrimary().getVisualBounds().toString());</span>
+
+<span class="nc" id="L112">        telemetryClient.trackSessionState(SessionState.Start);</span>
+<span class="nc" id="L113">    }</span>
+
+    public static FileUpdateMonitor getFileUpdateMonitor() {
+<span class="nc" id="L116">        return fileUpdateMonitor;</span>
+    }
+
+    public static void shutdownThreadPools() {
+<span class="nc" id="L120">        TASK_EXECUTOR.shutdown();</span>
+<span class="nc" id="L121">        JabRefExecutorService.INSTANCE.shutdownEverything();</span>
+<span class="nc" id="L122">    }</span>
+
+    public static void stopBackgroundTasks() {
+<span class="nc" id="L125">        stopTelemetryClient();</span>
+<span class="nc" id="L126">    }</span>
+
+    public static Optional&lt;TelemetryClient&gt; getTelemetryClient() {
+<span class="nc" id="L129">        return Optional.ofNullable(telemetryClient);</span>
+    }
+
+    public static ThemeLoader getThemeLoader() {
+<span class="nc" id="L133">        return themeLoader;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

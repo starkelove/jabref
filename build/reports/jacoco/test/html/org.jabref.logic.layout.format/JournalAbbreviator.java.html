@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JournalAbbreviator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.layout.format</a> &gt; <span class="el_source">JournalAbbreviator.java</span></div><h1>JournalAbbreviator.java</h1><pre class="source lang-java linenums">package org.jabref.logic.layout.format;
+
+import java.util.Objects;
+
+import org.jabref.logic.journals.JournalAbbreviationLoader;
+import org.jabref.logic.journals.JournalAbbreviationPreferences;
+import org.jabref.logic.layout.LayoutFormatter;
+
+/**
+ * JournalAbbreviator formats the given text in an abbreviated form
+ * according to the journal abbreviation lists.
+ *
+ * The given input text is abbreviated according to the journal abbreviation lists.
+ * If no abbreviation for input is found (e.g. not in list or already abbreviated), the input will be returned unmodified.
+ *
+ * Usage:
+ *    \format[JournalAbbreviator]{\journal}
+ * Example result:
+ *    &quot;Phys. Rev. Lett.&quot; instead of &quot;Physical Review Letters&quot;
+ *
+ */
+public class JournalAbbreviator implements LayoutFormatter {
+
+    private final JournalAbbreviationLoader repostioryLoader;
+    private final JournalAbbreviationPreferences journalAbbreviationPreferences;
+
+
+    public JournalAbbreviator(JournalAbbreviationLoader repostioryLoader,
+<span class="nc" id="L29">            JournalAbbreviationPreferences journalAbbreviationPreferences) {</span>
+<span class="nc" id="L30">        this.repostioryLoader = Objects.requireNonNull(repostioryLoader);</span>
+<span class="nc" id="L31">        this.journalAbbreviationPreferences = Objects.requireNonNull(journalAbbreviationPreferences);</span>
+<span class="nc" id="L32">    }</span>
+
+    @Override
+    public String format(String fieldText) {
+<span class="nc" id="L36">        return repostioryLoader.getRepository(journalAbbreviationPreferences)</span>
+<span class="nc" id="L37">                .getIsoAbbreviation(fieldText).orElse(fieldText);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ImportCustomizationDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.importer</a> &gt; <span class="el_source">ImportCustomizationDialog.java</span></div><h1>ImportCustomizationDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.importer;
+
+import javax.inject.Inject;
+
+import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.Tooltip;
+
+import org.jabref.gui.DialogService;
+import org.jabref.gui.util.BaseDialog;
+import org.jabref.gui.util.ControlHelper;
+import org.jabref.gui.util.ViewModelTableRowFactory;
+import org.jabref.logic.importer.fileformat.CustomImporter;
+import org.jabref.logic.journals.JournalAbbreviationLoader;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.preferences.PreferencesService;
+
+import com.airhacks.afterburner.views.ViewLoader;
+import org.fxmisc.easybind.EasyBind;
+
+public class ImportCustomizationDialog extends BaseDialog&lt;Void&gt; {
+
+    @FXML private ButtonType addButton;
+    @FXML private ButtonType removeButton;
+    @FXML private ButtonType closeButton;
+    @FXML private TableView&lt;CustomImporter&gt; importerTable;
+    @FXML private TableColumn&lt;CustomImporter, String&gt; nameColumn;
+    @FXML private TableColumn&lt;CustomImporter, String&gt; classColumn;
+    @FXML private TableColumn&lt;CustomImporter, String&gt; basePathColumn;
+
+    @Inject private DialogService dialogService;
+    @Inject private PreferencesService preferences;
+    @Inject private JournalAbbreviationLoader loader;
+    private ImportCustomizationDialogViewModel viewModel;
+
+<span class="nc" id="L41">    public ImportCustomizationDialog() {</span>
+<span class="nc" id="L42">        this.setTitle(Localization.lang(&quot;Manage custom imports&quot;));</span>
+
+<span class="nc" id="L44">        ViewLoader.view(this)</span>
+<span class="nc" id="L45">                  .load()</span>
+<span class="nc" id="L46">                  .setAsDialogPane(this);</span>
+
+<span class="nc" id="L48">        ((Button) getDialogPane().lookupButton(addButton)).setTooltip(new Tooltip(</span>
+<span class="nc" id="L49">                Localization.lang(&quot;Add a (compiled) custom Importer class from a class path.&quot;)</span>
+<span class="nc" id="L50">                        + &quot;\n&quot; + Localization.lang(&quot;The path need not be on the classpath of JabRef.&quot;)));</span>
+<span class="nc" id="L51">        ControlHelper.setAction(addButton, getDialogPane(), event -&gt; viewModel.addImporter());</span>
+<span class="nc" id="L52">        ControlHelper.setAction(removeButton, getDialogPane(), event -&gt; viewModel.removeSelectedImporter());</span>
+<span class="nc" id="L53">        ControlHelper.setAction(closeButton, getDialogPane(), event -&gt; {</span>
+<span class="nc" id="L54">            viewModel.saveToPrefs();</span>
+<span class="nc" id="L55">            close();</span>
+<span class="nc" id="L56">        });</span>
+<span class="nc" id="L57">    }</span>
+
+    @FXML
+    private void initialize() {
+<span class="nc" id="L61">        viewModel = new ImportCustomizationDialogViewModel(preferences, dialogService);</span>
+<span class="nc" id="L62">        importerTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);</span>
+<span class="nc" id="L63">        importerTable.itemsProperty().bind(viewModel.importersProperty());</span>
+<span class="nc" id="L64">        EasyBind.listBind(viewModel.selectedImportersProperty(), importerTable.getSelectionModel().getSelectedItems());</span>
+<span class="nc" id="L65">        nameColumn.setCellValueFactory(cellData -&gt; new ReadOnlyStringWrapper(cellData.getValue().getName()));</span>
+<span class="nc" id="L66">        classColumn.setCellValueFactory(cellData -&gt; new ReadOnlyStringWrapper(cellData.getValue().getClassName()));</span>
+<span class="nc" id="L67">        basePathColumn.setCellValueFactory(cellData -&gt; new ReadOnlyStringWrapper(cellData.getValue().getBasePath().toString()));</span>
+<span class="nc" id="L68">        new ViewModelTableRowFactory&lt;CustomImporter&gt;()</span>
+<span class="nc" id="L69">                .withTooltip(CustomImporter::getDescription)</span>
+<span class="nc" id="L70">                .install(importerTable);</span>
+<span class="nc" id="L71">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

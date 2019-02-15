@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibEntryWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.bibtex</a> &gt; <span class="el_source">BibEntryWriter.java</span></div><h1>BibEntryWriter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.bibtex;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Predicate;
+
+import org.jabref.logic.TypedBibEntry;
+import org.jabref.logic.util.OS;
+import org.jabref.model.EntryTypes;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.EntryType;
+import org.jabref.model.entry.InternalBibtexFields;
+import org.jabref.model.strings.StringUtil;
+
+public class BibEntryWriter {
+
+    private final LatexFieldFormatter fieldFormatter;
+    private final boolean write;
+
+
+<span class="fc" id="L30">    public BibEntryWriter(LatexFieldFormatter fieldFormatter, boolean write) {</span>
+<span class="fc" id="L31">        this.fieldFormatter = fieldFormatter;</span>
+<span class="fc" id="L32">        this.write = write;</span>
+<span class="fc" id="L33">    }</span>
+
+    public String serializeAll(List&lt;BibEntry&gt; entries, BibDatabaseMode databaseMode) throws IOException {
+<span class="nc" id="L36">        StringWriter writer = new StringWriter();</span>
+
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        for (BibEntry entry : entries) {</span>
+<span class="nc" id="L39">            write(entry, writer, databaseMode);</span>
+<span class="nc" id="L40">        }</span>
+<span class="nc" id="L41">        return writer.toString();</span>
+    }
+
+    public void write(BibEntry entry, Writer out, BibDatabaseMode bibDatabaseMode) throws IOException {
+<span class="fc" id="L45">        write(entry, out, bibDatabaseMode, false);</span>
+<span class="fc" id="L46">    }</span>
+
+    /**
+     * Writes the given BibEntry using the given writer
+     *
+     * @param entry           The entry to write
+     * @param out             The writer to use
+     * @param bibDatabaseMode The database mode (bibtex or biblatex)
+     * @param reformat        Should the entry be in any case, even if no change occurred?
+     */
+    public void write(BibEntry entry, Writer out, BibDatabaseMode bibDatabaseMode, Boolean reformat) throws IOException {
+        // if the entry has not been modified, write it as it was
+<span class="fc bfc" id="L58" title="All 4 branches covered.">        if (!reformat &amp;&amp; !entry.hasChanged()) {</span>
+<span class="fc" id="L59">            out.write(entry.getParsedSerialization());</span>
+<span class="fc" id="L60">            return;</span>
+        }
+
+<span class="fc" id="L63">        writeUserComments(entry, out);</span>
+<span class="fc" id="L64">        out.write(OS.NEWLINE);</span>
+<span class="fc" id="L65">        writeRequiredFieldsFirstRemainingFieldsSecond(entry, out, bibDatabaseMode);</span>
+<span class="fc" id="L66">        out.write(OS.NEWLINE);</span>
+<span class="fc" id="L67">    }</span>
+
+    private void writeUserComments(BibEntry entry, Writer out) throws IOException {
+<span class="fc" id="L70">        String userComments = entry.getUserComments();</span>
+
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (!userComments.isEmpty()) {</span>
+<span class="fc" id="L73">            out.write(userComments + OS.NEWLINE);</span>
+        }
+<span class="fc" id="L75">    }</span>
+
+    public void writeWithoutPrependedNewlines(BibEntry entry, Writer out, BibDatabaseMode bibDatabaseMode) throws IOException {
+        // if the entry has not been modified, write it as it was
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        if (!entry.hasChanged()) {</span>
+<span class="nc" id="L80">            out.write(entry.getParsedSerialization().trim());</span>
+<span class="nc" id="L81">            return;</span>
+        }
+
+<span class="fc" id="L84">        writeRequiredFieldsFirstRemainingFieldsSecond(entry, out, bibDatabaseMode);</span>
+<span class="fc" id="L85">    }</span>
+
+    /**
+     * Write fields in the order of requiredFields, optionalFields and other fields, but does not sort the fields.
+     *
+     * @param entry
+     * @param out
+     * @throws IOException
+     */
+    private void writeRequiredFieldsFirstRemainingFieldsSecond(BibEntry entry, Writer out,
+                                                               BibDatabaseMode bibDatabaseMode) throws IOException {
+        // Write header with type and bibtex-key.
+<span class="fc" id="L97">        TypedBibEntry typedEntry = new TypedBibEntry(entry, bibDatabaseMode);</span>
+<span class="fc" id="L98">        out.write('@' + typedEntry.getTypeForDisplay() + '{');</span>
+
+<span class="fc" id="L100">        writeKeyField(entry, out);</span>
+
+<span class="fc" id="L102">        Set&lt;String&gt; written = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L103">        written.add(BibEntry.KEY_FIELD);</span>
+<span class="fc" id="L104">        int indentation = getLengthOfLongestFieldName(entry);</span>
+
+<span class="fc" id="L106">        EntryType type = EntryTypes.getTypeOrDefault(entry.getType(), bibDatabaseMode);</span>
+
+        // Write required fields first.
+<span class="fc" id="L109">        Collection&lt;String&gt; fields = type.getRequiredFieldsFlat();</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        if (fields != null) {</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            for (String value : fields) {</span>
+<span class="fc" id="L112">                writeField(entry, out, value, indentation);</span>
+<span class="fc" id="L113">                written.add(value);</span>
+<span class="fc" id="L114">            }</span>
+        }
+        // Then optional fields.
+<span class="fc" id="L117">        fields = type.getOptionalFields();</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        if (fields != null) {</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">            for (String value : fields) {</span>
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">                if (!written.contains(value)) { // If field appears both in req. and opt. don't repeat.</span>
+<span class="fc" id="L121">                    writeField(entry, out, value, indentation);</span>
+<span class="fc" id="L122">                    written.add(value);</span>
+                }
+<span class="fc" id="L124">            }</span>
+        }
+        // Then write remaining fields in alphabetic order.
+<span class="fc" id="L127">        Set&lt;String&gt; remainingFields = new TreeSet&lt;&gt;();</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        for (String key : entry.getFieldNames()) {</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">            boolean writeIt = write ? InternalBibtexFields.isWriteableField(key) :</span>
+<span class="fc" id="L130">                    InternalBibtexFields.isDisplayableField(key);</span>
+<span class="pc bpc" id="L131" title="1 of 4 branches missed.">            if (!written.contains(key) &amp;&amp; writeIt) {</span>
+<span class="fc" id="L132">                remainingFields.add(key);</span>
+            }
+<span class="fc" id="L134">        }</span>
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        for (String field : remainingFields) {</span>
+<span class="fc" id="L136">            writeField(entry, out, field, indentation);</span>
+<span class="fc" id="L137">        }</span>
+
+        // Finally, end the entry.
+<span class="fc" id="L140">        out.write('}');</span>
+<span class="fc" id="L141">    }</span>
+
+    private void writeKeyField(BibEntry entry, Writer out) throws IOException {
+<span class="fc" id="L144">        String keyField = StringUtil.shaveString(entry.getCiteKeyOptional().orElse(&quot;&quot;));</span>
+<span class="fc" id="L145">        out.write(keyField + ',' + OS.NEWLINE);</span>
+<span class="fc" id="L146">    }</span>
+
+    /**
+     * Write a single field, if it has any content.
+     *
+     * @param entry the entry to write
+     * @param out   the target of the write
+     * @param name  The field name
+     * @throws IOException In case of an IO error
+     */
+    private void writeField(BibEntry entry, Writer out, String name, int indentation) throws IOException {
+<span class="fc" id="L157">        Optional&lt;String&gt; field = entry.getField(name);</span>
+        // only write field if is is not empty
+        // field.ifPresent does not work as an IOException may be thrown
+<span class="fc bfc" id="L160" title="All 4 branches covered.">        if (field.isPresent() &amp;&amp; !field.get().trim().isEmpty()) {</span>
+<span class="fc" id="L161">            out.write(&quot;  &quot; + getFieldDisplayName(name, indentation));</span>
+
+            try {
+<span class="fc" id="L164">                out.write(fieldFormatter.format(field.get(), name));</span>
+<span class="fc" id="L165">                out.write(',' + OS.NEWLINE);</span>
+<span class="fc" id="L166">            } catch (InvalidFieldValueException ex) {</span>
+<span class="fc" id="L167">                throw new IOException(&quot;Error in field '&quot; + name + &quot;': &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L168">            }</span>
+        }
+<span class="fc" id="L170">    }</span>
+
+    private int getLengthOfLongestFieldName(BibEntry entry) {
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        Predicate&lt;String&gt; isNotBibtexKey = field -&gt; !BibEntry.KEY_FIELD.equals(field);</span>
+<span class="fc" id="L174">        return entry.getFieldNames().stream().filter(isNotBibtexKey).mapToInt(String::length).max().orElse(0);</span>
+    }
+
+    /**
+     * Get display version of a entry field.
+     * &lt;p&gt;
+     * BibTeX is case-insensitive therefore there is no difference between:
+     * howpublished, HOWPUBLISHED, HowPublished, etc.
+     * &lt;p&gt;
+     * The was a long discussion about how JabRef should write the fields.
+     * See https://github.com/JabRef/jabref/issues/116
+     * &lt;p&gt;
+     * The team decided to do the biblatex way and use lower case for the field names.
+     *
+     * @param field The name of the field.
+     * @return The display version of the field name.
+     */
+    private String getFieldDisplayName(String field, int intendation) {
+<span class="fc" id="L192">        String actualField = field;</span>
+<span class="pc bpc" id="L193" title="1 of 2 branches missed.">        if (actualField.isEmpty()) {</span>
+            // hard coded &quot;UNKNOWN&quot; is assigned to a field without any name
+<span class="nc" id="L195">            actualField = &quot;UNKNOWN&quot;;</span>
+        }
+
+<span class="fc" id="L198">        return actualField.toLowerCase(Locale.ROOT) + StringUtil.repeatSpaces(intendation - actualField.length()) + &quot; = &quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

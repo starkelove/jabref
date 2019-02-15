@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WebSearchPane.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.importer.fetcher</a> &gt; <span class="el_source">WebSearchPane.java</span></div><h1>WebSearchPane.java</h1><pre class="source lang-java linenums">package org.jabref.gui.importer.fetcher;
+
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.SidePaneComponent;
+import org.jabref.gui.SidePaneManager;
+import org.jabref.gui.SidePaneType;
+import org.jabref.gui.actions.Action;
+import org.jabref.gui.actions.ActionFactory;
+import org.jabref.gui.actions.StandardActions;
+import org.jabref.gui.help.HelpAction;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.search.SearchTextField;
+import org.jabref.gui.util.ViewModelListCellFactory;
+import org.jabref.logic.importer.SearchBasedFetcher;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.fxmisc.easybind.EasyBind;
+
+public class WebSearchPane extends SidePaneComponent {
+
+    private final JabRefPreferences preferences;
+    private final WebSearchPaneViewModel viewModel;
+
+    public WebSearchPane(SidePaneManager sidePaneManager, JabRefPreferences preferences, JabRefFrame frame) {
+<span class="nc" id="L36">        super(sidePaneManager, IconTheme.JabRefIcons.WWW, Localization.lang(&quot;Web search&quot;));</span>
+<span class="nc" id="L37">        this.preferences = preferences;</span>
+<span class="nc" id="L38">        this.viewModel = new WebSearchPaneViewModel(preferences.getImportFormatPreferences(), frame, preferences);</span>
+<span class="nc" id="L39">    }</span>
+
+    @Override
+    public Action getToggleAction() {
+<span class="nc" id="L43">        return StandardActions.TOGGLE_WEB_SEARCH;</span>
+    }
+
+    @Override
+    protected Node createContentPane() {
+        // Setup combo box for fetchers
+<span class="nc" id="L49">        ComboBox&lt;SearchBasedFetcher&gt; fetchers = new ComboBox&lt;&gt;();</span>
+<span class="nc" id="L50">        new ViewModelListCellFactory&lt;SearchBasedFetcher&gt;()</span>
+<span class="nc" id="L51">                .withText(SearchBasedFetcher::getName)</span>
+<span class="nc" id="L52">                .install(fetchers);</span>
+<span class="nc" id="L53">        fetchers.itemsProperty().bind(viewModel.fetchersProperty());</span>
+<span class="nc" id="L54">        fetchers.valueProperty().bindBidirectional(viewModel.selectedFetcherProperty());</span>
+<span class="nc" id="L55">        fetchers.setMaxWidth(Double.POSITIVE_INFINITY);</span>
+
+        // Create help button for currently selected fetcher
+<span class="nc" id="L58">        StackPane helpButtonContainer = new StackPane();</span>
+<span class="nc" id="L59">        ActionFactory factory = new ActionFactory(preferences.getKeyBindingRepository());</span>
+<span class="nc" id="L60">        EasyBind.subscribe(viewModel.selectedFetcherProperty(), fetcher -&gt; {</span>
+<span class="nc bnc" id="L61" title="All 4 branches missed.">            if ((fetcher != null) &amp;&amp; fetcher.getHelpPage().isPresent()) {</span>
+<span class="nc" id="L62">                HelpAction helpCommand = new HelpAction(fetcher.getHelpPage().get());</span>
+<span class="nc" id="L63">                Button helpButton = factory.createIconButton(StandardActions.HELP, helpCommand.getCommand());</span>
+<span class="nc" id="L64">                helpButtonContainer.getChildren().setAll(helpButton);</span>
+<span class="nc" id="L65">            } else {</span>
+<span class="nc" id="L66">                helpButtonContainer.getChildren().clear();</span>
+            }
+<span class="nc" id="L68">        });</span>
+<span class="nc" id="L69">        HBox fetcherContainer = new HBox(fetchers, helpButtonContainer);</span>
+<span class="nc" id="L70">        HBox.setHgrow(fetchers, Priority.ALWAYS);</span>
+
+        // Create text field for query input
+<span class="nc" id="L73">        TextField query = SearchTextField.create();</span>
+<span class="nc" id="L74">        query.setOnAction(event -&gt; viewModel.search());</span>
+<span class="nc" id="L75">        viewModel.queryProperty().bind(query.textProperty());</span>
+
+        // Create button that triggers search
+<span class="nc" id="L78">        Button search = new Button(Localization.lang(&quot;Search&quot;));</span>
+<span class="nc" id="L79">        search.setDefaultButton(false);</span>
+<span class="nc" id="L80">        search.setOnAction(event -&gt; viewModel.search());</span>
+
+        // Put everything together
+<span class="nc" id="L83">        VBox container = new VBox();</span>
+<span class="nc" id="L84">        container.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L85">        container.getChildren().addAll(fetcherContainer, query, search);</span>
+<span class="nc" id="L86">        return container;</span>
+    }
+
+    @Override
+    public SidePaneType getType() {
+<span class="nc" id="L91">        return SidePaneType.WEB_SEARCH;</span>
+    }
+
+    @Override
+    public void beforeClosing() {
+<span class="nc" id="L96">        preferences.putBoolean(JabRefPreferences.WEB_SEARCH_VISIBLE, Boolean.FALSE);</span>
+<span class="nc" id="L97">    }</span>
+
+    @Override
+    public void afterOpening() {
+<span class="nc" id="L101">        preferences.putBoolean(JabRefPreferences.WEB_SEARCH_VISIBLE, Boolean.TRUE);</span>
+<span class="nc" id="L102">    }</span>
+
+    @Override
+    public Priority getResizePolicy() {
+<span class="nc" id="L106">        return Priority.NEVER;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

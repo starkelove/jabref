@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FulltextFetcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer</a> &gt; <span class="el_source">FulltextFetcher.java</span></div><h1>FulltextFetcher.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.Optional;
+
+import org.jabref.logic.importer.fetcher.TrustLevel;
+import org.jabref.model.entry.BibEntry;
+
+/**
+ * This interface is used for classes that try to resolve a full-text PDF url for a BibTex entry.
+ * Implementing classes should specialize on specific article sites.
+ * See e.g. @link{http://libguides.mit.edu/apis}.
+ */
+public interface FulltextFetcher {
+    /**
+     * Tries to find a fulltext URL for a given BibTex entry.
+     *
+     * @param entry The Bibtex entry
+     * @return The fulltext PDF URL Optional, if found, or an empty Optional if not found.
+     * @throws NullPointerException if no BibTex entry is given
+     * @throws java.io.IOException if an IO operation has failed
+     * @throws FetcherException if a fetcher specific error occurred
+     */
+    Optional&lt;URL&gt; findFullText(BibEntry entry) throws IOException, FetcherException;
+
+    /**
+     * Returns the level of trust for this fetcher.
+     * We distinguish between publishers and meta search engines for example.
+     *
+     * @return The trust level of the fetcher, the higher the better
+     */
+    default TrustLevel getTrustLevel() {
+<span class="fc" id="L34">        return TrustLevel.UNKNOWN;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

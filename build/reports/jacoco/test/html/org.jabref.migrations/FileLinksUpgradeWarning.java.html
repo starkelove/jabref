@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileLinksUpgradeWarning.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.migrations</a> &gt; <span class="el_source">FileLinksUpgradeWarning.java</span></div><h1>FileLinksUpgradeWarning.java</h1><pre class="source lang-java linenums">package org.jabref.migrations;
+
+import java.util.List;
+
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.FXDialogService;
+import org.jabref.gui.importer.actions.GUIPostOpenAction;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableFieldChange;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.gui.util.FileDialogConfiguration;
+import org.jabref.logic.cleanup.UpgradePdfPsToFileCleanup;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.FieldChange;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.metadata.FilePreferences;
+import org.jabref.preferences.JabRefPreferences;
+
+import com.jgoodies.forms.builder.FormBuilder;
+import com.jgoodies.forms.layout.FormLayout;
+
+/**
+ * This class defines the warning that can be offered when opening a pre-2.3
+ * JabRef file into a later version. This warning mentions the new external file
+ * link system in this version of JabRef, and offers to:
+ *
+ * * upgrade old-style PDF/PS links into the &quot;file&quot; field
+ * * modify General fields to show &quot;file&quot; instead of &quot;pdf&quot; / &quot;ps&quot;
+ * * modify table column settings to show &quot;file&quot; instead of &quot;pdf&quot; / &quot;ps&quot;
+ */
+<span class="nc" id="L43">public class FileLinksUpgradeWarning implements GUIPostOpenAction {</span>
+
+<span class="nc" id="L45">    private static final String[] FIELDS_TO_LOOK_FOR = new String[]{FieldName.PDF, FieldName.PS};</span>
+
+    private boolean offerChangeSettings;
+
+    private boolean offerChangeDatabase;
+
+    private boolean offerSetFileDir;
+
+    /**
+     * Collect file links from the given set of fields, and add them to the list contained in the field
+     * GUIGlobals.FILE_FIELD.
+     *
+     * @param database The database to modify.
+     * @return A CompoundEdit specifying the undo operation for the whole operation.
+     */
+    private static NamedCompound upgradePdfPsToFile(BibDatabase database) {
+<span class="nc" id="L61">        NamedCompound ce = new NamedCompound(Localization.lang(&quot;Move external links to 'file' field&quot;));</span>
+
+<span class="nc" id="L63">        UpgradePdfPsToFileCleanup cleanupJob = new UpgradePdfPsToFileCleanup();</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        for (BibEntry entry : database.getEntries()) {</span>
+<span class="nc" id="L65">            List&lt;FieldChange&gt; changes = cleanupJob.cleanup(entry);</span>
+
+<span class="nc bnc" id="L67" title="All 2 branches missed.">            for (FieldChange change : changes) {</span>
+<span class="nc" id="L68">                ce.addEdit(new UndoableFieldChange(change));</span>
+<span class="nc" id="L69">            }</span>
+<span class="nc" id="L70">        }</span>
+
+<span class="nc" id="L72">        ce.end();</span>
+<span class="nc" id="L73">        return ce;</span>
+    }
+
+    /**
+     * This method should be performed if the major/minor versions recorded in the ParserResult
+     * are less than or equal to 2.2.
+     *
+     * @return true if the file was written by a jabref version &lt;=2.2
+     */
+    @Override
+    public boolean isActionNecessary(ParserResult pr) {
+        // Find out which actions should be offered:
+        // Only offer to change Preferences if file column is not already visible:
+<span class="nc bnc" id="L86" title="All 4 branches missed.">        offerChangeSettings = !Globals.prefs.getBoolean(JabRefPreferences.FILE_COLUMN) || !showsFileInGenFields();</span>
+        // Only offer to upgrade links if the pdf/ps fields are used:
+<span class="nc" id="L88">        offerChangeDatabase = linksFound(pr.getDatabase(), FileLinksUpgradeWarning.FIELDS_TO_LOOK_FOR);</span>
+        // If the &quot;file&quot; directory is not set, offer to migrate pdf/ps dir:
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        offerSetFileDir = !Globals.prefs.hasKey(FieldName.FILE + FilePreferences.DIR_SUFFIX)</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                &amp;&amp; (Globals.prefs.hasKey(FieldName.PDF + FilePreferences.DIR_SUFFIX)</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">                || Globals.prefs.hasKey(FieldName.PS + FilePreferences.DIR_SUFFIX));</span>
+
+        // First check if this warning is disabled:
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        return Globals.prefs.getBoolean(JabRefPreferences.SHOW_FILE_LINKS_UPGRADE_WARNING)</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                &amp;&amp; isThereSomethingToBeDone();</span>
+    }
+
+    /*
+     * This method presents a dialog box explaining and offering to make the
+     * changes. If the user confirms, the changes are performed.
+     */
+    @Override
+    public void performAction(BasePanel panel, ParserResult parserResult) {
+
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (!isThereSomethingToBeDone()) {</span>
+<span class="nc" id="L107">            return; // Nothing to do, just return.</span>
+        }
+
+<span class="nc" id="L110">        JCheckBox changeSettings = new JCheckBox(</span>
+<span class="nc" id="L111">                Localization.lang(&quot;Change table column and General fields settings to use the new feature&quot;),</span>
+                offerChangeSettings);
+<span class="nc" id="L113">        JCheckBox changeDatabase = new JCheckBox(</span>
+<span class="nc" id="L114">                Localization.lang(&quot;Upgrade old external file links to use the new feature&quot;),</span>
+                offerChangeDatabase);
+<span class="nc" id="L116">        JCheckBox setFileDir = new JCheckBox(Localization.lang(&quot;Set main external file directory&quot;) + &quot;:&quot;,</span>
+                offerSetFileDir);
+<span class="nc" id="L118">        JTextField fileDir = new JTextField(30);</span>
+<span class="nc" id="L119">        JCheckBox doNotShowDialog = new JCheckBox(Localization.lang(&quot;Do not show these options in the future&quot;),</span>
+                false);
+
+<span class="nc" id="L122">        JPanel message = new JPanel();</span>
+<span class="nc" id="L123">        FormBuilder formBuilder = FormBuilder.create().layout(new FormLayout(&quot;left:pref&quot;, &quot;p&quot;));</span>
+        // Keep the formatting of these lines. Otherwise, strings have to be translated again.
+        // See updated JabRef_en.properties modifications by python syncLang.py -s -u
+<span class="nc" id="L126">        int row = 1;</span>
+<span class="nc" id="L127">        formBuilder.add(new JLabel(&quot;&lt;html&gt;&quot; + Localization.lang(&quot;This library uses outdated file links.&quot;) + &quot;&lt;br&gt;&lt;br&gt;&quot;</span>
+                + Localization
+<span class="nc" id="L129">                .lang(&quot;JabRef no longer supports 'ps' or 'pdf' fields.&lt;br&gt;File links are now stored in the 'file' field and files are stored in an external file directory.&lt;br&gt;To make use of this feature, JabRef needs to upgrade file links.&lt;br&gt;&lt;br&gt;&quot;)</span>
+                + &quot;&lt;p&gt;&quot;
+<span class="nc" id="L131">                + Localization.lang(&quot;Do you want JabRef to do the following operations?&quot;) + &quot;&lt;/html&gt;&quot;)).xy(1, row);</span>
+
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        if (offerChangeSettings) {</span>
+<span class="nc" id="L134">            formBuilder.appendRows(&quot;2dlu, p&quot;);</span>
+<span class="nc" id="L135">            row += 2;</span>
+<span class="nc" id="L136">            formBuilder.add(changeSettings).xy(1, row);</span>
+        }
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        if (offerChangeDatabase) {</span>
+<span class="nc" id="L139">            formBuilder.appendRows(&quot;2dlu, p&quot;);</span>
+<span class="nc" id="L140">            row += 2;</span>
+<span class="nc" id="L141">            formBuilder.add(changeDatabase).xy(1, row);</span>
+        }
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (offerSetFileDir) {</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">            if (Globals.prefs.hasKey(FieldName.PDF + FilePreferences.DIR_SUFFIX)) {</span>
+<span class="nc" id="L145">                fileDir.setText(Globals.prefs.get(FieldName.PDF + FilePreferences.DIR_SUFFIX));</span>
+            } else {
+<span class="nc" id="L147">                fileDir.setText(Globals.prefs.get(FieldName.PS + FilePreferences.DIR_SUFFIX));</span>
+            }
+<span class="nc" id="L149">            JPanel builderPanel = new JPanel();</span>
+<span class="nc" id="L150">            builderPanel.add(setFileDir);</span>
+<span class="nc" id="L151">            builderPanel.add(fileDir);</span>
+<span class="nc" id="L152">            JButton browse = new JButton(Localization.lang(&quot;Browse&quot;));</span>
+
+<span class="nc" id="L154">            FileDialogConfiguration fileDialogConfiguration = new FileDialogConfiguration.Builder()</span>
+<span class="nc" id="L155">                    .withInitialDirectory(Globals.prefs.get(JabRefPreferences.WORKING_DIRECTORY)).build();</span>
+<span class="nc" id="L156">            DialogService ds = new FXDialogService();</span>
+
+<span class="nc" id="L158">            browse.addActionListener(</span>
+<span class="nc" id="L159">                    e -&gt; DefaultTaskExecutor.runInJavaFXThread(() -&gt; ds.showFileOpenDialog(fileDialogConfiguration)</span>
+<span class="nc" id="L160">                            .ifPresent(f -&gt; fileDir.setText(f.toAbsolutePath().toString()))));</span>
+<span class="nc" id="L161">            builderPanel.add(browse);</span>
+<span class="nc" id="L162">            formBuilder.appendRows(&quot;2dlu, p&quot;);</span>
+<span class="nc" id="L163">            row += 2;</span>
+<span class="nc" id="L164">            formBuilder.add(builderPanel).xy(1, row);</span>
+        }
+<span class="nc" id="L166">        formBuilder.appendRows(&quot;6dlu, p&quot;);</span>
+<span class="nc" id="L167">        formBuilder.add(doNotShowDialog).xy(1, row + 2);</span>
+
+<span class="nc" id="L169">        message.add(formBuilder.build());</span>
+
+<span class="nc" id="L171">        int answer = JOptionPane.showConfirmDialog(null,</span>
+<span class="nc" id="L172">                message, Localization.lang(&quot;Upgrade file&quot;), JOptionPane.YES_NO_OPTION);</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (doNotShowDialog.isSelected()) {</span>
+<span class="nc" id="L174">            Globals.prefs.putBoolean(JabRefPreferences.SHOW_FILE_LINKS_UPGRADE_WARNING, false);</span>
+        }
+
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        if (answer == JOptionPane.YES_OPTION) {</span>
+<span class="nc" id="L178">            makeChanges(panel, parserResult, changeSettings.isSelected(), changeDatabase.isSelected(),</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">                    setFileDir.isSelected() ? fileDir.getText() : null);</span>
+        }
+<span class="nc" id="L181">    }</span>
+
+    private boolean isThereSomethingToBeDone() {
+<span class="nc bnc" id="L184" title="All 6 branches missed.">        return offerChangeSettings || offerChangeDatabase || offerSetFileDir;</span>
+    }
+
+    /**
+     * Check the database to find out whether any of a set of fields are used
+     * for any of the entries.
+     *
+     * @param database The BIB database.
+     * @param fields   The set of fields to look for.
+     * @return true if at least one of the given fields is set in at least one entry,
+     * false otherwise.
+     */
+    private boolean linksFound(BibDatabase database, String[] fields) {
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        for (BibEntry entry : database.getEntries()) {</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">            for (String field : fields) {</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">                if (entry.hasField(field)) {</span>
+<span class="nc" id="L200">                    return true;</span>
+                }
+            }
+<span class="nc" id="L203">        }</span>
+<span class="nc" id="L204">        return false;</span>
+    }
+
+    /**
+     * This method performs the actual changes.
+     *
+     * @param fileDir The path to the file directory to set, or null if it should not be set.
+     */
+    private void makeChanges(BasePanel panel, ParserResult pr, boolean upgradePrefs,
+                             boolean upgradeDatabase, String fileDir) {
+
+<span class="nc bnc" id="L215" title="All 2 branches missed.">        if (upgradeDatabase) {</span>
+            // Update file links links in the database:
+<span class="nc" id="L217">            NamedCompound ce = upgradePdfPsToFile(pr.getDatabase());</span>
+<span class="nc" id="L218">            panel.getUndoManager().addEdit(ce);</span>
+<span class="nc" id="L219">            panel.markBaseChanged();</span>
+        }
+
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        if (fileDir != null) {</span>
+<span class="nc" id="L223">            Globals.prefs.put(FieldName.FILE + FilePreferences.DIR_SUFFIX, fileDir);</span>
+        }
+
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        if (upgradePrefs) {</span>
+            // Exchange table columns:
+<span class="nc" id="L228">            Globals.prefs.putBoolean(JabRefPreferences.FILE_COLUMN, Boolean.TRUE);</span>
+
+            // Modify General fields if necessary:
+            // If we don't find the file field, insert it at the bottom of the first tab:
+<span class="nc bnc" id="L232" title="All 2 branches missed.">            if (!showsFileInGenFields()) {</span>
+<span class="nc" id="L233">                String gfs = Globals.prefs.get(JabRefPreferences.CUSTOM_TAB_FIELDS + &quot;0&quot;);</span>
+<span class="nc" id="L234">                StringBuilder sb = new StringBuilder(gfs);</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">                if (!gfs.isEmpty()) {</span>
+<span class="nc" id="L236">                    sb.append(';');</span>
+                }
+<span class="nc" id="L238">                sb.append(FieldName.FILE);</span>
+<span class="nc" id="L239">                Globals.prefs.put(JabRefPreferences.CUSTOM_TAB_FIELDS + &quot;0&quot;, sb.toString());</span>
+<span class="nc" id="L240">                Globals.prefs.updateEntryEditorTabList();</span>
+            }
+<span class="nc" id="L242">            panel.frame().setupAllTables();</span>
+        }
+<span class="nc" id="L244">    }</span>
+
+    private boolean showsFileInGenFields() {
+<span class="nc bnc" id="L247" title="All 2 branches missed.">        for (List&lt;String&gt; fields : Globals.prefs.getEntryEditorTabList().values()) {</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">            for (String field : fields) {</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">                if (field.equals(FieldName.FILE)) {</span>
+<span class="nc" id="L250">                    return true;</span>
+                }
+<span class="nc" id="L252">            }</span>
+<span class="nc" id="L253">        }</span>
+<span class="nc" id="L254">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

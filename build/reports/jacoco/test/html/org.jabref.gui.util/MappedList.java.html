@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MappedList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">MappedList.java</span></div><h1>MappedList.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.TransformationList;
+
+/**
+ * MappedList implementation based on https://github.com/corda/corda/blob/master/client/jfx/src/main/kotlin/net/corda/client/jfx/utils/MappedList.kt
+ */
+public final class MappedList&lt;A, B&gt; extends TransformationList&lt;A, B&gt; {
+
+    private final Function&lt;B, A&gt; mapper;
+    private final List&lt;A&gt; backingList;
+
+    public MappedList(ObservableList&lt;? extends B&gt; sourceList, Function&lt;B, A&gt; mapper) {
+<span class="fc" id="L20">        super(sourceList);</span>
+<span class="fc" id="L21">        this.mapper = mapper;</span>
+<span class="fc" id="L22">        this.backingList = new ArrayList&lt;&gt;(sourceList.size());</span>
+<span class="fc" id="L23">        sourceList.stream().map(mapper::apply).forEach(backingList::add);</span>
+<span class="fc" id="L24">    }</span>
+
+    @Override
+    protected void sourceChanged(ListChangeListener.Change&lt;? extends B&gt; change) {
+<span class="fc" id="L28">        beginChange();</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        while (change.next()) {</span>
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">            if (change.wasPermutated()) {</span>
+<span class="nc" id="L31">                int from = change.getFrom();</span>
+<span class="nc" id="L32">                int to = change.getTo();</span>
+
+                // get permutation array
+<span class="nc" id="L35">                int[] permutation = new int[to - from];</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">                for (int i = 0; i &lt; to - from; i++) {</span>
+<span class="nc" id="L37">                    permutation[i] = change.getPermutation(i);</span>
+                }
+
+                // perform permutation
+<span class="nc" id="L41">                Object[] permutedPart = new Object[to - from];</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">                for (int i = from; i &lt; to; i++) {</span>
+<span class="nc" id="L43">                    permutedPart[permutation[i]] = backingList.get(i);</span>
+                }
+
+                // update backingList
+<span class="nc bnc" id="L47" title="All 2 branches missed.">                for (int i = 0; i &lt; to; i++) {</span>
+<span class="nc" id="L48">                    backingList.set(i + from, (A) permutedPart[i]);</span>
+                }
+<span class="nc" id="L50">                nextPermutation(from, to, permutation);</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">            } else if (change.wasUpdated()) {</span>
+<span class="nc" id="L52">                backingList.set(change.getFrom(), mapper.apply(getSource().get(change.getFrom())));</span>
+<span class="nc" id="L53">                nextUpdate(change.getFrom());</span>
+            } else {
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                if (change.wasRemoved()) {</span>
+<span class="fc" id="L56">                    int removePosition = change.getFrom();</span>
+<span class="fc" id="L57">                    List&lt;A&gt; removed = new ArrayList&lt;&gt;(change.getRemovedSize());</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">                    for (int i = 0; i &lt; change.getRemovedSize(); i++) {</span>
+<span class="fc" id="L59">                        removed.add(backingList.remove(removePosition));</span>
+                    }
+<span class="fc" id="L61">                    nextRemove(change.getFrom(), removed);</span>
+                }
+<span class="fc bfc" id="L63" title="All 2 branches covered.">                if (change.wasAdded()) {</span>
+<span class="fc" id="L64">                    int addStart = change.getFrom();</span>
+<span class="fc" id="L65">                    int addEnd = change.getTo();</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                    for (int i = addStart; i &lt; addEnd; i++) {</span>
+<span class="fc" id="L67">                        backingList.add(i, mapper.apply(change.getList().get(i)));</span>
+                    }
+<span class="fc" id="L69">                    nextAdd(addStart, addEnd);</span>
+<span class="fc" id="L70">                }</span>
+            }
+        }
+<span class="fc" id="L73">        endChange();</span>
+<span class="fc" id="L74">    }</span>
+
+    @Override
+    public int getSourceIndex(int index) {
+<span class="nc" id="L78">        return index;</span>
+    }
+
+    @Override
+    public A get(int index) {
+<span class="fc" id="L83">        return backingList.get(index);</span>
+    }
+
+    @Override
+    public int size() {
+<span class="fc" id="L88">        return backingList.size();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

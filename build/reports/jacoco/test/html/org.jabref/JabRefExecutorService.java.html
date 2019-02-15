@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JabRefExecutorService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref</a> &gt; <span class="el_source">JabRefExecutorService.java</span></div><h1>JabRefExecutorService.java</h1><pre class="source lang-java linenums">package org.jabref;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Responsible for managing of all threads (except GUI threads) in JabRef
+ */
+public class JabRefExecutorService {
+
+<span class="fc" id="L24">    public static final JabRefExecutorService INSTANCE = new JabRefExecutorService();</span>
+<span class="fc" id="L25">    private static final Logger LOGGER = LoggerFactory.getLogger(JabRefExecutorService.class);</span>
+<span class="fc" id="L26">    private final ExecutorService executorService = Executors.newCachedThreadPool(r -&gt; {</span>
+<span class="fc" id="L27">        Thread thread = new Thread(r);</span>
+<span class="fc" id="L28">        thread.setName(&quot;JabRef CachedThreadPool&quot;);</span>
+<span class="fc" id="L29">        thread.setUncaughtExceptionHandler(new FallbackExceptionHandler());</span>
+<span class="fc" id="L30">        return thread;</span>
+
+    });
+<span class="fc" id="L33">    private final ExecutorService lowPriorityExecutorService = Executors.newCachedThreadPool(r -&gt; {</span>
+<span class="nc" id="L34">        Thread thread = new Thread(r);</span>
+<span class="nc" id="L35">        thread.setName(&quot;JabRef LowPriorityCachedThreadPool&quot;);</span>
+<span class="nc" id="L36">        thread.setUncaughtExceptionHandler(new FallbackExceptionHandler());</span>
+<span class="nc" id="L37">        return thread;</span>
+    });
+<span class="fc" id="L39">    private final Timer timer = new Timer(&quot;timer&quot;, true);</span>
+    private Thread remoteThread;
+
+<span class="fc" id="L42">    private JabRefExecutorService() {</span>
+<span class="fc" id="L43">    }</span>
+
+    public void execute(Runnable command) {
+<span class="nc" id="L46">        Objects.requireNonNull(command);</span>
+<span class="nc" id="L47">        executorService.execute(command);</span>
+<span class="nc" id="L48">    }</span>
+
+    public void executeAndWait(Runnable command) {
+<span class="nc" id="L51">        Objects.requireNonNull(command);</span>
+<span class="nc" id="L52">        Future&lt;?&gt; future = executorService.submit(command);</span>
+        try {
+<span class="nc" id="L54">            future.get();</span>
+<span class="nc" id="L55">        } catch (InterruptedException ignored) {</span>
+            // Ignored
+<span class="nc" id="L57">        } catch (ExecutionException e) {</span>
+<span class="nc" id="L58">            LOGGER.error(&quot;Problem executing command&quot;, e);</span>
+<span class="nc" id="L59">        }</span>
+<span class="nc" id="L60">    }</span>
+
+    /**
+     * Executes a callable task that provides a return value after the calculation is done.
+     *
+     * @param command The task to execute.
+     * @return A Future object that provides the returning value.
+     */
+    public &lt;T&gt; Future&lt;T&gt; execute(Callable&lt;T&gt; command) {
+<span class="nc" id="L69">        Objects.requireNonNull(command);</span>
+<span class="nc" id="L70">        return executorService.submit(command);</span>
+    }
+
+    /**
+     * Executes a collection of callable tasks and returns a List of the resulting Future objects after the calculation is done.
+     *
+     * @param tasks The tasks to execute
+     * @return A List of Future objects that provide the returning values.
+     */
+    public &lt;T&gt; List&lt;Future&lt;T&gt;&gt; executeAll(Collection&lt;Callable&lt;T&gt;&gt; tasks) {
+<span class="nc" id="L80">        Objects.requireNonNull(tasks);</span>
+        try {
+<span class="nc" id="L82">            return executorService.invokeAll(tasks);</span>
+<span class="nc" id="L83">        } catch (InterruptedException exception) {</span>
+            // Ignored
+<span class="nc" id="L85">            return Collections.emptyList();</span>
+        }
+    }
+
+    public &lt;T&gt; List&lt;Future&lt;T&gt;&gt; executeAll(Collection&lt;Callable&lt;T&gt;&gt; tasks, int timeout, TimeUnit timeUnit) {
+<span class="fc" id="L90">        Objects.requireNonNull(tasks);</span>
+        try {
+<span class="fc" id="L92">            return executorService.invokeAll(tasks, timeout, timeUnit);</span>
+<span class="nc" id="L93">        } catch (InterruptedException exception) {</span>
+            // Ignored
+<span class="nc" id="L95">            return Collections.emptyList();</span>
+        }
+    }
+
+    public void executeInterruptableTask(final Runnable runnable, String taskName) {
+<span class="nc" id="L100">        this.lowPriorityExecutorService.execute(new NamedRunnable(taskName, runnable));</span>
+<span class="nc" id="L101">    }</span>
+
+    public void executeInterruptableTaskAndWait(Runnable runnable) {
+<span class="nc" id="L104">        Objects.requireNonNull(runnable);</span>
+
+<span class="nc" id="L106">        Future&lt;?&gt; future = lowPriorityExecutorService.submit(runnable);</span>
+        try {
+<span class="nc" id="L108">            future.get();</span>
+<span class="nc" id="L109">        } catch (InterruptedException ignored) {</span>
+            // Ignored
+<span class="nc" id="L111">        } catch (ExecutionException e) {</span>
+<span class="nc" id="L112">            LOGGER.error(&quot;Problem executing command&quot;, e);</span>
+<span class="nc" id="L113">        }</span>
+<span class="nc" id="L114">    }</span>
+
+    public void manageRemoteThread(Thread thread) {
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        if (this.remoteThread != null) {</span>
+<span class="nc" id="L118">            throw new IllegalStateException(&quot;Remote thread is already attached&quot;);</span>
+        } else {
+<span class="fc" id="L120">            this.remoteThread = thread;</span>
+<span class="fc" id="L121">            remoteThread.start();</span>
+        }
+<span class="fc" id="L123">    }</span>
+
+    public void stopRemoteThread() {
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">        if (remoteThread != null) {</span>
+<span class="fc" id="L127">            remoteThread.interrupt();</span>
+<span class="fc" id="L128">            remoteThread = null;</span>
+        }
+<span class="fc" id="L130">    }</span>
+
+    public void submit(TimerTask timerTask, long millisecondsDelay) {
+<span class="nc" id="L133">        timer.schedule(timerTask, millisecondsDelay);</span>
+<span class="nc" id="L134">    }</span>
+
+    public void shutdownEverything() {
+        // those threads will be allowed to finish
+<span class="nc" id="L138">        this.executorService.shutdown();</span>
+        //those threads will be interrupted in their current task
+<span class="nc" id="L140">        this.lowPriorityExecutorService.shutdownNow();</span>
+        // kill the remote thread
+<span class="nc" id="L142">        stopRemoteThread();</span>
+<span class="nc" id="L143">        timer.cancel();</span>
+<span class="nc" id="L144">    }</span>
+
+    private class NamedRunnable implements Runnable {
+
+        private final String name;
+
+        private final Runnable task;
+
+<span class="nc" id="L152">        private NamedRunnable(String name, Runnable runnable) {</span>
+<span class="nc" id="L153">            this.name = name;</span>
+<span class="nc" id="L154">            this.task = runnable;</span>
+<span class="nc" id="L155">        }</span>
+
+        @Override
+        public void run() {
+<span class="nc" id="L159">            final String orgName = Thread.currentThread().getName();</span>
+<span class="nc" id="L160">            Thread.currentThread().setName(name);</span>
+            try {
+<span class="nc" id="L162">                task.run();</span>
+            } finally {
+<span class="nc" id="L164">                Thread.currentThread().setName(orgName);</span>
+            }
+<span class="nc" id="L166">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

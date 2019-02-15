@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MergeEntries.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.mergeentries</a> &gt; <span class="el_source">MergeEntries.java</span></div><h1>MergeEntries.java</h1><pre class="source lang-java linenums">package org.jabref.gui.mergeentries;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+
+import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
+
+import org.jabref.Globals;
+import org.jabref.gui.util.ViewModelListCellFactory;
+import org.jabref.gui.util.component.DiffHighlightingTextPane;
+import org.jabref.logic.formatter.casechanger.SentenceCaseFormatter;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.InternalBibtexFields;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.fxmisc.easybind.EasyBind;
+
+public class MergeEntries extends BorderPane {
+
+<span class="nc" id="L45">    private final ComboBox&lt;DiffMode&gt; diffMode = new ComboBox&lt;&gt;();</span>
+
+    // Headings
+<span class="nc" id="L48">    private final List&lt;String&gt; columnHeadings = Arrays.asList(Localization.lang(&quot;Field&quot;),</span>
+<span class="nc" id="L49">            Localization.lang(&quot;Left entry&quot;),</span>
+<span class="nc" id="L50">            Localization.lang(&quot;Left&quot;),</span>
+<span class="nc" id="L51">            Localization.lang(&quot;None&quot;),</span>
+<span class="nc" id="L52">            Localization.lang(&quot;Right&quot;),</span>
+<span class="nc" id="L53">            Localization.lang(&quot;Right entry&quot;));</span>
+<span class="nc" id="L54">    private final Set&lt;String&gt; identicalFields = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L55">    private final Set&lt;String&gt; differentFields = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L56">    private final BibEntry mergedEntry = new BibEntry();</span>
+    private final BibEntry leftEntry;
+    private final BibEntry rightEntry;
+<span class="nc" id="L59">    private final Map&lt;String, TextFlow&gt; leftTextPanes = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L60">    private final Set&lt;String&gt; allFields = new TreeSet&lt;&gt;();</span>
+<span class="nc" id="L61">    private final Map&lt;String, TextFlow&gt; rightTextPanes = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L62">    private final Map&lt;String, List&lt;RadioButton&gt;&gt; radioButtons = new HashMap&lt;&gt;();</span>
+    private Boolean identicalTypes;
+    private List&lt;RadioButton&gt; typeRadioButtons;
+
+    /**
+     * Constructor with optional column captions for the two entries
+     *
+     * @param entryLeft    Left entry
+     * @param entryRight   Right entry
+     * @param headingLeft  Heading for left entry
+     * @param headingRight Heading for right entry
+     * @param type         Bib database mode
+     */
+<span class="nc" id="L75">    public MergeEntries(BibEntry entryLeft, BibEntry entryRight, String headingLeft, String headingRight, BibDatabaseMode type) {</span>
+<span class="nc" id="L76">        this.leftEntry = entryLeft;</span>
+<span class="nc" id="L77">        this.rightEntry = entryRight;</span>
+
+<span class="nc" id="L79">        initialize();</span>
+<span class="nc" id="L80">        setLeftHeaderText(headingLeft);</span>
+<span class="nc" id="L81">        setRightHeaderText(headingRight);</span>
+<span class="nc" id="L82">    }</span>
+
+
+    /**
+     * Constructor taking two entries
+     *
+     * @param entryLeft Left entry
+     * @param entryRight Right entry
+     * @param type Bib database mode
+     */
+<span class="nc" id="L92">    public MergeEntries(BibEntry entryLeft, BibEntry entryRight, BibDatabaseMode type) {</span>
+<span class="nc" id="L93">        leftEntry = entryLeft;</span>
+<span class="nc" id="L94">        rightEntry = entryRight;</span>
+<span class="nc" id="L95">        initialize();</span>
+<span class="nc" id="L96">    }</span>
+
+    private static String getDisplayText(DiffMode mode) {
+<span class="nc bnc" id="L99" title="All 6 branches missed.">        switch (mode) {</span>
+            case PLAIN:
+<span class="nc" id="L101">                return Localization.lang(&quot;Plain text&quot;);</span>
+            case WORD:
+<span class="nc" id="L103">                return Localization.lang(&quot;Show diff&quot;) + &quot; - &quot; + Localization.lang(&quot;word&quot;);</span>
+            case CHARACTER:
+<span class="nc" id="L105">                return Localization.lang(&quot;Show diff&quot;) + &quot; - &quot; + Localization.lang(&quot;character&quot;);</span>
+            case WORD_SYMMETRIC:
+<span class="nc" id="L107">                return Localization.lang(&quot;Show symmetric diff&quot;) + &quot; - &quot; + Localization.lang(&quot;word&quot;);</span>
+            case CHARACTER_SYMMETRIC:
+<span class="nc" id="L109">                return Localization.lang(&quot;Show symmetric diff&quot;) + &quot; - &quot; + Localization.lang(&quot;character&quot;);</span>
+            default:
+<span class="nc" id="L111">                throw new UnsupportedOperationException(&quot;Not implemented: &quot; + mode);</span>
+        }
+    }
+
+    /**
+     * Main function for building the merge entry JPanel
+     */
+    private void initialize() {
+<span class="nc" id="L119">        setPrefWidth(800);</span>
+
+<span class="nc" id="L121">        setupFields();</span>
+
+<span class="nc" id="L123">        fillDiffModes();</span>
+
+<span class="nc" id="L125">        GridPane mergePanel = new GridPane();</span>
+<span class="nc" id="L126">        mergePanel.setVgap(10);</span>
+<span class="nc" id="L127">        mergePanel.setHgap(15);</span>
+<span class="nc" id="L128">        ColumnConstraints columnLabel = new ColumnConstraints();</span>
+<span class="nc" id="L129">        columnLabel.setHgrow(Priority.NEVER);</span>
+<span class="nc" id="L130">        ColumnConstraints columnValues = new ColumnConstraints();</span>
+<span class="nc" id="L131">        columnValues.setHgrow(Priority.ALWAYS);</span>
+<span class="nc" id="L132">        columnValues.setPercentWidth(40);</span>
+<span class="nc" id="L133">        ColumnConstraints columnSelect = new ColumnConstraints();</span>
+<span class="nc" id="L134">        columnSelect.setHgrow(Priority.NEVER);</span>
+<span class="nc" id="L135">        mergePanel.getColumnConstraints().setAll(columnLabel, columnValues, columnSelect, columnSelect, columnSelect, columnValues);</span>
+
+<span class="nc" id="L137">        setupHeadingRows(mergePanel);</span>
+<span class="nc" id="L138">        setupEntryTypeRow(mergePanel);</span>
+<span class="nc" id="L139">        setupFieldRows(mergePanel);</span>
+
+<span class="nc" id="L141">        ScrollPane scrollPane = new ScrollPane(mergePanel);</span>
+<span class="nc" id="L142">        scrollPane.setFitToWidth(true);</span>
+<span class="nc" id="L143">        setCenter(scrollPane);</span>
+
+<span class="nc" id="L145">        updateFieldValues(allFields);</span>
+
+<span class="nc" id="L147">        updateMergedEntry();</span>
+
+<span class="nc" id="L149">        getStylesheets().add(0, MergeEntries.class.getResource(&quot;MergeEntries.css&quot;).toExternalForm());</span>
+<span class="nc" id="L150">    }</span>
+
+    private void setupFieldRows(GridPane mergePanel) {
+        // For all fields in joint add a row and possibly radio buttons
+<span class="nc" id="L154">        int row = 2;</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        for (String field : allFields) {</span>
+<span class="nc" id="L156">            Label label = new Label(new SentenceCaseFormatter().format(field));</span>
+<span class="nc" id="L157">            mergePanel.add(label, 0, row);</span>
+<span class="nc" id="L158">            Optional&lt;String&gt; leftString = leftEntry.getField(field);</span>
+<span class="nc" id="L159">            Optional&lt;String&gt; rightString = rightEntry.getField(field);</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">            if (leftString.equals(rightString)) {</span>
+<span class="nc" id="L161">                identicalFields.add(field);</span>
+            } else {
+<span class="nc" id="L163">                differentFields.add(field);</span>
+            }
+
+            // Left text pane
+<span class="nc bnc" id="L167" title="All 2 branches missed.">            if (leftString.isPresent()) {</span>
+<span class="nc" id="L168">                TextFlow tf = new DiffHighlightingTextPane();</span>
+<span class="nc" id="L169">                mergePanel.add(tf, 1, row);</span>
+<span class="nc" id="L170">                leftTextPanes.put(field, tf);</span>
+            }
+
+            // Add radio buttons if the two entries do not have identical fields
+<span class="nc bnc" id="L174" title="All 2 branches missed.">            if (identicalFields.contains(field)) {</span>
+<span class="nc" id="L175">                mergedEntry.setField(field, leftString.get()); // Will only happen if both entries have the field and the content is identical</span>
+            } else {
+<span class="nc" id="L177">                ToggleGroup group = new ToggleGroup();</span>
+<span class="nc" id="L178">                List&lt;RadioButton&gt; list = new ArrayList&lt;&gt;(3);</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">                for (int k = 0; k &lt; 3; k++) {</span>
+<span class="nc" id="L180">                    RadioButton button = new RadioButton();</span>
+<span class="nc" id="L181">                    EasyBind.subscribe(button.selectedProperty(), selected -&gt; updateMergedEntry());</span>
+<span class="nc" id="L182">                    group.getToggles().add(button);</span>
+<span class="nc" id="L183">                    mergePanel.add(button, 2 + k, row);</span>
+<span class="nc" id="L184">                    list.add(button);</span>
+                }
+<span class="nc" id="L186">                radioButtons.put(field, list);</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">                if (leftString.isPresent()) {</span>
+<span class="nc" id="L188">                    list.get(0).setSelected(true);</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                    if (!rightString.isPresent()) {</span>
+<span class="nc" id="L190">                        list.get(2).setDisable(true);</span>
+                    }
+                } else {
+<span class="nc" id="L193">                    list.get(0).setDisable(true);</span>
+<span class="nc" id="L194">                    list.get(2).setSelected(true);</span>
+                }
+            }
+
+            // Right text pane
+<span class="nc bnc" id="L199" title="All 2 branches missed.">            if (rightString.isPresent()) {</span>
+<span class="nc" id="L200">                TextFlow tf = new DiffHighlightingTextPane();</span>
+<span class="nc" id="L201">                mergePanel.add(tf, 5, row);</span>
+<span class="nc" id="L202">                rightTextPanes.put(field, tf);</span>
+            }
+<span class="nc" id="L204">            row++;</span>
+<span class="nc" id="L205">        }</span>
+<span class="nc" id="L206">    }</span>
+
+    private void setupEntryTypeRow(GridPane mergePanel) {
+        // Start with entry type
+<span class="nc" id="L210">        mergePanel.add(new Label(Localization.lang(&quot;Entry type&quot;)), 0, 1);</span>
+
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (leftEntry.getType().equals(rightEntry.getType())) {</span>
+<span class="nc" id="L213">            mergePanel.add(DiffHighlighting.forUnchanged(leftEntry.getType()), 1, 1);</span>
+<span class="nc" id="L214">            mergePanel.add(DiffHighlighting.forUnchanged(rightEntry.getType()), 5, 1);</span>
+<span class="nc" id="L215">            identicalTypes = true;</span>
+        } else {
+<span class="nc" id="L217">            mergePanel.add(DiffHighlighting.forChanged(leftEntry.getType()), 1, 1);</span>
+<span class="nc" id="L218">            mergePanel.add(DiffHighlighting.forChanged(rightEntry.getType()), 5, 1);</span>
+<span class="nc" id="L219">            identicalTypes = false;</span>
+<span class="nc" id="L220">            ToggleGroup group = new ToggleGroup();</span>
+<span class="nc" id="L221">            typeRadioButtons = new ArrayList&lt;&gt;(2);</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">            for (int k = 0; k &lt; 3; k += 2) {</span>
+<span class="nc" id="L223">                RadioButton button = new RadioButton();</span>
+<span class="nc" id="L224">                EasyBind.subscribe(button.selectedProperty(), selected -&gt; updateMergedEntry());</span>
+<span class="nc" id="L225">                typeRadioButtons.add(button);</span>
+<span class="nc" id="L226">                group.getToggles().add(button);</span>
+<span class="nc" id="L227">                mergePanel.add(button, 2 + k, 1);</span>
+            }
+<span class="nc" id="L229">            typeRadioButtons.get(0).setSelected(true);</span>
+        }
+<span class="nc" id="L231">    }</span>
+
+    private void setupHeadingRows(GridPane mergePanel) {
+        // Set headings
+<span class="nc bnc" id="L235" title="All 2 branches missed.">        for (int i = 0; i &lt; 6; i++) {</span>
+<span class="nc" id="L236">            mergePanel.add(new Label(columnHeadings.get(i)), i, 0);</span>
+        }
+<span class="nc" id="L238">    }</span>
+
+    private void fillDiffModes() {
+<span class="nc" id="L241">        diffMode.setItems(FXCollections.observableList(Arrays.asList(DiffMode.values())));</span>
+<span class="nc" id="L242">        new ViewModelListCellFactory&lt;DiffMode&gt;()</span>
+<span class="nc" id="L243">                .withText(MergeEntries::getDisplayText)</span>
+<span class="nc" id="L244">                .install(diffMode);</span>
+<span class="nc" id="L245">        DiffMode diffModePref = Globals.prefs.getAsOptional(JabRefPreferences.MERGE_ENTRIES_DIFF_MODE)</span>
+<span class="nc" id="L246">                                             .flatMap(DiffMode::parse)</span>
+<span class="nc" id="L247">                                             .orElse(DiffMode.WORD);</span>
+<span class="nc" id="L248">        diffMode.setValue(diffModePref);</span>
+<span class="nc" id="L249">        EasyBind.subscribe(this.diffMode.valueProperty(), mode -&gt; {</span>
+<span class="nc" id="L250">            updateFieldValues(differentFields);</span>
+<span class="nc" id="L251">            Globals.prefs.put(JabRefPreferences.MERGE_ENTRIES_DIFF_MODE, mode.name());</span>
+<span class="nc" id="L252">        });</span>
+
+<span class="nc" id="L254">        HBox heading = new HBox(10);</span>
+<span class="nc" id="L255">        heading.getChildren().setAll(this.diffMode);</span>
+<span class="nc" id="L256">        setTop(heading);</span>
+<span class="nc" id="L257">        BorderPane.setMargin(heading, new Insets(0, 0, 10, 0));</span>
+<span class="nc" id="L258">    }</span>
+
+    private void setupFields() {
+<span class="nc" id="L261">        allFields.addAll(leftEntry.getFieldNames());</span>
+<span class="nc" id="L262">        allFields.addAll(rightEntry.getFieldNames());</span>
+
+        // Do not show internal fields
+<span class="nc" id="L265">        Set&lt;String&gt; internalFields = allFields.stream().filter(InternalBibtexFields::isInternalField).collect(Collectors.toSet());</span>
+<span class="nc" id="L266">        allFields.removeAll(internalFields);</span>
+<span class="nc" id="L267">    }</span>
+
+    private void updateFieldValues(Collection&lt;String&gt; fields) {
+<span class="nc bnc" id="L270" title="All 2 branches missed.">        for (String field : fields) {</span>
+<span class="nc" id="L271">            String leftString = leftEntry.getField(field).orElse(&quot;&quot;);</span>
+<span class="nc" id="L272">            String rightString = rightEntry.getField(field).orElse(&quot;&quot;);</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">            List&lt;Text&gt; leftText = leftString.isEmpty() ? Collections.emptyList() : Collections.singletonList(DiffHighlighting.forUnchanged(leftString));</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">            List&lt;Text&gt; rightText = rightString.isEmpty() ? Collections.emptyList() : Collections.singletonList(DiffHighlighting.forUnchanged(rightString));</span>
+<span class="nc bnc" id="L275" title="All 6 branches missed.">            switch (diffMode.getValue()) {</span>
+                case PLAIN:
+<span class="nc" id="L277">                    break;</span>
+                case WORD:
+<span class="nc" id="L279">                    rightText = DiffHighlighting.generateDiffHighlighting(leftString, rightString, &quot; &quot;);</span>
+<span class="nc" id="L280">                    break;</span>
+                case CHARACTER:
+<span class="nc" id="L282">                    rightText = DiffHighlighting.generateDiffHighlighting(leftString, rightString, &quot;&quot;);</span>
+<span class="nc" id="L283">                    break;</span>
+                case WORD_SYMMETRIC:
+<span class="nc" id="L285">                    leftText = DiffHighlighting.generateSymmetricHighlighting(leftString, rightString, &quot; &quot;);</span>
+<span class="nc" id="L286">                    rightText = DiffHighlighting.generateSymmetricHighlighting(rightString, leftString, &quot; &quot;);</span>
+<span class="nc" id="L287">                    break;</span>
+                case CHARACTER_SYMMETRIC:
+<span class="nc" id="L289">                    leftText = DiffHighlighting.generateSymmetricHighlighting(leftString, rightString, &quot;&quot;);</span>
+<span class="nc" id="L290">                    rightText = DiffHighlighting.generateSymmetricHighlighting(rightString, leftString, &quot;&quot;);</span>
+<span class="nc" id="L291">                    break;</span>
+                default:
+<span class="nc" id="L293">                    throw new UnsupportedOperationException(&quot;Not implemented &quot; + diffMode.getValue());</span>
+            }
+<span class="nc bnc" id="L295" title="All 4 branches missed.">            if (!leftText.isEmpty() &amp;&amp; leftTextPanes.containsKey(field)) {</span>
+<span class="nc" id="L296">                leftTextPanes.get(field).getChildren().setAll(leftText);</span>
+            }
+<span class="nc bnc" id="L298" title="All 4 branches missed.">            if (!rightText.isEmpty() &amp;&amp; rightTextPanes.containsKey(field)) {</span>
+<span class="nc" id="L299">                rightTextPanes.get(field).getChildren().setAll(rightText);</span>
+            }
+<span class="nc" id="L301">        }</span>
+<span class="nc" id="L302">    }</span>
+
+    /**
+     * @return Merged BibEntry
+     */
+    public BibEntry getMergeEntry() {
+<span class="nc" id="L308">        return mergedEntry;</span>
+    }
+
+    /**
+     * Update the merged entry
+     */
+    private void updateMergedEntry() {
+        // Check if the type has changed
+<span class="nc bnc" id="L316" title="All 6 branches missed.">        if (!identicalTypes &amp;&amp; !typeRadioButtons.isEmpty() &amp;&amp; typeRadioButtons.get(0).isSelected()) {</span>
+<span class="nc" id="L317">            mergedEntry.setType(leftEntry.getType());</span>
+        } else {
+<span class="nc" id="L319">            mergedEntry.setType(rightEntry.getType());</span>
+        }
+
+        // Check the potentially different fields
+<span class="nc bnc" id="L323" title="All 2 branches missed.">        for (String field : differentFields) {</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">            if (!radioButtons.containsKey(field)) {</span>
+                // May happen during initialization -&gt; just ignore
+<span class="nc" id="L326">                continue;</span>
+            }
+<span class="nc bnc" id="L328" title="All 2 branches missed.">            if (radioButtons.get(field).get(0).isSelected()) {</span>
+<span class="nc" id="L329">                mergedEntry.setField(field, leftEntry.getField(field).get()); // Will only happen if field exists</span>
+<span class="nc bnc" id="L330" title="All 2 branches missed.">            } else if (radioButtons.get(field).get(2).isSelected()) {</span>
+<span class="nc" id="L331">                mergedEntry.setField(field, rightEntry.getField(field).get()); // Will only happen if field exists</span>
+            } else {
+<span class="nc" id="L333">                mergedEntry.clearField(field);</span>
+            }
+<span class="nc" id="L335">        }</span>
+<span class="nc" id="L336">    }</span>
+
+    public void setLeftHeaderText(String leftHeaderText) {
+<span class="nc" id="L339">        columnHeadings.set(1, leftHeaderText);</span>
+<span class="nc" id="L340">        initialize();</span>
+<span class="nc" id="L341">    }</span>
+
+    public void setRightHeaderText(String rightHeaderText) {
+<span class="nc" id="L344">        columnHeadings.set(5, rightHeaderText);</span>
+<span class="nc" id="L345">        initialize();</span>
+<span class="nc" id="L346">    }</span>
+
+<span class="nc" id="L348">    public enum DiffMode {</span>
+<span class="nc" id="L349">        PLAIN,</span>
+<span class="nc" id="L350">        WORD,</span>
+<span class="nc" id="L351">        CHARACTER,</span>
+<span class="nc" id="L352">        WORD_SYMMETRIC,</span>
+<span class="nc" id="L353">        CHARACTER_SYMMETRIC;</span>
+
+        public static Optional&lt;DiffMode&gt; parse(String name) {
+            try {
+<span class="nc" id="L357">                return Optional.of(DiffMode.valueOf(name));</span>
+<span class="nc" id="L358">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L359">                return Optional.empty();</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

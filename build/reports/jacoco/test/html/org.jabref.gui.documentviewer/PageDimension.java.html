@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PageDimension.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.documentviewer</a> &gt; <span class="el_source">PageDimension.java</span></div><h1>PageDimension.java</h1><pre class="source lang-java linenums">package org.jabref.gui.documentviewer;
+
+<span class="nc" id="L3">public abstract class PageDimension {</span>
+
+    public static PageDimension ofFixedWidth(int width) {
+<span class="nc" id="L6">        return new FixedWidthPageDimension(width);</span>
+    }
+
+    public static PageDimension ofFixedHeight(int height) {
+<span class="nc" id="L10">        return new FixedHeightPageDimension(height);</span>
+    }
+
+    public static PageDimension ofFixedWidth(double width) {
+<span class="nc" id="L14">        return ofFixedWidth((int) width);</span>
+    }
+
+    public static PageDimension ofFixedHeight(double height) {
+<span class="nc" id="L18">        return ofFixedHeight((int) height);</span>
+    }
+
+    public abstract int getWidth(double aspectRatio);
+
+    public abstract int getHeight(double aspectRatio);
+
+    private static class FixedWidthPageDimension extends PageDimension {
+        private final int width;
+
+<span class="nc" id="L28">        public FixedWidthPageDimension(int width) {</span>
+<span class="nc" id="L29">            this.width = width;</span>
+<span class="nc" id="L30">        }</span>
+
+        @Override
+        public int getWidth(double aspectRatio) {
+<span class="nc" id="L34">            return width;</span>
+        }
+
+        @Override
+        public int getHeight(double aspectRatio) {
+<span class="nc" id="L39">            return (int) (width / aspectRatio);</span>
+        }
+    }
+
+<span class="nc" id="L43">    private static class FixedHeightPageDimension extends PageDimension {</span>
+        private final int height;
+
+<span class="nc" id="L46">        public FixedHeightPageDimension(int height) {</span>
+<span class="nc" id="L47">            this.height = height;</span>
+<span class="nc" id="L48">        }</span>
+
+        @Override
+        public int getWidth(double aspectRatio) {
+<span class="nc" id="L52">            return (int) (aspectRatio * height);</span>
+        }
+
+        @Override
+        public int getHeight(double aspectRatio) {
+<span class="nc" id="L57">            return height;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

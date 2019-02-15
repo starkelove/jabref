@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.model.entry.identifier.ISSNTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:26" hostname="n184-p67.eduroam.kth.se" time="0.005">
+  <properties/>
+  <testcase name="testIsValidFormatCorrect()" classname="org.jabref.model.entry.identifier.ISSNTest" time="0.001"/>
+  <testcase name="testIsValidChecksumCorrect()" classname="org.jabref.model.entry.identifier.ISSNTest" time="0.0"/>
+  <testcase name="testIsCanBeCleaned()" classname="org.jabref.model.entry.identifier.ISSNTest" time="0.0"/>
+  <testcase name="testIsValidFormatIncorrect()" classname="org.jabref.model.entry.identifier.ISSNTest" time="0.0"/>
+  <testcase name="testIsCanBeCleanedIncorrectRubbish()" classname="org.jabref.model.entry.identifier.ISSNTest" time="0.0"/>
+  <testcase name="testGetCleanedISSNDashAlreadyThere()" classname="org.jabref.model.entry.identifier.ISSNTest" time="0.0"/>
+  <testcase name="testIsCanBeCleanedDashAlreadyThere()" classname="org.jabref.model.entry.identifier.ISSNTest" time="0.001"/>
+  <testcase name="testIsValidChecksumIncorrect()" classname="org.jabref.model.entry.identifier.ISSNTest" time="0.0"/>
+  <testcase name="testGetCleanedISSNDashRubbish()" classname="org.jabref.model.entry.identifier.ISSNTest" time="0.001"/>
+  <testcase name="testGetCleanedISSN()" classname="org.jabref.model.entry.identifier.ISSNTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

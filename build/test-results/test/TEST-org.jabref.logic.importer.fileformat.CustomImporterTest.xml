@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.importer.fileformat.CustomImporterTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:11" hostname="n184-p67.eduroam.kth.se" time="0.011">
+  <properties/>
+  <testcase name="testCompareToSmaller()" classname="org.jabref.logic.importer.fileformat.CustomImporterTest" time="0.001"/>
+  <testcase name="testGetId()" classname="org.jabref.logic.importer.fileformat.CustomImporterTest" time="0.0"/>
+  <testcase name="testToString()" classname="org.jabref.logic.importer.fileformat.CustomImporterTest" time="0.0"/>
+  <testcase name="testClassicConstructor()" classname="org.jabref.logic.importer.fileformat.CustomImporterTest" time="0.001"/>
+  <testcase name="equalsIsBasedOnName()" classname="org.jabref.logic.importer.fileformat.CustomImporterTest" time="0.001"/>
+  <testcase name="testGetName()" classname="org.jabref.logic.importer.fileformat.CustomImporterTest" time="0.002"/>
+  <testcase name="equalsWithSameReference()" classname="org.jabref.logic.importer.fileformat.CustomImporterTest" time="0.001"/>
+  <testcase name="testGetBasePath()" classname="org.jabref.logic.importer.fileformat.CustomImporterTest" time="0.0"/>
+  <testcase name="testCompareToEven()" classname="org.jabref.logic.importer.fileformat.CustomImporterTest" time="0.0"/>
+  <testcase name="testCompareToGreater()" classname="org.jabref.logic.importer.fileformat.CustomImporterTest" time="0.0"/>
+  <testcase name="testGetClassName()" classname="org.jabref.logic.importer.fileformat.CustomImporterTest" time="0.001"/>
+  <testcase name="testGetAsStringList()" classname="org.jabref.logic.importer.fileformat.CustomImporterTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

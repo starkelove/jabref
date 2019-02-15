@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TagToMarkedTextStore.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.plaintextimport</a> &gt; <span class="el_source">TagToMarkedTextStore.java</span></div><h1>TagToMarkedTextStore.java</h1><pre class="source lang-java linenums">package org.jabref.gui.plaintextimport;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.swing.text.StyledDocument;
+
+/**
+ * Save the textposition for tags in a recent TextInputDialog context
+ */
+public class TagToMarkedTextStore {
+
+    private final Map&lt;String, List&lt;TMarkedStoreItem&gt;&gt; tagMap;
+
+<span class="nc" id="L17">    public TagToMarkedTextStore() {</span>
+<span class="nc" id="L18">        tagMap = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L19">    }</span>
+
+    /** appends a selection property for tag */
+    public void appendPosition(String tag, int start, int end) {
+<span class="nc" id="L23">        List&lt;TMarkedStoreItem&gt; ll = tagMap.get(tag);</span>
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        if (ll == null) {</span>
+<span class="nc" id="L25">            ll = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L26">            tagMap.put(tag, ll);</span>
+        }
+
+<span class="nc" id="L29">        ll.add(new TMarkedStoreItem(start, end));</span>
+<span class="nc" id="L30">    }</span>
+
+    /** insert selection properties for tag, old entries were deleted */
+    public void insertPosition(String tag, int start, int end) {
+<span class="nc" id="L34">        List&lt;TMarkedStoreItem&gt; ll = tagMap.get(tag);</span>
+
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        if (ll == null) {</span>
+<span class="nc" id="L37">            ll = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L38">            tagMap.put(tag, ll);</span>
+        } else {
+<span class="nc" id="L40">            ll.clear();</span>
+        }
+
+<span class="nc" id="L43">        ll.add(new TMarkedStoreItem(start, end));</span>
+<span class="nc" id="L44">    }</span>
+
+    /** set the Style for the tag if an entry is available */
+    public void setStyleForTag(String tag, String style, StyledDocument doc) {
+<span class="nc" id="L48">        List&lt;TMarkedStoreItem&gt; ll = tagMap.get(tag);</span>
+
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        if (ll != null) {</span>
+            // iterate over all saved selections
+<span class="nc bnc" id="L52" title="All 2 branches missed.">            for (TMarkedStoreItem item : ll) {</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">                if (item != null) {</span>
+<span class="nc" id="L54">                    doc.setCharacterAttributes(item.getStart(), item.getLength(), doc.getStyle(style), true);</span>
+                }
+<span class="nc" id="L56">            }</span>
+        }
+<span class="nc" id="L58">    }</span>
+
+    private static class TMarkedStoreItem {
+
+        private final int start;
+        private final int end;
+
+
+<span class="nc" id="L66">        public TMarkedStoreItem(int start, int end) {</span>
+<span class="nc" id="L67">            this.start = start;</span>
+<span class="nc" id="L68">            this.end = end;</span>
+<span class="nc" id="L69">        }</span>
+
+        public int getStart() {
+<span class="nc" id="L72">            return start;</span>
+        }
+
+        public int getLength() {
+<span class="nc" id="L76">            return end - start;</span>
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

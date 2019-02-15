@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArXiv.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fetcher</a> &gt; <span class="el_source">ArXiv.java</span></div><h1>ArXiv.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fetcher;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.jabref.logic.help.HelpFile;
+import org.jabref.logic.importer.FetcherException;
+import org.jabref.logic.importer.FulltextFetcher;
+import org.jabref.logic.importer.IdBasedFetcher;
+import org.jabref.logic.importer.IdFetcher;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.SearchBasedFetcher;
+import org.jabref.logic.util.io.XMLUtil;
+import org.jabref.logic.util.strings.StringSimilarity;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BibtexEntryTypes;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.LinkedFile;
+import org.jabref.model.entry.identifier.ArXivIdentifier;
+import org.jabref.model.entry.identifier.DOI;
+import org.jabref.model.strings.StringUtil;
+import org.jabref.model.util.OptionalUtil;
+
+import org.apache.http.client.utils.URIBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
+
+/**
+ * Fetcher for the arXiv.
+ *
+ * @see &lt;a href=&quot;https://arxiv.org/help/api/index&quot;&gt;ArXiv API&lt;/a&gt; for an overview of the API
+ * @see &lt;a href=&quot;https://arxiv.org/help/api/user-manual#_calling_the_api&quot;&gt;ArXiv API User's Manual&lt;/a&gt; for a detailed
+ * description on how to use the API
+ *
+ * Similar implementions:
+ * &lt;a href=&quot;https://github.com/nathangrigg/arxiv2bib&quot;&gt;arxiv2bib&lt;/a&gt; which is &lt;a href=&quot;https://arxiv2bibtex.org/&quot;&gt;live&lt;/a&gt;
+ * &lt;a herf=&quot;https://gitlab.c3sl.ufpr.br/portalmec/dspace-portalmec/blob/aa209d15082a9870f9daac42c78a35490ce77b52/dspace-api/src/main/java/org/dspace/submit/lookup/ArXivService.java&quot;&gt;dspace-portalmec&lt;/a&gt;
+ */
+public class ArXiv implements FulltextFetcher, SearchBasedFetcher, IdBasedFetcher, IdFetcher&lt;ArXivIdentifier&gt; {
+
+<span class="fc" id="L59">    private static final Logger LOGGER = LoggerFactory.getLogger(ArXiv.class);</span>
+
+    private static final String API_URL = &quot;https://export.arxiv.org/api/query&quot;;
+    private static final String ARXIV_URL_PREFIX_FOR_ID = &quot;(https?://arxiv.org/abs/)&quot;;
+<span class="fc" id="L63">    private static final Pattern URL_PATTERN = Pattern.compile(ARXIV_URL_PREFIX_FOR_ID);</span>
+
+    private final ImportFormatPreferences importFormatPreferences;
+
+<span class="fc" id="L67">    public ArXiv(ImportFormatPreferences importFormatPreferences) {</span>
+<span class="fc" id="L68">        this.importFormatPreferences = importFormatPreferences;</span>
+<span class="fc" id="L69">    }</span>
+
+    @Override
+    public Optional&lt;URL&gt; findFullText(BibEntry entry) throws IOException {
+<span class="fc" id="L73">        Objects.requireNonNull(entry);</span>
+
+        try {
+<span class="fc" id="L76">            Optional&lt;URL&gt; pdfUrl = searchForEntries(entry).stream()</span>
+<span class="fc" id="L77">                                                          .map(ArXivEntry::getPdfUrl)</span>
+<span class="fc" id="L78">                                                          .filter(Optional::isPresent)</span>
+<span class="fc" id="L79">                                                          .map(Optional::get)</span>
+<span class="fc" id="L80">                                                          .findFirst();</span>
+
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">            if (pdfUrl.isPresent()) {</span>
+<span class="nc" id="L83">                LOGGER.info(&quot;Fulltext PDF found @ arXiv.&quot;);</span>
+            }
+<span class="fc" id="L85">            return pdfUrl;</span>
+<span class="nc" id="L86">        } catch (FetcherException e) {</span>
+<span class="nc" id="L87">            LOGGER.warn(&quot;arXiv API request failed&quot;, e);</span>
+        }
+
+<span class="nc" id="L90">        return Optional.empty();</span>
+    }
+
+    @Override
+    public TrustLevel getTrustLevel() {
+<span class="nc" id="L95">        return TrustLevel.PREPRINT;</span>
+    }
+
+    private Optional&lt;ArXivEntry&gt; searchForEntry(String searchQuery) throws FetcherException {
+<span class="fc" id="L99">        List&lt;ArXivEntry&gt; entries = queryApi(searchQuery, Collections.emptyList(), 0, 1);</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        if (entries.size() == 1) {</span>
+<span class="nc" id="L101">            return Optional.of(entries.get(0));</span>
+        } else {
+<span class="fc" id="L103">            return Optional.empty();</span>
+        }
+    }
+
+    private Optional&lt;ArXivEntry&gt; searchForEntryById(String id) throws FetcherException {
+<span class="nc" id="L108">        Optional&lt;ArXivIdentifier&gt; identifier = ArXivIdentifier.parse(id);</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (!identifier.isPresent()) {</span>
+<span class="nc" id="L110">            return Optional.empty();</span>
+        }
+
+<span class="nc" id="L113">        List&lt;ArXivEntry&gt; entries = queryApi(&quot;&quot;, Collections.singletonList(identifier.get()), 0, 1);</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (entries.size() &gt;= 1) {</span>
+<span class="nc" id="L115">            return Optional.of(entries.get(0));</span>
+        } else {
+<span class="nc" id="L117">            return Optional.empty();</span>
+        }
+    }
+
+    private List&lt;ArXivEntry&gt; searchForEntries(BibEntry entry) throws FetcherException {
+        // 1. Eprint
+<span class="fc" id="L123">        Optional&lt;String&gt; identifier = entry.getField(FieldName.EPRINT);</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        if (StringUtil.isNotBlank(identifier)) {</span>
+            try {
+                // Get pdf of entry with the specified id
+<span class="nc" id="L127">                return OptionalUtil.toList(searchForEntryById(identifier.get()));</span>
+<span class="nc" id="L128">            } catch (FetcherException e) {</span>
+<span class="nc" id="L129">                LOGGER.warn(&quot;arXiv eprint API request failed&quot;, e);</span>
+            }
+        }
+
+        // 2. DOI and other fields
+        String query;
+
+<span class="fc" id="L136">        Optional&lt;String&gt; doi = entry.getField(FieldName.DOI).flatMap(DOI::parse).map(DOI::getNormalized);</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        if (doi.isPresent()) {</span>
+            // Search for an entry in the ArXiv which is linked to the doi
+<span class="nc" id="L139">            query = &quot;doi:&quot; + doi.get();</span>
+        } else {
+<span class="pc" id="L141">            Optional&lt;String&gt; authorQuery = entry.getField(FieldName.AUTHOR).map(author -&gt; &quot;au:&quot; + author);</span>
+<span class="pc" id="L142">            Optional&lt;String&gt; titleQuery = entry.getField(FieldName.TITLE).map(title -&gt; &quot;ti:&quot; + title);</span>
+<span class="fc" id="L143">            query = OptionalUtil.toList(authorQuery, titleQuery).stream().collect(Collectors.joining(&quot;+AND+&quot;));</span>
+        }
+
+<span class="fc" id="L146">        Optional&lt;ArXivEntry&gt; arxivEntry = searchForEntry(query);</span>
+
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">        if (arxivEntry.isPresent()) {</span>
+            // Check if entry is a match
+<span class="nc" id="L150">            StringSimilarity match = new StringSimilarity();</span>
+<span class="nc" id="L151">            String arxivTitle = arxivEntry.get().title.orElse(&quot;&quot;);</span>
+<span class="nc" id="L152">            String entryTitle = entry.getField(FieldName.TITLE).orElse(&quot;&quot;);</span>
+
+<span class="nc bnc" id="L154" title="All 2 branches missed.">            if (match.isSimilar(arxivTitle, entryTitle)) {</span>
+<span class="nc" id="L155">                return OptionalUtil.toList(arxivEntry);</span>
+            }
+        }
+
+<span class="fc" id="L159">        return Collections.emptyList();</span>
+    }
+
+    private List&lt;ArXivEntry&gt; searchForEntries(String searchQuery) throws FetcherException {
+<span class="nc" id="L163">        return queryApi(searchQuery, Collections.emptyList(), 0, 10);</span>
+    }
+
+    private List&lt;ArXivEntry&gt; queryApi(String searchQuery, List&lt;ArXivIdentifier&gt; ids, int start, int maxResults)
+        throws FetcherException {
+<span class="fc" id="L168">        Document result = callApi(searchQuery, ids, start, maxResults);</span>
+<span class="fc" id="L169">        List&lt;Node&gt; entries = XMLUtil.asList(result.getElementsByTagName(&quot;entry&quot;));</span>
+
+<span class="fc" id="L171">        return entries.stream().map(ArXivEntry::new).collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Queries the API.
+     *
+     * If only {@code searchQuery} is given, then the API will return results for each article that matches the query.
+     * If only {@code ids} is given, then the API will return results for each article in the list.
+     * If both {@code searchQuery} and {@code ids} are given, then the API will return each article in
+     * {@code ids} that matches {@code searchQuery}. This allows the API to act as a results filter.
+     *
+     * @param searchQuery the search query used to find articles;
+     *                    &lt;a href=&quot;http://arxiv.org/help/api/user-manual#query_details&quot;&gt;details&lt;/a&gt;
+     * @param ids         a list of arXiv identifiers
+     * @param start       the index of the first returned result (zero-based)
+     * @param maxResults  the number of maximal results (has to be smaller than 2000)
+     * @return the response from the API as a XML document (Atom 1.0)
+     * @throws FetcherException if there was a problem while building the URL or the API was not accessible
+     */
+    private Document callApi(String searchQuery, List&lt;ArXivIdentifier&gt; ids, int start, int maxResults) throws FetcherException {
+<span class="pc bpc" id="L191" title="1 of 2 branches missed.">        if (maxResults &gt; 2000) {</span>
+<span class="nc" id="L192">            throw new IllegalArgumentException(&quot;The arXiv API limits the number of maximal results to be 2000&quot;);</span>
+        }
+
+        try {
+<span class="fc" id="L196">            URIBuilder uriBuilder = new URIBuilder(API_URL);</span>
+            // The arXiv API has problems with accents, so we remove them (i.e. Fréchet -&gt; Frechet)
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">            if (StringUtil.isNotBlank(searchQuery)) {</span>
+<span class="nc" id="L199">                uriBuilder.addParameter(&quot;search_query&quot;, StringUtil.stripAccents(searchQuery));</span>
+            }
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">            if (!ids.isEmpty()) {</span>
+<span class="nc" id="L202">                uriBuilder.addParameter(&quot;id_list&quot;,</span>
+<span class="nc" id="L203">                                        ids.stream().map(ArXivIdentifier::getNormalized).collect(Collectors.joining(&quot;,&quot;)));</span>
+            }
+<span class="fc" id="L205">            uriBuilder.addParameter(&quot;start&quot;, String.valueOf(start));</span>
+<span class="fc" id="L206">            uriBuilder.addParameter(&quot;max_results&quot;, String.valueOf(maxResults));</span>
+<span class="fc" id="L207">            URL url = uriBuilder.build().toURL();</span>
+
+<span class="fc" id="L209">            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();</span>
+<span class="fc" id="L210">            DocumentBuilder builder = factory.newDocumentBuilder();</span>
+
+<span class="fc" id="L212">            HttpURLConnection connection = (HttpURLConnection) url.openConnection();</span>
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">            if (connection.getResponseCode() == 400) {</span>
+                // Bad request error from server, try to get more information
+<span class="nc" id="L215">                throw getException(builder.parse(connection.getErrorStream()));</span>
+            } else {
+<span class="fc" id="L217">                return builder.parse(connection.getInputStream());</span>
+            }
+<span class="nc" id="L219">        } catch (SAXException | ParserConfigurationException | IOException | URISyntaxException exception) {</span>
+<span class="nc" id="L220">            throw new FetcherException(&quot;arXiv API request failed&quot;, exception);</span>
+        }
+    }
+
+    private FetcherException getException(Document error) {
+<span class="nc" id="L225">        List&lt;Node&gt; entries = XMLUtil.asList(error.getElementsByTagName(&quot;entry&quot;));</span>
+
+        // Check if the API returned an error
+        // In case of an error, only one entry will be returned with the error information. For example:
+        // https://export.arxiv.org/api/query?id_list=0307015
+        // &lt;entry&gt;
+        //      &lt;id&gt;https://arxiv.org/api/errors#incorrect_id_format_for_0307015&lt;/id&gt;
+        //      &lt;title&gt;Error&lt;/title&gt;
+        //      &lt;summary&gt;incorrect id format for 0307015&lt;/summary&gt;
+        // &lt;/entry&gt;
+<span class="nc bnc" id="L235" title="All 2 branches missed.">        if (entries.size() == 1) {</span>
+<span class="nc" id="L236">            Node node = entries.get(0);</span>
+<span class="nc" id="L237">            Optional&lt;String&gt; id = XMLUtil.getNodeContent(node, &quot;id&quot;);</span>
+<span class="nc" id="L238">            Boolean isError = id.map(idContent -&gt; idContent.startsWith(&quot;http://arxiv.org/api/errors&quot;)).orElse(false);</span>
+<span class="nc bnc" id="L239" title="All 2 branches missed.">            if (isError) {</span>
+<span class="nc" id="L240">                String errorMessage = XMLUtil.getNodeContent(node, &quot;summary&quot;).orElse(&quot;Unknown error&quot;);</span>
+<span class="nc" id="L241">                return new FetcherException(errorMessage);</span>
+            }
+        }
+<span class="nc" id="L244">        return new FetcherException(&quot;arXiv API request failed&quot;);</span>
+    }
+
+    @Override
+    public String getName() {
+<span class="fc" id="L249">        return &quot;ArXiv&quot;;</span>
+    }
+
+    @Override
+    public Optional&lt;HelpFile&gt; getHelpPage() {
+<span class="nc" id="L254">        return Optional.of(HelpFile.FETCHER_OAI2_ARXIV);</span>
+    }
+
+    @Override
+    public List&lt;BibEntry&gt; performSearch(String query) throws FetcherException {
+<span class="nc" id="L259">        return searchForEntries(query).stream().map(</span>
+<span class="nc" id="L260">                                                    (arXivEntry) -&gt; arXivEntry.toBibEntry(importFormatPreferences.getKeywordSeparator()))</span>
+<span class="nc" id="L261">                                      .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public Optional&lt;BibEntry&gt; performSearchById(String identifier) throws FetcherException {
+<span class="nc" id="L266">        String cleanedIdentifier = identifier.replaceAll(&quot; &quot;, &quot;&quot;);</span>
+<span class="nc" id="L267">        cleanedIdentifier = ArXivEntry.createIdString(cleanedIdentifier);</span>
+
+<span class="nc" id="L269">        return searchForEntryById(cleanedIdentifier).map((arXivEntry) -&gt; arXivEntry.toBibEntry(importFormatPreferences.getKeywordSeparator()));</span>
+    }
+
+    @Override
+    public Optional&lt;ArXivIdentifier&gt; findIdentifier(BibEntry entry) throws FetcherException {
+<span class="nc" id="L274">        return searchForEntries(entry).stream()</span>
+<span class="nc" id="L275">                                      .map(ArXivEntry::getId)</span>
+<span class="nc" id="L276">                                      .filter(Optional::isPresent)</span>
+<span class="nc" id="L277">                                      .map(Optional::get)</span>
+<span class="nc" id="L278">                                      .findFirst();</span>
+    }
+
+    @Override
+    public String getIdentifierName() {
+<span class="nc" id="L283">        return &quot;ArXiv&quot;;</span>
+    }
+
+    private static class ArXivEntry {
+
+        private final Optional&lt;String&gt; title;
+        private final Optional&lt;String&gt; urlAbstractPage;
+        private final Optional&lt;String&gt; publishedDate;
+        private final Optional&lt;String&gt; abstractText;
+        private final List&lt;String&gt; authorNames;
+        private final List&lt;String&gt; categories;
+        private final Optional&lt;URL&gt; pdfUrl;
+        private final Optional&lt;String&gt; doi;
+        private final Optional&lt;String&gt; journalReferenceText;
+        private final Optional&lt;String&gt; primaryCategory;
+
+<span class="nc" id="L299">        public ArXivEntry(Node item) {</span>
+            // see https://arxiv.org/help/api/user-manual#_details_of_atom_results_returned
+
+            // Title of the article
+            // The result from the arXiv contains hard line breaks, try to remove them
+<span class="nc" id="L304">            title = XMLUtil.getNodeContent(item, &quot;title&quot;).map(ArXivEntry::correctLineBreaks);</span>
+
+            // The url leading to the abstract page
+<span class="nc" id="L307">            urlAbstractPage = XMLUtil.getNodeContent(item, &quot;id&quot;);</span>
+
+            // Date on which the first version was published
+<span class="nc" id="L310">            publishedDate = XMLUtil.getNodeContent(item, &quot;published&quot;);</span>
+
+            // Abstract of the article
+<span class="nc" id="L313">            abstractText = XMLUtil.getNodeContent(item, &quot;summary&quot;).map(ArXivEntry::correctLineBreaks)</span>
+<span class="nc" id="L314">                                  .map(String::trim);</span>
+
+            // Authors of the article
+<span class="nc" id="L317">            authorNames = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L318" title="All 2 branches missed.">            for (Node authorNode : XMLUtil.getNodesByName(item, &quot;author&quot;)) {</span>
+<span class="nc" id="L319">                Optional&lt;String&gt; authorName = XMLUtil.getNodeContent(authorNode, &quot;name&quot;).map(String::trim);</span>
+<span class="nc" id="L320">                authorName.ifPresent(authorNames::add);</span>
+<span class="nc" id="L321">            }</span>
+
+            // Categories (arXiv, ACM, or MSC classification)
+<span class="nc" id="L324">            categories = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L325" title="All 2 branches missed.">            for (Node categoryNode : XMLUtil.getNodesByName(item, &quot;category&quot;)) {</span>
+<span class="nc" id="L326">                Optional&lt;String&gt; category = XMLUtil.getAttributeContent(categoryNode, &quot;term&quot;);</span>
+<span class="nc" id="L327">                category.ifPresent(categories::add);</span>
+<span class="nc" id="L328">            }</span>
+
+            // Links
+<span class="nc" id="L331">            Optional&lt;URL&gt; pdfUrlParsed = Optional.empty();</span>
+<span class="nc bnc" id="L332" title="All 2 branches missed.">            for (Node linkNode : XMLUtil.getNodesByName(item, &quot;link&quot;)) {</span>
+<span class="nc" id="L333">                Optional&lt;String&gt; linkTitle = XMLUtil.getAttributeContent(linkNode, &quot;title&quot;);</span>
+<span class="nc bnc" id="L334" title="All 2 branches missed.">                if (linkTitle.equals(Optional.of(&quot;pdf&quot;))) {</span>
+<span class="nc" id="L335">                    pdfUrlParsed = XMLUtil.getAttributeContent(linkNode, &quot;href&quot;).map(url -&gt; {</span>
+                        try {
+<span class="nc" id="L337">                            return new URL(url);</span>
+<span class="nc" id="L338">                        } catch (MalformedURLException e) {</span>
+<span class="nc" id="L339">                            return null;</span>
+                        }
+                    });
+                }
+<span class="nc" id="L343">            }</span>
+<span class="nc" id="L344">            pdfUrl = pdfUrlParsed;</span>
+
+            // Associated DOI
+<span class="nc" id="L347">            doi = XMLUtil.getNodeContent(item, &quot;arxiv:doi&quot;);</span>
+
+            // Journal reference (as provided by the author)
+<span class="nc" id="L350">            journalReferenceText = XMLUtil.getNodeContent(item, &quot;arxiv:journal_ref&quot;);</span>
+
+            // Primary category
+            // Ex: &lt;arxiv:primary_category xmlns:arxiv=&quot;https://arxiv.org/schemas/atom&quot; term=&quot;math-ph&quot; scheme=&quot;http://arxiv.org/schemas/atom&quot;/&gt;
+<span class="nc" id="L354">            primaryCategory = XMLUtil.getNode(item, &quot;arxiv:primary_category&quot;)</span>
+<span class="nc" id="L355">                                     .flatMap(node -&gt; XMLUtil.getAttributeContent(node, &quot;term&quot;));</span>
+<span class="nc" id="L356">        }</span>
+
+        public static String correctLineBreaks(String s) {
+<span class="nc" id="L359">            String result = s.replaceAll(&quot;\\n(?!\\s*\\n)&quot;, &quot; &quot;);</span>
+<span class="nc" id="L360">            result = result.replaceAll(&quot;\\s*\\n\\s*&quot;, &quot;\n&quot;);</span>
+<span class="nc" id="L361">            return result.replaceAll(&quot; {2,}&quot;, &quot; &quot;).replaceAll(&quot;(^\\s*|\\s+$)&quot;, &quot;&quot;);</span>
+        }
+
+        /**
+         * Returns the url of the linked pdf
+         */
+        public Optional&lt;URL&gt; getPdfUrl() {
+<span class="nc" id="L368">            return pdfUrl;</span>
+        }
+
+        /**
+         * Returns the arXiv identifier
+         */
+        public Optional&lt;String&gt; getIdString() {
+<span class="nc" id="L375">            return urlAbstractPage.map(ArXivEntry::createIdString);</span>
+        }
+
+        public static String createIdString(String id) {
+<span class="nc" id="L379">                Matcher matcher = URL_PATTERN.matcher(id);</span>
+<span class="nc bnc" id="L380" title="All 2 branches missed.">                if (matcher.find()) {</span>
+                    // Remove leading http(s)://arxiv.org/abs/ from abstract url to get arXiv ID
+<span class="nc" id="L382">                    return id.substring(matcher.group(1).length());</span>
+                } else {
+<span class="nc" id="L384">                    return id;</span>
+                }
+
+        }
+
+        public Optional&lt;ArXivIdentifier&gt; getId() {
+<span class="nc" id="L390">            return getIdString().flatMap(ArXivIdentifier::parse);</span>
+        }
+
+        /**
+         * Returns the date when the first version was put on the arXiv
+         */
+        public Optional&lt;String&gt; getDate() {
+            // Publication string also contains time, e.g. 2014-05-09T14:49:43Z
+<span class="nc" id="L398">            return publishedDate.map(date -&gt; {</span>
+<span class="nc bnc" id="L399" title="All 2 branches missed.">                if (date.length() &lt; 10) {</span>
+<span class="nc" id="L400">                    return null;</span>
+                } else {
+<span class="nc" id="L402">                    return date.substring(0, 10);</span>
+                }
+            });
+        }
+
+        public BibEntry toBibEntry(Character keywordDelimiter) {
+<span class="nc" id="L408">            BibEntry bibEntry = new BibEntry();</span>
+<span class="nc" id="L409">            bibEntry.setType(BibtexEntryTypes.ARTICLE);</span>
+<span class="nc" id="L410">            bibEntry.setField(FieldName.EPRINTTYPE, &quot;arXiv&quot;);</span>
+<span class="nc" id="L411">            bibEntry.setField(FieldName.AUTHOR, String.join(&quot; and &quot;, authorNames));</span>
+<span class="nc" id="L412">            bibEntry.addKeywords(categories, keywordDelimiter);</span>
+<span class="nc" id="L413">            getIdString().ifPresent(id -&gt; bibEntry.setField(FieldName.EPRINT, id));</span>
+<span class="nc" id="L414">            title.ifPresent(titleContent -&gt; bibEntry.setField(FieldName.TITLE, titleContent));</span>
+<span class="nc" id="L415">            doi.ifPresent(doiContent -&gt; bibEntry.setField(FieldName.DOI, doiContent));</span>
+<span class="nc" id="L416">            abstractText.ifPresent(abstractContent -&gt; bibEntry.setField(FieldName.ABSTRACT, abstractContent));</span>
+<span class="nc" id="L417">            getDate().ifPresent(date -&gt; bibEntry.setField(FieldName.DATE, date));</span>
+<span class="nc" id="L418">            primaryCategory.ifPresent(category -&gt; bibEntry.setField(FieldName.EPRINTCLASS, category));</span>
+<span class="nc" id="L419">            journalReferenceText.ifPresent(journal -&gt; bibEntry.setField(FieldName.JOURNALTITLE, journal));</span>
+<span class="nc" id="L420">            getPdfUrl().ifPresent(url -&gt; bibEntry.setFiles(Collections.singletonList(new LinkedFile(url, &quot;PDF&quot;))));</span>
+<span class="nc" id="L421">            return bibEntry;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

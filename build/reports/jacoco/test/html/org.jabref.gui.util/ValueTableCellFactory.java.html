@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValueTableCellFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">ValueTableCellFactory.java</span></div><h1>ValueTableCellFactory.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
+import javafx.event.EventHandler;
+import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.util.Callback;
+
+import org.jabref.model.strings.StringUtil;
+
+/**
+ * Constructs a {@link TableCell} based on the value of the cell and a bunch of specified converter methods.
+ *
+ * @param &lt;S&gt; view model of table row
+ * @param &lt;T&gt; cell value
+ */
+<span class="nc" id="L25">public class ValueTableCellFactory&lt;S, T&gt; implements Callback&lt;TableColumn&lt;S, T&gt;, TableCell&lt;S, T&gt;&gt; {</span>
+
+    private Function&lt;T, String&gt; toText;
+    private BiFunction&lt;S, T, Node&gt; toGraphic;
+    private BiFunction&lt;S, T, EventHandler&lt;? super MouseEvent&gt;&gt; toOnMouseClickedEvent;
+    private BiFunction&lt;S, T, String&gt; toTooltip;
+    private Function&lt;T, ContextMenu&gt; contextMenuFactory;
+    private BiFunction&lt;S, T, ContextMenu&gt; menuFactory;
+
+    public ValueTableCellFactory&lt;S, T&gt; withText(Function&lt;T, String&gt; toText) {
+<span class="nc" id="L35">        this.toText = toText;</span>
+<span class="nc" id="L36">        return this;</span>
+    }
+
+    public ValueTableCellFactory&lt;S, T&gt; withGraphic(Function&lt;T, Node&gt; toGraphic) {
+<span class="nc" id="L40">        this.toGraphic = (rowItem, value) -&gt; toGraphic.apply(value);</span>
+<span class="nc" id="L41">        return this;</span>
+    }
+
+    public ValueTableCellFactory&lt;S, T&gt; withGraphic(BiFunction&lt;S, T, Node&gt; toGraphic) {
+<span class="nc" id="L45">        this.toGraphic = toGraphic;</span>
+<span class="nc" id="L46">        return this;</span>
+    }
+
+    public ValueTableCellFactory&lt;S, T&gt; withTooltip(BiFunction&lt;S, T, String&gt; toTooltip) {
+<span class="nc" id="L50">        this.toTooltip = toTooltip;</span>
+<span class="nc" id="L51">        return this;</span>
+    }
+
+    public ValueTableCellFactory&lt;S, T&gt; withTooltip(Function&lt;T, String&gt; toTooltip) {
+<span class="nc" id="L55">        this.toTooltip = (rowItem, value) -&gt; toTooltip.apply(value);</span>
+<span class="nc" id="L56">        return this;</span>
+    }
+
+    public ValueTableCellFactory&lt;S, T&gt; withOnMouseClickedEvent(BiFunction&lt;S, T, EventHandler&lt;? super MouseEvent&gt;&gt; toOnMouseClickedEvent) {
+<span class="nc" id="L60">        this.toOnMouseClickedEvent = toOnMouseClickedEvent;</span>
+<span class="nc" id="L61">        return this;</span>
+    }
+
+    public ValueTableCellFactory&lt;S, T&gt; withOnMouseClickedEvent(Function&lt;T, EventHandler&lt;? super MouseEvent&gt;&gt; toOnMouseClickedEvent) {
+<span class="nc" id="L65">        this.toOnMouseClickedEvent = (rowItem, value) -&gt; toOnMouseClickedEvent.apply(value);</span>
+<span class="nc" id="L66">        return this;</span>
+    }
+
+    public ValueTableCellFactory&lt;S, T&gt; withContextMenu(Function&lt;T, ContextMenu&gt; contextMenuFactory) {
+<span class="nc" id="L70">        this.contextMenuFactory = contextMenuFactory;</span>
+<span class="nc" id="L71">        return this;</span>
+    }
+
+    public ValueTableCellFactory&lt;S, T&gt; withMenu(BiFunction&lt;S, T, ContextMenu&gt; menuFactory) {
+<span class="nc" id="L75">        this.menuFactory = menuFactory;</span>
+<span class="nc" id="L76">        return this;</span>
+    }
+
+    @Override
+    public TableCell&lt;S, T&gt; call(TableColumn&lt;S, T&gt; param) {
+
+<span class="nc" id="L82">        return new TableCell&lt;S, T&gt;() {</span>
+
+            @Override
+            protected void updateItem(T item, boolean empty) {
+<span class="nc" id="L86">                super.updateItem(item, empty);</span>
+
+<span class="nc bnc" id="L88" title="All 8 branches missed.">                if (empty || (item == null) || (getTableRow() == null) || (getTableRow().getItem() == null)) {</span>
+<span class="nc" id="L89">                    setText(null);</span>
+<span class="nc" id="L90">                    setGraphic(null);</span>
+<span class="nc" id="L91">                    setOnMouseClicked(null);</span>
+<span class="nc" id="L92">                    setTooltip(null);</span>
+                } else {
+<span class="nc" id="L94">                    S rowItem = ((TableRow&lt;S&gt;) getTableRow()).getItem();</span>
+
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                    if (toText != null) {</span>
+<span class="nc" id="L97">                        setText(toText.apply(item));</span>
+                    }
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                    if (toGraphic != null) {</span>
+<span class="nc" id="L100">                        setGraphic(toGraphic.apply(rowItem, item));</span>
+                    }
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                    if (toTooltip != null) {</span>
+<span class="nc" id="L103">                        String tooltipText = toTooltip.apply(rowItem, item);</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                        if (StringUtil.isNotBlank(tooltipText)) {</span>
+<span class="nc" id="L105">                            setTooltip(new Tooltip(tooltipText));</span>
+                        }
+                    }
+
+<span class="nc bnc" id="L109" title="All 2 branches missed.">                    if (contextMenuFactory != null) {</span>
+                        // We only create the context menu when really necessary
+<span class="nc" id="L111">                        setOnContextMenuRequested(event -&gt; {</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">                            if (!isEmpty()) {</span>
+<span class="nc" id="L113">                                setContextMenu(contextMenuFactory.apply(item));</span>
+<span class="nc" id="L114">                                getContextMenu().show(this, event.getScreenX(), event.getScreenY());</span>
+                            }
+<span class="nc" id="L116">                            event.consume();</span>
+<span class="nc" id="L117">                        });</span>
+                    }
+
+<span class="nc" id="L120">                    setOnMouseClicked(event -&gt; {</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">                        if (toOnMouseClickedEvent != null) {</span>
+<span class="nc" id="L122">                            toOnMouseClickedEvent.apply(rowItem, item).handle(event);</span>
+                        }
+
+<span class="nc bnc" id="L125" title="All 4 branches missed.">                        if ((menuFactory != null) &amp;&amp; !event.isConsumed()) {</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">                            if (event.getButton() == MouseButton.PRIMARY) {</span>
+<span class="nc" id="L127">                                ContextMenu menu = menuFactory.apply(rowItem, item);</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                                if (menu != null) {</span>
+<span class="nc" id="L129">                                    menu.show(this, event.getScreenX(), event.getScreenY());</span>
+<span class="nc" id="L130">                                    event.consume();</span>
+                                }
+                            }
+                        }
+<span class="nc" id="L134">                    });</span>
+                }
+<span class="nc" id="L136">            }</span>
+        };
+    }
+
+    public void install(TableColumn&lt;S, T&gt; column) {
+<span class="nc" id="L141">        column.setCellFactory(this);</span>
+<span class="nc" id="L142">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

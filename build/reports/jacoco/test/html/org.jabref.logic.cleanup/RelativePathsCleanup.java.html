@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RelativePathsCleanup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.cleanup</a> &gt; <span class="el_source">RelativePathsCleanup.java</span></div><h1>RelativePathsCleanup.java</h1><pre class="source lang-java linenums">package org.jabref.logic.cleanup;
+
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.logic.util.io.FileUtil;
+import org.jabref.model.FieldChange;
+import org.jabref.model.cleanup.CleanupJob;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.LinkedFile;
+import org.jabref.model.metadata.FilePreferences;
+
+public class RelativePathsCleanup implements CleanupJob {
+
+    private final BibDatabaseContext databaseContext;
+    private final FilePreferences filePreferences;
+
+<span class="fc" id="L23">    public RelativePathsCleanup(BibDatabaseContext databaseContext, FilePreferences filePreferences) {</span>
+<span class="fc" id="L24">        this.databaseContext = Objects.requireNonNull(databaseContext);</span>
+<span class="fc" id="L25">        this.filePreferences = Objects.requireNonNull(filePreferences);</span>
+<span class="fc" id="L26">    }</span>
+
+    @Override
+    public List&lt;FieldChange&gt; cleanup(BibEntry entry) {
+<span class="fc" id="L30">        List&lt;LinkedFile&gt; fileList = entry.getFiles();</span>
+<span class="fc" id="L31">        List&lt;LinkedFile&gt; newFileList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L32">        boolean changed = false;</span>
+
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        for (LinkedFile fileEntry : fileList) {</span>
+<span class="fc" id="L35">            String oldFileName = fileEntry.getLink();</span>
+<span class="fc" id="L36">            String newFileName = FileUtil</span>
+<span class="fc" id="L37">                    .relativize(Paths.get(oldFileName), databaseContext.getFileDirectoriesAsPaths(filePreferences))</span>
+<span class="fc" id="L38">                    .toString();</span>
+
+<span class="fc" id="L40">            LinkedFile newFileEntry = fileEntry;</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">            if (!oldFileName.equals(newFileName)) {</span>
+<span class="fc" id="L42">                newFileEntry = new LinkedFile(fileEntry.getDescription(), newFileName, fileEntry.getFileType());</span>
+<span class="fc" id="L43">                changed = true;</span>
+            }
+<span class="fc" id="L45">            newFileList.add(newFileEntry);</span>
+<span class="fc" id="L46">        }</span>
+
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        if (changed) {</span>
+<span class="fc" id="L49">            Optional&lt;FieldChange&gt; change = entry.setFiles(newFileList);</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">            if (change.isPresent()) {</span>
+<span class="fc" id="L51">                return Collections.singletonList(change.get());</span>
+            } else {
+<span class="nc" id="L53">                return Collections.emptyList();</span>
+            }
+        }
+
+<span class="nc" id="L57">        return Collections.emptyList();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

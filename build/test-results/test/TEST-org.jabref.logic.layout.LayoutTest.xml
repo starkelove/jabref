@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.layout.LayoutTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:25" hostname="n184-p67.eduroam.kth.se" time="0.032">
+  <properties/>
+  <testcase name="HTMLCharsWithDotlessIAndTiled()" classname="org.jabref.logic.layout.LayoutTest" time="0.021"/>
+  <testcase name="entryTypeForArticle()" classname="org.jabref.logic.layout.LayoutTest" time="0.0"/>
+  <testcase name="entryTypeForUnknown()" classname="org.jabref.logic.layout.LayoutTest" time="0.0"/>
+  <testcase name="wrapFileLinksExpandFile()" classname="org.jabref.logic.layout.LayoutTest" time="0.003"/>
+  <testcase name="HTMLCharWithDoubleLineBreak()" classname="org.jabref.logic.layout.LayoutTest" time="0.001"/>
+  <testcase name="nameFormatter()" classname="org.jabref.logic.layout.LayoutTest" time="0.001"/>
+  <testcase name="HTMLChar()" classname="org.jabref.logic.layout.LayoutTest" time="0.002"/>
+  <testcase name="entryTypeForMisc()" classname="org.jabref.logic.layout.LayoutTest" time="0.0"/>
+  <testcase name="expandCommandIfTerminatedByMinus()" classname="org.jabref.logic.layout.LayoutTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

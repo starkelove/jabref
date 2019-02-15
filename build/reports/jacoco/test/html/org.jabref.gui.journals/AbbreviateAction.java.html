@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbbreviateAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.journals</a> &gt; <span class="el_source">AbbreviateAction.java</span></div><h1>AbbreviateAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.journals;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import org.jabref.Globals;
+import org.jabref.JabRefExecutorService;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.actions.BaseAction;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.InternalBibtexFields;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Converts journal full names to either iso or medline abbreviations for all
+ * selected entries.
+ */
+public class AbbreviateAction implements BaseAction {
+
+<span class="nc" id="L29">    private static final Logger LOGGER = LoggerFactory.getLogger(AbbreviateAction.class);</span>
+    private final BasePanel panel;
+    private final boolean iso;
+
+<span class="nc" id="L33">    public AbbreviateAction(BasePanel panel, boolean iso) {</span>
+<span class="nc" id="L34">        this.panel = panel;</span>
+<span class="nc" id="L35">        this.iso = iso;</span>
+<span class="nc" id="L36">    }</span>
+
+    @Override
+    public void action() {
+<span class="nc" id="L40">        BackgroundTask.wrap(this::abbreviate)</span>
+<span class="nc" id="L41">                      .onSuccess(panel::output)</span>
+<span class="nc" id="L42">                      .executeWith(Globals.TASK_EXECUTOR);</span>
+
+<span class="nc" id="L44">    }</span>
+
+    private String abbreviate() {
+<span class="nc" id="L47">        panel.output(Localization.lang(&quot;Abbreviating...&quot;));</span>
+
+<span class="nc" id="L49">        List&lt;BibEntry&gt; entries = panel.getSelectedEntries();</span>
+<span class="nc" id="L50">        UndoableAbbreviator undoableAbbreviator = new UndoableAbbreviator(</span>
+<span class="nc" id="L51">                Globals.journalAbbreviationLoader.getRepository(Globals.prefs.getJournalAbbreviationPreferences()),</span>
+                iso);
+
+<span class="nc" id="L54">        NamedCompound ce = new NamedCompound(Localization.lang(&quot;Abbreviate journal names&quot;));</span>
+<span class="nc" id="L55">        Set&lt;Callable&lt;Boolean&gt;&gt; tasks = new HashSet&lt;&gt;();</span>
+
+        // Collect all callables to execute in one collection.
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        for (BibEntry entry : entries) {</span>
+<span class="nc" id="L59">            Callable&lt;Boolean&gt; callable = () -&gt; {</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">                for (String journalField : InternalBibtexFields.getJournalNameFields()) {</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">                    if (undoableAbbreviator.abbreviate(panel.getDatabase(), entry, journalField, ce)) {</span>
+<span class="nc" id="L62">                        return true;</span>
+                    }
+<span class="nc" id="L64">                }</span>
+<span class="nc" id="L65">                return false;</span>
+            };
+<span class="nc" id="L67">            tasks.add(callable);</span>
+<span class="nc" id="L68">        }</span>
+
+        // Execute the callables and wait for the results.
+<span class="nc" id="L71">        List&lt;Future&lt;Boolean&gt;&gt; futures = JabRefExecutorService.INSTANCE.executeAll(tasks);</span>
+
+        // Evaluate the results of the callables.
+<span class="nc" id="L74">        long count = futures.stream().filter(future -&gt; {</span>
+            try {
+<span class="nc" id="L76">                return future.get();</span>
+<span class="nc" id="L77">            } catch (InterruptedException | ExecutionException exception) {</span>
+<span class="nc" id="L78">                LOGGER.error(&quot;Unable to retrieve value.&quot;, exception);</span>
+<span class="nc" id="L79">                return false;</span>
+            }
+<span class="nc" id="L81">        }).count();</span>
+
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (count &gt; 0) {</span>
+<span class="nc" id="L84">            ce.end();</span>
+<span class="nc" id="L85">            panel.getUndoManager().addEdit(ce);</span>
+<span class="nc" id="L86">            panel.markBaseChanged();</span>
+<span class="nc" id="L87">            return Localization.lang(&quot;Abbreviated %0 journal names.&quot;, String.valueOf(count));</span>
+        } else {
+<span class="nc" id="L89">            return Localization.lang(&quot;No journal names could be abbreviated.&quot;);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

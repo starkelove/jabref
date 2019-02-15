@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StyleSelectItemViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.openoffice</a> &gt; <span class="el_source">StyleSelectItemViewModel.java</span></div><h1>StyleSelectItemViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.openoffice;
+
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.scene.Node;
+
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.logic.openoffice.OOBibStyle;
+
+public class StyleSelectItemViewModel {
+
+<span class="nc" id="L16">    private final StringProperty name = new SimpleStringProperty(&quot;&quot;);</span>
+<span class="nc" id="L17">    private final StringProperty journals = new SimpleStringProperty(&quot;&quot;);</span>
+<span class="nc" id="L18">    private final StringProperty file = new SimpleStringProperty(&quot;&quot;);</span>
+<span class="nc" id="L19">    private final ObjectProperty&lt;Node&gt; icon = new SimpleObjectProperty&lt;&gt;(IconTheme.JabRefIcons.DELETE_ENTRY.getGraphicNode());</span>
+    private final OOBibStyle style;
+<span class="nc" id="L21">    private final BooleanProperty internalStyle = new SimpleBooleanProperty();</span>
+
+<span class="nc" id="L23">    public StyleSelectItemViewModel(String name, String journals, String file, OOBibStyle style) {</span>
+<span class="nc" id="L24">        this.name.setValue(name);</span>
+<span class="nc" id="L25">        this.journals.setValue(journals);</span>
+<span class="nc" id="L26">        this.file.setValue(file);</span>
+<span class="nc" id="L27">        this.style = style;</span>
+<span class="nc" id="L28">        this.internalStyle.set(style.isFromResource());</span>
+<span class="nc" id="L29">    }</span>
+
+    public StringProperty nameProperty() {
+<span class="nc" id="L32">        return name;</span>
+    }
+
+    public StringProperty journalsProperty() {
+<span class="nc" id="L36">        return journals;</span>
+    }
+
+    public ObjectProperty&lt;Node&gt; iconProperty() {
+<span class="nc" id="L40">        return icon;</span>
+    }
+
+    public StringProperty fileProperty() {
+<span class="nc" id="L44">        return file;</span>
+    }
+
+    public OOBibStyle getStyle() {
+<span class="nc" id="L48">        return style;</span>
+    }
+
+    public BooleanProperty internalStyleProperty() {
+<span class="nc" id="L52">        return internalStyle;</span>
+    }
+
+    public String getStylePath() {
+<span class="nc" id="L56">        return style.getPath();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

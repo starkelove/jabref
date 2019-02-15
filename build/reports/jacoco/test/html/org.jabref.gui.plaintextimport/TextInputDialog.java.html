@@ -1,0 +1,736 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TextInputDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.plaintextimport</a> &gt; <span class="el_source">TextInputDialog.java</span></div><h1>TextInputDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.plaintextimport;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.Icon;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextPane;
+import javax.swing.JToolBar;
+import javax.swing.ListSelectionModel;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.EditorKit;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
+
+import org.jabref.Globals;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.JabRefDialog;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.OSXCompatibleToolbar;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.keyboard.KeyBinding;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.gui.util.FileDialogConfiguration;
+import org.jabref.gui.util.component.OverlayPanel;
+import org.jabref.logic.bibtex.BibEntryWriter;
+import org.jabref.logic.bibtex.LatexFieldFormatter;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.importer.fileformat.FreeCiteImporter;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.OS;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.logic.util.UpdateField;
+import org.jabref.model.EntryTypes;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.EntryType;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.FieldProperty;
+import org.jabref.model.entry.InternalBibtexFields;
+import org.jabref.preferences.JabRefPreferences;
+
+import com.jgoodies.forms.builder.ButtonBarBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * import from plain text =&gt; simple mark/copy/paste into bibtex entry
+ * &lt;p&gt;
+ * TODO
+ * - change colors and fonts
+ * - delete selected text
+ * - make textarea editable
+ * - create several bibtex entries in dialog
+ * - if the dialog works with an existing entry (right click menu item), the cancel option doesn't work well
+ */
+public class TextInputDialog extends JabRefDialog {
+
+<span class="nc" id="L103">    private static final Logger LOGGER = LoggerFactory.getLogger(TextInputDialog.class);</span>
+
+<span class="nc" id="L105">    private final JButton okButton = new JButton(Localization.lang(&quot;Accept&quot;));</span>
+<span class="nc" id="L106">    private final JButton cancelButton = new JButton(Localization.lang(&quot;Cancel&quot;));</span>
+<span class="nc" id="L107">    private final JButton insertButton = new JButton(Localization.lang(&quot;Insert&quot;));</span>
+<span class="nc" id="L108">    private final JButton parseWithFreeCiteButton = new JButton(Localization.lang(&quot;Parse with FreeCite&quot;));</span>
+<span class="nc" id="L109">    private final JPanel panel1 = new JPanel();</span>
+<span class="nc" id="L110">    private final JPanel buttons = new JPanel();</span>
+<span class="nc" id="L111">    private final JPanel rawPanel = new JPanel();</span>
+<span class="nc" id="L112">    private final JPanel sourcePanel = new JPanel();</span>
+    private JList&lt;String&gt; fieldList;
+<span class="nc" id="L114">    private final JRadioButton override = new JRadioButton(Localization.lang(&quot;Override&quot;));</span>
+<span class="nc" id="L115">    private final JRadioButton append = new JRadioButton(Localization.lang(&quot;Append&quot;));</span>
+<span class="nc" id="L116">    private final JToolBar toolBar = new OSXCompatibleToolbar();</span>
+
+<span class="nc" id="L118">    private final List&lt;String&gt; allFields = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L119">    private final List&lt;String&gt; requiredFields = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L120">    private final List&lt;String&gt; optionalFields = new ArrayList&lt;&gt;();</span>
+
+    private final BibEntry entry;
+
+<span class="nc" id="L124">    private final JPopupMenu inputMenu = new JPopupMenu();</span>
+    private StyledDocument document; // content from inputPane
+<span class="nc" id="L126">    private final JTextPane textPane = new JTextPane();</span>
+<span class="nc" id="L127">    private final JTextArea sourcePreview = new JTextArea();</span>
+
+    private final TagToMarkedTextStore markedTextStore;
+
+    private final JabRefFrame frame;
+
+    private boolean okPressed;
+
+
+    public TextInputDialog(JabRefFrame frame, BibEntry bibEntry) {
+<span class="nc" id="L137">        super(true, TextInputDialog.class);</span>
+
+<span class="nc" id="L139">        this.frame = Objects.requireNonNull(frame);</span>
+
+<span class="nc" id="L141">        entry = Objects.requireNonNull(bibEntry);</span>
+<span class="nc" id="L142">        markedTextStore = new TagToMarkedTextStore();</span>
+
+<span class="nc" id="L144">        jbInit();</span>
+<span class="nc" id="L145">        pack();</span>
+<span class="nc" id="L146">        updateSourceView();</span>
+<span class="nc" id="L147">    }</span>
+
+    private void jbInit() {
+<span class="nc" id="L150">        getContentPane().setLayout(new BorderLayout());</span>
+<span class="nc" id="L151">        StringBuilder typeStr = new StringBuilder(&quot;Plain text import&quot;);</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">        if (entry.getType() != null) {</span>
+<span class="nc" id="L153">            typeStr.append(' ').append(Localization.lang(&quot;for&quot;)).append(' ').append(entry.getType());</span>
+        }
+
+<span class="nc" id="L156">        this.setTitle(typeStr.toString());</span>
+<span class="nc" id="L157">        getContentPane().add(panel1, BorderLayout.CENTER);</span>
+
+<span class="nc" id="L159">        initRawPanel();</span>
+<span class="nc" id="L160">        initButtonPanel();</span>
+<span class="nc" id="L161">        initSourcePanel();</span>
+
+<span class="nc" id="L163">        JTabbedPane tabbed = new JTabbedPane();</span>
+
+<span class="nc" id="L165">        tabbed.add(rawPanel, Localization.lang(&quot;Raw source&quot;));</span>
+<span class="nc" id="L166">        tabbed.add(sourcePanel, Localization.lang(&quot;%0 source&quot;, frame.getCurrentBasePanel().getBibDatabaseContext().getMode().getFormattedName()));</span>
+
+        // Panel Layout
+<span class="nc" id="L169">        panel1.setLayout(new BorderLayout());</span>
+<span class="nc" id="L170">        panel1.add(tabbed, BorderLayout.CENTER);</span>
+<span class="nc" id="L171">        panel1.add(buttons, BorderLayout.SOUTH);</span>
+
+        // Key bindings:
+<span class="nc" id="L174">        ActionMap am = buttons.getActionMap();</span>
+<span class="nc" id="L175">        InputMap im = buttons.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);</span>
+<span class="nc" id="L176">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.CLOSE), &quot;close&quot;);</span>
+<span class="nc" id="L177">        am.put(&quot;close&quot;, new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L181">                dispose();</span>
+<span class="nc" id="L182">            }</span>
+        });
+<span class="nc" id="L184">    }</span>
+
+    // Panel with text import functionality
+    private void initRawPanel() {
+<span class="nc" id="L188">        rawPanel.setLayout(new BorderLayout());</span>
+
+        // Textarea
+<span class="nc" id="L191">        textPane.setEditable(false);</span>
+
+<span class="nc" id="L193">        document = textPane.getStyledDocument();</span>
+<span class="nc" id="L194">        addStylesToDocument();</span>
+
+        try {
+<span class="nc" id="L197">            document.insertString(0, &quot;&quot;, document.getStyle(&quot;regular&quot;));</span>
+<span class="nc" id="L198">        } catch (BadLocationException ex) {</span>
+<span class="nc" id="L199">            LOGGER.warn(&quot;Problem setting style&quot;, ex);</span>
+
+<span class="nc" id="L201">        }</span>
+
+<span class="nc" id="L203">        OverlayPanel testPanel = new OverlayPanel(textPane, Localization.lang(&quot;paste text here&quot;));</span>
+
+<span class="nc" id="L205">        testPanel.setPreferredSize(new Dimension(450, 255));</span>
+<span class="nc" id="L206">        testPanel.setMaximumSize(new Dimension(450, Integer.MAX_VALUE));</span>
+
+        // Setup fields (required to be done before setting up popup menu)
+<span class="nc" id="L209">        fieldList = new JList&lt;&gt;(getAllFields());</span>
+<span class="nc" id="L210">        fieldList.setCellRenderer(new SimpleCellRenderer(fieldList.getFont()));</span>
+<span class="nc" id="L211">        ListSelectionModel listSelectionModel = fieldList.getSelectionModel();</span>
+<span class="nc" id="L212">        listSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);</span>
+<span class="nc" id="L213">        listSelectionModel.addListSelectionListener(new FieldListSelectionHandler());</span>
+<span class="nc" id="L214">        fieldList.addMouseListener(new FieldListMouseListener());</span>
+
+        // After the call to getAllFields
+<span class="nc" id="L217">        initPopupMenuAndToolbar();</span>
+
+        //Add listener to components that can bring up popup menus.
+<span class="nc" id="L220">        MouseListener popupListener = new PopupListener(inputMenu);</span>
+<span class="nc" id="L221">        textPane.addMouseListener(popupListener);</span>
+<span class="nc" id="L222">        testPanel.addMouseListener(popupListener);</span>
+
+<span class="nc" id="L224">        JPanel leftPanel = new JPanel(new BorderLayout());</span>
+
+<span class="nc" id="L226">        leftPanel.add(toolBar, BorderLayout.NORTH);</span>
+<span class="nc" id="L227">        leftPanel.add(testPanel, BorderLayout.CENTER);</span>
+
+<span class="nc" id="L229">        JPanel inputPanel = setUpFieldListPanel();</span>
+
+        // parse with FreeCite button
+<span class="nc" id="L232">        parseWithFreeCiteButton.addActionListener(event -&gt; {</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">            if (parseWithFreeCiteAndAddEntries()) {</span>
+<span class="nc" id="L234">                okPressed = false; // we do not want to have the super method to handle our entries, we do it on our own</span>
+<span class="nc" id="L235">                dispose();</span>
+            }
+<span class="nc" id="L237">        });</span>
+
+<span class="nc" id="L239">        rawPanel.add(leftPanel, BorderLayout.CENTER);</span>
+<span class="nc" id="L240">        rawPanel.add(inputPanel, BorderLayout.EAST);</span>
+
+<span class="nc" id="L242">        JLabel desc = new JLabel(&quot;&lt;html&gt;&lt;h3&gt;&quot; + Localization.lang(&quot;Plain text import&quot;) + &quot;&lt;/h3&gt;&lt;p&gt;&quot;</span>
+<span class="nc" id="L243">                + Localization.lang(&quot;This is a simple copy and paste dialog. First load or paste some text into &quot;</span>
+                + &quot;the text input area.&lt;br&gt;After that, you can mark text and assign it to a BibTeX field.&quot;)
+                + &quot;&lt;/p&gt;&lt;/html&gt;&quot;);
+<span class="nc" id="L246">        desc.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));</span>
+
+<span class="nc" id="L248">        rawPanel.add(desc, BorderLayout.SOUTH);</span>
+<span class="nc" id="L249">    }</span>
+
+    private JPanel setUpFieldListPanel() {
+<span class="nc" id="L252">        JPanel inputPanel = new JPanel();</span>
+
+        // Panel Layout
+<span class="nc" id="L255">        GridBagLayout gbl = new GridBagLayout();</span>
+<span class="nc" id="L256">        GridBagConstraints con = new GridBagConstraints();</span>
+<span class="nc" id="L257">        con.weightx = 0;</span>
+<span class="nc" id="L258">        con.insets = new Insets(5, 5, 0, 5);</span>
+<span class="nc" id="L259">        con.fill = GridBagConstraints.HORIZONTAL;</span>
+
+<span class="nc" id="L261">        inputPanel.setLayout(gbl);</span>
+
+        // Border
+<span class="nc" id="L264">        TitledBorder titledBorder1 = new TitledBorder(BorderFactory.createLineBorder(new Color(153, 153, 153), 2),</span>
+<span class="nc" id="L265">                Localization.lang(&quot;Work options&quot;));</span>
+<span class="nc" id="L266">        inputPanel.setBorder(titledBorder1);</span>
+<span class="nc" id="L267">        inputPanel.setMinimumSize(new Dimension(10, 10));</span>
+
+<span class="nc" id="L269">        JScrollPane fieldScroller = new JScrollPane(fieldList);</span>
+<span class="nc" id="L270">        fieldScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);</span>
+
+        // insert buttons
+<span class="nc" id="L273">        insertButton.addActionListener(event -&gt; insertTextForTag(override.isSelected()));</span>
+
+        // Radio buttons
+<span class="nc" id="L276">        append.setToolTipText(Localization.lang(&quot;Append the selected text to BibTeX field&quot;));</span>
+<span class="nc" id="L277">        append.setMnemonic(KeyEvent.VK_A);</span>
+<span class="nc" id="L278">        append.setSelected(true);</span>
+
+<span class="nc" id="L280">        override.setToolTipText(Localization.lang(&quot;Override the BibTeX field by the selected text&quot;));</span>
+<span class="nc" id="L281">        override.setMnemonic(KeyEvent.VK_O);</span>
+<span class="nc" id="L282">        override.setSelected(false);</span>
+
+        //Group the radio buttons.
+<span class="nc" id="L285">        ButtonGroup group = new ButtonGroup();</span>
+<span class="nc" id="L286">        group.add(append);</span>
+<span class="nc" id="L287">        group.add(override);</span>
+
+<span class="nc" id="L289">        JPanel radioPanel = new JPanel(new GridLayout(0, 1));</span>
+<span class="nc" id="L290">        radioPanel.add(append);</span>
+<span class="nc" id="L291">        radioPanel.add(override);</span>
+
+        // insert sub components
+<span class="nc" id="L294">        JLabel label1 = new JLabel(Localization.lang(&quot;Available BibTeX fields&quot;));</span>
+<span class="nc" id="L295">        con.gridwidth = GridBagConstraints.REMAINDER;</span>
+<span class="nc" id="L296">        gbl.setConstraints(label1, con);</span>
+<span class="nc" id="L297">        inputPanel.add(label1);</span>
+
+<span class="nc" id="L299">        con.gridwidth = GridBagConstraints.REMAINDER;</span>
+<span class="nc" id="L300">        con.gridheight = 8;</span>
+<span class="nc" id="L301">        con.weighty = 1;</span>
+<span class="nc" id="L302">        con.fill = GridBagConstraints.BOTH;</span>
+<span class="nc" id="L303">        gbl.setConstraints(fieldScroller, con);</span>
+<span class="nc" id="L304">        inputPanel.add(fieldScroller);</span>
+
+<span class="nc" id="L306">        con.fill = GridBagConstraints.HORIZONTAL;</span>
+<span class="nc" id="L307">        con.weighty = 0;</span>
+<span class="nc" id="L308">        con.gridwidth = 2;</span>
+<span class="nc" id="L309">        gbl.setConstraints(radioPanel, con);</span>
+<span class="nc" id="L310">        inputPanel.add(radioPanel);</span>
+
+<span class="nc" id="L312">        con.gridwidth = GridBagConstraints.REMAINDER;</span>
+<span class="nc" id="L313">        gbl.setConstraints(insertButton, con);</span>
+<span class="nc" id="L314">        inputPanel.add(insertButton);</span>
+<span class="nc" id="L315">        return inputPanel;</span>
+    }
+
+    private void initPopupMenuAndToolbar() {
+        // copy/paste Menu
+<span class="nc" id="L320">        PasteAction pasteAction = new PasteAction();</span>
+<span class="nc" id="L321">        ClearAction clearAction = new ClearAction();</span>
+<span class="nc" id="L322">        JMenuItem pasteMI = new JMenuItem(pasteAction);</span>
+
+<span class="nc" id="L324">        inputMenu.add(clearAction);</span>
+<span class="nc" id="L325">        inputMenu.addSeparator();</span>
+<span class="nc" id="L326">        inputMenu.add(pasteMI);</span>
+<span class="nc" id="L327">        inputMenu.addSeparator();</span>
+
+        // Right-click append/override
+<span class="nc" id="L330">        JMenu appendMenu = new JMenu(Localization.lang(&quot;Append&quot;));</span>
+<span class="nc" id="L331">        appendMenu.setToolTipText(Localization.lang(&quot;Append the selected text to BibTeX field&quot;));</span>
+<span class="nc" id="L332">        JMenu overrideMenu = new JMenu(Localization.lang(&quot;Override&quot;));</span>
+<span class="nc" id="L333">        overrideMenu.setToolTipText(Localization.lang(&quot;Override the BibTeX field by the selected text&quot;));</span>
+<span class="nc bnc" id="L334" title="All 2 branches missed.">        for (String field : allFields) {</span>
+<span class="nc" id="L335">            appendMenu.add(new JMenuItem(new MenuTextForTagAction(field, false)));</span>
+<span class="nc" id="L336">            overrideMenu.add(new JMenuItem(new MenuTextForTagAction(field, true)));</span>
+<span class="nc" id="L337">        }</span>
+
+<span class="nc" id="L339">        inputMenu.add(appendMenu);</span>
+<span class="nc" id="L340">        inputMenu.add(overrideMenu);</span>
+
+        // Toolbar
+
+<span class="nc" id="L344">        toolBar.add(clearAction);</span>
+<span class="nc" id="L345">        toolBar.setBorderPainted(false);</span>
+<span class="nc" id="L346">        toolBar.addSeparator();</span>
+<span class="nc" id="L347">        toolBar.add(pasteAction);</span>
+<span class="nc" id="L348">        toolBar.add(new LoadAction());</span>
+<span class="nc" id="L349">    }</span>
+
+    private void initButtonPanel() {
+<span class="nc" id="L352">        okButton.addActionListener(event -&gt; {</span>
+<span class="nc" id="L353">            okPressed = true;</span>
+<span class="nc" id="L354">            dispose();</span>
+<span class="nc" id="L355">        });</span>
+<span class="nc" id="L356">        cancelButton.addActionListener(event -&gt; dispose());</span>
+
+<span class="nc" id="L358">        ButtonBarBuilder bb = new ButtonBarBuilder(buttons);</span>
+<span class="nc" id="L359">        buttons.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));</span>
+<span class="nc" id="L360">        bb.addGlue();</span>
+<span class="nc" id="L361">        bb.addButton(okButton);</span>
+<span class="nc" id="L362">        bb.addButton(parseWithFreeCiteButton);</span>
+<span class="nc" id="L363">        bb.addButton(cancelButton);</span>
+<span class="nc" id="L364">        bb.addGlue();</span>
+<span class="nc" id="L365">    }</span>
+
+    // Panel with BibTeX source code
+    private void initSourcePanel() {
+<span class="nc" id="L369">        sourcePreview.setEditable(false);</span>
+<span class="nc" id="L370">        sourcePreview.setFont(new Font(&quot;Monospaced&quot;, Font.PLAIN, Globals.prefs.getInt(JabRefPreferences.FONT_SIZE)));</span>
+<span class="nc" id="L371">        JScrollPane paneScrollPane = new JScrollPane(sourcePreview);</span>
+<span class="nc" id="L372">        paneScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);</span>
+<span class="nc" id="L373">        paneScrollPane.setPreferredSize(new Dimension(500, 255));</span>
+<span class="nc" id="L374">        paneScrollPane.setMinimumSize(new Dimension(10, 10));</span>
+
+<span class="nc" id="L376">        sourcePanel.setLayout(new BorderLayout());</span>
+<span class="nc" id="L377">        sourcePanel.add(paneScrollPane, BorderLayout.CENTER);</span>
+<span class="nc" id="L378">    }</span>
+
+    private void addStylesToDocument() {
+        //Initialize some styles.
+<span class="nc" id="L382">        Style defaultStyle = StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);</span>
+
+<span class="nc" id="L384">        Style regularStyle = document.addStyle(&quot;regular&quot;, defaultStyle);</span>
+<span class="nc" id="L385">        StyleConstants.setFontFamily(defaultStyle, &quot;SansSerif&quot;);</span>
+<span class="nc" id="L386">        StyleConstants.setFontSize(defaultStyle, Globals.prefs.getInt(JabRefPreferences.FONT_SIZE));</span>
+
+<span class="nc" id="L388">        Style s = document.addStyle(&quot;used&quot;, regularStyle);</span>
+<span class="nc" id="L389">        StyleConstants.setBold(s, true);</span>
+<span class="nc" id="L390">        StyleConstants.setForeground(s, Color.blue);</span>
+
+<span class="nc" id="L392">        s = document.addStyle(&quot;marked&quot;, regularStyle);</span>
+<span class="nc" id="L393">        StyleConstants.setBold(s, true);</span>
+<span class="nc" id="L394">        StyleConstants.setForeground(s, Color.red);</span>
+<span class="nc" id="L395">    }</span>
+
+    private void insertTextForTag(boolean overrideField) {
+<span class="nc" id="L398">        String fieldName = fieldList.getSelectedValue();</span>
+<span class="nc bnc" id="L399" title="All 2 branches missed.">        if (fieldName != null) {</span>
+<span class="nc" id="L400">            String txt = textPane.getSelectedText();</span>
+
+<span class="nc bnc" id="L402" title="All 2 branches missed.">            if (txt != null) {</span>
+<span class="nc" id="L403">                int selectionStart = textPane.getSelectionStart();</span>
+<span class="nc" id="L404">                int selectionEnd = textPane.getSelectionEnd();</span>
+
+                // unselect text
+<span class="nc" id="L407">                textPane.setSelectionEnd(selectionStart);</span>
+
+                // mark the selected text as &quot;used&quot;
+<span class="nc" id="L410">                document.setCharacterAttributes(selectionStart, selectionEnd - selectionStart,</span>
+<span class="nc" id="L411">                        document.getStyle(&quot;marked&quot;), true);</span>
+
+                // override an existing entry
+<span class="nc bnc" id="L414" title="All 2 branches missed.">                if (overrideField) {</span>
+<span class="nc" id="L415">                    entry.setField(fieldName, txt);</span>
+                    // erase old text selection
+<span class="nc" id="L417">                    markedTextStore.setStyleForTag(fieldName, &quot;regular&quot;, document); // delete all previous styles</span>
+<span class="nc" id="L418">                    markedTextStore.insertPosition(fieldName, selectionStart, selectionEnd); // insert new selection style</span>
+                } else {
+                    // memorize the selection for text highlighting
+<span class="nc" id="L421">                    markedTextStore.appendPosition(fieldName, selectionStart, selectionEnd);</span>
+
+                    // get old text from BibTeX tag
+<span class="nc" id="L424">                    Optional&lt;String&gt; old = entry.getField(fieldName);</span>
+
+                    // merge old and selected text
+<span class="nc bnc" id="L427" title="All 2 branches missed.">                    if (old.isPresent()) {</span>
+                        // insert a new name with an additional &quot;and&quot;
+<span class="nc bnc" id="L429" title="All 2 branches missed.">                        if (InternalBibtexFields.getFieldProperties(fieldName).contains(FieldProperty.PERSON_NAMES)) {</span>
+<span class="nc" id="L430">                            entry.setField(fieldName, old.get() + &quot; and &quot; + txt);</span>
+<span class="nc bnc" id="L431" title="All 2 branches missed.">                        } else if (FieldName.KEYWORDS.equals(fieldName)) {</span>
+                            // Add keyword
+<span class="nc" id="L433">                            entry.addKeyword(txt, Globals.prefs.getKeywordDelimiter());</span>
+                        } else {
+<span class="nc" id="L435">                            entry.setField(fieldName, old.get() + txt);</span>
+                        }
+                    } else {
+                        // &quot;null&quot;+&quot;txt&quot; Strings forbidden
+<span class="nc" id="L439">                        entry.setField(fieldName, txt);</span>
+                    }
+                }
+                // make the new data in BibTeX source code visible
+<span class="nc" id="L443">                updateSourceView();</span>
+            }
+        }
+<span class="nc" id="L446">    }</span>
+
+    public boolean okPressed() {
+<span class="nc" id="L449">        return okPressed;</span>
+    }
+
+    /**
+     * tries to parse the pasted reference with freecite
+     *
+     * @return true if successful, false otherwise
+     */
+    private boolean parseWithFreeCiteAndAddEntries() {
+<span class="nc" id="L458">        FreeCiteImporter fimp = new FreeCiteImporter(Globals.prefs.getImportFormatPreferences());</span>
+<span class="nc" id="L459">        String text = textPane.getText();</span>
+
+        // we have to remove line breaks (but keep empty lines)
+        // otherwise, the result is broken
+<span class="nc" id="L463">        text = text.replace(OS.NEWLINE.concat(OS.NEWLINE), &quot;##NEWLINE##&quot;);</span>
+        // possible URL line breaks are removed completely.
+<span class="nc" id="L465">        text = text.replace(&quot;/&quot;.concat(OS.NEWLINE), &quot;/&quot;);</span>
+<span class="nc" id="L466">        text = text.replace(OS.NEWLINE, &quot; &quot;);</span>
+<span class="nc" id="L467">        text = text.replace(&quot;##NEWLINE##&quot;, OS.NEWLINE);</span>
+
+<span class="nc" id="L469">        ParserResult importerResult = fimp.importEntries(text);</span>
+<span class="nc bnc" id="L470" title="All 2 branches missed.">        if (importerResult.hasWarnings()) {</span>
+<span class="nc" id="L471">            frame.showMessage(importerResult.getErrorMessage());</span>
+        }
+<span class="nc" id="L473">        List&lt;BibEntry&gt; importedEntries = importerResult.getDatabase().getEntries();</span>
+<span class="nc bnc" id="L474" title="All 2 branches missed.">        if (importedEntries.isEmpty()) {</span>
+<span class="nc" id="L475">            return false;</span>
+        } else {
+<span class="nc" id="L477">            UpdateField.setAutomaticFields(importedEntries, false, false, Globals.prefs.getUpdateFieldPreferences());</span>
+
+<span class="nc" id="L479">            importedEntries.forEach(entry -&gt; frame.getCurrentBasePanel().insertEntry(entry));</span>
+<span class="nc" id="L480">            return true;</span>
+        }
+    }
+
+    // update the bibtex source view and available List
+    private void updateSourceView() {
+<span class="nc" id="L486">        StringWriter sw = new StringWriter(200);</span>
+        try {
+<span class="nc" id="L488">            new BibEntryWriter(new LatexFieldFormatter(Globals.prefs.getLatexFieldFormatterPreferences()),</span>
+<span class="nc" id="L489">                    false).write(entry, sw, frame.getCurrentBasePanel().getBibDatabaseContext().getMode());</span>
+<span class="nc" id="L490">            sourcePreview.setText(sw.getBuffer().toString());</span>
+<span class="nc" id="L491">        } catch (IOException ex) {</span>
+<span class="nc" id="L492">            LOGGER.error(&quot;Error in entry&quot; + &quot;: &quot; + ex.getMessage(), ex);</span>
+<span class="nc" id="L493">        }</span>
+
+<span class="nc" id="L495">        fieldList.clearSelection();</span>
+<span class="nc" id="L496">    }</span>
+
+    private String[] getAllFields() {
+<span class="nc" id="L499">        Optional&lt;EntryType&gt; type = EntryTypes.getType(entry.getType(),</span>
+<span class="nc" id="L500">                frame.getCurrentBasePanel().getBibDatabaseContext().getMode());</span>
+<span class="nc bnc" id="L501" title="All 2 branches missed.">        if (type.isPresent()) {</span>
+<span class="nc" id="L502">            allFields.addAll(type.get().getAllFields());</span>
+<span class="nc" id="L503">            requiredFields.addAll(type.get().getRequiredFieldsFlat());</span>
+<span class="nc" id="L504">            optionalFields.addAll(type.get().getPrimaryOptionalFields());</span>
+        }
+<span class="nc bnc" id="L506" title="All 2 branches missed.">        for (String field : InternalBibtexFields.getAllPublicFieldNames()) {</span>
+<span class="nc bnc" id="L507" title="All 2 branches missed.">            if (!allFields.contains(field)) {</span>
+<span class="nc" id="L508">                allFields.add(field);</span>
+            }
+<span class="nc" id="L510">        }</span>
+<span class="nc" id="L511">        return allFields.toArray(new String[allFields.size()]);</span>
+    }
+
+    private class PasteAction extends BasicAction {
+
+<span class="nc" id="L516">        public PasteAction() {</span>
+<span class="nc" id="L517">            super(Localization.lang(&quot;Paste&quot;), Localization.lang(&quot;Paste from clipboard&quot;),</span>
+<span class="nc" id="L518">                    IconTheme.JabRefIcons.PASTE.getIcon());</span>
+<span class="nc" id="L519">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L523">            String data = Globals.clipboardManager.getContents();</span>
+<span class="nc" id="L524">            int selStart = textPane.getSelectionStart();</span>
+<span class="nc" id="L525">            int selEnd = textPane.getSelectionEnd();</span>
+<span class="nc bnc" id="L526" title="All 2 branches missed.">            if ((selEnd - selStart) &gt; 0) {</span>
+<span class="nc" id="L527">                textPane.replaceSelection(&quot;&quot;);</span>
+            }
+<span class="nc" id="L529">            int cPos = textPane.getCaretPosition();</span>
+            try {
+<span class="nc" id="L531">                document.insertString(cPos, data, document.getStyle(&quot;regular&quot;));</span>
+<span class="nc" id="L532">            } catch (BadLocationException ex) {</span>
+<span class="nc" id="L533">                LOGGER.warn(&quot;Could not paste text&quot;, ex);</span>
+<span class="nc" id="L534">            }</span>
+<span class="nc" id="L535">        }</span>
+    }
+
+    private class LoadAction extends BasicAction {
+
+<span class="nc" id="L540">        public LoadAction() {</span>
+<span class="nc" id="L541">            super(Localization.lang(&quot;Open&quot;), Localization.lang(&quot;Open file&quot;), IconTheme.JabRefIcons.OPEN.getIcon());</span>
+<span class="nc" id="L542">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+<span class="nc" id="L547">                FileDialogConfiguration fileDialogConfiguration = new FileDialogConfiguration.Builder()</span>
+<span class="nc" id="L548">                        .addExtensionFilter(Localization.lang(&quot;Plain text&quot;), StandardFileType.TXT)</span>
+<span class="nc" id="L549">                        .withDefaultExtension(Localization.lang(&quot;Plain text&quot;), StandardFileType.TXT)</span>
+<span class="nc" id="L550">                        .withInitialDirectory(Globals.prefs.get(JabRefPreferences.WORKING_DIRECTORY)).build();</span>
+<span class="nc" id="L551">                DialogService ds = frame.getDialogService();</span>
+
+<span class="nc" id="L553">                Optional&lt;Path&gt; path = DefaultTaskExecutor</span>
+<span class="nc" id="L554">                        .runInJavaFXThread(() -&gt; ds.showFileOpenDialog(fileDialogConfiguration));</span>
+
+<span class="nc bnc" id="L556" title="All 2 branches missed.">                if (path.isPresent()) {</span>
+<span class="nc" id="L557">                    Path file = path.get();</span>
+<span class="nc" id="L558">                    document.remove(0, document.getLength());</span>
+<span class="nc" id="L559">                    EditorKit eKit = textPane.getEditorKit();</span>
+<span class="nc bnc" id="L560" title="All 2 branches missed.">                    if (eKit != null) {</span>
+<span class="nc" id="L561">                        try (InputStream fis = Files.newInputStream(file)) {</span>
+<span class="nc" id="L562">                            eKit.read(fis, document, 0);</span>
+<span class="nc" id="L563">                            document.setLogicalStyle(0, document.getStyle(&quot;regular&quot;));</span>
+                        }
+                    }
+                }
+<span class="nc" id="L567">            } catch (BadLocationException | IOException ex) {</span>
+<span class="nc" id="L568">                LOGGER.warn(&quot;Problem reading or inserting file&quot;, ex);</span>
+<span class="nc" id="L569">            }</span>
+<span class="nc" id="L570">        }</span>
+    }
+
+    private class ClearAction extends BasicAction {
+
+<span class="nc" id="L575">        public ClearAction() {</span>
+<span class="nc" id="L576">            super(Localization.lang(&quot;Clear&quot;), Localization.lang(&quot;Clear inputarea&quot;), IconTheme.JabRefIcons.NEW.getIcon());</span>
+<span class="nc" id="L577">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L581">            textPane.setText(&quot;&quot;);</span>
+<span class="nc" id="L582">        }</span>
+    }
+
+<span class="nc" id="L585">    class FieldListSelectionHandler implements ListSelectionListener {</span>
+
+<span class="nc" id="L587">        private int lastIndex = -1;</span>
+
+        @Override
+        public void valueChanged(ListSelectionEvent e) {
+<span class="nc" id="L591">            ListSelectionModel lsm = (ListSelectionModel) e.getSource();</span>
+
+<span class="nc" id="L593">            int index = lsm.getAnchorSelectionIndex();</span>
+<span class="nc bnc" id="L594" title="All 2 branches missed.">            if (index != lastIndex) {</span>
+<span class="nc" id="L595">                boolean isAdjusting = e.getValueIsAdjusting();</span>
+
+<span class="nc bnc" id="L597" title="All 2 branches missed.">                if (!isAdjusting) {</span>
+<span class="nc bnc" id="L598" title="All 2 branches missed.">                    if (lastIndex &gt; -1) {</span>
+<span class="nc" id="L599">                        String tag1 = fieldList.getModel().getElementAt(lastIndex);</span>
+<span class="nc" id="L600">                        markedTextStore.setStyleForTag(tag1, &quot;used&quot;, document);</span>
+                    }
+
+<span class="nc" id="L603">                    String tag2 = fieldList.getModel().getElementAt(index);</span>
+<span class="nc" id="L604">                    markedTextStore.setStyleForTag(tag2, &quot;marked&quot;, document);</span>
+
+<span class="nc" id="L606">                    lastIndex = index;</span>
+                }
+            }
+<span class="nc" id="L609">        }</span>
+    }
+
+    // simple JList Renderer
+    // based on : Advanced JList Programming at developers.sun.com
+    private class SimpleCellRenderer extends DefaultListCellRenderer {
+
+        private final Font baseFont;
+        private final Font usedFont;
+<span class="nc" id="L618">        private final Icon okIcon = IconTheme.JabRefIcons.PLAIN_TEXT_IMPORT_DONE.getSmallIcon();</span>
+<span class="nc" id="L619">        private final Icon needIcon = IconTheme.JabRefIcons.PLAIN_TEXT_IMPORT_TODO.getSmallIcon();</span>
+<span class="nc" id="L620">        private final Color requiredColor = new Color(230, 235, 255);</span>
+<span class="nc" id="L621">        private final Color optionalColor = new Color(230, 255, 230);</span>
+
+
+<span class="nc" id="L624">        public SimpleCellRenderer(Font normFont) {</span>
+<span class="nc" id="L625">            baseFont = normFont;</span>
+<span class="nc" id="L626">            usedFont = baseFont.deriveFont(Font.ITALIC);</span>
+<span class="nc" id="L627">        }</span>
+
+        /* This is the only method defined by ListCellRenderer.  We just
+         * reconfigure the Jlabel each time we're called.
+         */
+        @Override
+        public Component getListCellRendererComponent(JList&lt;?&gt; list, Object value, // value to display
+                                                      int index, // cell index
+                                                      boolean iss, // is the cell selected
+                                                      boolean chf) // the list and the cell have the focus
+        {
+            /* The DefaultListCellRenderer class will take care of
+             * the JLabels text property, it's foreground and background
+             * colors, and so on.
+             */
+<span class="nc" id="L642">            super.getListCellRendererComponent(list, value, index, iss, chf);</span>
+
+            /* We additionally set the JLabels icon property here.
+             */
+<span class="nc" id="L646">            String s = value.toString();</span>
+<span class="nc bnc" id="L647" title="All 2 branches missed.">            if (entry.hasField(s)) {</span>
+<span class="nc" id="L648">                this.setForeground(Color.gray);</span>
+<span class="nc" id="L649">                this.setFont(usedFont);</span>
+<span class="nc" id="L650">                this.setIcon(okIcon);</span>
+<span class="nc" id="L651">                this.setToolTipText(Localization.lang(&quot;Filled&quot;));</span>
+            } else {
+<span class="nc" id="L653">                this.setIcon(needIcon);</span>
+<span class="nc" id="L654">                this.setToolTipText(Localization.lang(&quot;Field is missing&quot;));</span>
+            }
+<span class="nc bnc" id="L656" title="All 2 branches missed.">            if (requiredFields.contains(s)) {</span>
+<span class="nc" id="L657">                this.setBackground(requiredColor);</span>
+<span class="nc bnc" id="L658" title="All 2 branches missed.">            } else if (optionalFields.contains(s)) {</span>
+<span class="nc" id="L659">                this.setBackground(optionalColor);</span>
+            }
+<span class="nc" id="L661">            return this;</span>
+        }
+    }
+
+<span class="nc" id="L665">    private class FieldListMouseListener extends MouseAdapter {</span>
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+<span class="nc bnc" id="L669" title="All 2 branches missed.">            if (e.getClickCount() == 2) {</span>
+<span class="nc" id="L670">                insertTextForTag(override.isSelected());</span>
+            }
+<span class="nc" id="L672">        }</span>
+    }
+
+    private class MenuTextForTagAction extends AbstractAction {
+
+        private final String field;
+        private final Boolean overrideField;
+
+
+<span class="nc" id="L681">        public MenuTextForTagAction(String field, Boolean overrideField) {</span>
+<span class="nc" id="L682">            super(field);</span>
+<span class="nc" id="L683">            this.field = field;</span>
+<span class="nc" id="L684">            this.overrideField = overrideField;</span>
+<span class="nc" id="L685">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            // To enable correct marking of used values
+<span class="nc" id="L690">            fieldList.setSelectedValue(field, false);</span>
+<span class="nc" id="L691">            insertTextForTag(overrideField);</span>
+<span class="nc" id="L692">        }</span>
+    }
+}
+
+class PopupListener extends MouseAdapter {
+
+    private final JPopupMenu popMenu;
+
+
+<span class="nc" id="L701">    public PopupListener(JPopupMenu menu) {</span>
+<span class="nc" id="L702">        popMenu = menu;</span>
+<span class="nc" id="L703">    }</span>
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+<span class="nc" id="L707">        maybeShowPopup(e);</span>
+<span class="nc" id="L708">    }</span>
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+<span class="nc" id="L712">        maybeShowPopup(e);</span>
+<span class="nc" id="L713">    }</span>
+
+    private void maybeShowPopup(MouseEvent e) {
+<span class="nc bnc" id="L716" title="All 2 branches missed.">        if (e.isPopupTrigger()) {</span>
+<span class="nc" id="L717">            popMenu.show(e.getComponent(), e.getX(), e.getY());</span>
+        }
+<span class="nc" id="L719">    }</span>
+}
+
+abstract class BasicAction extends AbstractAction {
+
+    public BasicAction(String text, String description, Icon icon) {
+<span class="nc" id="L725">        super(text, icon);</span>
+<span class="nc" id="L726">        putValue(Action.SHORT_DESCRIPTION, description);</span>
+<span class="nc" id="L727">    }</span>
+
+    public BasicAction(String text) {
+<span class="nc" id="L730">        super(text);</span>
+<span class="nc" id="L731">    }</span>
+
+    @Override
+    public abstract void actionPerformed(ActionEvent e);
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

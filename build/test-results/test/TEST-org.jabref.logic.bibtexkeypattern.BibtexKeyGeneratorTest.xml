@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" tests="62" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:23:40" hostname="n184-p67.eduroam.kth.se" time="0.511">
+  <properties/>
+  <testcase name="testAndInAuthorName()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.181"/>
+  <testcase name="firstAuthorVonAndLastNoVonInName()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.006"/>
+  <testcase name="crossrefkeywordNKeywordsSeparatedBySpace()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.006"/>
+  <testcase name="keywordsNKeywordsSeparatedBySpace()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.005"/>
+  <testcase name="testMakeLabelAndCheckLegalKeys()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.066"/>
+  <testcase name="testFirstAuthorNull()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.004"/>
+  <testcase name="authNM()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.004"/>
+  <testcase name="testMakeLabelAndCheckLegalKeysAccentGrave()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.026"/>
+  <testcase name="testCrossrefAndInAuthorNames()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.002"/>
+  <testcase name="testInstituteOfTechnology()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.007"/>
+  <testcase name="testCheckLegalKeyEnforceLegal()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testcrossrefUniversity()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.004"/>
+  <testcase name="testLastPage()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.002"/>
+  <testcase name="veryShortTitle()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.008"/>
+  <testcase name="firstAuthorVonAndLast()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testCrossrefAndAuthorNames()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.004"/>
+  <testcase name="testUniversity()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.007"/>
+  <testcase name="testPagePrefixNull()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="lastAuthorForenameInitials()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.002"/>
+  <testcase name="generateKeyWithOneModifier()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.005"/>
+  <testcase name="testAuthEaEmptyReturnsEmpty()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testNAuthors1EmptyReturnEmpty()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testcrossrefDepartment()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.004"/>
+  <testcase name="testcrossrefInstituteOfTechnology()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.003"/>
+  <testcase name="testAllAuthors()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testCheckLegalNullInNullOut()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.002"/>
+  <testcase name="camel()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.003"/>
+  <testcase name="title()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.003"/>
+  <testcase name="testDepartment()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.007"/>
+  <testcase name="testLastPageNull()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.002"/>
+  <testcase name="keywordNKeywordsSeparatedBySpace()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.003"/>
+  <testcase name="testSpecialLatexCharacterInAuthorName()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.006"/>
+  <testcase name="testPagePrefix()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testcrossrefSchool()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.003"/>
+  <testcase name="oneAuthorPlusIni()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testcrossrefShorttitle()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.003"/>
+  <testcase name="crossrefkeywordsNKeywordsSeparatedBySpace()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.003"/>
+  <testcase name="testFirstPage()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testAuthIniNNull()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testNAuthors1()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testNAuthors3()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="generateKeyStripsApostropheFromTitle()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.002"/>
+  <testcase name="authorsAlpha()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testAuthIniNEmptyReturnsEmpty()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testcrossrefShorttitleInitials()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.003"/>
+  <testcase name="testApplyModifiers()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.003"/>
+  <testcase name="testCheckLegalKeyDoNotEnforceLegal()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.0"/>
+  <testcase name="lastAuthor()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testAndAuthorNames()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.005"/>
+  <testcase name="authAuthEa()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="shortTitle()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.003"/>
+  <testcase name="testSchool()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.005"/>
+  <testcase name="testAuthShortEmptyReturnsEmpty()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testCheckLegalKey()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.004"/>
+  <testcase name="testFirstAuthor()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="generateKeyWithTwoModifiers()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.035"/>
+  <testcase name="firstAuthorForenameInitials()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testAuthShort()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.002"/>
+  <testcase name="authNMThrowsNPE()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testAuthEtAl()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.001"/>
+  <testcase name="testAuthIniN()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.003"/>
+  <testcase name="generateKeyStripsColonFromTitle()" classname="org.jabref.logic.bibtexkeypattern.BibtexKeyGeneratorTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

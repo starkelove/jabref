@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IntegrityCheckAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.integrity</a> &gt; <span class="el_source">IntegrityCheckAction.java</span></div><h1>IntegrityCheckAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.integrity;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
+
+import org.jabref.Globals;
+import org.jabref.gui.Dialog;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.actions.SimpleCommand;
+import org.jabref.gui.util.TaskExecutor;
+import org.jabref.logic.integrity.IntegrityCheck;
+import org.jabref.logic.integrity.IntegrityMessage;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.preferences.JabRefPreferences;
+
+public class IntegrityCheckAction extends SimpleCommand {
+
+    private final JabRefFrame frame;
+    private final TaskExecutor taskExecutor;
+    private final DialogService dialogService;
+
+<span class="nc" id="L28">    public IntegrityCheckAction(JabRefFrame frame) {</span>
+<span class="nc" id="L29">        this.frame = frame;</span>
+<span class="nc" id="L30">        this.taskExecutor = Globals.TASK_EXECUTOR;</span>
+<span class="nc" id="L31">        this.dialogService = frame.getDialogService();</span>
+<span class="nc" id="L32">    }</span>
+
+    @Override
+    public void execute() {
+<span class="nc" id="L36">        BibDatabaseContext databaseContext = frame.getCurrentBasePanel().getBibDatabaseContext();</span>
+<span class="nc" id="L37">        IntegrityCheck check = new IntegrityCheck(databaseContext,</span>
+<span class="nc" id="L38">                Globals.prefs.getFilePreferences(),</span>
+<span class="nc" id="L39">                Globals.prefs.getBibtexKeyPatternPreferences(),</span>
+<span class="nc" id="L40">                Globals.journalAbbreviationLoader.getRepository(Globals.prefs.getJournalAbbreviationPreferences()),</span>
+<span class="nc" id="L41">                Globals.prefs.getBoolean(JabRefPreferences.ENFORCE_LEGAL_BIBTEX_KEY));</span>
+
+<span class="nc" id="L43">        Task&lt;List&lt;IntegrityMessage&gt;&gt; task = new Task&lt;List&lt;IntegrityMessage&gt;&gt;() {</span>
+            @Override
+            protected List&lt;IntegrityMessage&gt; call() {
+<span class="nc" id="L46">                List&lt;IntegrityMessage&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L48">                ObservableList&lt;BibEntry&gt; entries = databaseContext.getDatabase().getEntries();</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">                for (int i = 0; i &lt; entries.size(); i++) {</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                    if (isCancelled()) {</span>
+<span class="nc" id="L51">                        break;</span>
+                    }
+
+<span class="nc" id="L54">                    BibEntry entry = entries.get(i);</span>
+<span class="nc" id="L55">                    result.addAll(check.checkBibtexEntry(entry));</span>
+<span class="nc" id="L56">                    updateProgress(i, entries.size());</span>
+                }
+
+<span class="nc" id="L59">                return result;</span>
+            }
+        };
+<span class="nc" id="L62">        task.setOnSucceeded(value -&gt; {</span>
+<span class="nc" id="L63">            List&lt;IntegrityMessage&gt; messages = task.getValue();</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            if (messages.isEmpty()) {</span>
+<span class="nc" id="L65">                dialogService.notify(Localization.lang(&quot;No problems found.&quot;));</span>
+            } else {
+<span class="nc" id="L67">                Dialog&lt;Void&gt; dialog = new IntegrityCheckDialog(messages, frame.getCurrentBasePanel());</span>
+<span class="nc" id="L68">                dialog.showAndWait();</span>
+            }
+<span class="nc" id="L70">        });</span>
+<span class="nc" id="L71">        task.setOnFailed(event -&gt; dialogService.showErrorDialogAndWait(&quot;Integrity check failed.&quot;));</span>
+
+<span class="nc" id="L73">        dialogService.showProgressDialogAndWait(</span>
+<span class="nc" id="L74">                Localization.lang(&quot;Checking integrity...&quot;),</span>
+<span class="nc" id="L75">                Localization.lang(&quot;Checking integrity...&quot;),</span>
+                task);
+<span class="nc" id="L77">        taskExecutor.execute(task);</span>
+<span class="nc" id="L78">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

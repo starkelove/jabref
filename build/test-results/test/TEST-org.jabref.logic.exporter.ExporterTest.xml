@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.exporter.ExporterTest" tests="69" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:54" hostname="n184-p67.eduroam.kth.se" time="0.166">
+  <properties/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[1]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[2]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[3]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[4]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[5]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[6]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[7]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[8]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[9]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[10]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[11]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[12]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[13]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[14]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[15]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[16]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[17]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[18]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[19]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[20]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[21]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[22]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingEmptyDatabaseYieldsEmptyFile(Exporter, String, Path)[23]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[1]" classname="org.jabref.logic.exporter.ExporterTest" time="0.003"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[2]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[3]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[4]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[5]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[6]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[7]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[8]" classname="org.jabref.logic.exporter.ExporterTest" time="0.005"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[9]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[10]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[11]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[12]" classname="org.jabref.logic.exporter.ExporterTest" time="0.004"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[13]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[14]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[15]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[16]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[17]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[18]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[19]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[20]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[21]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[22]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingNullEntriesThrowsNPE(Exporter, String, Path)[23]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[1]" classname="org.jabref.logic.exporter.ExporterTest" time="0.003"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[2]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[3]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[4]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[5]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[6]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[7]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[8]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[9]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[10]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[11]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[12]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[13]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[14]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[15]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[16]" classname="org.jabref.logic.exporter.ExporterTest" time="0.003"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[17]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[18]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[19]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[20]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[21]" classname="org.jabref.logic.exporter.ExporterTest" time="0.001"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[22]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <testcase name="testExportingNullDatabaseThrowsNPE(Exporter, String, Path)[23]" classname="org.jabref.logic.exporter.ExporterTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

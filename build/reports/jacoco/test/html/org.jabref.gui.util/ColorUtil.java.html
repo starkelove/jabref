@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ColorUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">ColorUtil.java</span></div><h1>ColorUtil.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import javafx.scene.paint.Color;
+
+<span class="nc" id="L5">public class ColorUtil {</span>
+    public static java.awt.Color toAWT(Color color) {
+<span class="nc" id="L7">        return new java.awt.Color((float) color.getRed(),</span>
+<span class="nc" id="L8">                (float) color.getGreen(),</span>
+<span class="nc" id="L9">                (float) color.getBlue(),</span>
+<span class="nc" id="L10">                (float) color.getOpacity());</span>
+    }
+
+    public static Color toFX(java.awt.Color awtColor) {
+<span class="fc" id="L14">        int r = awtColor.getRed();</span>
+<span class="fc" id="L15">        int g = awtColor.getGreen();</span>
+<span class="fc" id="L16">        int b = awtColor.getBlue();</span>
+<span class="fc" id="L17">        int a = awtColor.getAlpha();</span>
+<span class="fc" id="L18">        double opacity = a / 255.0;</span>
+<span class="fc" id="L19">        return Color.rgb(r, g, b, opacity);</span>
+    }
+
+    public static String toRGBCode(Color color) {
+<span class="nc" id="L23">        return String.format(&quot;#%02X%02X%02X&quot;,</span>
+<span class="nc" id="L24">                (int) (color.getRed() * 255),</span>
+<span class="nc" id="L25">                (int) (color.getGreen() * 255),</span>
+<span class="nc" id="L26">                (int) (color.getBlue() * 255));</span>
+    }
+
+    public static String toHex(java.awt.Color color) {
+<span class="nc" id="L30">        return String.format(&quot;#%02x%02x%02x&quot;, color.getRed(), color.getGreen(), color.getBlue());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

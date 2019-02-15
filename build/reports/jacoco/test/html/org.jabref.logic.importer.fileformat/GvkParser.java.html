@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GvkParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fileformat</a> &gt; <span class="el_source">GvkParser.java</span></div><h1>GvkParser.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fileformat;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.LinkedList;
+import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.jabref.logic.importer.ParseException;
+import org.jabref.logic.importer.Parser;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BibtexEntryTypes;
+import org.jabref.model.entry.FieldName;
+
+import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+<span class="nc" id="L27">public class GvkParser implements Parser {</span>
+<span class="nc" id="L28">    private static final Logger LOGGER = LoggerFactory.getLogger(GvkParser.class);</span>
+
+    @Override
+    public List&lt;BibEntry&gt; parseEntries(InputStream inputStream) throws ParseException {
+        try {
+<span class="nc" id="L33">            DocumentBuilder dbuild = DocumentBuilderFactory.newInstance().newDocumentBuilder();</span>
+<span class="nc" id="L34">            Document content = dbuild.parse(inputStream);</span>
+<span class="nc" id="L35">            return this.parseEntries(content);</span>
+<span class="nc" id="L36">        } catch (ParserConfigurationException | SAXException | IOException exception) {</span>
+<span class="nc" id="L37">            throw new ParseException(exception);</span>
+        }
+    }
+
+    private List&lt;BibEntry&gt; parseEntries(Document content) {
+<span class="nc" id="L42">        List&lt;BibEntry&gt; result = new LinkedList&lt;&gt;();</span>
+
+        // used for creating test cases
+        // XMLUtil.printDocument(content);
+
+        // Namespace srwNamespace = Namespace.getNamespace(&quot;srw&quot;,&quot;http://www.loc.gov/zing/srw/&quot;);
+
+        // Schleife ueber allen Teilergebnissen
+        //Element root = content.getDocumentElement();
+<span class="nc" id="L51">        Element root = (Element) content.getElementsByTagName(&quot;zs:searchRetrieveResponse&quot;).item(0);</span>
+<span class="nc" id="L52">        Element srwrecords = getChild(&quot;zs:records&quot;, root);</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (srwrecords == null) {</span>
+            // no records found -&gt; return empty list
+<span class="nc" id="L55">            return result;</span>
+        }
+<span class="nc" id="L57">        List&lt;Element&gt; records = getChildren(&quot;zs:record&quot;, srwrecords);</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        for (Element record : records) {</span>
+<span class="nc" id="L59">            Element e = getChild(&quot;zs:recordData&quot;, record);</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            if (e != null) {</span>
+<span class="nc" id="L61">                e = getChild(&quot;record&quot;, e);</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">                if (e != null) {</span>
+<span class="nc" id="L63">                    result.add(parseEntry(e));</span>
+                }
+            }
+<span class="nc" id="L66">        }</span>
+<span class="nc" id="L67">        return result;</span>
+    }
+
+    private BibEntry parseEntry(Element e) {
+<span class="nc" id="L71">        String author = null;</span>
+<span class="nc" id="L72">        String editor = null;</span>
+<span class="nc" id="L73">        String title = null;</span>
+<span class="nc" id="L74">        String publisher = null;</span>
+<span class="nc" id="L75">        String year = null;</span>
+<span class="nc" id="L76">        String address = null;</span>
+<span class="nc" id="L77">        String series = null;</span>
+<span class="nc" id="L78">        String edition = null;</span>
+<span class="nc" id="L79">        String isbn = null;</span>
+<span class="nc" id="L80">        String issn = null;</span>
+<span class="nc" id="L81">        String number = null;</span>
+<span class="nc" id="L82">        String pagetotal = null;</span>
+<span class="nc" id="L83">        String volume = null;</span>
+<span class="nc" id="L84">        String pages = null;</span>
+<span class="nc" id="L85">        String journal = null;</span>
+<span class="nc" id="L86">        String ppn = null;</span>
+<span class="nc" id="L87">        String booktitle = null;</span>
+<span class="nc" id="L88">        String url = null;</span>
+<span class="nc" id="L89">        String note = null;</span>
+
+<span class="nc" id="L91">        String quelle = &quot;&quot;;</span>
+<span class="nc" id="L92">        String mak = &quot;&quot;;</span>
+<span class="nc" id="L93">        String subtitle = &quot;&quot;;</span>
+
+<span class="nc" id="L95">        String entryType = &quot;book&quot;; // Default</span>
+
+        // Alle relevanten Informationen einsammeln
+
+<span class="nc" id="L99">        List&lt;Element&gt; datafields = getChildren(&quot;datafield&quot;, e);</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        for (Element datafield : datafields) {</span>
+<span class="nc" id="L101">            String tag = datafield.getAttribute(&quot;tag&quot;);</span>
+<span class="nc" id="L102">            LOGGER.debug(&quot;tag: &quot; + tag);</span>
+
+            // mak
+<span class="nc bnc" id="L105" title="All 2 branches missed.">            if (&quot;002@&quot;.equals(tag)) {</span>
+<span class="nc" id="L106">                mak = getSubfield(&quot;0&quot;, datafield);</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                if (mak == null) {</span>
+<span class="nc" id="L108">                    mak = &quot;&quot;;</span>
+                }
+            }
+
+            //ppn
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            if (&quot;003@&quot;.equals(tag)) {</span>
+<span class="nc" id="L114">                ppn = getSubfield(&quot;0&quot;, datafield);</span>
+            }
+
+            //author
+<span class="nc bnc" id="L118" title="All 2 branches missed.">            if (&quot;028A&quot;.equals(tag)) {</span>
+<span class="nc" id="L119">                String vorname = getSubfield(&quot;d&quot;, datafield);</span>
+<span class="nc" id="L120">                String nachname = getSubfield(&quot;a&quot;, datafield);</span>
+
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                if (author == null) {</span>
+<span class="nc" id="L123">                    author = &quot;&quot;;</span>
+                } else {
+<span class="nc" id="L125">                    author = author.concat(&quot; and &quot;);</span>
+                }
+<span class="nc" id="L127">                author = author.concat(vorname + &quot; &quot; + nachname);</span>
+            }
+            //author (weiterer)
+<span class="nc bnc" id="L130" title="All 2 branches missed.">            if (&quot;028B&quot;.equals(tag)) {</span>
+<span class="nc" id="L131">                String vorname = getSubfield(&quot;d&quot;, datafield);</span>
+<span class="nc" id="L132">                String nachname = getSubfield(&quot;a&quot;, datafield);</span>
+
+<span class="nc bnc" id="L134" title="All 2 branches missed.">                if (author == null) {</span>
+<span class="nc" id="L135">                    author = &quot;&quot;;</span>
+                } else {
+<span class="nc" id="L137">                    author = author.concat(&quot; and &quot;);</span>
+                }
+<span class="nc" id="L139">                author = author.concat(vorname + &quot; &quot; + nachname);</span>
+            }
+
+            //editor
+<span class="nc bnc" id="L143" title="All 2 branches missed.">            if (&quot;028C&quot;.equals(tag)) {</span>
+<span class="nc" id="L144">                String vorname = getSubfield(&quot;d&quot;, datafield);</span>
+<span class="nc" id="L145">                String nachname = getSubfield(&quot;a&quot;, datafield);</span>
+
+<span class="nc bnc" id="L147" title="All 2 branches missed.">                if (editor == null) {</span>
+<span class="nc" id="L148">                    editor = &quot;&quot;;</span>
+                } else {
+<span class="nc" id="L150">                    editor = editor.concat(&quot; and &quot;);</span>
+                }
+<span class="nc" id="L152">                editor = editor.concat(vorname + &quot; &quot; + nachname);</span>
+            }
+
+            //title and subtitle
+<span class="nc bnc" id="L156" title="All 2 branches missed.">            if (&quot;021A&quot;.equals(tag)) {</span>
+<span class="nc" id="L157">                title = getSubfield(&quot;a&quot;, datafield);</span>
+<span class="nc" id="L158">                subtitle = getSubfield(&quot;d&quot;, datafield);</span>
+            }
+
+            //publisher and address
+<span class="nc bnc" id="L162" title="All 2 branches missed.">            if (&quot;033A&quot;.equals(tag)) {</span>
+<span class="nc" id="L163">                publisher = getSubfield(&quot;n&quot;, datafield);</span>
+<span class="nc" id="L164">                address = getSubfield(&quot;p&quot;, datafield);</span>
+            }
+
+            //year
+<span class="nc bnc" id="L168" title="All 2 branches missed.">            if (&quot;011@&quot;.equals(tag)) {</span>
+<span class="nc" id="L169">                year = getSubfield(&quot;a&quot;, datafield);</span>
+            }
+
+            //year, volume, number, pages (year bei Zeitschriften (evtl. redundant mit 011@))
+<span class="nc bnc" id="L173" title="All 2 branches missed.">            if (&quot;031A&quot;.equals(tag)) {</span>
+<span class="nc" id="L174">                year = getSubfield(&quot;j&quot;, datafield);</span>
+
+<span class="nc" id="L176">                volume = getSubfield(&quot;e&quot;, datafield);</span>
+<span class="nc" id="L177">                number = getSubfield(&quot;a&quot;, datafield);</span>
+<span class="nc" id="L178">                pages = getSubfield(&quot;h&quot;, datafield);</span>
+
+            }
+
+            // 036D seems to contain more information than the other fields
+            // overwrite information using that field
+            // 036D also contains information normally found in 036E
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            if (&quot;036D&quot;.equals(tag)) {</span>
+                // 021 might have been present
+<span class="nc bnc" id="L187" title="All 2 branches missed.">                if (title != null) {</span>
+                    // convert old title (contained in &quot;a&quot; of 021A) to volume
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                    if (title.startsWith(&quot;@&quot;)) {</span>
+                        // &quot;@&quot; indicates a number
+<span class="nc" id="L191">                        title = title.substring(1);</span>
+                    }
+<span class="nc" id="L193">                    number = title;</span>
+                }
+                //title and subtitle
+<span class="nc" id="L196">                title = getSubfield(&quot;a&quot;, datafield);</span>
+<span class="nc" id="L197">                subtitle = getSubfield(&quot;d&quot;, datafield);</span>
+<span class="nc" id="L198">                volume = getSubfield(&quot;l&quot;, datafield);</span>
+            }
+
+            //series and number
+<span class="nc bnc" id="L202" title="All 2 branches missed.">            if (&quot;036E&quot;.equals(tag)) {</span>
+<span class="nc" id="L203">                series = getSubfield(&quot;a&quot;, datafield);</span>
+<span class="nc" id="L204">                number = getSubfield(&quot;l&quot;, datafield);</span>
+<span class="nc" id="L205">                String kor = getSubfield(&quot;b&quot;, datafield);</span>
+
+<span class="nc bnc" id="L207" title="All 2 branches missed.">                if (kor != null) {</span>
+<span class="nc" id="L208">                    series = series + &quot; / &quot; + kor;</span>
+                }
+            }
+
+            //note
+<span class="nc bnc" id="L213" title="All 2 branches missed.">            if (&quot;037A&quot;.equals(tag)) {</span>
+<span class="nc" id="L214">                note = getSubfield(&quot;a&quot;, datafield);</span>
+            }
+
+            //edition
+<span class="nc bnc" id="L218" title="All 2 branches missed.">            if (&quot;032@&quot;.equals(tag)) {</span>
+<span class="nc" id="L219">                edition = getSubfield(&quot;a&quot;, datafield);</span>
+            }
+
+            //isbn
+<span class="nc bnc" id="L223" title="All 2 branches missed.">            if (&quot;004A&quot;.equals(tag)) {</span>
+<span class="nc" id="L224">                final String isbn10 = getSubfield(&quot;0&quot;, datafield);</span>
+<span class="nc" id="L225">                final String isbn13 = getSubfield(&quot;A&quot;, datafield);</span>
+
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                if (isbn10 != null) {</span>
+<span class="nc" id="L228">                    isbn = isbn10;</span>
+                }
+
+<span class="nc bnc" id="L231" title="All 2 branches missed.">                if (isbn13 != null) {</span>
+<span class="nc" id="L232">                    isbn = isbn13;</span>
+                }
+
+            }
+
+            // Hochschulschriftenvermerk
+            // Bei einer Verlagsdissertation ist der Ort schon eingetragen
+<span class="nc bnc" id="L239" title="All 2 branches missed.">            if (&quot;037C&quot;.equals(tag)) {</span>
+<span class="nc bnc" id="L240" title="All 2 branches missed.">                if (address == null) {</span>
+<span class="nc" id="L241">                    address = getSubfield(&quot;b&quot;, datafield);</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">                    if (address != null) {</span>
+<span class="nc" id="L243">                        address = removeSortCharacters(address);</span>
+                    }
+                }
+
+<span class="nc" id="L247">                String st = getSubfield(&quot;a&quot;, datafield);</span>
+<span class="nc bnc" id="L248" title="All 4 branches missed.">                if ((st != null) &amp;&amp; st.contains(&quot;Diss&quot;)) {</span>
+<span class="nc" id="L249">                    entryType = &quot;phdthesis&quot;;</span>
+                }
+            }
+
+            //journal oder booktitle
+
+            /* Problematiken hier: Sowohl für Artikel in
+             * Zeitschriften als für Beiträge in Büchern
+             * wird 027D verwendet. Der Titel muß je nach
+             * Fall booktitle oder journal zugeordnet
+             * werden. Auch bei Zeitschriften werden hier
+             * ggf. Verlag und Ort angegeben (sind dann
+             * eigentlich überflüssig), während bei
+             * Buchbeiträgen Verlag und Ort wichtig sind
+             * (sonst in Kategorie 033A).
+             */
+<span class="nc bnc" id="L265" title="All 2 branches missed.">            if (&quot;027D&quot;.equals(tag)) {</span>
+<span class="nc" id="L266">                journal = getSubfield(&quot;a&quot;, datafield);</span>
+<span class="nc" id="L267">                booktitle = getSubfield(&quot;a&quot;, datafield);</span>
+<span class="nc" id="L268">                address = getSubfield(&quot;p&quot;, datafield);</span>
+<span class="nc" id="L269">                publisher = getSubfield(&quot;n&quot;, datafield);</span>
+            }
+
+            //pagetotal
+<span class="nc bnc" id="L273" title="All 2 branches missed.">            if (&quot;034D&quot;.equals(tag)) {</span>
+<span class="nc" id="L274">                pagetotal = getSubfield(&quot;a&quot;, datafield);</span>
+
+<span class="nc bnc" id="L276" title="All 2 branches missed.">                if (pagetotal != null) {</span>
+                    // S, S. etc. entfernen
+<span class="nc" id="L278">                    pagetotal = pagetotal.replaceAll(&quot; S\\.?$&quot;, &quot;&quot;);</span>
+                }
+            }
+
+            // Behandlung von Konferenzen
+<span class="nc bnc" id="L283" title="All 2 branches missed.">            if (&quot;030F&quot;.equals(tag)) {</span>
+<span class="nc" id="L284">                address = getSubfield(&quot;k&quot;, datafield);</span>
+
+<span class="nc bnc" id="L286" title="All 2 branches missed.">                if (!&quot;proceedings&quot;.equals(entryType)) {</span>
+<span class="nc" id="L287">                    subtitle = getSubfield(&quot;a&quot;, datafield);</span>
+                }
+
+<span class="nc" id="L290">                entryType = &quot;proceedings&quot;;</span>
+            }
+
+            // Wenn eine Verlagsdiss vorliegt
+<span class="nc bnc" id="L294" title="All 4 branches missed.">            if (&quot;phdthesis&quot;.equals(entryType) &amp;&amp; (isbn != null)) {</span>
+<span class="nc" id="L295">                entryType = &quot;book&quot;;</span>
+            }
+
+            //Hilfskategorien zur Entscheidung @article
+            //oder @incollection; hier könnte man auch die
+            //ISBN herausparsen als Erleichterung für das
+            //Auffinden der Quelle, die über die
+            //SRU-Schnittstelle gelieferten Daten zur
+            //Quelle unvollständig sind (z.B. nicht Serie
+            //und Nummer angegeben werden)
+<span class="nc bnc" id="L305" title="All 2 branches missed.">            if (&quot;039B&quot;.equals(tag)) {</span>
+<span class="nc" id="L306">                quelle = getSubfield(&quot;8&quot;, datafield);</span>
+            }
+<span class="nc bnc" id="L308" title="All 6 branches missed.">            if (&quot;046R&quot;.equals(tag) &amp;&amp; ((quelle == null) || quelle.isEmpty())) {</span>
+<span class="nc" id="L309">                quelle = getSubfield(&quot;a&quot;, datafield);</span>
+            }
+
+            // URLs behandeln
+<span class="nc bnc" id="L313" title="All 4 branches missed.">            if (&quot;009P&quot;.equals(tag) &amp;&amp; (&quot;03&quot;.equals(datafield.getAttribute(&quot;occurrence&quot;))</span>
+<span class="nc bnc" id="L314" title="All 4 branches missed.">                    || &quot;05&quot;.equals(datafield.getAttribute(&quot;occurrence&quot;))) &amp;&amp; (url == null)) {</span>
+<span class="nc" id="L315">                url = getSubfield(&quot;a&quot;, datafield);</span>
+            }
+<span class="nc" id="L317">        }</span>
+
+        // Abfangen von Nulleintraegen
+<span class="nc bnc" id="L320" title="All 2 branches missed.">        if (quelle == null) {</span>
+<span class="nc" id="L321">            quelle = &quot;&quot;;</span>
+        }
+
+        // Nichtsortierzeichen entfernen
+<span class="nc bnc" id="L325" title="All 2 branches missed.">        if (author != null) {</span>
+<span class="nc" id="L326">            author = removeSortCharacters(author);</span>
+        }
+<span class="nc bnc" id="L328" title="All 2 branches missed.">        if (editor != null) {</span>
+<span class="nc" id="L329">            editor = removeSortCharacters(editor);</span>
+        }
+<span class="nc bnc" id="L331" title="All 2 branches missed.">        if (title != null) {</span>
+<span class="nc" id="L332">            title = removeSortCharacters(title);</span>
+        }
+<span class="nc bnc" id="L334" title="All 2 branches missed.">        if (subtitle != null) {</span>
+<span class="nc" id="L335">            subtitle = removeSortCharacters(subtitle);</span>
+        }
+
+        // Dokumenttyp bestimmen und Eintrag anlegen
+
+<span class="nc bnc" id="L340" title="All 2 branches missed.">        if (mak.startsWith(&quot;As&quot;)) {</span>
+<span class="nc" id="L341">            entryType = BibEntry.DEFAULT_TYPE;</span>
+
+<span class="nc bnc" id="L343" title="All 2 branches missed.">            if (quelle.contains(&quot;ISBN&quot;)) {</span>
+<span class="nc" id="L344">                entryType = &quot;incollection&quot;;</span>
+            }
+<span class="nc bnc" id="L346" title="All 2 branches missed.">            if (quelle.contains(&quot;ZDB-ID&quot;)) {</span>
+<span class="nc" id="L347">                entryType = &quot;article&quot;;</span>
+            }
+<span class="nc bnc" id="L349" title="All 2 branches missed.">        } else if (mak.isEmpty()) {</span>
+<span class="nc" id="L350">            entryType = BibEntry.DEFAULT_TYPE;</span>
+<span class="nc bnc" id="L351" title="All 2 branches missed.">        } else if (mak.startsWith(&quot;O&quot;)) {</span>
+<span class="nc" id="L352">            entryType = BibEntry.DEFAULT_TYPE;</span>
+            // FIXME: online only available in Biblatex
+            //entryType = &quot;online&quot;;
+        }
+
+        /*
+         * Wahrscheinlichkeit, dass ZDB-ID
+         * vorhanden ist, ist größer als ISBN bei
+         * Buchbeiträgen. Daher bei As?-Sätzen am besten immer
+         * dann @incollection annehmen, wenn weder ISBN noch
+         * ZDB-ID vorhanden sind.
+         */
+<span class="nc" id="L364">        BibEntry result = new BibEntry(BibtexEntryTypes.getTypeOrDefault(entryType));</span>
+
+        // Zuordnung der Felder in Abhängigkeit vom Dokumenttyp
+<span class="nc bnc" id="L367" title="All 2 branches missed.">        if (author != null) {</span>
+<span class="nc" id="L368">            result.setField(FieldName.AUTHOR, author);</span>
+        }
+<span class="nc bnc" id="L370" title="All 2 branches missed.">        if (editor != null) {</span>
+<span class="nc" id="L371">            result.setField(FieldName.EDITOR, editor);</span>
+        }
+<span class="nc bnc" id="L373" title="All 2 branches missed.">        if (title != null) {</span>
+<span class="nc" id="L374">            result.setField(FieldName.TITLE, title);</span>
+        }
+<span class="nc bnc" id="L376" title="All 2 branches missed.">        if (!Strings.isNullOrEmpty(subtitle)) {</span>
+            // ensure that first letter is an upper case letter
+            // there could be the edge case that the string is only one character long, therefore, this special treatment
+            // this is Apache commons lang StringUtils.capitalize (https://commons.apache.org/proper/commons-lang/javadocs/api-release/org/apache/commons/lang3/StringUtils.html#capitalize%28java.lang.String%29), but we don't want to add an additional dependency  ('org.apache.commons:commons-lang3:3.4')
+<span class="nc" id="L380">            StringBuilder newSubtitle = new StringBuilder(</span>
+<span class="nc" id="L381">                    Character.toString(Character.toUpperCase(subtitle.charAt(0))));</span>
+<span class="nc bnc" id="L382" title="All 2 branches missed.">            if (subtitle.length() &gt; 1) {</span>
+<span class="nc" id="L383">                newSubtitle.append(subtitle.substring(1));</span>
+            }
+<span class="nc" id="L385">            result.setField(FieldName.SUBTITLE, newSubtitle.toString());</span>
+        }
+<span class="nc bnc" id="L387" title="All 2 branches missed.">        if (publisher != null) {</span>
+<span class="nc" id="L388">            result.setField(FieldName.PUBLISHER, publisher);</span>
+        }
+<span class="nc bnc" id="L390" title="All 2 branches missed.">        if (year != null) {</span>
+<span class="nc" id="L391">            result.setField(FieldName.YEAR, year);</span>
+        }
+<span class="nc bnc" id="L393" title="All 2 branches missed.">        if (address != null) {</span>
+<span class="nc" id="L394">            result.setField(FieldName.ADDRESS, address);</span>
+        }
+<span class="nc bnc" id="L396" title="All 2 branches missed.">        if (series != null) {</span>
+<span class="nc" id="L397">            result.setField(FieldName.SERIES, series);</span>
+        }
+<span class="nc bnc" id="L399" title="All 2 branches missed.">        if (edition != null) {</span>
+<span class="nc" id="L400">            result.setField(FieldName.EDITION, edition);</span>
+        }
+<span class="nc bnc" id="L402" title="All 2 branches missed.">        if (isbn != null) {</span>
+<span class="nc" id="L403">            result.setField(FieldName.ISBN, isbn);</span>
+        }
+<span class="nc bnc" id="L405" title="All 2 branches missed.">        if (issn != null) {</span>
+<span class="nc" id="L406">            result.setField(FieldName.ISSN, issn);</span>
+        }
+<span class="nc bnc" id="L408" title="All 2 branches missed.">        if (number != null) {</span>
+<span class="nc" id="L409">            result.setField(FieldName.NUMBER, number);</span>
+        }
+<span class="nc bnc" id="L411" title="All 2 branches missed.">        if (pagetotal != null) {</span>
+<span class="nc" id="L412">            result.setField(FieldName.PAGETOTAL, pagetotal);</span>
+        }
+<span class="nc bnc" id="L414" title="All 2 branches missed.">        if (pages != null) {</span>
+<span class="nc" id="L415">            result.setField(FieldName.PAGES, pages);</span>
+        }
+<span class="nc bnc" id="L417" title="All 2 branches missed.">        if (volume != null) {</span>
+<span class="nc" id="L418">            result.setField(FieldName.VOLUME, volume);</span>
+        }
+<span class="nc bnc" id="L420" title="All 2 branches missed.">        if (journal != null) {</span>
+<span class="nc" id="L421">            result.setField(FieldName.JOURNAL, journal);</span>
+        }
+<span class="nc bnc" id="L423" title="All 2 branches missed.">        if (ppn != null) {</span>
+<span class="nc" id="L424">            result.setField(&quot;ppn_GVK&quot;, ppn);</span>
+        }
+<span class="nc bnc" id="L426" title="All 2 branches missed.">        if (url != null) {</span>
+<span class="nc" id="L427">            result.setField(FieldName.URL, url);</span>
+        }
+<span class="nc bnc" id="L429" title="All 2 branches missed.">        if (note != null) {</span>
+<span class="nc" id="L430">            result.setField(FieldName.NOTE, note);</span>
+        }
+
+<span class="nc bnc" id="L433" title="All 4 branches missed.">        if (&quot;article&quot;.equals(entryType) &amp;&amp; (journal != null)) {</span>
+<span class="nc" id="L434">            result.setField(FieldName.JOURNAL, journal);</span>
+<span class="nc bnc" id="L435" title="All 4 branches missed.">        } else if (&quot;incollection&quot;.equals(entryType) &amp;&amp; (booktitle != null)) {</span>
+<span class="nc" id="L436">            result.setField(FieldName.BOOKTITLE, booktitle);</span>
+        }
+
+<span class="nc" id="L439">        return result;</span>
+    }
+
+    private String getSubfield(String a, Element datafield) {
+<span class="nc" id="L443">        List&lt;Element&gt; liste = getChildren(&quot;subfield&quot;, datafield);</span>
+
+<span class="nc bnc" id="L445" title="All 2 branches missed.">        for (Element subfield : liste) {</span>
+<span class="nc bnc" id="L446" title="All 2 branches missed.">            if (subfield.getAttribute(&quot;code&quot;).equals(a)) {</span>
+<span class="nc" id="L447">                return (subfield.getTextContent());</span>
+            }
+<span class="nc" id="L449">        }</span>
+<span class="nc" id="L450">        return null;</span>
+    }
+
+    private Element getChild(String name, Element e) {
+<span class="nc bnc" id="L454" title="All 2 branches missed.">        if (e == null) {</span>
+<span class="nc" id="L455">            return null;</span>
+        }
+<span class="nc" id="L457">        NodeList children = e.getChildNodes();</span>
+
+<span class="nc" id="L459">        int j = children.getLength();</span>
+<span class="nc bnc" id="L460" title="All 2 branches missed.">        for (int i = 0; i &lt; j; i++) {</span>
+<span class="nc" id="L461">            Node test = children.item(i);</span>
+<span class="nc bnc" id="L462" title="All 2 branches missed.">            if (test.getNodeType() == Node.ELEMENT_NODE) {</span>
+<span class="nc" id="L463">                Element entry = (Element) test;</span>
+<span class="nc bnc" id="L464" title="All 2 branches missed.">                if (entry.getTagName().equals(name)) {</span>
+<span class="nc" id="L465">                    return entry;</span>
+                }
+            }
+        }
+<span class="nc" id="L469">        return null;</span>
+    }
+
+    private List&lt;Element&gt; getChildren(String name, Element e) {
+<span class="nc" id="L473">        List&lt;Element&gt; result = new LinkedList&lt;&gt;();</span>
+<span class="nc" id="L474">        NodeList children = e.getChildNodes();</span>
+
+<span class="nc" id="L476">        int j = children.getLength();</span>
+<span class="nc bnc" id="L477" title="All 2 branches missed.">        for (int i = 0; i &lt; j; i++) {</span>
+<span class="nc" id="L478">            Node test = children.item(i);</span>
+<span class="nc bnc" id="L479" title="All 2 branches missed.">            if (test.getNodeType() == Node.ELEMENT_NODE) {</span>
+<span class="nc" id="L480">                Element entry = (Element) test;</span>
+<span class="nc bnc" id="L481" title="All 2 branches missed.">                if (entry.getTagName().equals(name)) {</span>
+<span class="nc" id="L482">                    result.add(entry);</span>
+                }
+            }
+        }
+
+<span class="nc" id="L487">        return result;</span>
+    }
+
+    private String removeSortCharacters(String input) {
+<span class="nc" id="L491">        return input.replaceAll(&quot;\\@&quot;, &quot;&quot;);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

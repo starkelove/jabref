@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnicodeToLatexFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.formatter.bibtexfields</a> &gt; <span class="el_source">UnicodeToLatexFormatter.java</span></div><h1>UnicodeToLatexFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.formatter.bibtexfields;
+
+import java.util.Map;
+import java.util.Objects;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.layout.LayoutFormatter;
+import org.jabref.logic.util.strings.HTMLUnicodeConversionMaps;
+import org.jabref.model.cleanup.Formatter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+<span class="fc" id="L14">public class UnicodeToLatexFormatter extends Formatter implements LayoutFormatter {</span>
+
+<span class="fc" id="L16">    private static final Logger LOGGER = LoggerFactory.getLogger(UnicodeToLatexFormatter.class);</span>
+
+    @Override
+    public String format(String text) {
+<span class="fc" id="L20">        String result = Objects.requireNonNull(text);</span>
+
+<span class="fc bfc" id="L22" title="All 2 branches covered.">        if (result.isEmpty()) {</span>
+<span class="fc" id="L23">            return result;</span>
+        }
+
+        // Standard symbols
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        for (Map.Entry&lt;String, String&gt; unicodeLatexPair : HTMLUnicodeConversionMaps.UNICODE_LATEX_CONVERSION_MAP</span>
+<span class="fc" id="L28">                .entrySet()) {</span>
+<span class="fc" id="L29">            result = result.replace(unicodeLatexPair.getKey(), unicodeLatexPair.getValue());</span>
+<span class="fc" id="L30">        }</span>
+
+        // Combining accents
+<span class="fc" id="L33">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L34">        boolean consumed = false;</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        for (int i = 0; i &lt;= (result.length() - 2); i++) {</span>
+<span class="pc bpc" id="L36" title="1 of 4 branches missed.">            if (!consumed &amp;&amp; (i &lt; (result.length() - 1))) {</span>
+<span class="fc" id="L37">                int cpCurrent = result.codePointAt(i);</span>
+<span class="fc" id="L38">                Integer cpNext = result.codePointAt(i + 1);</span>
+<span class="fc" id="L39">                String code = HTMLUnicodeConversionMaps.ESCAPED_ACCENTS.get(cpNext);</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">                if (code == null) {</span>
+<span class="fc" id="L41">                    sb.append((char) cpCurrent);</span>
+                } else {
+<span class="fc" id="L43">                    sb.append(&quot;{\\&quot;).append(code).append('{').append((char) cpCurrent).append(&quot;}}&quot;);</span>
+<span class="fc" id="L44">                    consumed = true;</span>
+                }
+<span class="fc" id="L46">            } else {</span>
+<span class="fc" id="L47">                consumed = false;</span>
+            }
+        }
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (!consumed) {</span>
+<span class="fc" id="L51">            sb.append((char) result.codePointAt(result.length() - 1));</span>
+        }
+<span class="fc" id="L53">        result = sb.toString();</span>
+
+        // Check if any symbols is not converted
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        for (int i = 0; i &lt;= (result.length() - 1); i++) {</span>
+<span class="fc" id="L57">            int cp = result.codePointAt(i);</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">            if (cp &gt;= 129) {</span>
+<span class="nc" id="L59">                LOGGER.warn(&quot;Unicode character not converted: &quot; + cp);</span>
+            }
+        }
+<span class="fc" id="L62">        return result;</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L67">        return Localization.lang(&quot;Converts Unicode characters to LaTeX encoding.&quot;);</span>
+    }
+
+    @Override
+    public String getExampleInput() {
+<span class="fc" id="L72">        return &quot;Mönch&quot;;</span>
+    }
+
+    @Override
+    public String getName() {
+<span class="fc" id="L77">        return Localization.lang(&quot;Unicode to LaTeX&quot;);</span>
+    }
+
+    @Override
+    public String getKey() {
+<span class="fc" id="L82">        return &quot;unicode_to_latex&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

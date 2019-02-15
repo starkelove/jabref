@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileDownloadTask.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.externalfiles</a> &gt; <span class="el_source">FileDownloadTask.java</span></div><h1>FileDownloadTask.java</h1><pre class="source lang-java linenums">package org.jabref.gui.externalfiles;
+
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.logic.net.ProgressInputStream;
+import org.jabref.logic.net.URLDownload;
+
+import org.fxmisc.easybind.EasyBind;
+
+public class FileDownloadTask extends BackgroundTask&lt;Path&gt; {
+
+    private final URL source;
+    private final Path destination;
+
+<span class="nc" id="L19">    public FileDownloadTask(URL source, Path destination) {</span>
+<span class="nc" id="L20">        this.source = source;</span>
+<span class="nc" id="L21">        this.destination = destination;</span>
+<span class="nc" id="L22">    }</span>
+
+    @Override
+    protected Path call() throws Exception {
+<span class="nc" id="L26">        URLDownload download = new URLDownload(source);</span>
+<span class="nc" id="L27">        try (ProgressInputStream inputStream = download.asInputStream()) {</span>
+<span class="nc" id="L28">            EasyBind.subscribe(</span>
+<span class="nc" id="L29">                    inputStream.totalNumBytesReadProperty(),</span>
+<span class="nc" id="L30">                    bytesRead -&gt; updateProgress(bytesRead.longValue(), inputStream.getMaxNumBytes()));</span>
+
+            // Make sure directory exists since otherwise copy fails
+<span class="nc" id="L33">            Files.createDirectories(destination.getParent());</span>
+
+<span class="nc" id="L35">            Files.copy(inputStream, destination, StandardCopyOption.REPLACE_EXISTING);</span>
+        }
+
+<span class="nc" id="L38">        return destination;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

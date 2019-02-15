@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UpdateFieldPreferences.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util</a> &gt; <span class="el_source">UpdateFieldPreferences.java</span></div><h1>UpdateFieldPreferences.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util;
+
+public class UpdateFieldPreferences {
+
+    private final boolean useOwner;
+    private final boolean useTimeStamp;
+    private final boolean overwriteOwner;
+    private final boolean overwriteTimeStamp;
+    private final String timeStampField;
+    private final String timeStampFormat;
+    private final String defaultOwner;
+
+
+    public UpdateFieldPreferences(boolean useOwner, boolean overwriteOwner, String defaultOwner, boolean useTimeStamp,
+            boolean overwriteTimeStamp, String timeStampField,
+<span class="nc" id="L16">            String timeStampFormat) {</span>
+<span class="nc" id="L17">        this.useOwner = useOwner;</span>
+<span class="nc" id="L18">        this.overwriteOwner = overwriteOwner;</span>
+<span class="nc" id="L19">        this.defaultOwner = defaultOwner;</span>
+<span class="nc" id="L20">        this.useTimeStamp = useTimeStamp;</span>
+<span class="nc" id="L21">        this.overwriteTimeStamp = overwriteTimeStamp;</span>
+<span class="nc" id="L22">        this.timeStampField = timeStampField;</span>
+<span class="nc" id="L23">        this.timeStampFormat = timeStampFormat;</span>
+<span class="nc" id="L24">    }</span>
+
+    public boolean isUseOwner() {
+<span class="nc" id="L27">        return useOwner;</span>
+    }
+
+    public boolean isUseTimeStamp() {
+<span class="nc" id="L31">        return useTimeStamp;</span>
+    }
+
+    public String getTimeStampField() {
+<span class="nc" id="L35">        return timeStampField;</span>
+    }
+
+    public String getDefaultOwner() {
+<span class="nc" id="L39">        return defaultOwner;</span>
+    }
+
+    public String getTimeStampFormat() {
+<span class="nc" id="L43">        return timeStampFormat;</span>
+    }
+
+    public boolean isOverwriteOwner() {
+<span class="nc" id="L47">        return overwriteOwner;</span>
+    }
+
+    public boolean isOverwriteTimeStamp() {
+<span class="nc" id="L51">        return overwriteTimeStamp;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

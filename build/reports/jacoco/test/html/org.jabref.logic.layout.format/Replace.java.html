@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Replace.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.layout.format</a> &gt; <span class="el_source">Replace.java</span></div><h1>Replace.java</h1><pre class="source lang-java linenums">package org.jabref.logic.layout.format;
+
+import java.util.List;
+
+import org.jabref.logic.layout.AbstractParamLayoutFormatter;
+
+/**
+ * Formatter that does regexp replacement.
+ *
+ * To use this formatter, a two-part argument must be given. The parts are
+ * separated by a comma. To indicate the comma character, use an escape
+ * sequence: \,
+ * For inserting newlines and tabs in arguments, use \n and \t, respectively.
+ *
+ * The first part is the regular expression to search for. Remember that any commma
+ * character must be preceded by a backslash, and consequently a literal backslash must
+ * be written as a pair of backslashes. A description of Java regular expressions can be
+ * found at:
+ *   http://java.sun.com/j2se/1.4.2/docs/api/java/util/regex/Pattern.html
+ *
+ * The second part is the text to replace all matches with.
+ *
+ * For instance:
+ *  \format[Replace(and,&amp;)]{\author} :
+ *      will output the &quot;author&quot; field after replacing all occurences of &quot;and&quot;
+ *      by &quot;&amp;&quot;
+ *
+ *  \format[Replace(\s,_)]{\author} :
+ *      will output the &quot;author&quot; field after replacing all whitespace
+ *      by underscores.
+ *
+ *  \format[Replace(\,,;)]{\author} :
+ *      will output the &quot;author&quot; field after replacing all commas by semicolons.
+ *
+ */
+<span class="fc" id="L36">public class Replace extends AbstractParamLayoutFormatter {</span>
+
+    private String regex;
+    private String replaceWith;
+
+    @Override
+    public void setArgument(String arg) {
+<span class="fc" id="L43">        List&lt;String&gt; parts = AbstractParamLayoutFormatter.parseArgument(arg);</span>
+
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (parts.size() &lt; 2) {</span>
+<span class="fc" id="L46">            return; // TODO: too few arguments. Print an error message here?</span>
+        }
+<span class="fc" id="L48">        regex = parts.get(0);</span>
+<span class="fc" id="L49">        replaceWith = parts.get(1);</span>
+
+<span class="fc" id="L51">    }</span>
+
+    @Override
+    public String format(String fieldText) {
+<span class="fc bfc" id="L55" title="All 4 branches covered.">        if ((fieldText == null) || (regex == null)) {</span>
+<span class="fc" id="L56">            return fieldText; // TODO: argument missing or invalid. Print an error message here?</span>
+        }
+<span class="fc" id="L58">        return fieldText.replaceAll(regex, replaceWith);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

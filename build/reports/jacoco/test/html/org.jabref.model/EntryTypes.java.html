@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EntryTypes.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model</a> &gt; <span class="el_source">EntryTypes.java</span></div><h1>EntryTypes.java</h1><pre class="source lang-java linenums">package org.jabref.model;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.BiblatexEntryTypes;
+import org.jabref.model.entry.BibtexEntryTypes;
+import org.jabref.model.entry.CustomEntryType;
+import org.jabref.model.entry.EntryType;
+import org.jabref.model.entry.IEEETranEntryTypes;
+
+public class EntryTypes {
+    /**
+     * This class is used to specify entry types for either BIBTEX and BIBLATEX.
+     */
+    private static class InternalEntryTypes {
+<span class="fc" id="L27">        private final Map&lt;String, EntryType&gt; ALL_TYPES = new TreeMap&lt;&gt;();</span>
+        private final Map&lt;String, EntryType&gt; STANDARD_TYPES;
+        private final EntryType defaultType;
+
+
+<span class="fc" id="L32">        public InternalEntryTypes(EntryType defaultType, List&lt;List&lt;EntryType&gt;&gt; entryTypes) {</span>
+<span class="fc" id="L33">            this.defaultType = defaultType;</span>
+
+<span class="fc bfc" id="L35" title="All 2 branches covered.">            for (List&lt;EntryType&gt; list : entryTypes) {</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">                for (EntryType type : list) {</span>
+<span class="fc" id="L37">                    ALL_TYPES.put(type.getName().toLowerCase(Locale.ROOT), type);</span>
+<span class="fc" id="L38">                }</span>
+<span class="fc" id="L39">            }</span>
+<span class="fc" id="L40">            STANDARD_TYPES = new TreeMap&lt;&gt;(ALL_TYPES);</span>
+<span class="fc" id="L41">        }</span>
+
+        /**
+         * This method returns the BibtexEntryType for the name of a type,
+         * or null if it does not exist.
+         */
+        public Optional&lt;EntryType&gt; getType(String name) {
+<span class="fc" id="L48">            return Optional.ofNullable(ALL_TYPES.get(name.toLowerCase(Locale.ROOT)));</span>
+        }
+
+        /**
+         * This method returns the EntryType for the name of a type,
+         * or the default type (*.MISC) if it does not exist.
+         */
+        // Get an entry type defined in BibtexEntryType
+        public EntryType getTypeOrDefault(String type) {
+<span class="fc" id="L57">            return getType(type).orElse(defaultType);</span>
+        }
+
+        /**
+         * This method returns the standard BibtexEntryType for the
+         * name of a type, or null if it does not exist.
+         */
+        public Optional&lt;EntryType&gt; getStandardType(String name) {
+<span class="fc" id="L65">            return Optional.ofNullable(STANDARD_TYPES.get(name.toLowerCase(Locale.ROOT)));</span>
+        }
+
+        private void addOrModifyEntryType(EntryType type) {
+<span class="fc" id="L69">            ALL_TYPES.put(type.getName().toLowerCase(Locale.ROOT), type);</span>
+<span class="fc" id="L70">        }</span>
+
+        public Set&lt;String&gt; getAllTypes() {
+<span class="fc" id="L73">            return ALL_TYPES.keySet();</span>
+        }
+
+        public Collection&lt;EntryType&gt; getAllValues() {
+<span class="fc" id="L77">            return ALL_TYPES.values();</span>
+        }
+
+        /**
+         * Removes a customized entry type from the type map. If this type
+         * overrode a standard type, we reinstate the standard one.
+         *
+         * @param name The customized entry type to remove.
+         */
+        public void removeType(String name) {
+<span class="fc" id="L87">            String toLowerCase = name.toLowerCase(Locale.ROOT);</span>
+
+<span class="fc bfc" id="L89" title="All 2 branches covered.">            if (!ALL_TYPES.get(toLowerCase).equals(STANDARD_TYPES.get(toLowerCase))) {</span>
+<span class="fc" id="L90">                ALL_TYPES.remove(toLowerCase);</span>
+
+<span class="fc bfc" id="L92" title="All 2 branches covered.">                if (STANDARD_TYPES.containsKey(toLowerCase)) {</span>
+                    // In this case the user has removed a customized version
+                    // of a standard type. We reinstate the standard type.
+<span class="fc" id="L95">                    addOrModifyEntryType(STANDARD_TYPES.get(toLowerCase));</span>
+                }
+            }
+<span class="fc" id="L98">        }</span>
+
+    }
+
+
+<span class="fc" id="L103">    public static final InternalEntryTypes BIBTEX = new InternalEntryTypes(BibtexEntryTypes.MISC,</span>
+<span class="fc" id="L104">            Arrays.asList(BibtexEntryTypes.ALL, IEEETranEntryTypes.ALL));</span>
+<span class="fc" id="L105">    public static final InternalEntryTypes BIBLATEX = new InternalEntryTypes(BiblatexEntryTypes.MISC,</span>
+<span class="fc" id="L106">            Arrays.asList(BiblatexEntryTypes.ALL));</span>
+
+    private EntryTypes() {
+    }
+
+    /**
+     * This method returns the BibtexEntryType for the name of a type,
+     * or null if it does not exist.
+     */
+    public static Optional&lt;EntryType&gt; getType(String name, BibDatabaseMode type) {
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        return type == BibDatabaseMode.BIBLATEX ? BIBLATEX.getType(name) : BIBTEX.getType(name);</span>
+    }
+
+    /**
+     * This method returns the EntryType for the name of a type,
+     * or the default type (*.MISC) if it does not exist.
+     */
+    // Get an entry type defined in BibtexEntryType
+    public static EntryType getTypeOrDefault(String name, BibDatabaseMode mode) {
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        return mode == BibDatabaseMode.BIBLATEX ? BIBLATEX.getTypeOrDefault(name) : BIBTEX.getTypeOrDefault(name);</span>
+    }
+
+    /**
+     * This method returns the standard BibtexEntryType for the
+     * name of a type, or null if it does not exist.
+     */
+    public static Optional&lt;EntryType&gt; getStandardType(String name, BibDatabaseMode mode) {
+<span class="fc bfc" id="L133" title="All 2 branches covered.">        return mode == BibDatabaseMode.BIBLATEX ? BIBLATEX.getStandardType(name) : BIBTEX.getStandardType(name);</span>
+    }
+
+    public static void addOrModifyCustomEntryType(CustomEntryType customEntryType, BibDatabaseMode mode) {
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (BibDatabaseMode.BIBLATEX == mode) {</span>
+<span class="fc" id="L138">            BIBLATEX.addOrModifyEntryType(customEntryType);</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        } else if (BibDatabaseMode.BIBTEX == mode) {</span>
+<span class="fc" id="L140">            BIBTEX.addOrModifyEntryType(customEntryType);</span>
+        }
+<span class="fc" id="L142">    }</span>
+
+    public static Set&lt;String&gt; getAllTypes(BibDatabaseMode type) {
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        return type == BibDatabaseMode.BIBLATEX ? BIBLATEX.getAllTypes() : BIBTEX.getAllTypes();</span>
+    }
+
+    public static Collection&lt;EntryType&gt; getAllValues(BibDatabaseMode type) {
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        return type == BibDatabaseMode.BIBLATEX ? BIBLATEX.getAllValues() : BIBTEX.getAllValues();</span>
+    }
+
+    /**
+     * Determine all CustomTypes which are not overwritten standard types but real custom types for a given BibDatabaseMode
+     *
+     * I.e., a modified &quot;article&quot; type will not be included in the list, but an EntryType like &quot;MyCustomType&quot; will be included.
+     *
+     * @param mode the BibDatabaseMode to be checked
+     * @return  the list of all found custom types
+     */
+    public static List&lt;EntryType&gt; getAllCustomTypes(BibDatabaseMode mode) {
+<span class="fc" id="L161">        Collection&lt;EntryType&gt; allTypes = getAllValues(mode);</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">        if (mode == BibDatabaseMode.BIBTEX) {</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">            return allTypes.stream().filter(entryType -&gt; !BibtexEntryTypes.getType(entryType.getName()).isPresent())</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">                    .filter(entryType -&gt; !IEEETranEntryTypes.getType(entryType.getName()).isPresent())</span>
+<span class="fc" id="L165">                    .collect(Collectors.toList());</span>
+        } else {
+<span class="fc bfc" id="L167" title="All 2 branches covered.">            return allTypes.stream().filter(entryType -&gt; !BiblatexEntryTypes.getType(entryType.getName()).isPresent())</span>
+<span class="fc" id="L168">                    .collect(Collectors.toList());</span>
+        }
+    }
+
+    public static List&lt;EntryType&gt; getAllModifiedStandardTypes(BibDatabaseMode mode) {
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        if (mode == BibDatabaseMode.BIBTEX) {</span>
+<span class="fc" id="L174">            return getAllModifiedStandardTypes(BIBTEX);</span>
+        } else {
+<span class="fc" id="L176">            return getAllModifiedStandardTypes(BIBLATEX);</span>
+        }
+    }
+
+    private static List&lt;EntryType&gt; getAllModifiedStandardTypes(InternalEntryTypes internalTypes) {
+<span class="fc" id="L181">        return internalTypes.getAllValues().stream().filter(type -&gt; type instanceof CustomEntryType)</span>
+<span class="fc" id="L182">                .filter(type -&gt; internalTypes.getStandardType(type.getName()).isPresent())</span>
+<span class="fc" id="L183">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Removes a customized entry type from the type map. If this type
+     * overrode a standard type, we reinstate the standard one.
+     *
+     * @param name The customized entry type to remove.
+     */
+    public static void removeType(String name, BibDatabaseMode type) {
+<span class="fc bfc" id="L193" title="All 2 branches covered.">        if (type == BibDatabaseMode.BIBLATEX) {</span>
+<span class="fc" id="L194">            BIBLATEX.removeType(name);</span>
+        } else {
+<span class="fc" id="L196">            BIBTEX.removeType(name);</span>
+        }
+<span class="fc" id="L198">    }</span>
+
+    public static void removeAllCustomEntryTypes() {
+<span class="fc bfc" id="L201" title="All 2 branches covered.">        for (BibDatabaseMode type : BibDatabaseMode.values()) {</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">            for (String typeName : new HashSet&lt;&gt;(getAllTypes(type))) {</span>
+<span class="fc" id="L203">                getType(typeName, type).ifPresent(entryType -&gt; {</span>
+<span class="fc bfc" id="L204" title="All 2 branches covered.">                    if (entryType instanceof CustomEntryType) {</span>
+<span class="fc" id="L205">                        removeType(typeName, type);</span>
+                    }
+<span class="fc" id="L207">                });</span>
+<span class="fc" id="L208">            }</span>
+        }
+<span class="fc" id="L210">    }</span>
+
+    /**
+     * Load given custom entry types for BibTeX and biblatex mode
+     */
+    public static void loadCustomEntryTypes(List&lt;CustomEntryType&gt; customBibtexEntryTypes, List&lt;CustomEntryType&gt; customBiblatexEntryTypes) {
+<span class="nc bnc" id="L216" title="All 2 branches missed.">        for (CustomEntryType type : customBibtexEntryTypes) {</span>
+<span class="nc" id="L217">            EntryTypes.addOrModifyCustomEntryType(type, BibDatabaseMode.BIBTEX);</span>
+<span class="nc" id="L218">        }</span>
+
+<span class="nc bnc" id="L220" title="All 2 branches missed.">        for (CustomEntryType type : customBiblatexEntryTypes) {</span>
+<span class="nc" id="L221">            EntryTypes.addOrModifyCustomEntryType(type, BibDatabaseMode.BIBLATEX);</span>
+<span class="nc" id="L222">        }</span>
+<span class="nc" id="L223">    }</span>
+
+    /**
+     * Checks whether two EntryTypes are equal or not based on the equality of the type names and on the equality of
+     * the required and optional field lists
+     *
+     * @param type1 the first EntryType to compare
+     * @param type2 the secend EntryType to compare
+     * @return returns true if the two compared entry types have the same name and equal required and optional fields
+     */
+    public static boolean isEqualNameAndFieldBased(EntryType type1, EntryType type2) {
+<span class="nc bnc" id="L234" title="All 4 branches missed.">        if ((type1 == null) &amp;&amp; (type2 == null)) {</span>
+<span class="nc" id="L235">            return true;</span>
+<span class="nc bnc" id="L236" title="All 4 branches missed.">        } else if ((type1 == null) || (type2 == null)) {</span>
+<span class="nc" id="L237">            return false;</span>
+        } else {
+<span class="nc bnc" id="L239" title="All 2 branches missed.">            return type1.getName().equals(type2.getName())</span>
+<span class="nc bnc" id="L240" title="All 2 branches missed.">                    &amp;&amp; type1.getRequiredFields().equals(type2.getRequiredFields())</span>
+<span class="nc bnc" id="L241" title="All 2 branches missed.">                    &amp;&amp; type1.getOptionalFields().equals(type2.getOptionalFields())</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">                    &amp;&amp; type1.getSecondaryOptionalFields().equals(type2.getSecondaryOptionalFields());</span>
+        }
+    }
+
+    public static boolean isExclusiveBiblatex(String type) {
+<span class="fc" id="L247">        return filterEntryTypesNames(BiblatexEntryTypes.ALL, isNotIncludedIn(BibtexEntryTypes.ALL)).contains(type.toLowerCase(Locale.ROOT));</span>
+    }
+
+    private static List&lt;String&gt; filterEntryTypesNames(List&lt;EntryType&gt; types, Predicate&lt;EntryType&gt; predicate) {
+<span class="fc" id="L251">        return types.stream().filter(predicate).map(type -&gt; type.getName().toLowerCase(Locale.ROOT)).collect(Collectors.toList());</span>
+    }
+
+    private static Predicate&lt;EntryType&gt; isNotIncludedIn(List&lt;EntryType&gt; collection) {
+<span class="fc" id="L255">        return entry -&gt; collection.stream().noneMatch(c -&gt; c.getName().equalsIgnoreCase(entry.getName()));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

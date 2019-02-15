@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupsPrefsTab.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.preferences</a> &gt; <span class="el_source">GroupsPrefsTab.java</span></div><h1>GroupsPrefsTab.java</h1><pre class="source lang-java linenums">package org.jabref.gui.preferences;
+
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Node;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
+
+import org.jabref.gui.groups.GroupViewMode;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.preferences.JabRefPreferences;
+
+class GroupsPrefsTab extends Pane implements PrefsTab {
+
+<span class="nc" id="L20">    private final CheckBox hideNonHits = new CheckBox(Localization.lang(&quot;Hide non-hits&quot;));</span>
+<span class="nc" id="L21">    private final CheckBox grayOut = new CheckBox(Localization.lang(&quot;Gray out non-hits&quot;));</span>
+<span class="nc" id="L22">    private final CheckBox autoAssignGroup = new CheckBox(Localization.lang(&quot;Automatically assign new entry to selected groups&quot;));</span>
+<span class="nc" id="L23">    private final RadioButton multiSelectionModeIntersection = new RadioButton(Localization.lang(&quot;Intersection&quot;));</span>
+<span class="nc" id="L24">    private final RadioButton multiSelectionModeUnion = new RadioButton(Localization.lang(&quot;Union&quot;));</span>
+
+<span class="nc" id="L26">    private final TextField groupingField = new TextField();</span>
+<span class="nc" id="L27">    private final TextField keywordSeparator = new TextField();</span>
+<span class="nc" id="L28">    private final GridPane builder = new GridPane();</span>
+    private final JabRefPreferences prefs;
+
+<span class="nc" id="L31">    public GroupsPrefsTab(JabRefPreferences prefs) {</span>
+<span class="nc" id="L32">        this.prefs = prefs;</span>
+
+<span class="nc" id="L34">        keywordSeparator.setOnAction(new EventHandler&lt;ActionEvent&gt;() {</span>
+            @Override
+            public void handle(ActionEvent event) {
+<span class="nc" id="L37">                keywordSeparator.selectAll();</span>
+<span class="nc" id="L38">            }</span>
+        });
+
+<span class="nc" id="L41">        multiSelectionModeIntersection.setText(Localization.lang(&quot;Display only entries belonging to all selected groups.&quot;));</span>
+<span class="nc" id="L42">        multiSelectionModeUnion.setText(Localization.lang(&quot;Display all entries belonging to one or more of the selected groups.&quot;));</span>
+
+<span class="nc" id="L44">        Label view = new Label(Localization.lang(&quot;View&quot;));</span>
+<span class="nc" id="L45">        view.getStyleClass().add(&quot;sectionHeader&quot;);</span>
+<span class="nc" id="L46">        builder.add(view, 1, 1);</span>
+<span class="nc" id="L47">        builder.add(hideNonHits, 2, 2);</span>
+<span class="nc" id="L48">        builder.add(grayOut, 2, 3);</span>
+<span class="nc" id="L49">        final ToggleGroup selectionModeGroup = new ToggleGroup();</span>
+<span class="nc" id="L50">        builder.add(multiSelectionModeIntersection, 2, 4);</span>
+<span class="nc" id="L51">        builder.add(multiSelectionModeUnion, 2, 5);</span>
+<span class="nc" id="L52">        multiSelectionModeIntersection.setToggleGroup(selectionModeGroup);</span>
+<span class="nc" id="L53">        multiSelectionModeUnion.setToggleGroup(selectionModeGroup);</span>
+<span class="nc" id="L54">        builder.add(autoAssignGroup, 2, 6);</span>
+<span class="nc" id="L55">        builder.add(new Label(&quot;&quot;), 1, 7);</span>
+
+<span class="nc" id="L57">        Label dynamicGroups = new Label(Localization.lang(&quot;Dynamic groups&quot;));</span>
+<span class="nc" id="L58">        dynamicGroups.getStyleClass().add(&quot;sectionHeader&quot;);</span>
+<span class="nc" id="L59">        builder.add(dynamicGroups, 1, 8);</span>
+
+<span class="nc" id="L61">        Label defaultGrouping = new Label(Localization.lang(&quot;Default grouping field&quot;) + &quot;:&quot;);</span>
+<span class="nc" id="L62">        builder.add(defaultGrouping, 1, 9);</span>
+<span class="nc" id="L63">        builder.add(groupingField, 2, 9);</span>
+<span class="nc" id="L64">        Label label = new Label(Localization.lang(&quot;When adding/removing keywords, separate them by&quot;) + &quot;:&quot;);</span>
+<span class="nc" id="L65">        builder.add(label, 1, 10);</span>
+<span class="nc" id="L66">        builder.add(keywordSeparator, 2, 10);</span>
+<span class="nc" id="L67">    }</span>
+
+    public Node getBuilder() {
+<span class="nc" id="L70">        return builder;</span>
+    }
+
+    @Override
+    public void setValues() {
+<span class="nc" id="L75">        grayOut.setSelected(prefs.getBoolean(JabRefPreferences.GRAY_OUT_NON_HITS));</span>
+<span class="nc" id="L76">        groupingField.setText(prefs.get(JabRefPreferences.GROUPS_DEFAULT_FIELD));</span>
+<span class="nc" id="L77">        keywordSeparator.setText(prefs.get(JabRefPreferences.KEYWORD_SEPARATOR));</span>
+<span class="nc" id="L78">        autoAssignGroup.setSelected(prefs.getBoolean(JabRefPreferences.AUTO_ASSIGN_GROUP));</span>
+
+<span class="nc" id="L80">        GroupViewMode mode = prefs.getGroupViewMode();</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (mode == GroupViewMode.INTERSECTION) {</span>
+<span class="nc" id="L82">            multiSelectionModeIntersection.setSelected(true);</span>
+        }
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (mode == GroupViewMode.UNION) {</span>
+<span class="nc" id="L85">            multiSelectionModeUnion.setSelected(true);</span>
+        }
+<span class="nc" id="L87">    }</span>
+
+    @Override
+    public void storeSettings() {
+<span class="nc" id="L91">        prefs.putBoolean(JabRefPreferences.GRAY_OUT_NON_HITS, grayOut.isSelected());</span>
+<span class="nc" id="L92">        prefs.put(JabRefPreferences.GROUPS_DEFAULT_FIELD, groupingField.getText().trim());</span>
+<span class="nc" id="L93">        prefs.putBoolean(JabRefPreferences.AUTO_ASSIGN_GROUP, autoAssignGroup.isSelected());</span>
+<span class="nc" id="L94">        prefs.put(JabRefPreferences.KEYWORD_SEPARATOR, keywordSeparator.getText());</span>
+
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        if (multiSelectionModeIntersection.isSelected()) {</span>
+<span class="nc" id="L97">            prefs.setGroupViewMode(GroupViewMode.INTERSECTION);</span>
+        }
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (multiSelectionModeUnion.isSelected()) {</span>
+<span class="nc" id="L100">            prefs.setGroupViewMode(GroupViewMode.UNION);</span>
+        }
+<span class="nc" id="L102">    }</span>
+
+    @Override
+    public boolean validateSettings() {
+<span class="nc" id="L106">        return true;</span>
+    }
+
+    @Override
+    public String getTabName() {
+<span class="nc" id="L111">        return Localization.lang(&quot;Groups&quot;);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.auxparser.AuxParserTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:12" hostname="n184-p67.eduroam.kth.se" time="0.023">
+  <properties/>
+  <testcase name="testCrossRef()" classname="org.jabref.logic.auxparser.AuxParserTest" time="0.008"/>
+  <testcase name="duplicateBibDatabaseConfiguration()" classname="org.jabref.logic.auxparser.AuxParserTest" time="0.004"/>
+  <testcase name="testFileNotFound()" classname="org.jabref.logic.auxparser.AuxParserTest" time="0.001"/>
+  <testcase name="testNotAllFound()" classname="org.jabref.logic.auxparser.AuxParserTest" time="0.003"/>
+  <testcase name="testNormal()" classname="org.jabref.logic.auxparser.AuxParserTest" time="0.003"/>
+  <testcase name="testNestedAux()" classname="org.jabref.logic.auxparser.AuxParserTest" time="0.003"/>
+  <system-out><![CDATA[15:25:12.855 [Test worker] WARN  org.jabref.logic.auxparser.DefaultAuxParser - Problem opening file - java.nio.file.NoSuchFileException: unknownfile.aux
+	at sun.nio.fs.UnixException.translateToIOException(UnixException.java:86)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:102)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:107)
+	at sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:214) 
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

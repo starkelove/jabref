@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UndoableStringChange.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.undo</a> &gt; <span class="el_source">UndoableStringChange.java</span></div><h1>UndoableStringChange.java</h1><pre class="source lang-java linenums">package org.jabref.gui.undo;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibtexString;
+import org.jabref.model.strings.StringUtil;
+
+public class UndoableStringChange extends AbstractUndoableJabRefEdit {
+
+    private final BibtexString string;
+    private final String oldValue;
+    private final String newValue;
+    private final boolean nameChange;
+    private final BasePanel panel;
+
+
+    public UndoableStringChange(BasePanel panel,
+            BibtexString string, boolean nameChange,
+<span class="nc" id="L19">            String oldValue, String newValue) {</span>
+<span class="nc" id="L20">        this.string = string;</span>
+<span class="nc" id="L21">        this.oldValue = oldValue;</span>
+<span class="nc" id="L22">        this.newValue = newValue;</span>
+<span class="nc" id="L23">        this.nameChange = nameChange;</span>
+<span class="nc" id="L24">        this.panel = panel;</span>
+<span class="nc" id="L25">    }</span>
+
+    @Override
+    public String getPresentationName() {
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        return (nameChange ? Localization.lang(&quot;change string name %0 to %1&quot;, StringUtil.boldHTML(oldValue),</span>
+<span class="nc" id="L30">                StringUtil.boldHTML(newValue)) : Localization.lang(&quot;change string content %0 to %1&quot;,</span>
+<span class="nc" id="L31">                        StringUtil.boldHTML(oldValue), StringUtil.boldHTML(newValue)));</span>
+    }
+
+    @Override
+    public void undo() {
+<span class="nc" id="L36">        super.undo();</span>
+
+        // Revert the change.
+
+<span class="nc" id="L40">        panel.assureStringDialogNotEditing();</span>
+
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (nameChange) {</span>
+<span class="nc" id="L43">            string.setName(oldValue);</span>
+        } else {
+<span class="nc" id="L45">            string.setContent(oldValue);</span>
+        }
+
+<span class="nc" id="L48">        panel.updateStringDialog();</span>
+<span class="nc" id="L49">    }</span>
+
+    @Override
+    public void redo() {
+<span class="nc" id="L53">        super.redo();</span>
+
+        // Redo the change.
+
+<span class="nc" id="L57">        panel.assureStringDialogNotEditing();</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (nameChange) {</span>
+<span class="nc" id="L59">            string.setName(newValue);</span>
+        } else {
+<span class="nc" id="L61">            string.setContent(newValue);</span>
+        }
+
+<span class="nc" id="L64">        panel.updateStringDialog();</span>
+<span class="nc" id="L65">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

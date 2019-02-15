@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractPushToApplication.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.push</a> &gt; <span class="el_source">AbstractPushToApplication.java</span></div><h1>AbstractPushToApplication.java</h1><pre class="source lang-java linenums">package org.jabref.gui.push;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.OS;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.metadata.MetaData;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Abstract class for pushing entries into different editors.
+ */
+public abstract class AbstractPushToApplication implements PushToApplication {
+
+<span class="nc" id="L24">    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPushToApplication.class);</span>
+
+    protected boolean couldNotCall; // Set to true in case the command could not be executed, e.g., if the file is not found
+    protected boolean couldNotConnect; // Set to true in case the tunnel to the program (if one is used) does not operate
+    protected boolean notDefined; // Set to true if the corresponding path is not defined in the preferences
+
+    protected String commandPath;
+    protected String commandPathPreferenceKey;
+
+    protected DialogService dialogService;
+
+<span class="nc" id="L35">    public AbstractPushToApplication(DialogService dialogService) {</span>
+<span class="nc" id="L36">        this.dialogService = dialogService;</span>
+<span class="nc" id="L37">    }</span>
+
+    @Override
+    public String getName() {
+<span class="nc" id="L41">        return Localization.lang(&quot;Push entries to external application (%0)&quot;, getApplicationName());</span>
+    }
+
+    @Override
+    public String getTooltip() {
+<span class="nc" id="L46">        return Localization.lang(&quot;Push to %0&quot;, getApplicationName());</span>
+    }
+
+    @Override
+    public void pushEntries(BibDatabase database, List&lt;BibEntry&gt; entries, String keyString, MetaData metaData) {
+
+<span class="nc" id="L52">        couldNotConnect = false;</span>
+<span class="nc" id="L53">        couldNotCall = false;</span>
+<span class="nc" id="L54">        notDefined = false;</span>
+
+<span class="nc" id="L56">        initParameters();</span>
+<span class="nc" id="L57">        commandPath = Globals.prefs.get(commandPathPreferenceKey);</span>
+
+        // Check if a path to the command has been specified
+<span class="nc bnc" id="L60" title="All 4 branches missed.">        if ((commandPath == null) || commandPath.trim().isEmpty()) {</span>
+<span class="nc" id="L61">            notDefined = true;</span>
+<span class="nc" id="L62">            return;</span>
+        }
+
+        // Execute command
+        try {
+<span class="nc bnc" id="L67" title="All 2 branches missed.">            if (OS.OS_X) {</span>
+<span class="nc" id="L68">                String[] commands = getCommandLine(keyString);</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">                if (commands.length &lt; 3) {</span>
+<span class="nc" id="L70">                    LOGGER.error(&quot;Commandline does not contain enough parameters to \&quot;push to application\&quot;&quot;);</span>
+<span class="nc" id="L71">                    return;</span>
+                }
+<span class="nc" id="L73">                ProcessBuilder processBuilder = new ProcessBuilder(</span>
+                        &quot;open&quot;,
+                        &quot;-a&quot;,
+                        commands[0],
+                        &quot;-n&quot;,
+                        &quot;--args&quot;,
+                        commands[1],
+                        commands[2]
+                );
+<span class="nc" id="L82">                processBuilder.start();</span>
+<span class="nc" id="L83">            } else {</span>
+<span class="nc" id="L84">                ProcessBuilder processBuilder = new ProcessBuilder(getCommandLine(keyString));</span>
+<span class="nc" id="L85">                processBuilder.start();</span>
+            }
+        }
+
+        // In case it did not work
+<span class="nc" id="L90">        catch (IOException excep) {</span>
+<span class="nc" id="L91">            couldNotCall = true;</span>
+
+<span class="nc" id="L93">            LOGGER.warn(&quot;Error: Could not call executable '&quot; + commandPath + &quot;'.&quot;, excep);</span>
+<span class="nc" id="L94">        }</span>
+<span class="nc" id="L95">    }</span>
+
+    @Override
+    public void operationCompleted(BasePanel panel) {
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (notDefined) {</span>
+<span class="nc" id="L100">            panel.output(Localization.lang(&quot;Error&quot;) + &quot;: &quot;</span>
+<span class="nc" id="L101">                    + Localization.lang(&quot;Path to %0 not defined&quot;, getApplicationName()) + &quot;.&quot;);</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        } else if (couldNotCall) {</span>
+<span class="nc" id="L103">            panel.output(Localization.lang(&quot;Error&quot;) + &quot;: &quot;</span>
+<span class="nc" id="L104">                    + Localization.lang(&quot;Could not call executable&quot;) + &quot; '&quot; + commandPath + &quot;'.&quot;);</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        } else if (couldNotConnect) {</span>
+<span class="nc" id="L106">            panel.output(Localization.lang(&quot;Error&quot;) + &quot;: &quot;</span>
+<span class="nc" id="L107">                    + Localization.lang(&quot;Could not connect to %0&quot;, getApplicationName()) + &quot;.&quot;);</span>
+        } else {
+<span class="nc" id="L109">            panel.output(Localization.lang(&quot;Pushed citations to %0&quot;, getApplicationName()) + &quot;.&quot;);</span>
+        }
+<span class="nc" id="L111">    }</span>
+
+    @Override
+    public boolean requiresBibtexKeys() {
+<span class="nc" id="L115">        return true;</span>
+    }
+
+    /**
+     * Function to get the command to be executed for pushing keys to be cited
+     *
+     * @param keyString String containing the Bibtex keys to be pushed to the application
+     * @return String array with the command to call and its arguments
+     */
+    @SuppressWarnings(&quot;unused&quot;)
+    protected String[] getCommandLine(String keyString) {
+<span class="nc" id="L126">        return new String[0];</span>
+    }
+
+    /**
+     * Function to get the command name in case it is different from the application name
+     *
+     * @return String with the command name
+     */
+    protected String getCommandName() {
+<span class="nc" id="L135">        return null;</span>
+    }
+
+    /**
+     * Function to initialize parameters. Currently it is expected that commandPathPreferenceKey is set to the path of
+     * the application.
+     */
+    protected abstract void initParameters();
+
+    protected String getCiteCommand() {
+<span class="nc" id="L145">        return Globals.prefs.get(JabRefPreferences.CITE_COMMAND);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RemoveTilde.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.layout.format</a> &gt; <span class="el_source">RemoveTilde.java</span></div><h1>RemoveTilde.java</h1><pre class="source lang-java linenums">package org.jabref.logic.layout.format;
+
+import org.jabref.logic.layout.LayoutFormatter;
+
+/**
+ * Replace a non-command tilde ~ by a space.
+ *
+ * Useful for formatting Latex code.
+ */
+<span class="fc" id="L10">public class RemoveTilde implements LayoutFormatter {</span>
+    @Override
+    public String format(String fieldText) {
+<span class="fc" id="L13">        StringBuilder result = new StringBuilder(fieldText.length());</span>
+
+<span class="fc" id="L15">        char[] c = fieldText.toCharArray();</span>
+
+<span class="fc bfc" id="L17" title="All 2 branches covered.">        for (int i = 0; i &lt; c.length; i++) {</span>
+<span class="fc bfc" id="L18" title="All 2 branches covered.">            if (c[i] == '~') {</span>
+<span class="fc" id="L19">                result.append(' ');</span>
+            } else {
+<span class="fc" id="L21">                result.append(c[i]);</span>
+                // Skip the next character if the current one is a backslash
+<span class="pc bpc" id="L23" title="1 of 4 branches missed.">                if ((c[i] == '\\') &amp;&amp; ((i + 1) &lt; c.length)) {</span>
+<span class="fc" id="L24">                    i++;</span>
+<span class="fc" id="L25">                    result.append(c[i]);</span>
+                }
+            }
+        }
+<span class="fc" id="L29">        return result.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

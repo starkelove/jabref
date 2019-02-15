@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SpringerLink.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fetcher</a> &gt; <span class="el_source">SpringerLink.java</span></div><h1>SpringerLink.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fetcher;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.logic.importer.FulltextFetcher;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.identifier.DOI;
+
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * FulltextFetcher implementation that attempts to find a PDF URL at SpringerLink.
+ *
+ * Uses Springer API, see @link{https://dev.springer.com}
+ */
+<span class="fc" id="L26">public class SpringerLink implements FulltextFetcher {</span>
+<span class="fc" id="L27">    private static final Logger LOGGER = LoggerFactory.getLogger(SpringerLink.class);</span>
+
+    private static final String API_URL = &quot;https://api.springer.com/meta/v1/json&quot;;
+    private static final String API_KEY = &quot;b0c7151179b3d9c1119cf325bca8460d&quot;;
+    private static final String CONTENT_HOST = &quot;link.springer.com&quot;;
+
+    @Override
+    public Optional&lt;URL&gt; findFullText(BibEntry entry) throws IOException {
+<span class="fc" id="L35">        Objects.requireNonNull(entry);</span>
+<span class="fc" id="L36">        Optional&lt;URL&gt; pdfLink = Optional.empty();</span>
+
+        // Try unique DOI first
+<span class="fc" id="L39">        Optional&lt;DOI&gt; doi = entry.getField(FieldName.DOI).flatMap(DOI::parse);</span>
+
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        if (doi.isPresent()) {</span>
+            // Available in catalog?
+            try {
+<span class="nc" id="L44">                HttpResponse&lt;JsonNode&gt; jsonResponse = Unirest.get(API_URL)</span>
+<span class="nc" id="L45">                        .queryString(&quot;api_key&quot;, API_KEY)</span>
+<span class="nc" id="L46">                        .queryString(&quot;q&quot;, String.format(&quot;doi:%s&quot;, doi.get().getDOI()))</span>
+<span class="nc" id="L47">                        .asJson();</span>
+
+<span class="nc" id="L49">                JSONObject json = jsonResponse.getBody().getObject();</span>
+<span class="nc" id="L50">                int results = json.getJSONArray(&quot;result&quot;).getJSONObject(0).getInt(&quot;total&quot;);</span>
+
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                if (results &gt; 0) {</span>
+<span class="nc" id="L53">                    LOGGER.info(&quot;Fulltext PDF found @ Springer.&quot;);</span>
+<span class="nc" id="L54">                    pdfLink = Optional.of(new URL(&quot;http&quot;, CONTENT_HOST, String.format(&quot;/content/pdf/%s.pdf&quot;, doi.get().getDOI())));</span>
+                }
+<span class="nc" id="L56">            } catch (UnirestException e) {</span>
+<span class="nc" id="L57">                LOGGER.warn(&quot;SpringerLink API request failed&quot;, e);</span>
+<span class="nc" id="L58">            }</span>
+        }
+<span class="fc" id="L60">        return pdfLink;</span>
+    }
+
+    @Override
+    public TrustLevel getTrustLevel() {
+<span class="nc" id="L65">        return TrustLevel.PUBLISHER;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PushToApplicationButton.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.push</a> &gt; <span class="el_source">PushToApplicationButton.java</span></div><h1>PushToApplicationButton.java</h1><pre class="source lang-java linenums">package org.jabref.gui.push;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.jabref.Globals;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.actions.SimpleCommand;
+import org.jabref.gui.icon.JabRefIcon;
+import org.jabref.gui.keyboard.KeyBinding;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.preferences.JabRefPreferences;
+
+/**
+ * Customized UI component for pushing to external applications. Has a selection popup menu to change the selected
+ * external application. This class implements the ActionListener interface. When actionPerformed() is invoked, the
+ * currently selected PushToApplication is activated. The actionPerformed() method can be called with a null argument.
+ */
+public class PushToApplicationButton extends SimpleCommand implements ActionListener {
+
+    private final JabRefFrame frame;
+    private final List&lt;PushToApplication&gt; pushActions;
+    private final PushToApplication toApp;
+<span class="nc" id="L28">    private final Map&lt;PushToApplication, PushToApplicationAction&gt; actions = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L30">    public PushToApplicationButton(JabRefFrame frame, List&lt;PushToApplication&gt; pushActions) {</span>
+<span class="nc" id="L31">        this.frame = frame;</span>
+<span class="nc" id="L32">        this.pushActions = pushActions;</span>
+        // Set the last used external application
+<span class="nc" id="L34">        toApp = getLastUsedApplication();</span>
+<span class="nc" id="L35">    }</span>
+
+    private PushToApplication getLastUsedApplication() {
+<span class="nc" id="L38">        String appSelected = Globals.prefs.get(JabRefPreferences.PUSH_TO_APPLICATION);</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        for (PushToApplication application : pushActions) {</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">            if (application.getApplicationName().equals(appSelected)) {</span>
+<span class="nc" id="L41">                return application;</span>
+            }
+<span class="nc" id="L43">        }</span>
+
+        // Nothing found, pick first
+<span class="nc" id="L46">        return pushActions.get(0);</span>
+    }
+
+    public org.jabref.gui.actions.Action getMenuAction() {
+<span class="nc" id="L50">        PushToApplication application = getLastUsedApplication();</span>
+
+<span class="nc" id="L52">        return new org.jabref.gui.actions.Action() {</span>
+            @Override
+            public Optional&lt;JabRefIcon&gt; getIcon() {
+<span class="nc" id="L55">                return Optional.of(application.getIcon());</span>
+            }
+
+            @Override
+            public Optional&lt;KeyBinding&gt; getKeyBinding() {
+<span class="nc" id="L60">                return Optional.of(KeyBinding.PUSH_TO_APPLICATION);</span>
+            }
+
+            @Override
+            public String getText() {
+<span class="nc" id="L65">                return Localization.lang(&quot;Push entries to external application (%0)&quot;, application.getApplicationName());</span>
+            }
+
+            @Override
+            public String getDescription() {
+<span class="nc" id="L70">                return &quot;&quot;;</span>
+            }
+        };
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L77">        execute();</span>
+<span class="nc" id="L78">    }</span>
+
+    @Override
+    public void execute() {
+        // Lazy initialization of the push action:
+<span class="nc" id="L83">        PushToApplicationAction action = actions.get(toApp);</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (action == null) {</span>
+<span class="nc" id="L85">            action = new PushToApplicationAction(frame, toApp);</span>
+<span class="nc" id="L86">            actions.put(toApp, action);</span>
+        }
+<span class="nc" id="L88">        action.actionPerformed(new ActionEvent(toApp, 0, &quot;push&quot;));</span>
+<span class="nc" id="L89">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

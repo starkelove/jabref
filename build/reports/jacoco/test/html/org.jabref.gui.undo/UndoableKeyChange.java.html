@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UndoableKeyChange.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.undo</a> &gt; <span class="el_source">UndoableKeyChange.java</span></div><h1>UndoableKeyChange.java</h1><pre class="source lang-java linenums">package org.jabref.gui.undo;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.FieldChange;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.strings.StringUtil;
+
+/**
+ * This class represents a change in any field value. The relevant
+ * information is the BibEntry, the field name, the old and the
+ * new value. Old/new values can be null.
+ */
+public class UndoableKeyChange extends AbstractUndoableJabRefEdit {
+
+    private final BibEntry entry;
+    private final String oldValue;
+    private final String newValue;
+
+    public UndoableKeyChange(FieldChange change) {
+<span class="nc" id="L20">        this(change.getEntry(), change.getOldValue(), change.getNewValue());</span>
+<span class="nc" id="L21">    }</span>
+
+<span class="nc" id="L23">    public UndoableKeyChange(BibEntry entry, String oldValue, String newValue) {</span>
+<span class="nc" id="L24">        this.entry = entry;</span>
+<span class="nc" id="L25">        this.oldValue = oldValue;</span>
+<span class="nc" id="L26">        this.newValue = newValue;</span>
+<span class="nc" id="L27">    }</span>
+
+    @Override
+    public String getPresentationName() {
+<span class="nc" id="L31">        return Localization.lang(&quot;change key from %0 to %1&quot;,</span>
+<span class="nc" id="L32">                StringUtil.boldHTML(oldValue, Localization.lang(&quot;undefined&quot;)),</span>
+<span class="nc" id="L33">                StringUtil.boldHTML(newValue, Localization.lang(&quot;undefined&quot;)));</span>
+    }
+
+    @Override
+    public void undo() {
+<span class="nc" id="L38">        super.undo();</span>
+<span class="nc" id="L39">        entry.setCiteKey(oldValue);</span>
+<span class="nc" id="L40">    }</span>
+
+    @Override
+    public void redo() {
+<span class="nc" id="L44">        super.redo();</span>
+<span class="nc" id="L45">        entry.setCiteKey(newValue);</span>
+<span class="nc" id="L46">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

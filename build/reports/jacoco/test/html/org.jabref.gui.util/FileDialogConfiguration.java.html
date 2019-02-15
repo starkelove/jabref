@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileDialogConfiguration.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">FileDialogConfiguration.java</span></div><h1>FileDialogConfiguration.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import javafx.stage.FileChooser;
+
+import org.jabref.logic.util.FileType;
+
+public class FileDialogConfiguration {
+
+    private final List&lt;FileChooser.ExtensionFilter&gt; extensionFilters;
+    private final Path initialDirectory;
+    private final FileChooser.ExtensionFilter defaultExtension;
+    private final String initialFileName;
+    private FileChooser.ExtensionFilter selectedExtensionFilter;
+
+    private FileDialogConfiguration(Path initialDirectory, List&lt;FileChooser.ExtensionFilter&gt; extensionFilters,
+<span class="fc" id="L25">            FileChooser.ExtensionFilter defaultExtension, String initialFileName) {</span>
+<span class="fc" id="L26">        this.initialDirectory = initialDirectory;</span>
+<span class="fc" id="L27">        this.extensionFilters = Objects.requireNonNull(extensionFilters);</span>
+<span class="fc" id="L28">        this.defaultExtension = defaultExtension;</span>
+<span class="fc" id="L29">        this.initialFileName = initialFileName;</span>
+<span class="fc" id="L30">    }</span>
+
+    public Optional&lt;Path&gt; getInitialDirectory() {
+<span class="fc" id="L33">        return Optional.ofNullable(initialDirectory);</span>
+    }
+
+    public FileChooser.ExtensionFilter getDefaultExtension() {
+<span class="fc" id="L37">        return defaultExtension;</span>
+    }
+
+    public String getInitialFileName() {
+<span class="nc" id="L41">        return initialFileName;</span>
+    }
+
+    public List&lt;FileChooser.ExtensionFilter&gt; getExtensionFilters() {
+<span class="nc" id="L45">        return extensionFilters;</span>
+    }
+
+    public FileChooser.ExtensionFilter getSelectedExtensionFilter() {
+<span class="nc" id="L49">        return selectedExtensionFilter;</span>
+    }
+
+    public void setSelectedExtensionFilter(FileChooser.ExtensionFilter selectedExtensionFilter) {
+<span class="nc" id="L53">        this.selectedExtensionFilter = selectedExtensionFilter;</span>
+<span class="nc" id="L54">    }</span>
+
+<span class="fc" id="L56">    public static class Builder {</span>
+
+<span class="fc" id="L58">        private final List&lt;FileChooser.ExtensionFilter&gt; extensionFilters = new ArrayList&lt;&gt;();</span>
+        private Path initialDirectory;
+        private FileChooser.ExtensionFilter defaultExtension;
+        private String initialFileName;
+
+        public FileDialogConfiguration build() {
+<span class="fc" id="L64">            return new FileDialogConfiguration(initialDirectory, extensionFilters, defaultExtension, initialFileName);</span>
+        }
+
+        public Builder withInitialDirectory(Path directory) {
+<span class="fc bfc" id="L68" title="All 2 branches covered.">            if (directory == null) { //It could be that somehow the path is null, for example if it got deleted in the meantime</span>
+<span class="fc" id="L69">                initialDirectory = null;</span>
+            } else { //Dir must be a folder, not a file
+<span class="fc bfc" id="L71" title="All 2 branches covered.">                if (!Files.isDirectory(directory)) {</span>
+<span class="fc" id="L72">                    directory = directory.getParent();</span>
+                }
+                //The lines above work also if the dir does not exist at all!
+                //NULL is accepted by the filechooser as no inital path
+                //Explicit null check, if somehow the parent is null, as Files.exists throws an NPE otherwise
+<span class="pc bpc" id="L77" title="1 of 4 branches missed.">                if ((directory != null) &amp;&amp; !Files.exists(directory)) {</span>
+<span class="nc" id="L78">                    directory = null;</span>
+                }
+<span class="fc" id="L80">                initialDirectory = directory;</span>
+            }
+<span class="fc" id="L82">            return this;</span>
+        }
+
+        public Builder withInitialDirectory(String directory) {
+<span class="fc bfc" id="L86" title="All 2 branches covered.">            if (directory != null) {</span>
+<span class="fc" id="L87">                withInitialDirectory(Paths.get(directory));</span>
+            } else {
+<span class="fc" id="L89">                initialDirectory = null;</span>
+            }
+<span class="fc" id="L91">            return this;</span>
+        }
+
+        public Builder withInitialFileName(String initialFileName) {
+<span class="nc" id="L95">            this.initialFileName = initialFileName;</span>
+<span class="nc" id="L96">            return this;</span>
+        }
+
+        public Builder withDefaultExtension(FileChooser.ExtensionFilter extensionFilter) {
+<span class="nc" id="L100">            defaultExtension = extensionFilter;</span>
+<span class="nc" id="L101">            return this;</span>
+        }
+
+        public Builder withDefaultExtension(FileType fileType) {
+<span class="fc" id="L105">            defaultExtension = FileFilterConverter.toExtensionFilter(fileType);</span>
+<span class="fc" id="L106">            return this;</span>
+        }
+
+        public Builder withDefaultExtension(String description, FileType fileType) {
+<span class="nc" id="L110">            defaultExtension = FileFilterConverter.toExtensionFilter(description, fileType);</span>
+<span class="nc" id="L111">            return this;</span>
+        }
+
+        public Builder withDefaultExtension(String fileTypeDescription) {
+<span class="nc" id="L115">            extensionFilters.stream()</span>
+<span class="nc" id="L116">                    .filter(type -&gt; type.getDescription().equalsIgnoreCase(fileTypeDescription))</span>
+<span class="nc" id="L117">                    .findFirst()</span>
+<span class="nc" id="L118">                    .ifPresent(extensionFilter -&gt; defaultExtension = extensionFilter);</span>
+
+<span class="nc" id="L120">            return this;</span>
+        }
+
+        public Builder addExtensionFilter(FileChooser.ExtensionFilter filter) {
+<span class="fc" id="L124">            extensionFilters.add(filter);</span>
+<span class="fc" id="L125">            return this;</span>
+        }
+
+        public Builder addExtensionFilter(List&lt;FileChooser.ExtensionFilter&gt; filters) {
+<span class="nc" id="L129">            extensionFilters.addAll(filters);</span>
+<span class="nc" id="L130">            return this;</span>
+        }
+
+        public Builder addExtensionFilter(FileType... fileTypes) {
+<span class="fc" id="L134">            Stream.of(fileTypes)</span>
+<span class="fc" id="L135">                  .map(FileFilterConverter::toExtensionFilter)</span>
+<span class="fc" id="L136">                  .forEachOrdered(this::addExtensionFilter);</span>
+<span class="fc" id="L137">            return this;</span>
+        }
+
+        public Builder addExtensionFilter(String description, FileType fileType) {
+<span class="nc" id="L141">            extensionFilters.add(FileFilterConverter.toExtensionFilter(description, fileType));</span>
+<span class="nc" id="L142">            return this;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

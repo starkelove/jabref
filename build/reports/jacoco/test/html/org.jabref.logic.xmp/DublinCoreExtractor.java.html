@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DublinCoreExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.xmp</a> &gt; <span class="el_source">DublinCoreExtractor.java</span></div><h1>DublinCoreExtractor.java</h1><pre class="source lang-java linenums">package org.jabref.logic.xmp;
+
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+
+import org.jabref.logic.TypedBibEntry;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.Author;
+import org.jabref.model.entry.AuthorList;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.Month;
+import org.jabref.model.strings.StringUtil;
+
+import org.apache.xmpbox.DateConverter;
+import org.apache.xmpbox.schema.DublinCoreSchema;
+
+public class DublinCoreExtractor {
+
+    private final DublinCoreSchema dcSchema;
+    private final XmpPreferences xmpPreferences;
+
+    private final BibEntry bibEntry;
+
+<span class="fc" id="L32">    public DublinCoreExtractor(DublinCoreSchema dcSchema, XmpPreferences xmpPreferences, BibEntry resolvedEntry) {</span>
+<span class="fc" id="L33">        this.dcSchema = dcSchema;</span>
+<span class="fc" id="L34">        this.xmpPreferences = xmpPreferences;</span>
+
+<span class="fc" id="L36">        this.bibEntry = resolvedEntry;</span>
+<span class="fc" id="L37">    }</span>
+
+    /**
+     * Editor in BibTex - Contributor in DublinCore
+     *
+     * @param bibEntry The BibEntry object, which is filled during metadata extraction.
+     * @param dcSchema Metadata in DublinCore format.
+     */
+    private void extractEditor() {
+<span class="fc" id="L46">        List&lt;String&gt; contributors = dcSchema.getContributors();</span>
+<span class="pc bpc" id="L47" title="3 of 4 branches missed.">        if ((contributors != null) &amp;&amp; !contributors.isEmpty()) {</span>
+<span class="nc" id="L48">            bibEntry.setField(FieldName.EDITOR, String.join(&quot; and &quot;, contributors));</span>
+        }
+<span class="fc" id="L50">    }</span>
+
+    /**
+     * Author in BibTex - Creator in DublinCore
+     *
+     * @param bibEntry The BibEntry object, which is filled during metadata extraction.
+     * @param dcSchema Metadata in DublinCore format.
+     */
+    private void extractAuthor() {
+<span class="fc" id="L59">        List&lt;String&gt; creators = dcSchema.getCreators();</span>
+<span class="pc bpc" id="L60" title="2 of 4 branches missed.">        if ((creators != null) &amp;&amp; !creators.isEmpty()) {</span>
+<span class="fc" id="L61">            bibEntry.setField(FieldName.AUTHOR, String.join(&quot; and &quot;, creators));</span>
+        }
+<span class="fc" id="L63">    }</span>
+
+    /**
+     * Year in BibTex - Date in DublinCore is only the year information, because dc interprets empty months as January.
+     * Tries to extract the month as well.
+     * In JabRef the bibtex/month/value is prioritized.
+     * &lt;br/&gt;
+     * The problem is the default value of the calendar, which is always January, also if there is no month information in
+     * the xmp metdata. The idea is, to reject all information with YYYY-01-01. In cases, where xmp is written with JabRef
+     * the month property filled with jan will override this behavior and no data is lost. In the cases, where xmp
+     * is written by another service, the assumption is, that the 1st January is not a publication date at all.
+     *
+     * @param bibEntry The BibEntry object, which is filled during metadata extraction.
+     * @param dcSchema Metadata in DublinCore format.
+     */
+    private void extractYearAndMonth() {
+<span class="fc" id="L79">        List&lt;String&gt; dates = dcSchema.getUnqualifiedSequenceValueList(&quot;date&quot;);</span>
+<span class="pc bpc" id="L80" title="1 of 4 branches missed.">        if ((dates != null) &amp;&amp; !dates.isEmpty()) {</span>
+<span class="fc" id="L81">            String date = dates.get(0).trim();</span>
+<span class="fc" id="L82">            Calendar calender = null;</span>
+            try {
+<span class="fc" id="L84">                calender = DateConverter.toCalendar(date);</span>
+<span class="nc" id="L85">            } catch (IOException ignored) {</span>
+                // Ignored
+<span class="fc" id="L87">            }</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            if (calender != null) {</span>
+<span class="fc" id="L89">                bibEntry.setField(FieldName.YEAR, String.valueOf(calender.get(Calendar.YEAR)));</span>
+                // not the 1st of January
+<span class="pc bpc" id="L91" title="3 of 4 branches missed.">                if (!((calender.get(Calendar.MONTH) == 0) &amp;&amp; (calender.get(Calendar.DAY_OF_MONTH) == 1))) {</span>
+<span class="fc" id="L92">                    Optional&lt;Month&gt; month = Month.getMonthByNumber(calender.get(Calendar.MONTH) + 1);</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">                    if (month.isPresent()) {</span>
+<span class="fc" id="L94">                        bibEntry.setField(FieldName.MONTH, month.get().getShortName());</span>
+                    }
+                }
+            }
+        }
+<span class="fc" id="L99">    }</span>
+
+    /**
+     * Abstract in BibTex - Description in DublinCore
+     *
+     * @param bibEntry The BibEntry object, which is filled during metadata extraction.
+     * @param dcSchema Metadata in DublinCore format.
+     */
+    private void extractAbstract() {
+<span class="fc" id="L108">        String description = dcSchema.getDescription();</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (!StringUtil.isNullOrEmpty(description)) {</span>
+<span class="fc" id="L110">            bibEntry.setField(FieldName.ABSTRACT, description);</span>
+        }
+<span class="fc" id="L112">    }</span>
+
+    /**
+     * DOI in BibTex - Identifier in DublinCore
+     *
+     * @param bibEntry The BibEntry object, which is filled during metadata extraction.
+     * @param dcSchema Metadata in DublinCore format.
+     */
+    private void extractDOI() {
+<span class="fc" id="L121">        String identifier = dcSchema.getIdentifier();</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (!StringUtil.isNullOrEmpty(identifier)) {</span>
+<span class="fc" id="L123">            bibEntry.setField(FieldName.DOI, identifier);</span>
+        }
+<span class="fc" id="L125">    }</span>
+
+    /**
+     * Publisher are equivalent in both formats (BibTex and DublinCore)
+     *
+     * @param bibEntry The BibEntry object, which is filled during metadata extraction.
+     * @param dcSchema Metadata in DublinCore format.
+     */
+    private void extractPublisher() {
+<span class="fc" id="L134">        List&lt;String&gt; publishers = dcSchema.getPublishers();</span>
+<span class="pc bpc" id="L135" title="1 of 4 branches missed.">        if ((publishers != null) &amp;&amp; !publishers.isEmpty()) {</span>
+<span class="fc" id="L136">            bibEntry.setField(FieldName.PUBLISHER, String.join(&quot; and &quot;, publishers));</span>
+        }
+<span class="fc" id="L138">    }</span>
+
+    /**
+     * This method sets all fields, which are custom in bibtext and therefore supported by jabref, but which are not included in the DublinCore format.
+     * &lt;p/&gt;
+     * The relation attribute of DublinCore is abused to insert these custom fields.
+     *
+     * @param bibEntry The BibEntry object, which is filled during metadata extraction.
+     * @param dcSchema Metadata in DublinCore format.
+     */
+    private void extractBibTexFields() {
+<span class="fc" id="L149">        List&lt;String&gt; relationships = dcSchema.getRelations();</span>
+
+<span class="fc" id="L151">        Predicate&lt;String&gt; isBibTeXElement = s -&gt; s.startsWith(&quot;bibtex/&quot;);</span>
+
+<span class="fc" id="L153">        Consumer&lt;String&gt; splitBibTeXElement = s -&gt; {</span>
+            // the default pattern is bibtex/key/value, but some fields contains url etc.
+            // so the value property contains additional slashes, which makes the usage of
+            // String#split complicated.
+<span class="fc" id="L157">            String temp = s.substring(&quot;bibtex/&quot;.length());</span>
+<span class="fc" id="L158">            int i = temp.indexOf('/');</span>
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">            if (i != -1) {</span>
+<span class="fc" id="L160">                String key = temp.substring(0, i);</span>
+<span class="fc" id="L161">                String value = temp.substring(i + 1);</span>
+<span class="fc" id="L162">                bibEntry.setField(key, value);</span>
+
+                // only for month field - override value
+                // workaround, because the date value of the xmp component of pdf box is corrupted
+                // see also DublinCoreExtractor#extractYearAndMonth
+<span class="fc bfc" id="L167" title="All 2 branches covered.">                if (&quot;month&quot;.equals(key)) {</span>
+<span class="fc" id="L168">                    Optional&lt;Month&gt; parsedMonth = Month.parse(value);</span>
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">                    if (parsedMonth.isPresent()) {</span>
+<span class="fc" id="L170">                        bibEntry.setField(key, parsedMonth.get().getShortName());</span>
+                    }
+                }
+            }
+
+<span class="fc" id="L175">        };</span>
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">        if (relationships != null) {</span>
+<span class="fc" id="L177">            relationships.stream()</span>
+<span class="fc" id="L178">                    .filter(isBibTeXElement)</span>
+<span class="fc" id="L179">                    .forEach(splitBibTeXElement);</span>
+        }
+<span class="fc" id="L181">    }</span>
+
+    /**
+     * Rights are equivalent in both formats (BibTex and DublinCore)
+     *
+     * @param bibEntry The BibEntry object, which is filled during metadata extraction.
+     * @param dcSchema Metadata in DublinCore format.
+     */
+    private void extractRights() {
+<span class="fc" id="L190">        String rights = dcSchema.getRights();</span>
+<span class="pc bpc" id="L191" title="1 of 2 branches missed.">        if (!StringUtil.isNullOrEmpty(rights)) {</span>
+<span class="nc" id="L192">            bibEntry.setField(&quot;rights&quot;, rights);</span>
+        }
+<span class="fc" id="L194">    }</span>
+
+    /**
+     * Source is equivalent in both formats (BibTex and DublinCore)
+     *
+     * @param bibEntry The BibEntry object, which is filled during metadata extraction.
+     * @param dcSchema Metadata in DublinCore format.
+     */
+    private void extractSource() {
+<span class="fc" id="L203">        String source = dcSchema.getSource();</span>
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">        if (!StringUtil.isNullOrEmpty(source)) {</span>
+<span class="nc" id="L205">            bibEntry.setField(&quot;source&quot;, source);</span>
+        }
+<span class="fc" id="L207">    }</span>
+
+    /**
+     * Keywords in BibTex - Subjects in DublinCore
+     * @param bibEntry The BibEntry object, which is filled during metadata extraction.
+     * @param dcSchema Metadata in DublinCore format.
+     */
+    private void extractSubject() {
+<span class="fc" id="L215">        List&lt;String&gt; subjects = dcSchema.getSubjects();</span>
+<span class="pc bpc" id="L216" title="1 of 4 branches missed.">        if ((subjects != null) &amp;&amp; !subjects.isEmpty()) {</span>
+<span class="fc" id="L217">            bibEntry.addKeywords(subjects, xmpPreferences.getKeywordSeparator());</span>
+        }
+<span class="fc" id="L219">    }</span>
+
+    /**
+     * Title is equivalent in both formats (BibTex and DublinCore)
+     *
+     * @param bibEntry The BibEntry object, which is filled during metadata extraction.
+     * @param dcSchema Metadata in DublinCore format.
+     */
+    private void extractTitle() {
+<span class="fc" id="L228">        String title = dcSchema.getTitle();</span>
+<span class="pc bpc" id="L229" title="1 of 2 branches missed.">        if (!StringUtil.isNullOrEmpty(title)) {</span>
+<span class="fc" id="L230">            bibEntry.setField(FieldName.TITLE, title);</span>
+        }
+<span class="fc" id="L232">    }</span>
+
+    /**
+     * Type is equivalent in both formats (BibTex and DublinCore)
+     *
+     * @param bibEntry The BibEntry object, which is filled during metadata extraction.
+     * @param dcSchema Metadata in DublinCore format.
+     */
+    private void extractType() {
+<span class="fc" id="L241">        List&lt;String&gt; types = dcSchema.getTypes();</span>
+<span class="pc bpc" id="L242" title="2 of 4 branches missed.">        if ((types != null) &amp;&amp; !types.isEmpty()) {</span>
+<span class="fc" id="L243">            String type = types.get(0);</span>
+<span class="pc bpc" id="L244" title="1 of 2 branches missed.">            if (!StringUtil.isNullOrEmpty(type)) {</span>
+<span class="fc" id="L245">                bibEntry.setType(type);</span>
+            }
+        }
+<span class="fc" id="L248">    }</span>
+
+    /**
+     * Helper function for retrieving a BibEntry from the DublinCore metadata
+     * in a PDF file.
+     *
+     * To understand how to get hold of a DublinCore have a look in the
+     * test cases for XMPUtil.
+     *
+     * The BibEntry is build by mapping individual fields in the dublin core
+     * (like creator, title, subject) to fields in a bibtex bibEntry.
+     *
+     * @param dcSchema The document information from which to build a BibEntry.
+     * @return The bibtex bibEntry found in the document information.
+     */
+    public Optional&lt;BibEntry&gt; extractBibtexEntry() {
+
+<span class="fc" id="L265">        this.extractEditor();</span>
+<span class="fc" id="L266">        this.extractAuthor();</span>
+<span class="fc" id="L267">        this.extractYearAndMonth();</span>
+<span class="fc" id="L268">        this.extractAbstract();</span>
+<span class="fc" id="L269">        this.extractDOI();</span>
+<span class="fc" id="L270">        this.extractPublisher();</span>
+<span class="fc" id="L271">        this.extractBibTexFields();</span>
+<span class="fc" id="L272">        this.extractRights();</span>
+<span class="fc" id="L273">        this.extractSource();</span>
+<span class="fc" id="L274">        this.extractSubject();</span>
+<span class="fc" id="L275">        this.extractTitle();</span>
+<span class="fc" id="L276">        this.extractType();</span>
+
+<span class="pc bpc" id="L278" title="1 of 2 branches missed.">        if (bibEntry.getType() == null) {</span>
+<span class="nc" id="L279">            bibEntry.setType(BibEntry.DEFAULT_TYPE);</span>
+        }
+
+<span class="fc" id="L282">        return Optional.of(bibEntry);</span>
+    }
+
+    /**
+     * Bibtex-Fields used: editor, Field: 'dc:contributor'
+     *
+     * @param authors
+     */
+    private void fillContributor(String authors) {
+<span class="nc" id="L291">        AuthorList list = AuthorList.parse(authors);</span>
+<span class="nc bnc" id="L292" title="All 2 branches missed.">        for (Author author : list.getAuthors()) {</span>
+<span class="nc" id="L293">            dcSchema.addContributor(author.getFirstLast(false));</span>
+<span class="nc" id="L294">        }</span>
+<span class="nc" id="L295">    }</span>
+
+    /**
+     * Bibtex-Fields used: author, Field: 'dc:creator'
+     *
+     * @param creators
+     */
+    private void fillCreator(String creators) {
+<span class="fc" id="L303">        AuthorList list = AuthorList.parse(creators);</span>
+
+<span class="fc bfc" id="L305" title="All 2 branches covered.">        for (Author author : list.getAuthors()) {</span>
+<span class="fc" id="L306">            dcSchema.addCreator(author.getFirstLast(false));</span>
+<span class="fc" id="L307">        }</span>
+<span class="fc" id="L308">    }</span>
+
+    /**
+     * Bibtex-Fields used: year, month, Field: 'dc:date'
+     */
+    private void fillDate() {
+<span class="nc" id="L314">        bibEntry.getFieldOrAlias(FieldName.DATE)</span>
+<span class="nc" id="L315">                .ifPresent(publicationDate -&gt; dcSchema.addUnqualifiedSequenceValue(&quot;date&quot;, publicationDate));</span>
+<span class="nc" id="L316">    }</span>
+
+    /**
+     * Bibtex-Fields used: abstract, Field: 'dc:description'
+     *
+     * @param description
+     */
+    private void fillDescription(String description) {
+<span class="fc" id="L324">        dcSchema.setDescription(description);</span>
+<span class="fc" id="L325">    }</span>
+
+    /**
+     * Bibtex-Fields used: doi, Field: 'dc:identifier'
+     *
+     * @param identifier
+     */
+    private void fillIdentifier(String identifier) {
+<span class="fc" id="L333">        dcSchema.setIdentifier(identifier);</span>
+<span class="fc" id="L334">    }</span>
+
+    /**
+     * Bibtex-Fields used: publisher, Field: dc:publisher
+     *
+     * @param publisher
+     */
+    private void fillPublisher(String publisher) {
+<span class="fc" id="L342">        dcSchema.addPublisher(publisher);</span>
+<span class="fc" id="L343">    }</span>
+
+    /**
+     * Bibtex-Fields used: keywords, Field: 'dc:subject'
+     *
+     * @param value
+     */
+    private void fillKeywords(String value) {
+<span class="fc" id="L351">        String[] keywords = value.split(&quot;,&quot;);</span>
+<span class="fc bfc" id="L352" title="All 2 branches covered.">        for (String keyword : keywords) {</span>
+<span class="fc" id="L353">            dcSchema.addSubject(keyword.trim());</span>
+        }
+<span class="fc" id="L355">    }</span>
+
+    /**
+     * Bibtex-Fields used: title, Field: 'dc:title'
+     *
+     * @param title
+     */
+    private void fillTitle(String title) {
+<span class="fc" id="L363">        dcSchema.setTitle(title);</span>
+<span class="fc" id="L364">    }</span>
+
+    /**
+     * All others (+ bibtex key) get packaged in the relation attribute
+     *
+     * @param key Key of the metadata attribute
+     * @param value Value of the metadata attribute
+     */
+    private void fillCustomField(String key, String value) {
+<span class="fc" id="L373">        dcSchema.addRelation(&quot;bibtex/&quot; + key + '/' + value);</span>
+<span class="fc" id="L374">    }</span>
+
+    public void fillDublinCoreSchema() {
+
+        // Query privacy filter settings
+<span class="fc" id="L379">        boolean useXmpPrivacyFilter = xmpPreferences.isUseXMPPrivacyFilter();</span>
+        // Fields for which not to write XMP data later on:
+<span class="fc" id="L381">        Set&lt;String&gt; filters = new TreeSet&lt;&gt;(xmpPreferences.getXmpPrivacyFilter());</span>
+
+<span class="fc bfc" id="L383" title="All 2 branches covered.">        for (Entry&lt;String, String&gt; field : bibEntry.getFieldMap().entrySet()) {</span>
+
+<span class="pc bpc" id="L385" title="1 of 4 branches missed.">            if (useXmpPrivacyFilter &amp;&amp; filters.contains(field.getKey())) {</span>
+<span class="fc" id="L386">                continue;</span>
+            }
+
+<span class="pc bpc" id="L389" title="1 of 2 branches missed.">            if (FieldName.EDITOR.equals(field.getKey())) {</span>
+<span class="nc" id="L390">                this.fillContributor(field.getValue());</span>
+<span class="fc bfc" id="L391" title="All 2 branches covered.">            } else if (FieldName.AUTHOR.equals(field.getKey())) {</span>
+<span class="fc" id="L392">                this.fillCreator(field.getValue());</span>
+<span class="pc bpc" id="L393" title="1 of 2 branches missed.">            } else if (FieldName.YEAR.equals(field.getKey())) {</span>
+<span class="nc" id="L394">                this.fillDate();</span>
+<span class="fc bfc" id="L395" title="All 2 branches covered.">            } else if (FieldName.ABSTRACT.equals(field.getKey())) {</span>
+<span class="fc" id="L396">                this.fillDescription(field.getValue());</span>
+<span class="fc bfc" id="L397" title="All 2 branches covered.">            } else if (FieldName.DOI.equals(field.getKey())) {</span>
+<span class="fc" id="L398">                this.fillIdentifier(field.getValue());</span>
+<span class="fc bfc" id="L399" title="All 2 branches covered.">            } else if (FieldName.PUBLISHER.equals(field.getKey())) {</span>
+<span class="fc" id="L400">                this.fillPublisher(field.getValue());</span>
+<span class="fc bfc" id="L401" title="All 2 branches covered.">            } else if (FieldName.KEYWORDS.equals(field.getKey())) {</span>
+<span class="fc" id="L402">                this.fillKeywords(field.getValue());</span>
+<span class="fc bfc" id="L403" title="All 2 branches covered.">            } else if (FieldName.TITLE.equals(field.getKey())) {</span>
+<span class="fc" id="L404">                this.fillTitle(field.getValue());</span>
+            } else {
+<span class="fc" id="L406">                this.fillCustomField(field.getKey(), field.getValue());</span>
+            }
+<span class="fc" id="L408">        }</span>
+
+<span class="fc" id="L410">        dcSchema.setFormat(&quot;application/pdf&quot;);</span>
+
+        // Bibtex-Fields used: entrytype, Field: 'dc:type'
+<span class="fc" id="L413">        TypedBibEntry typedEntry = new TypedBibEntry(bibEntry, BibDatabaseMode.BIBTEX);</span>
+<span class="fc" id="L414">        String o = typedEntry.getTypeForDisplay();</span>
+<span class="pc bpc" id="L415" title="1 of 2 branches missed.">        if (!o.isEmpty()) {</span>
+<span class="fc" id="L416">            dcSchema.addType(o);</span>
+        }
+<span class="fc" id="L418">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

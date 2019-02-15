@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PurifyFunction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.bst</a> &gt; <span class="el_source">PurifyFunction.java</span></div><h1>PurifyFunction.java</h1><pre class="source lang-java linenums">package org.jabref.logic.bst;
+
+import java.util.Stack;
+
+import org.jabref.logic.bst.VM.BstEntry;
+import org.jabref.logic.bst.VM.BstFunction;
+
+/**
+ *
+ * The |built_in| function {\.{purify\$}} pops the top (string) literal, removes
+ * nonalphanumeric characters except for |white_space| and |sep_char| characters
+ * (these get converted to a |space|) and removes certain alphabetic characters
+ * contained in the control sequences associated with a special character, and
+ * pushes the resulting string. If the literal isn't a string, it complains and
+ * pushes the null string.
+ *
+ */
+public class PurifyFunction implements BstFunction {
+
+    private final VM vm;
+
+
+<span class="fc" id="L23">    public PurifyFunction(VM vm) {</span>
+<span class="fc" id="L24">        this.vm = vm;</span>
+<span class="fc" id="L25">    }</span>
+
+    @Override
+    public void execute(BstEntry context) {
+<span class="fc" id="L29">        Stack&lt;Object&gt; stack = vm.getStack();</span>
+
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">        if (stack.isEmpty()) {</span>
+<span class="nc" id="L32">            throw new VMException(&quot;Not enough operands on stack for operation purify$&quot;);</span>
+        }
+<span class="fc" id="L34">        Object o1 = stack.pop();</span>
+
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        if (!(o1 instanceof String)) {</span>
+<span class="nc" id="L37">            vm.warn(&quot;A string is needed for purify$&quot;);</span>
+<span class="nc" id="L38">            stack.push(&quot;&quot;);</span>
+<span class="nc" id="L39">            return;</span>
+        }
+
+<span class="fc" id="L42">        stack.push(BibtexPurify.purify((String) o1, vm));</span>
+<span class="fc" id="L43">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

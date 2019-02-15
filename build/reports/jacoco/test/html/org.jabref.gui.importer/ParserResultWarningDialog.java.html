@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ParserResultWarningDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.importer</a> &gt; <span class="el_source">ParserResultWarningDialog.java</span></div><h1>ParserResultWarningDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.importer;
+
+import java.awt.Dimension;
+import java.util.List;
+import java.util.Objects;
+
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+
+import org.jabref.gui.JabRefFrame;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.l10n.Localization;
+
+/**
+ * Class for generating a dialog showing warnings from ParserResult
+ *
+ */
+public class ParserResultWarningDialog {
+
+    private ParserResultWarningDialog() {
+    }
+
+    /**
+     * Shows a dialog with the warnings from an import or open of a file
+     *
+     * @param parserResult - ParserResult for the current import/open
+     * @param jabRefFrame - the JabRefFrame
+     */
+    public static void showParserResultWarningDialog(final ParserResult parserResult, final JabRefFrame jabRefFrame) {
+<span class="nc" id="L31">        Objects.requireNonNull(parserResult);</span>
+<span class="nc" id="L32">        Objects.requireNonNull(jabRefFrame);</span>
+<span class="nc" id="L33">        showParserResultWarningDialog(parserResult, jabRefFrame, -1);</span>
+<span class="nc" id="L34">    }</span>
+
+    /**
+     * Shows a dialog with the warnings from an import or open of a file
+     *
+     * @param parserResult - ParserResult for the current import/open
+     * @param jabRefFrame - the JabRefFrame
+     * @param dataBaseNumber - Database tab number to activate when showing the warning dialog
+     */
+    public static void showParserResultWarningDialog(final ParserResult parserResult, final JabRefFrame jabRefFrame,
+            final int dataBaseNumber) {
+<span class="nc" id="L45">        Objects.requireNonNull(parserResult);</span>
+<span class="nc" id="L46">        Objects.requireNonNull(jabRefFrame);</span>
+        // Return if no warnings
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (!(parserResult.hasWarnings())) {</span>
+<span class="nc" id="L49">            return;</span>
+        }
+
+        // Switch tab if asked to do so
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (dataBaseNumber &gt;= 0) {</span>
+<span class="nc" id="L54">            jabRefFrame.showBasePanelAt(dataBaseNumber);</span>
+        }
+
+        // Generate string with warning texts
+<span class="nc" id="L58">        final List&lt;String&gt; warnings = parserResult.warnings();</span>
+<span class="nc" id="L59">        final StringBuilder dialogContent = new StringBuilder();</span>
+<span class="nc" id="L60">        int warningCount = 1;</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        for (final String warning : warnings) {</span>
+<span class="nc" id="L62">            dialogContent.append(String.format(&quot;%d. %s%n&quot;, warningCount++, warning));</span>
+<span class="nc" id="L63">        }</span>
+<span class="nc" id="L64">        dialogContent.deleteCharAt(dialogContent.length() - 1);</span>
+
+        // Generate dialog title
+        String dialogTitle;
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (dataBaseNumber &lt; 0) {</span>
+<span class="nc" id="L69">            dialogTitle = Localization.lang(&quot;Warnings&quot;);</span>
+        } else {
+<span class="nc" id="L71">            dialogTitle = Localization.lang(&quot;Warnings&quot;) + &quot; (&quot; + parserResult.getFile().get().getName() + &quot;)&quot;;</span>
+        }
+
+        // Create JTextArea with JScrollPane
+<span class="nc" id="L75">        final JTextArea textArea = new JTextArea(dialogContent.toString());</span>
+<span class="nc" id="L76">        final JScrollPane scrollPane = new JScrollPane(textArea) {</span>
+
+            @Override
+            public Dimension getPreferredSize() {
+<span class="nc" id="L80">                return new Dimension(800, Math.min(Math.max(100, warnings.size() * 15), 400)); // Guess a suitable height between 100 and 400</span>
+            }
+        };
+
+        // Show dialog
+<span class="nc" id="L85">        JOptionPane.showMessageDialog(null, scrollPane, dialogTitle, JOptionPane.WARNING_MESSAGE);</span>
+<span class="nc" id="L86">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

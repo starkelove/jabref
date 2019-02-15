@@ -10,6 +10,7 @@ import java.util.function.UnaryOperator;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
+import org.jabref.CoverageMeasurement;
 import org.jabref.Globals;
 import org.jabref.JabRefMain;
 import org.jabref.model.bibtexkeypattern.GlobalBibtexKeyPattern;
@@ -83,8 +84,11 @@ public class PreferencesMigrations {
      * Added from Jabref 2.11 beta 4 onwards to fix wrong encoding names
      */
     private static void upgradeFaultyEncodingStrings(JabRefPreferences prefs) {
+        CoverageMeasurement.coverageMap.put("ID1", new Boolean[3]);
+
         String defaultEncoding = prefs.get(JabRefPreferences.DEFAULT_ENCODING);
         if (defaultEncoding == null) {
+            CoverageMeasurement.coverageMap.get("ID1")[1] = true;
             return;
         }
 
@@ -113,6 +117,7 @@ public class PreferencesMigrations {
 
         if (encodingMap.containsKey(defaultEncoding)) {
             prefs.put(JabRefPreferences.DEFAULT_ENCODING, encodingMap.get(defaultEncoding));
+            CoverageMeasurement.coverageMap.get("ID1")[2] = true;
         }
     }
 

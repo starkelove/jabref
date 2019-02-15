@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RTFChars.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.layout.format</a> &gt; <span class="el_source">RTFChars.java</span></div><h1>RTFChars.java</h1><pre class="source lang-java linenums">package org.jabref.logic.layout.format;
+
+import org.jabref.logic.layout.LayoutFormatter;
+import org.jabref.logic.layout.StringInt;
+import org.jabref.logic.util.strings.RtfCharMap;
+import org.jabref.model.strings.StringUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Transform a LaTeX-String to RTF.
+ *
+ * This method will:
+ *
+ *   1.) Remove LaTeX-Command sequences.
+ *
+ *   2.) Replace LaTeX-Special chars with RTF aquivalents.
+ *
+ *   3.) Replace emph and textit and textbf with their RTF replacements.
+ *
+ *   4.) Take special care to save all unicode characters correctly.
+ *
+ *   5.) Replace --- by \emdash and -- by \endash.
+ */
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">public class RTFChars implements LayoutFormatter {</span>
+
+<span class="fc" id="L28">    private static final Logger LOGGER = LoggerFactory.getLogger(LayoutFormatter.class);</span>
+
+<span class="fc" id="L30">    private static final RtfCharMap RTF_CHARS = new RtfCharMap();</span>
+
+    @Override
+    public String format(String field) {
+<span class="fc" id="L34">        StringBuilder sb = new StringBuilder(&quot;&quot;);</span>
+<span class="fc" id="L35">        StringBuilder currentCommand = null;</span>
+<span class="fc" id="L36">        boolean escaped = false;</span>
+<span class="fc" id="L37">        boolean incommand = false;</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        for (int i = 0; i &lt; field.length(); i++) {</span>
+
+<span class="fc" id="L40">            char c = field.charAt(i);</span>
+
+<span class="pc bpc" id="L42" title="1 of 4 branches missed.">            if (escaped &amp;&amp; (c == '\\')) {</span>
+<span class="nc" id="L43">                sb.append('\\');</span>
+<span class="nc" id="L44">                escaped = false;</span>
+            }
+
+<span class="fc bfc" id="L47" title="All 2 branches covered.">            else if (c == '\\') {</span>
+<span class="fc" id="L48">                escaped = true;</span>
+<span class="fc" id="L49">                incommand = true;</span>
+<span class="fc" id="L50">                currentCommand = new StringBuilder();</span>
+<span class="fc bfc" id="L51" title="All 6 branches covered.">            } else if (!incommand &amp;&amp; ((c == '{') || (c == '}'))) {</span>
+                // Swallow the brace.
+<span class="fc bfc" id="L53" title="All 2 branches covered.">            } else if (Character.isLetter(c)</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">                    || StringUtil.SPECIAL_COMMAND_CHARS.contains(String.valueOf(c))) {</span>
+<span class="fc" id="L55">                escaped = false;</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">                if (incommand) {</span>
+                    // Else we are in a command, and should not keep the letter.
+<span class="fc" id="L58">                    currentCommand.append(c);</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">                    testCharCom: if ((currentCommand.length() == 1)</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">                            &amp;&amp; StringUtil.SPECIAL_COMMAND_CHARS.contains(currentCommand.toString())) {</span>
+                        // This indicates that we are in a command of the type
+                        // \^o or \~{n}
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">                        if (i &gt;= (field.length() - 1)) {</span>
+<span class="nc" id="L64">                            break testCharCom;</span>
+                        }
+
+<span class="fc" id="L67">                        String command = currentCommand.toString();</span>
+<span class="fc" id="L68">                        i++;</span>
+<span class="fc" id="L69">                        c = field.charAt(i);</span>
+                        String combody;
+<span class="fc bfc" id="L71" title="All 2 branches covered.">                        if (c == '{') {</span>
+<span class="fc" id="L72">                            StringInt part = getPart(field, i, true);</span>
+<span class="fc" id="L73">                            i += part.i;</span>
+<span class="fc" id="L74">                            combody = part.s;</span>
+<span class="fc" id="L75">                        } else {</span>
+<span class="fc" id="L76">                            combody = field.substring(i, i + 1);</span>
+                        }
+
+<span class="fc" id="L79">                        String result = RTF_CHARS.get(command + combody);</span>
+
+<span class="fc bfc" id="L81" title="All 2 branches covered.">                        if (result != null) {</span>
+<span class="fc" id="L82">                            sb.append(result);</span>
+                        }
+
+<span class="fc" id="L85">                        incommand = false;</span>
+<span class="fc" id="L86">                        escaped = false;</span>
+
+<span class="fc" id="L88">                    }</span>
+                } else {
+<span class="fc" id="L90">                    sb.append(c);</span>
+                }
+
+            } else {
+<span class="pc bpc" id="L94" title="1 of 8 branches missed.">                testContent: if (!incommand || (!Character.isWhitespace(c) &amp;&amp; (c != '{') &amp;&amp; (c != '}'))) {</span>
+<span class="fc" id="L95">                    sb.append(c);</span>
+                } else {
+<span class="pc bpc" id="L97" title="2 of 4 branches missed.">                    assert incommand;</span>
+
+                    // First test for braces that may be part of a LaTeX command:
+<span class="pc bpc" id="L100" title="1 of 4 branches missed.">                    if ((c == '{') &amp;&amp; (currentCommand.length() == 0)) {</span>
+                        // We have seen something like \{, which is probably the start
+                        // of a command like \{aa}. Swallow the brace.
+<span class="nc" id="L103">                        continue;</span>
+<span class="pc bpc" id="L104" title="1 of 4 branches missed.">                    } else if ((c == '}') &amp;&amp; (currentCommand.length() &gt; 0)) {</span>
+                        // Seems to be the end of a command like \{aa}. Look it up:
+<span class="fc" id="L106">                        String command = currentCommand.toString();</span>
+<span class="fc" id="L107">                        String result = RTF_CHARS.get(command);</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">                        if (result != null) {</span>
+<span class="fc" id="L109">                            sb.append(result);</span>
+                        }
+<span class="fc" id="L111">                        incommand = false;</span>
+<span class="fc" id="L112">                        escaped = false;</span>
+<span class="fc" id="L113">                        continue;</span>
+                    }
+
+                    // Then look for italics etc.,
+                    // but first check if we are already at the end of the string.
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">                    if (i &gt;= (field.length() - 1)) {</span>
+<span class="nc" id="L119">                        break testContent;</span>
+                    }
+
+<span class="pc bpc" id="L122" title="2 of 6 branches missed.">                    if (((c == '{') || (c == ' ')) &amp;&amp; (currentCommand.length() &gt; 0)) {</span>
+<span class="fc" id="L123">                        String command = currentCommand.toString();</span>
+                        // Then test if we are dealing with a italics or bold
+                        // command. If so, handle.
+<span class="pc bpc" id="L126" title="1 of 6 branches missed.">                        if (&quot;em&quot;.equals(command) || &quot;emph&quot;.equals(command) || &quot;textit&quot;.equals(command)</span>
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">                                || &quot;it&quot;.equals(command)) {</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">                            StringInt part = getPart(field, i, c == '{');</span>
+<span class="fc" id="L129">                            i += part.i;</span>
+<span class="fc" id="L130">                            sb.append(&quot;{\\i &quot;).append(part.s).append('}');</span>
+<span class="pc bpc" id="L131" title="3 of 4 branches missed.">                        } else if (&quot;textbf&quot;.equals(command) || &quot;bf&quot;.equals(command)) {</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">                            StringInt part = getPart(field, i, c == '{');</span>
+<span class="fc" id="L133">                            i += part.i;</span>
+<span class="fc" id="L134">                            sb.append(&quot;{\\b &quot;).append(part.s).append('}');</span>
+<span class="fc" id="L135">                        } else {</span>
+<span class="nc" id="L136">                            LOGGER.info(&quot;Unknown command &quot; + command);</span>
+                        }
+<span class="fc bfc" id="L138" title="All 2 branches covered.">                        if (c == ' ') {</span>
+                            // command was separated with the content by ' '
+                            // We have to add the space a
+                        }
+<span class="fc" id="L142">                    } else {</span>
+<span class="nc" id="L143">                        sb.append(c);</span>
+                    }
+
+                }
+<span class="fc" id="L147">                incommand = false;</span>
+<span class="fc" id="L148">                escaped = false;</span>
+            }
+        }
+
+<span class="fc" id="L152">        char[] chars = sb.toString().toCharArray();</span>
+<span class="fc" id="L153">        sb = new StringBuilder();</span>
+
+<span class="fc bfc" id="L155" title="All 2 branches covered.">        for (char c : chars) {</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">            if (c &lt; 128) {</span>
+<span class="fc" id="L157">                sb.append(c);</span>
+            } else {
+<span class="fc" id="L159">                sb.append(&quot;\\u&quot;).append((long) c).append(transformSpecialCharacter(c));</span>
+            }
+        }
+
+<span class="fc" id="L163">        return sb.toString().replace(&quot;---&quot;, &quot;{\\emdash}&quot;).replace(&quot;--&quot;, &quot;{\\endash}&quot;).replace(&quot;``&quot;, &quot;{\\ldblquote}&quot;)</span>
+<span class="fc" id="L164">                .replace(&quot;''&quot;, &quot;{\\rdblquote}&quot;);</span>
+    }
+
+    /**
+     * @param text the text to extract the part from
+     * @param i the position to start
+     * @param commandNestedInBraces true if the command is nested in braces (\emph{xy}), false if spaces are sued (\emph xy)
+     * @return a tuple of number of added characters and the extracted part
+     */
+    private StringInt getPart(String text, int i, boolean commandNestedInBraces) {
+        char c;
+<span class="fc" id="L175">        int count = 0;</span>
+<span class="fc" id="L176">        int icount = i;</span>
+<span class="fc" id="L177">        StringBuilder part = new StringBuilder();</span>
+<span class="pc bpc" id="L178" title="1 of 4 branches missed.">        loop: while ((count &gt;= 0) &amp;&amp; (icount &lt; text.length())) {</span>
+<span class="fc" id="L179">            icount++;</span>
+<span class="fc" id="L180">            c = text.charAt(icount);</span>
+<span class="pc bpc" id="L181" title="1 of 4 branches missed.">            switch (c) {</span>
+            case '}':
+<span class="fc" id="L183">                count--;</span>
+<span class="fc" id="L184">                break;</span>
+            case '{':
+<span class="nc" id="L186">                count++;</span>
+<span class="nc" id="L187">                break;</span>
+            case ' ':
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">                if (!commandNestedInBraces) {</span>
+                    // in any case, a space terminates the loop
+<span class="nc" id="L191">                    break loop;</span>
+                }
+                break;
+            default:
+                break;
+            }
+<span class="fc" id="L197">            part.append(c);</span>
+        }
+<span class="fc" id="L199">        String res = part.toString();</span>
+        // the wrong &quot;}&quot; at the end is removed by &quot;format(res)&quot;
+<span class="fc" id="L201">        return new StringInt(format(res), part.length());</span>
+    }
+
+    /**
+     * This method transforms the unicode of a special character into its base character: 233 (é) - &gt; e
+     * @param c long
+     * @return returns the basic character of the given unicode
+     */
+    private String transformSpecialCharacter(long c) {
+<span class="pc bpc" id="L210" title="4 of 10 branches missed.">        if (((192 &lt;= c) &amp;&amp; (c &lt;= 197)) || (c == 256) || (c == 258) || (c == 260)) {</span>
+<span class="fc" id="L211">            return &quot;A&quot;;</span>
+        }
+<span class="pc bpc" id="L213" title="2 of 10 branches missed.">        if (((224 &lt;= c) &amp;&amp; (c &lt;= 229)) || (c == 257) || (c == 259) || (c == 261)) {</span>
+<span class="fc" id="L214">            return &quot;a&quot;;</span>
+        }
+<span class="pc bpc" id="L216" title="5 of 10 branches missed.">        if ((199 == c) || (262 == c) || (264 == c) || (266 == c) || (268 == c)) {</span>
+<span class="nc" id="L217">            return &quot;C&quot;;</span>
+        }
+<span class="pc bpc" id="L219" title="3 of 10 branches missed.">        if ((231 == c) || (263 == c) || (265 == c) || (267 == c) || (269 == c)) {</span>
+<span class="fc" id="L220">            return &quot;c&quot;;</span>
+        }
+<span class="pc bpc" id="L222" title="2 of 4 branches missed.">        if ((208 == c) || (272 == c)) {</span>
+<span class="nc" id="L223">            return &quot;D&quot;;</span>
+        }
+<span class="pc bpc" id="L225" title="2 of 4 branches missed.">        if ((240 == c) || (273 == c)) {</span>
+<span class="nc" id="L226">            return &quot;d&quot;;</span>
+        }
+<span class="pc bpc" id="L228" title="7 of 14 branches missed.">        if (((200 &lt;= c) &amp;&amp; (c &lt;= 203)) || (274 == c) || (276 == c) || (278 == c) || (280 == c) || (282 == c)) {</span>
+<span class="nc" id="L229">            return &quot;E&quot;;</span>
+        }
+<span class="pc bpc" id="L231" title="4 of 14 branches missed.">        if (((232 &lt;= c) &amp;&amp; (c &lt;= 235)) || (275 == c) || (277 == c) || (279 == c) || (281 == c) || (283 == c)) {</span>
+<span class="fc" id="L232">            return &quot;e&quot;;</span>
+        }
+<span class="pc bpc" id="L234" title="5 of 10 branches missed.">        if (((284 == c) || (286 == c)) || (288 == c) || (290 == c) || (330 == c)) {</span>
+<span class="nc" id="L235">            return &quot;G&quot;;</span>
+        }
+<span class="pc bpc" id="L237" title="5 of 10 branches missed.">        if ((285 == c) || (287 == c) || (289 == c) || (291 == c) || (331 == c)) {</span>
+<span class="nc" id="L238">            return &quot;g&quot;;</span>
+        }
+<span class="pc bpc" id="L240" title="2 of 4 branches missed.">        if ((292 == c) || (294 == c)) {</span>
+<span class="nc" id="L241">            return &quot;H&quot;;</span>
+        }
+<span class="pc bpc" id="L243" title="2 of 4 branches missed.">        if ((293 == c) || (295 == c)) {</span>
+<span class="nc" id="L244">            return &quot;h&quot;;</span>
+        }
+<span class="pc bpc" id="L246" title="7 of 14 branches missed.">        if (((204 &lt;= c) &amp;&amp; (c &lt;= 207)) || (296 == c) || (298 == c) || (300 == c) || (302 == c) || (304 == c)) {</span>
+<span class="nc" id="L247">            return &quot;I&quot;;</span>
+        }
+<span class="pc bpc" id="L249" title="4 of 12 branches missed.">        if (((236 &lt;= c) &amp;&amp; (c &lt;= 239)) || (297 == c) || (299 == c) || (301 == c) || (303 == c)) {</span>
+<span class="fc" id="L250">            return &quot;i&quot;;</span>
+        }
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">        if (308 == c) {</span>
+<span class="nc" id="L253">            return &quot;J&quot;;</span>
+        }
+<span class="pc bpc" id="L255" title="1 of 2 branches missed.">        if (309 == c) {</span>
+<span class="nc" id="L256">            return &quot;j&quot;;</span>
+        }
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">        if (310 == c) {</span>
+<span class="nc" id="L259">            return &quot;K&quot;;</span>
+        }
+<span class="pc bpc" id="L261" title="1 of 2 branches missed.">        if (311 == c) {</span>
+<span class="nc" id="L262">            return &quot;k&quot;;</span>
+        }
+<span class="pc bpc" id="L264" title="3 of 6 branches missed.">        if ((313 == c) || (315 == c) || (319 == c)) {</span>
+<span class="nc" id="L265">            return &quot;L&quot;;</span>
+        }
+<span class="pc bpc" id="L267" title="3 of 8 branches missed.">        if ((314 == c) || (316 == c) || (320 == c) || (322 == c)) {</span>
+<span class="fc" id="L268">            return &quot;l&quot;;</span>
+        }
+<span class="pc bpc" id="L270" title="4 of 8 branches missed.">        if ((209 == c) || (323 == c) || (325 == c) || (327 == c)) {</span>
+<span class="nc" id="L271">            return &quot;N&quot;;</span>
+        }
+<span class="pc bpc" id="L273" title="3 of 8 branches missed.">        if ((241 == c) || (324 == c) || (326 == c) || (328 == c)) {</span>
+<span class="fc" id="L274">            return &quot;n&quot;;</span>
+        }
+<span class="pc bpc" id="L276" title="4 of 10 branches missed.">        if (((210 &lt;= c) &amp;&amp; (c &lt;= 214)) || (c == 216) || (332 == c) || (334 == c)) {</span>
+<span class="fc" id="L277">            return &quot;O&quot;;</span>
+        }
+<span class="pc bpc" id="L279" title="3 of 10 branches missed.">        if (((242 &lt;= c) &amp;&amp; (c &lt;= 248) &amp;&amp; (247 != c)) || (333 == c) || (335 == c)) {</span>
+<span class="fc" id="L280">            return &quot;o&quot;;</span>
+        }
+<span class="pc bpc" id="L282" title="3 of 6 branches missed.">        if ((340 == c) || (342 == c) || (344 == c)) {</span>
+<span class="nc" id="L283">            return &quot;R&quot;;</span>
+        }
+<span class="pc bpc" id="L285" title="3 of 6 branches missed.">        if ((341 == c) || (343 == c) || (345 == c)) {</span>
+<span class="nc" id="L286">            return &quot;r&quot;;</span>
+        }
+<span class="pc bpc" id="L288" title="4 of 8 branches missed.">        if ((346 == c) || (348 == c) || (350 == c) || (352 == c)) {</span>
+<span class="nc" id="L289">            return &quot;S&quot;;</span>
+        }
+<span class="pc bpc" id="L291" title="3 of 8 branches missed.">        if ((347 == c) || (349 == c) || (351 == c) || (353 == c)) {</span>
+<span class="fc" id="L292">            return &quot;s&quot;;</span>
+        }
+<span class="pc bpc" id="L294" title="3 of 6 branches missed.">        if ((354 == c) || (356 == c) || (358 == c)) {</span>
+<span class="nc" id="L295">            return &quot;T&quot;;</span>
+        }
+<span class="pc bpc" id="L297" title="2 of 4 branches missed.">        if ((355 == c) || (359 == c)) {</span>
+<span class="nc" id="L298">            return &quot;t&quot;;</span>
+        }
+<span class="pc bpc" id="L300" title="7 of 14 branches missed.">        if (((217 &lt;= c) &amp;&amp; (c &lt;= 220)) || (360 == c) || (362 == c) || (364 == c) || (366 == c) || (370 == c)) {</span>
+<span class="nc" id="L301">            return &quot;U&quot;;</span>
+        }
+<span class="pc bpc" id="L303" title="5 of 14 branches missed.">        if (((249 &lt;= c) &amp;&amp; (c &lt;= 251)) || (361 == c) || (363 == c) || (365 == c) || (367 == c) || (371 == c)) {</span>
+<span class="fc" id="L304">            return &quot;u&quot;;</span>
+        }
+<span class="pc bpc" id="L306" title="1 of 2 branches missed.">        if (372 == c) {</span>
+<span class="nc" id="L307">            return &quot;W&quot;;</span>
+        }
+<span class="pc bpc" id="L309" title="1 of 2 branches missed.">        if (373 == c) {</span>
+<span class="nc" id="L310">            return &quot;w&quot;;</span>
+        }
+<span class="pc bpc" id="L312" title="3 of 6 branches missed.">        if ((374 == c) || (376 == c) || (221 == c)) {</span>
+<span class="nc" id="L313">            return &quot;Y&quot;;</span>
+        }
+<span class="pc bpc" id="L315" title="1 of 4 branches missed.">        if ((375 == c) || (255 == c)) {</span>
+<span class="fc" id="L316">            return &quot;y&quot;;</span>
+        }
+<span class="pc bpc" id="L318" title="3 of 6 branches missed.">        if ((377 == c) || (379 == c) || (381 == c)) {</span>
+<span class="nc" id="L319">            return &quot;Z&quot;;</span>
+        }
+<span class="pc bpc" id="L321" title="1 of 6 branches missed.">        if ((378 == c) || (380 == c) || (382 == c)) {</span>
+<span class="fc" id="L322">            return &quot;z&quot;;</span>
+        }
+<span class="pc bpc" id="L324" title="1 of 2 branches missed.">        if (198 == c) {</span>
+<span class="nc" id="L325">            return &quot;AE&quot;;</span>
+        }
+<span class="fc bfc" id="L327" title="All 2 branches covered.">        if (230 == c) {</span>
+<span class="fc" id="L328">            return &quot;ae&quot;;</span>
+        }
+<span class="pc bpc" id="L330" title="1 of 2 branches missed.">        if (338 == c) {</span>
+<span class="nc" id="L331">            return &quot;OE&quot;;</span>
+        }
+<span class="fc bfc" id="L333" title="All 2 branches covered.">        if (339 == c) {</span>
+<span class="fc" id="L334">            return &quot;oe&quot;;</span>
+        }
+<span class="pc bpc" id="L336" title="1 of 2 branches missed.">        if (222 == c) {</span>
+<span class="nc" id="L337">            return &quot;TH&quot;;</span>
+        }
+<span class="pc bpc" id="L339" title="1 of 2 branches missed.">        if (223 == c) {</span>
+<span class="nc" id="L340">            return &quot;ss&quot;;</span>
+        }
+<span class="pc bpc" id="L342" title="1 of 2 branches missed.">        if (161 == c) {</span>
+<span class="nc" id="L343">            return &quot;!&quot;;</span>
+        }
+<span class="fc" id="L345">        return &quot;?&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

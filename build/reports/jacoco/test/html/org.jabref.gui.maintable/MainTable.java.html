@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MainTable.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.maintable</a> &gt; <span class="el_source">MainTable.java</span></div><h1>MainTable.java</h1><pre class="source lang-java linenums">package org.jabref.gui.maintable;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.swing.undo.UndoManager;
+
+import javafx.collections.ListChangeListener;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableRow;
+import javafx.scene.control.TableView;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseDragEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DragAndDropDataFormats;
+import org.jabref.gui.GUIGlobals;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.externalfiles.ImportHandler;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.gui.keyboard.KeyBinding;
+import org.jabref.gui.keyboard.KeyBindingRepository;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableInsertEntry;
+import org.jabref.gui.util.CustomLocalDragboard;
+import org.jabref.gui.util.ViewModelTableRowFactory;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.UpdateField;
+import org.jabref.logic.util.io.FileUtil;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class MainTable extends TableView&lt;BibEntryTableViewModel&gt; {
+
+<span class="nc" id="L53">    private static final Logger LOGGER = LoggerFactory.getLogger(MainTable.class);</span>
+
+    private final BasePanel panel;
+
+    private final ScrollPane pane;
+    private final BibDatabaseContext database;
+    private final UndoManager undoManager;
+
+    private final MainTableDataModel model;
+    private final ImportHandler importHandler;
+<span class="nc" id="L63">    private final CustomLocalDragboard localDragboard = GUIGlobals.localDragboard;</span>
+
+    public MainTable(MainTableDataModel model, JabRefFrame frame,
+                     BasePanel panel, BibDatabaseContext database,
+                     MainTablePreferences preferences, ExternalFileTypes externalFileTypes, KeyBindingRepository keyBindingRepository) {
+<span class="nc" id="L68">        super();</span>
+
+<span class="nc" id="L70">        this.model = model;</span>
+<span class="nc" id="L71">        this.database = Objects.requireNonNull(database);</span>
+<span class="nc" id="L72">        this.undoManager = panel.getUndoManager();</span>
+
+<span class="nc" id="L74">        importHandler = new ImportHandler(</span>
+<span class="nc" id="L75">                frame.getDialogService(), database, externalFileTypes,</span>
+<span class="nc" id="L76">                Globals.prefs.getFilePreferences(),</span>
+<span class="nc" id="L77">                Globals.prefs.getImportFormatPreferences(),</span>
+<span class="nc" id="L78">                Globals.prefs.getUpdateFieldPreferences(),</span>
+<span class="nc" id="L79">                Globals.getFileUpdateMonitor(),</span>
+                undoManager);
+
+<span class="nc" id="L82">        this.getColumns().addAll(new MainTableColumnFactory(database, preferences.getColumnPreferences(), externalFileTypes, panel.getUndoManager(), frame.getDialogService()).createColumns());</span>
+
+<span class="nc" id="L84">        new ViewModelTableRowFactory&lt;BibEntryTableViewModel&gt;()</span>
+<span class="nc" id="L85">                                                              .withOnMouseClickedEvent((entry, event) -&gt; {</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                                                                  if (event.getClickCount() == 2) {</span>
+<span class="nc" id="L87">                                                                      panel.showAndEdit(entry.getEntry());</span>
+                                                                  }
+<span class="nc" id="L89">                                                              })</span>
+<span class="nc" id="L90">                                                              .withContextMenu(entry -&gt; RightClickMenu.create(entry, keyBindingRepository, panel, Globals.getKeyPrefs(), frame.getDialogService()))</span>
+<span class="nc" id="L91">                                                              .setOnDragDetected(this::handleOnDragDetected)</span>
+<span class="nc" id="L92">                                                              .setOnDragDropped(this::handleOnDragDropped)</span>
+<span class="nc" id="L93">                                                              .setOnDragOver(this::handleOnDragOver)</span>
+<span class="nc" id="L94">                                                              .setOnMouseDragEntered(this::handleOnDragEntered)</span>
+<span class="nc" id="L95">                                                              .install(this);</span>
+
+        /*for (Entry&lt;String, SortType&gt; entries : preferences.getColumnPreferences().getSortTypesForColumns().entrySet()) {
+            Optional&lt;TableColumn&lt;BibEntryTableViewModel, ?&gt;&gt; column = this.getColumns().stream().filter(col -&gt; entries.getKey().equals(col.getText())).findFirst();
+            column.ifPresent(col -&gt; {
+                col.setSortType(entries.getValue());
+                this.getSortOrder().add(col);
+            });
+        }*/
+
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        if (preferences.resizeColumnsToFit()) {</span>
+<span class="nc" id="L106">            this.setColumnResizePolicy(new SmartConstrainedResizePolicy());</span>
+        }
+<span class="nc" id="L108">        this.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);</span>
+
+<span class="nc" id="L110">        this.setItems(model.getEntriesFilteredAndSorted());</span>
+        // Enable sorting
+<span class="nc" id="L112">        model.getEntriesFilteredAndSorted().comparatorProperty().bind(this.comparatorProperty());</span>
+
+<span class="nc" id="L114">        this.panel = panel;</span>
+
+<span class="nc" id="L116">        pane = new ScrollPane(this);</span>
+<span class="nc" id="L117">        pane.setFitToHeight(true);</span>
+<span class="nc" id="L118">        pane.setFitToWidth(true);</span>
+
+<span class="nc" id="L120">        this.pane.getStylesheets().add(MainTable.class.getResource(&quot;MainTable.css&quot;).toExternalForm());</span>
+
+        // Store visual state
+<span class="nc" id="L123">        new PersistenceVisualStateTable(this, Globals.prefs);</span>
+
+        // TODO: Float marked entries
+        //model.updateMarkingState(Globals.prefs.getBoolean(JabRefPreferences.FLOAT_MARKED_ENTRIES));
+
+<span class="nc" id="L128">        setupKeyBindings(keyBindingRepository);</span>
+<span class="nc" id="L129">    }</span>
+
+    public void clearAndSelect(BibEntry bibEntry) {
+<span class="nc" id="L132">        findEntry(bibEntry).ifPresent(entry -&gt; {</span>
+<span class="nc" id="L133">            getSelectionModel().clearSelection();</span>
+<span class="nc" id="L134">            getSelectionModel().select(entry);</span>
+<span class="nc" id="L135">            scrollTo(entry);</span>
+<span class="nc" id="L136">        });</span>
+<span class="nc" id="L137">    }</span>
+
+    public void copy() {
+<span class="nc" id="L140">        List&lt;BibEntry&gt; selectedEntries = getSelectedEntries();</span>
+
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (!selectedEntries.isEmpty()) {</span>
+            try {
+<span class="nc" id="L144">                Globals.clipboardManager.setContent(selectedEntries);</span>
+<span class="nc" id="L145">                panel.output(panel.formatOutputMessage(Localization.lang(&quot;Copied&quot;), selectedEntries.size()));</span>
+<span class="nc" id="L146">            } catch (IOException e) {</span>
+<span class="nc" id="L147">                LOGGER.error(&quot;Error while copying selected entries to clipboard&quot;, e);</span>
+<span class="nc" id="L148">            }</span>
+        }
+<span class="nc" id="L150">    }</span>
+
+    public void cut() {
+<span class="nc" id="L153">        copy();</span>
+<span class="nc" id="L154">        panel.delete(true);</span>
+<span class="nc" id="L155">    }</span>
+
+    private void setupKeyBindings(KeyBindingRepository keyBindings) {
+<span class="nc" id="L158">        this.addEventHandler(KeyEvent.KEY_PRESSED, event -&gt; {</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">            if (event.getCode() == KeyCode.ENTER) {</span>
+<span class="nc" id="L160">                getSelectedEntries().stream()</span>
+<span class="nc" id="L161">                                    .findFirst()</span>
+<span class="nc" id="L162">                                    .ifPresent(panel::showAndEdit);</span>
+<span class="nc" id="L163">                event.consume();</span>
+<span class="nc" id="L164">                return;</span>
+            }
+
+<span class="nc" id="L167">            Optional&lt;KeyBinding&gt; keyBinding = keyBindings.mapToKeyBinding(event);</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">            if (keyBinding.isPresent()) {</span>
+<span class="nc bnc" id="L169" title="All 6 branches missed.">                switch (keyBinding.get()) {</span>
+                    case SELECT_FIRST_ENTRY:
+<span class="nc" id="L171">                        clearAndSelectFirst();</span>
+<span class="nc" id="L172">                        event.consume();</span>
+<span class="nc" id="L173">                        break;</span>
+                    case SELECT_LAST_ENTRY:
+<span class="nc" id="L175">                        clearAndSelectLast();</span>
+<span class="nc" id="L176">                        event.consume();</span>
+<span class="nc" id="L177">                        break;</span>
+                    case PASTE:
+<span class="nc" id="L179">                        paste();</span>
+<span class="nc" id="L180">                        event.consume();</span>
+<span class="nc" id="L181">                        break;</span>
+                    case COPY:
+<span class="nc" id="L183">                        copy();</span>
+<span class="nc" id="L184">                        event.consume();</span>
+<span class="nc" id="L185">                        break;</span>
+                    case CUT:
+<span class="nc" id="L187">                        cut();</span>
+<span class="nc" id="L188">                        event.consume();</span>
+<span class="nc" id="L189">                        break;</span>
+                    default:
+                        // Pass other keys to parent
+                }
+            }
+<span class="nc" id="L194">        });</span>
+<span class="nc" id="L195">    }</span>
+
+    private void clearAndSelectFirst() {
+<span class="nc" id="L198">        getSelectionModel().clearSelection();</span>
+<span class="nc" id="L199">        getSelectionModel().selectFirst();</span>
+<span class="nc" id="L200">        scrollTo(0);</span>
+<span class="nc" id="L201">    }</span>
+
+    private void clearAndSelectLast() {
+<span class="nc" id="L204">        getSelectionModel().clearSelection();</span>
+<span class="nc" id="L205">        getSelectionModel().selectLast();</span>
+<span class="nc" id="L206">        scrollTo(getItems().size() - 1);</span>
+<span class="nc" id="L207">    }</span>
+
+    public void paste() {
+        // Find entries in clipboard
+<span class="nc" id="L211">        List&lt;BibEntry&gt; entriesToAdd = Globals.clipboardManager.extractEntries();</span>
+
+<span class="nc bnc" id="L213" title="All 2 branches missed.">        if (!entriesToAdd.isEmpty()) {</span>
+            // Add new entries
+<span class="nc bnc" id="L215" title="All 2 branches missed.">            NamedCompound ce = new NamedCompound((entriesToAdd.size() &gt; 1 ? Localization.lang(&quot;paste entries&quot;) : Localization.lang(&quot;paste entry&quot;)));</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">            for (BibEntry entryToAdd : entriesToAdd) {</span>
+<span class="nc" id="L217">                UpdateField.setAutomaticFields(entryToAdd, Globals.prefs.getUpdateFieldPreferences());</span>
+
+<span class="nc" id="L219">                database.getDatabase().insertEntry(entryToAdd);</span>
+
+<span class="nc" id="L221">                ce.addEdit(new UndoableInsertEntry(database.getDatabase(), entryToAdd));</span>
+<span class="nc" id="L222">            }</span>
+<span class="nc" id="L223">            ce.end();</span>
+<span class="nc" id="L224">            undoManager.addEdit(ce);</span>
+
+<span class="nc" id="L226">            panel.output(panel.formatOutputMessage(Localization.lang(&quot;Pasted&quot;), entriesToAdd.size()));</span>
+
+            // Show editor if user want us to do this
+<span class="nc" id="L229">            BibEntry firstNewEntry = entriesToAdd.get(0);</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">            if (Globals.prefs.getBoolean(JabRefPreferences.AUTO_OPEN_FORM)) {</span>
+<span class="nc" id="L231">                panel.showAndEdit(firstNewEntry);</span>
+            }
+
+            // Select and focus first new entry
+<span class="nc" id="L235">            clearAndSelect(firstNewEntry);</span>
+<span class="nc" id="L236">            this.requestFocus();</span>
+        }
+<span class="nc" id="L238">    }</span>
+
+    private void handleOnDragOver(BibEntryTableViewModel originalItem, DragEvent event) {
+<span class="nc bnc" id="L241" title="All 4 branches missed.">        if ((event.getGestureSource() != originalItem) &amp;&amp; localDragboard.hasType(DragAndDropDataFormats.BIBENTRY_LIST_CLASS)) {</span>
+<span class="nc" id="L242">            event.acceptTransferModes(TransferMode.MOVE);</span>
+
+        }
+<span class="nc bnc" id="L245" title="All 4 branches missed.">        if (event.getDragboard().hasFiles() &amp;&amp; (event.getSource() instanceof TableRow)) {</span>
+<span class="nc" id="L246">            event.acceptTransferModes(TransferMode.COPY, TransferMode.MOVE, TransferMode.LINK);</span>
+        }
+<span class="nc" id="L248">        event.consume(); //need to consume it here to stop the DnDTabPane from getting the event</span>
+
+<span class="nc" id="L250">    }</span>
+
+    private void handleOnDragEntered(TableRow&lt;BibEntryTableViewModel&gt; row, BibEntryTableViewModel entry, MouseDragEvent event) {
+        // Support the following gesture to select entries: click on one row -&gt; hold mouse button -&gt; move over other rows
+        // We need to select all items between the starting row and the row where the user currently hovers the mouse over
+        // It is not enough to just select the currently hovered row since then sometimes rows are not marked selected if the user moves to fast
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L257">        TableRow&lt;BibEntryTableViewModel&gt; sourceRow = (TableRow&lt;BibEntryTableViewModel&gt;) event.getGestureSource();</span>
+<span class="nc" id="L258">        getSelectionModel().selectRange(sourceRow.getIndex(), row.getIndex());</span>
+<span class="nc" id="L259">    }</span>
+
+    private void handleOnDragDetected(TableRow&lt;BibEntryTableViewModel&gt; row, BibEntryTableViewModel entry, MouseEvent event) {
+        // Start drag'n'drop
+<span class="nc" id="L263">        row.startFullDrag();</span>
+
+<span class="nc" id="L265">        List&lt;BibEntry&gt; entries = getSelectionModel().getSelectedItems().stream().map(BibEntryTableViewModel::getEntry).collect(Collectors.toList());</span>
+
+        //The following is necesary to initiate the drag and drop in javafx, although we don't need the contents
+        //It doesn't work without
+<span class="nc" id="L269">        ClipboardContent content = new ClipboardContent();</span>
+<span class="nc" id="L270">        Dragboard dragboard = startDragAndDrop(TransferMode.MOVE);</span>
+<span class="nc" id="L271">        content.put(DragAndDropDataFormats.ENTRIES, &quot;&quot;);</span>
+<span class="nc" id="L272">        dragboard.setContent(content);</span>
+
+<span class="nc bnc" id="L274" title="All 2 branches missed.">        if (!entries.isEmpty()) {</span>
+<span class="nc" id="L275">            localDragboard.putBibEntries(entries);</span>
+        }
+
+<span class="nc" id="L278">        event.consume();</span>
+<span class="nc" id="L279">    }</span>
+
+    private void handleOnDragDropped(BibEntryTableViewModel originalItem, DragEvent event) {
+<span class="nc" id="L282">        boolean success = false;</span>
+
+<span class="nc bnc" id="L284" title="All 2 branches missed.">        if (event.getDragboard().hasContent(DataFormat.FILES)) {</span>
+<span class="nc" id="L285">            List&lt;Path&gt; files = event.getDragboard().getFiles().stream().map(File::toPath).collect(Collectors.toList());</span>
+<span class="nc" id="L286">            List&lt;Path&gt; bibFiles = files.stream().filter(FileUtil::isBibFile).collect(Collectors.toList());</span>
+
+<span class="nc bnc" id="L288" title="All 2 branches missed.">            if (!bibFiles.isEmpty()) {</span>
+                // Import all bibtex entries contained in the dropped bib files
+<span class="nc bnc" id="L290" title="All 2 branches missed.">                for (Path file : bibFiles) {</span>
+<span class="nc" id="L291">                    importHandler.importEntriesFromBibFiles(file);</span>
+<span class="nc" id="L292">                }</span>
+<span class="nc" id="L293">                success = true;</span>
+            }
+<span class="nc bnc" id="L295" title="All 2 branches missed.">            if (event.getGestureTarget() instanceof TableRow) {</span>
+                // Depending on the pressed modifier, import as new entries or link to drop target
+<span class="nc" id="L297">                BibEntry entry = originalItem.getEntry();</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">                if ((event.getTransferMode() == TransferMode.MOVE)) {</span>
+<span class="nc" id="L299">                    LOGGER.debug(&quot;Mode MOVE&quot;); //shift on win or no modifier</span>
+<span class="nc" id="L300">                    importHandler.importAsNewEntries(files);</span>
+<span class="nc" id="L301">                    success = true;</span>
+                }
+
+<span class="nc bnc" id="L304" title="All 2 branches missed.">                if (event.getTransferMode() == TransferMode.LINK) {</span>
+<span class="nc" id="L305">                    LOGGER.debug(&quot;LINK&quot;); //alt on win</span>
+<span class="nc" id="L306">                    importHandler.getLinker().moveFilesToFileDirAndAddToEntry(entry, files);</span>
+<span class="nc" id="L307">                    success = true;</span>
+                }
+
+<span class="nc bnc" id="L310" title="All 2 branches missed.">                if (event.getTransferMode() == TransferMode.COPY) {</span>
+<span class="nc" id="L311">                    LOGGER.debug(&quot;Mode Copy&quot;); //ctrl on win</span>
+<span class="nc" id="L312">                    importHandler.getLinker().copyFilesToFileDirAndAddToEntry(entry, files);</span>
+<span class="nc" id="L313">                    success = true;</span>
+                }
+            }
+        }
+
+<span class="nc" id="L318">        event.setDropCompleted(success);</span>
+<span class="nc" id="L319">        event.consume();</span>
+<span class="nc" id="L320">    }</span>
+
+    public void addSelectionListener(ListChangeListener&lt;? super BibEntryTableViewModel&gt; listener) {
+<span class="nc" id="L323">        getSelectionModel().getSelectedItems().addListener(listener);</span>
+<span class="nc" id="L324">    }</span>
+
+    public ScrollPane getPane() {
+<span class="nc" id="L327">        return pane;</span>
+    }
+
+    public MainTableDataModel getTableModel() {
+<span class="nc" id="L331">        return model;</span>
+    }
+
+    public BibEntry getEntryAt(int row) {
+<span class="nc" id="L335">        return model.getEntriesFilteredAndSorted().get(row).getEntry();</span>
+    }
+
+    public List&lt;BibEntry&gt; getSelectedEntries() {
+<span class="nc" id="L339">        return getSelectionModel()</span>
+<span class="nc" id="L340">                                  .getSelectedItems()</span>
+<span class="nc" id="L341">                                  .stream()</span>
+<span class="nc" id="L342">                                  .map(BibEntryTableViewModel::getEntry)</span>
+<span class="nc" id="L343">                                  .collect(Collectors.toList());</span>
+    }
+
+    private Optional&lt;BibEntryTableViewModel&gt; findEntry(BibEntry entry) {
+<span class="nc" id="L347">        return model.getEntriesFilteredAndSorted()</span>
+<span class="nc" id="L348">                    .stream()</span>
+<span class="nc" id="L349">                    .filter(viewModel -&gt; viewModel.getEntry().equals(entry))</span>
+<span class="nc" id="L350">                    .findFirst();</span>
+    }
+
+    /**
+     * Repaints the table with the most recent font configuration
+     */
+    public void updateFont() {
+        // TODO: Font &amp; padding customization
+        // setFont(GUIGlobals.currentFont);
+<span class="nc" id="L359">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

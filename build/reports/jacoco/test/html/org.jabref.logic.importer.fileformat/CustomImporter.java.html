@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomImporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fileformat</a> &gt; <span class="el_source">CustomImporter.java</span></div><h1>CustomImporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fileformat;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
+import org.jabref.logic.importer.Importer;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.util.FileType;
+
+/**
+ * Object with data for a custom importer.
+ *
+ * &lt;p&gt;Is also responsible for instantiating the class loader.&lt;/p&gt;
+ */
+public class CustomImporter extends Importer {
+
+    private final String className;
+    private final Path basePath;
+
+    private Importer importer;
+
+<span class="fc" id="L29">    public CustomImporter(String basePath, String className) throws ClassNotFoundException {</span>
+<span class="fc" id="L30">        this.basePath = Paths.get(basePath);</span>
+<span class="fc" id="L31">        this.className = className;</span>
+        try {
+<span class="fc" id="L33">            importer = load(this.basePath.toUri().toURL(), this.className);</span>
+<span class="nc" id="L34">        } catch (IOException | InstantiationException | IllegalAccessException exception) {</span>
+<span class="nc" id="L35">            throw new ClassNotFoundException(&quot;&quot;, exception);</span>
+<span class="fc" id="L36">        }</span>
+<span class="fc" id="L37">    }</span>
+
+    private static Importer load(URL basePathURL, String className)
+            throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+<span class="fc" id="L41">        try (URLClassLoader cl = new URLClassLoader(new URL[] {basePathURL})) {</span>
+<span class="fc" id="L42">            Class&lt;?&gt; clazz = Class.forName(className, true, cl);</span>
+<span class="fc" id="L43">            return (Importer) clazz.newInstance();</span>
+<span class="fc" id="L44">        }</span>
+    }
+
+    public List&lt;String&gt; getAsStringList() {
+<span class="fc" id="L48">        return Arrays.asList(basePath.toString().replace('\\', '/'), className);</span>
+    }
+
+    public String getClassName() {
+<span class="fc" id="L52">        return className;</span>
+    }
+
+    public Path getBasePath() {
+<span class="fc" id="L56">        return basePath;</span>
+    }
+
+    @Override
+    public boolean equals(Object other) {
+
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (this == other) {</span>
+<span class="fc" id="L63">            return true;</span>
+        }
+
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (!(other instanceof CustomImporter)) {</span>
+<span class="nc" id="L67">            return false;</span>
+        }
+
+<span class="fc" id="L70">        CustomImporter otherImporter = (CustomImporter) other;</span>
+<span class="pc bpc" id="L71" title="2 of 4 branches missed.">        return Objects.equals(className, otherImporter.className) &amp;&amp; Objects.equals(basePath, otherImporter.basePath);</span>
+    }
+
+    @Override
+    public boolean isRecognizedFormat(BufferedReader input) throws IOException {
+<span class="nc" id="L76">        return importer.isRecognizedFormat(input);</span>
+    }
+
+    @Override
+    public ParserResult importDatabase(BufferedReader input) throws IOException {
+<span class="nc" id="L81">        return importer.importDatabase(input);</span>
+    }
+
+    @Override
+    public String getName() {
+<span class="fc" id="L86">        return importer.getName();</span>
+    }
+
+    @Override
+    public FileType getFileType() {
+<span class="nc" id="L91">        return importer.getFileType();</span>
+    }
+
+    @Override
+    public String getId() {
+<span class="fc" id="L96">        return importer.getId();</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="nc" id="L101">        return importer.getDescription();</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L106">        return Objects.hash(className, basePath);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L111">        return this.getName();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

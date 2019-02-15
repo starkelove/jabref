@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibStringChecker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.integrity</a> &gt; <span class="el_source">BibStringChecker.java</span></div><h1>BibStringChecker.java</h1><pre class="source lang-java linenums">package org.jabref.logic.integrity;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.integrity.IntegrityCheck.Checker;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldProperty;
+import org.jabref.model.entry.InternalBibtexFields;
+
+<span class="fc" id="L15">public class BibStringChecker implements Checker {</span>
+
+    // Detect # if it doesn't have a \ in front of it or if it starts the string
+<span class="fc" id="L18">    private static final Pattern UNESCAPED_HASH = Pattern.compile(&quot;(?&lt;!\\\\)#|^#&quot;);</span>
+
+
+    /**
+     * Checks, if there is an even number of unescaped #
+     */
+    @Override
+    public List&lt;IntegrityMessage&gt; check(BibEntry entry) {
+<span class="fc" id="L26">        List&lt;IntegrityMessage&gt; results = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L28">        Map&lt;String, String&gt; fields = entry.getFieldMap();</span>
+
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        for (Map.Entry&lt;String, String&gt; field : fields.entrySet()) {</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">            if (!InternalBibtexFields.getFieldProperties(field.getKey()).contains(FieldProperty.VERBATIM)) {</span>
+<span class="fc" id="L32">                Matcher hashMatcher = UNESCAPED_HASH.matcher(field.getValue());</span>
+<span class="fc" id="L33">                int hashCount = 0;</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">                while (hashMatcher.find()) {</span>
+<span class="fc" id="L35">                    hashCount++;</span>
+                }
+<span class="fc bfc" id="L37" title="All 2 branches covered.">                if ((hashCount &amp; 1) == 1) { // Check if odd</span>
+<span class="fc" id="L38">                    results.add(new IntegrityMessage(Localization.lang(&quot;odd number of unescaped '#'&quot;), entry,</span>
+<span class="fc" id="L39">                            field.getKey()));</span>
+                }
+            }
+<span class="fc" id="L42">        }</span>
+<span class="fc" id="L43">        return results;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ISBN.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry.identifier</a> &gt; <span class="el_source">ISBN.java</span></div><h1>ISBN.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry.identifier;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jabref.model.entry.FieldName;
+
+public class ISBN implements Identifier {
+
+<span class="fc" id="L14">    private static final Pattern ISBN_PATTERN = Pattern.compile(&quot;^(\\d{9}[\\dxX]|\\d{13})$&quot;);</span>
+
+    private final String isbnString;
+
+
+<span class="fc" id="L19">    public ISBN(String isbnString) {</span>
+<span class="fc" id="L20">        this.isbnString = Objects.requireNonNull(isbnString).trim().replace(&quot;-&quot;, &quot;&quot;);</span>
+<span class="fc" id="L21">    }</span>
+
+    public static Optional&lt;ISBN&gt; parse(String input) {
+<span class="nc" id="L24">        ISBN isbn = new ISBN(input);</span>
+<span class="nc bnc" id="L25" title="All 2 branches missed.">        if (isbn.isValid()) {</span>
+<span class="nc" id="L26">            return Optional.of(isbn);</span>
+        } else {
+<span class="nc" id="L28">            return Optional.empty();</span>
+        }
+    }
+
+    public boolean isValidFormat() {
+<span class="fc" id="L33">        Matcher isbnMatcher = ISBN_PATTERN.matcher(isbnString);</span>
+<span class="fc" id="L34">        return isbnMatcher.matches();</span>
+    }
+
+    public boolean isValidChecksum() {
+        boolean valid;
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (isbnString.length() == 10) {</span>
+<span class="fc" id="L40">            valid = isbn10check();</span>
+        } else {
+            // length is either 10 or 13 based on regexp so will be 13 here
+<span class="fc" id="L43">            valid = isbn13check();</span>
+        }
+<span class="fc" id="L45">        return valid;</span>
+    }
+
+    public boolean isIsbn10() {
+<span class="fc" id="L49">        return isbn10check();</span>
+    }
+
+    public boolean isIsbn13() {
+<span class="fc" id="L53">        return isbn13check();</span>
+    }
+
+    // Check that the control digit is correct, see e.g. https://en.wikipedia.org/wiki/International_Standard_Book_Number#Check_digits
+    private boolean isbn10check() {
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (isbnString.length() != 10) {</span>
+<span class="fc" id="L59">            return false;</span>
+        }
+
+<span class="fc" id="L62">        int sum = 0;</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        for (int pos = 0; pos &lt;= 8; pos++) {</span>
+<span class="fc" id="L64">            sum += (isbnString.charAt(pos) - '0') * ((10 - pos));</span>
+        }
+<span class="fc" id="L66">        char control = isbnString.charAt(9);</span>
+<span class="fc bfc" id="L67" title="All 4 branches covered.">        if ((control == 'x') || (control == 'X')) {</span>
+<span class="fc" id="L68">            control = '9' + 1;</span>
+        }
+<span class="fc" id="L70">        sum += (control - '0');</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        return (sum % 11) == 0;</span>
+    }
+
+    // Check that the control digit is correct, see e.g. https://en.wikipedia.org/wiki/International_Standard_Book_Number#Check_digits
+    private boolean isbn13check() {
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        if (isbnString.length() != 13) {</span>
+<span class="fc" id="L77">            return false;</span>
+        }
+
+<span class="fc" id="L80">        int sum = 0;</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        for (int pos = 0; pos &lt;= 12; pos++) {</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            sum += (isbnString.charAt(pos) - '0') * ((pos % 2) == 0 ? 1 : 3);</span>
+        }
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        return (sum % 10) == 0;</span>
+    }
+
+    public boolean isValid() {
+<span class="nc bnc" id="L88" title="All 4 branches missed.">        return isValidFormat() &amp;&amp; isValidChecksum();</span>
+    }
+
+    @Override
+    public String getDefaultField() {
+<span class="nc" id="L93">        return FieldName.ISBN;</span>
+    }
+
+    @Override
+    public String getNormalized() {
+<span class="nc" id="L98">        return isbnString;</span>
+    }
+
+    @Override
+    public Optional&lt;URI&gt; getExternalURI() {
+        try {
+<span class="nc" id="L104">            return Optional.of(new URI(&quot;https://www.worldcat.org/isbn/&quot; + isbnString));</span>
+<span class="nc" id="L105">        } catch (URISyntaxException e) {</span>
+<span class="nc" id="L106">            return Optional.empty();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

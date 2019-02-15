@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HelpFile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.help</a> &gt; <span class="el_source">HelpFile.java</span></div><h1>HelpFile.java</h1><pre class="source lang-java linenums">package org.jabref.logic.help;
+
+/**
+ * This enum globally defines all help pages with the name of the markdown file in the help repository at Github.
+ *
+ * @see &lt;a href=https://github.com/JabRef/help.jabref.org&gt;help.jabref.org@github&lt;/a&gt;
+ */
+<span class="fc" id="L8">public enum HelpFile {</span>
+<span class="fc" id="L9">    COMMAND_LINE(&quot;&quot;),</span>
+    //Empty because it refers to the TOC/index
+<span class="fc" id="L11">    CONTENTS(&quot;&quot;),</span>
+<span class="fc" id="L12">    ENTRY_EDITOR(&quot;EntryEditor&quot;),</span>
+<span class="fc" id="L13">    STRING_EDITOR(&quot;StringEditor&quot;),</span>
+<span class="fc" id="L14">    SEARCH(&quot;Search&quot;),</span>
+<span class="fc" id="L15">    GROUP(&quot;Groups&quot;),</span>
+<span class="fc" id="L16">    CONTENT_SELECTOR(&quot;ContentSelector&quot;),</span>
+<span class="fc" id="L17">    SPECIAL_FIELDS(&quot;SpecialFields&quot;),</span>
+<span class="fc" id="L18">    BIBTEX_KEY_PATTERN(&quot;BibtexKeyPatterns&quot;),</span>
+<span class="fc" id="L19">    OWNER(&quot;Owner&quot;),</span>
+<span class="fc" id="L20">    TIMESTAMP(&quot;TimeStamp&quot;),</span>
+<span class="fc" id="L21">    CUSTOM_EXPORTS(&quot;CustomExports&quot;),</span>
+<span class="fc" id="L22">    CUSTOM_EXPORTS_NAME_FORMATTER(&quot;CustomExports#NameFormatter&quot;),</span>
+<span class="fc" id="L23">    CUSTOM_IMPORTS(&quot;CustomImports&quot;),</span>
+<span class="fc" id="L24">    GENERAL_FIELDS(&quot;GeneralFields&quot;),</span>
+<span class="fc" id="L25">    IMPORT_INSPECTION(&quot;ImportInspectionDialog&quot;),</span>
+<span class="fc" id="L26">    REMOTE(&quot;Remote&quot;),</span>
+<span class="fc" id="L27">    JOURNAL_ABBREV(&quot;JournalAbbreviations&quot;),</span>
+<span class="fc" id="L28">    REGEX_SEARCH(&quot;ExternalFiles#RegularExpressionSearch&quot;),</span>
+<span class="fc" id="L29">    PREVIEW(&quot;Preview&quot;),</span>
+<span class="fc" id="L30">    AUTOSAVE(&quot;Autosave&quot;),</span>
+    //The help page covers both OO and LO.
+<span class="fc" id="L32">    OPENOFFICE_LIBREOFFICE(&quot;OpenOfficeIntegration&quot;),</span>
+<span class="fc" id="L33">    FETCHER_ACM(&quot;ACMPortal&quot;),</span>
+<span class="fc" id="L34">    FETCHER_ADS(&quot;ADS&quot;),</span>
+<span class="fc" id="L35">    FETCHER_BIBSONOMY_SCRAPER(&quot;&quot;),</span>
+<span class="fc" id="L36">    FETCHER_CITESEERX(&quot;CiteSeer&quot;),</span>
+<span class="fc" id="L37">    FETCHER_DBLP(&quot;DBLP&quot;),</span>
+<span class="fc" id="L38">    FETCHER_DIVA(&quot;DiVAtoBibTeX&quot;),</span>
+<span class="fc" id="L39">    FETCHER_DOAJ(&quot;DOAJ&quot;),</span>
+<span class="fc" id="L40">    FETCHER_DOI(&quot;DOItoBibTeX&quot;),</span>
+<span class="fc" id="L41">    FETCHER_GOOGLE_SCHOLAR(&quot;GoogleScholar&quot;),</span>
+<span class="fc" id="L42">    FETCHER_GVK(&quot;GVK&quot;),</span>
+<span class="fc" id="L43">    FETCHER_IEEEXPLORE(&quot;IEEEXplore&quot;),</span>
+<span class="fc" id="L44">    FETCHER_INSPIRE(&quot;INSPIRE&quot;),</span>
+<span class="fc" id="L45">    FETCHER_ISBN(&quot;ISBNtoBibTeX&quot;),</span>
+<span class="fc" id="L46">    FETCHER_MEDLINE(&quot;Medline&quot;),</span>
+<span class="fc" id="L47">    FETCHER_OAI2_ARXIV(&quot;arXiv&quot;),</span>
+<span class="fc" id="L48">    FETCHER_RFC(&quot;RFCtoBibTeX&quot;),</span>
+<span class="fc" id="L49">    FETCHER_SPRINGER(&quot;Springer&quot;),</span>
+<span class="fc" id="L50">    FETCHER_TITLE(&quot;TitleToBibTeX&quot;),</span>
+<span class="fc" id="L51">    FETCHER_SCIENCEDIRECT(&quot;&quot;),</span>
+<span class="fc" id="L52">    DATABASE_PROPERTIES(&quot;DatabaseProperties&quot;),</span>
+<span class="fc" id="L53">    FIND_DUPLICATES(&quot;FindDuplicates&quot;),</span>
+<span class="fc" id="L54">    SQL_DATABASE_MIGRATION(&quot;SQLDatabaseMigration&quot;),</span>
+<span class="fc" id="L55">    SQL_DATABASE(&quot;SQLDatabase&quot;);</span>
+
+    private final String pageName;
+
+    /**
+     * Sets the URL path part of the help page.
+     *
+     * @param pageName the URL path part of the help page
+     */
+<span class="fc" id="L64">    HelpFile(String pageName) {</span>
+<span class="fc" id="L65">        this.pageName = pageName;</span>
+<span class="fc" id="L66">    }</span>
+
+    /**
+     * Returns the URL path part of the help page.
+     *
+     * @return the URL path part of the help page
+     */
+    public String getPageName() {
+<span class="fc" id="L74">        return pageName;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

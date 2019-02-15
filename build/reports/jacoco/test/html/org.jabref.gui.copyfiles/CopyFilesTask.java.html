@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CopyFilesTask.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.copyfiles</a> &gt; <span class="el_source">CopyFilesTask.java</span></div><h1>CopyFilesTask.java</h1><pre class="source lang-java linenums">package org.jabref.gui.copyfiles;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.BiFunction;
+
+import javafx.concurrent.Task;
+
+import org.jabref.Globals;
+import org.jabref.gui.actions.CopyFilesAction;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.OS;
+import org.jabref.logic.util.io.FileUtil;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.LinkedFile;
+import org.jabref.model.util.OptionalUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class CopyFilesTask extends Task&lt;List&lt;CopyFilesResultItemViewModel&gt;&gt; {
+
+<span class="nc" id="L32">    private static final Logger LOGGER = LoggerFactory.getLogger(CopyFilesAction.class);</span>
+    private static final String LOGFILE_PREFIX = &quot;copyFileslog_&quot;;
+    private static final String LOGFILE_EXT = &quot;.log&quot;;
+    private final BibDatabaseContext databaseContext;
+    private final Path exportPath;
+<span class="nc" id="L37">    private final String localizedSucessMessage = Localization.lang(&quot;Copied file successfully&quot;);</span>
+<span class="nc" id="L38">    private final String localizedErrorMessage = Localization.lang(&quot;Could not copy file&quot;) + &quot;: &quot; + Localization.lang(&quot;File exists&quot;);</span>
+    private final long totalFilesCount;
+    private final List&lt;BibEntry&gt; entries;
+<span class="nc" id="L41">    private final List&lt;CopyFilesResultItemViewModel&gt; results = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L42">    private Optional&lt;Path&gt; newPath = Optional.empty();</span>
+    private int numberSucessful;
+    private int totalFilesCounter;
+
+<span class="nc" id="L46">    private final BiFunction&lt;Path, Path, Path&gt; resolvePathFilename = (path, file) -&gt; {</span>
+<span class="nc" id="L47">        return path.resolve(file.getFileName());</span>
+    };
+
+<span class="nc" id="L50">    public CopyFilesTask(BibDatabaseContext databaseContext, List&lt;BibEntry&gt; entries, Path path) {</span>
+<span class="nc" id="L51">        this.databaseContext = databaseContext;</span>
+<span class="nc" id="L52">        this.entries = entries;</span>
+<span class="nc" id="L53">        this.exportPath = path;</span>
+<span class="nc" id="L54">        totalFilesCount = entries.stream().flatMap(entry -&gt; entry.getFiles().stream()).count();</span>
+<span class="nc" id="L55">    }</span>
+
+    @Override
+    protected List&lt;CopyFilesResultItemViewModel&gt; call() throws InterruptedException, IOException {
+
+<span class="nc" id="L60">        updateMessage(Localization.lang(&quot;Copying files...&quot;));</span>
+<span class="nc" id="L61">        updateProgress(0, totalFilesCount);</span>
+
+<span class="nc" id="L63">        LocalDateTime currentTime = LocalDateTime.now();</span>
+<span class="nc" id="L64">        String currentDate = currentTime.format(DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd-HH-mm-ss&quot;));</span>
+
+<span class="nc" id="L66">        try (BufferedWriter bw = Files.newBufferedWriter(exportPath.resolve(LOGFILE_PREFIX + currentDate + LOGFILE_EXT), StandardCharsets.UTF_8)) {</span>
+
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            for (int i = 0; i &lt; entries.size(); i++) {</span>
+
+<span class="nc bnc" id="L70" title="All 2 branches missed.">                if (isCancelled()) {</span>
+<span class="nc" id="L71">                    break;</span>
+                }
+
+<span class="nc" id="L74">                List&lt;LinkedFile&gt; files = entries.get(i).getFiles();</span>
+
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                for (int j = 0; j &lt; files.size(); j++) {</span>
+
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                    if (isCancelled()) {</span>
+<span class="nc" id="L79">                        break;</span>
+                    }
+
+<span class="nc" id="L82">                    updateMessage(Localization.lang(&quot;Copying file %0 of entry %1&quot;, Integer.toString(j + 1), Integer.toString(i + 1)));</span>
+
+<span class="nc" id="L84">                    LinkedFile fileName = files.get(j);</span>
+
+<span class="nc" id="L86">                    Optional&lt;Path&gt; fileToExport = fileName.findIn(databaseContext, Globals.prefs.getFilePreferences());</span>
+
+<span class="nc" id="L88">                    newPath = OptionalUtil.combine(Optional.of(exportPath), fileToExport, resolvePathFilename);</span>
+
+<span class="nc bnc" id="L90" title="All 2 branches missed.">                    if (newPath.isPresent()) {</span>
+
+<span class="nc" id="L92">                        Path newFile = newPath.get();</span>
+<span class="nc" id="L93">                        boolean success = FileUtil.copyFile(fileToExport.get(), newFile, false);</span>
+<span class="nc" id="L94">                        updateProgress(totalFilesCounter++, totalFilesCount);</span>
+                        try {
+<span class="nc" id="L96">                            Thread.sleep(300);</span>
+<span class="nc" id="L97">                        } catch (InterruptedException e) {</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                            if (isCancelled()) {</span>
+<span class="nc" id="L99">                                updateMessage(&quot;Cancelled&quot;);</span>
+<span class="nc" id="L100">                                break;</span>
+                            }
+<span class="nc" id="L102">                        }</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                        if (success) {</span>
+<span class="nc" id="L104">                            updateMessage(localizedSucessMessage);</span>
+<span class="nc" id="L105">                            numberSucessful++;</span>
+<span class="nc" id="L106">                            writeLogMessage(newFile, bw, localizedSucessMessage);</span>
+<span class="nc" id="L107">                            addResultToList(newFile, success, localizedSucessMessage);</span>
+
+                        } else {
+
+<span class="nc" id="L111">                            updateMessage(localizedErrorMessage);</span>
+<span class="nc" id="L112">                            writeLogMessage(newFile, bw, localizedErrorMessage);</span>
+<span class="nc" id="L113">                            addResultToList(newFile, success, localizedErrorMessage);</span>
+                        }
+                    }
+
+                }
+            }
+<span class="nc" id="L119">            updateMessage(Localization.lang(&quot;Finished copying&quot;));</span>
+
+<span class="nc" id="L121">            String sucessMessage = Localization.lang(&quot;Copied %0 files of %1 sucessfully to %2&quot;, Integer.toString(numberSucessful), Integer.toString(totalFilesCounter), newPath.map(Path::getParent).map(Path::toString).orElse(&quot;&quot;));</span>
+<span class="nc" id="L122">            updateMessage(sucessMessage);</span>
+<span class="nc" id="L123">            bw.write(sucessMessage);</span>
+<span class="nc" id="L124">            return results;</span>
+<span class="nc" id="L125">        }</span>
+    }
+
+    private void writeLogMessage(Path newFile, BufferedWriter bw, String logMessage) {
+        try {
+<span class="nc" id="L130">            bw.write(logMessage + &quot;: &quot; + newFile);</span>
+<span class="nc" id="L131">            bw.write(OS.NEWLINE);</span>
+<span class="nc" id="L132">        } catch (IOException e) {</span>
+<span class="nc" id="L133">            LOGGER.error(&quot;error writing log file&quot;, e);</span>
+<span class="nc" id="L134">        }</span>
+<span class="nc" id="L135">    }</span>
+
+    private void addResultToList(Path newFile, boolean success, String logMessage) {
+<span class="nc" id="L138">        CopyFilesResultItemViewModel result = new CopyFilesResultItemViewModel(newFile, success, logMessage);</span>
+<span class="nc" id="L139">        results.add(result);</span>
+<span class="nc" id="L140">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

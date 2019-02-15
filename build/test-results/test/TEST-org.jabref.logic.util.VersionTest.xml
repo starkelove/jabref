@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.util.VersionTest" tests="36" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:25" hostname="n184-p67.eduroam.kth.se" time="0.017">
+  <properties/>
+  <testcase name="betaShouldBeUpdatedToStable()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionNotNewerMinor()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionNotNewerPatch()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="unknownVersionAsEmptyString()" classname="org.jabref.logic.util.VersionTest" time="0.001"/>
+  <testcase name="initVersionFromWrongStringResultsInUnknownVersion()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionNewerMinor()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionNewerPatch()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="alphaShouldBeUpdatedToStables()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionNewerThanDevTwoDigits()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="changelogWithThreeDigits()" classname="org.jabref.logic.util.VersionTest" time="0.001"/>
+  <testcase name="stableShouldNotBeUpdatedToAlpha()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionNewerThanDevThreeDigits()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionNotNewerThan()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="unknownVersionAsNull()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionOneDigitDevVersion()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="stableNewerThanBeta()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionEmpty()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="betaNewerThanAlpha()" classname="org.jabref.logic.util.VersionTest" time="0.001"/>
+  <testcase name="unknownVersionIsNotNewerThanValidVersion()" classname="org.jabref.logic.util.VersionTest" time="0.001"/>
+  <testcase name="versionThreeDigits()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionNewerThanDevVersion()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="unknownVersionAsString()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionThreeDigitDevVersion()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="alphaShouldBeUpdatedToBeta()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionNull()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionTwoDigits()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="stableShouldNotBeUpdatedToBeta()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionNewerThan()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionNotNewerThanSameVersion()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="validVersionIsNotNewerThanUnknownVersion()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="equalVersionsNotNewer()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionOneDigit()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="changelogOfDevelopmentVersionWithDash()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="versionTwoDigitDevVersion()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="changelogOfDevelopmentVersionWithoutDash()" classname="org.jabref.logic.util.VersionTest" time="0.0"/>
+  <testcase name="changelogWithTwoDigits()" classname="org.jabref.logic.util.VersionTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

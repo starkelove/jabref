@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MergeReviewIntoCommentConfirmationDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.importer.actions</a> &gt; <span class="el_source">MergeReviewIntoCommentConfirmationDialog.java</span></div><h1>MergeReviewIntoCommentConfirmationDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.importer.actions;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.swing.JOptionPane;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+
+public class MergeReviewIntoCommentConfirmationDialog {
+
+    private final BasePanel panel;
+
+<span class="nc" id="L17">    public MergeReviewIntoCommentConfirmationDialog(BasePanel panel) {</span>
+<span class="nc" id="L18">        this.panel = panel;</span>
+<span class="nc" id="L19">    }</span>
+
+    public boolean askUserForMerge(List&lt;BibEntry&gt; conflicts) {
+<span class="nc" id="L22">        String bibKeys = conflicts.stream()</span>
+<span class="nc" id="L23">                .map(BibEntry::getCiteKeyOptional)</span>
+<span class="nc" id="L24">                .filter(Optional::isPresent)</span>
+<span class="nc" id="L25">                .map(Optional::get)</span>
+<span class="nc" id="L26">                .collect(Collectors.joining(&quot;,\n&quot;));</span>
+
+<span class="nc" id="L28">        String[] options = {Localization.lang(&quot;Merge fields&quot;)};</span>
+<span class="nc" id="L29">        int answer = JOptionPane.showOptionDialog(</span>
+                null,
+                bibKeys + &quot; &quot; +
+<span class="nc" id="L32">                        Localization.lang(&quot;has/have both a 'Comment' and a 'Review' field.&quot;) + &quot;\n&quot; +</span>
+<span class="nc" id="L33">                        Localization.lang(&quot;Since the 'Review' field was deprecated in JabRef 4.2, these two fields are about to be merged into the 'Comment' field.&quot;) + &quot;\n&quot; +</span>
+<span class="nc" id="L34">                        Localization.lang(&quot;The conflicting fields of these entries will be merged into the 'Comment' field.&quot;),</span>
+<span class="nc" id="L35">                Localization.lang(&quot;Review Field Migration&quot;), JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);</span>
+
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        return 0 == answer;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

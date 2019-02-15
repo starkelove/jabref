@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldsEditorTab.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.entryeditor</a> &gt; <span class="el_source">FieldsEditorTab.java</span></div><h1>FieldsEditorTab.java</h1><pre class="source lang-java linenums">package org.jabref.gui.entryeditor;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import javax.swing.undo.UndoManager;
+
+import javafx.application.Platform;
+import javafx.geometry.VPos;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.RowConstraints;
+
+import org.jabref.Globals;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.autocompleter.SuggestionProviders;
+import org.jabref.gui.fieldeditors.FieldEditorFX;
+import org.jabref.gui.fieldeditors.FieldEditors;
+import org.jabref.gui.fieldeditors.FieldNameLabel;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.EntryTypes;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.EntryType;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.FieldProperty;
+import org.jabref.model.entry.InternalBibtexFields;
+
+/**
+ * A single tab displayed in the EntryEditor holding several FieldEditors.
+ */
+abstract class FieldsEditorTab extends EntryEditorTab {
+
+<span class="nc" id="L46">    private final Map&lt;String, FieldEditorFX&gt; editors = new LinkedHashMap&lt;&gt;();</span>
+    private final boolean isCompressed;
+    private final SuggestionProviders suggestionProviders;
+
+    private FieldEditorFX activeField;
+    private final BibDatabaseContext databaseContext;
+    private UndoManager undoManager;
+<span class="nc" id="L53">    private Collection&lt;String&gt; fields = new ArrayList&lt;&gt;();</span>
+    private final DialogService dialogService;
+    private GridPane gridPane;
+
+<span class="nc" id="L57">    public FieldsEditorTab(boolean compressed, BibDatabaseContext databaseContext, SuggestionProviders suggestionProviders, UndoManager undoManager, DialogService dialogService) {</span>
+<span class="nc" id="L58">        this.isCompressed = compressed;</span>
+<span class="nc" id="L59">        this.databaseContext = databaseContext;</span>
+<span class="nc" id="L60">        this.suggestionProviders = suggestionProviders;</span>
+<span class="nc" id="L61">        this.undoManager = undoManager;</span>
+<span class="nc" id="L62">        this.dialogService = dialogService;</span>
+<span class="nc" id="L63">    }</span>
+
+    private static void addColumn(GridPane gridPane, int columnIndex, List&lt;Label&gt; nodes) {
+<span class="nc" id="L66">        gridPane.addColumn(columnIndex, nodes.toArray(new Node[nodes.size()]));</span>
+<span class="nc" id="L67">    }</span>
+
+    private static void addColumn(GridPane gridPane, int columnIndex, Stream&lt;Parent&gt; nodes) {
+<span class="nc" id="L70">        gridPane.addColumn(columnIndex, nodes.toArray(Node[]::new));</span>
+<span class="nc" id="L71">    }</span>
+
+    private void setupPanel(BibEntry entry, boolean compressed, SuggestionProviders suggestionProviders, UndoManager undoManager) {
+        // The preferences might be not initialized in tests -&gt; return immediately
+        // TODO: Replace this ugly workaround by proper injection propagation
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (Globals.prefs == null) {</span>
+<span class="nc" id="L77">            return;</span>
+        }
+
+<span class="nc" id="L80">        editors.clear();</span>
+<span class="nc" id="L81">        gridPane.getChildren().clear();</span>
+<span class="nc" id="L82">        gridPane.getColumnConstraints().clear();</span>
+<span class="nc" id="L83">        gridPane.getRowConstraints().clear();</span>
+
+<span class="nc" id="L85">        EntryType entryType = EntryTypes.getTypeOrDefault(entry.getType(), databaseContext.getMode());</span>
+<span class="nc" id="L86">        fields = determineFieldsToShow(entry, entryType);</span>
+
+<span class="nc" id="L88">        List&lt;Label&gt; labels = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L89">        boolean isFirstField = true;</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        for (String fieldName : fields) {</span>
+<span class="nc" id="L91">            FieldEditorFX fieldEditor = FieldEditors.getForField(fieldName, Globals.TASK_EXECUTOR, dialogService,</span>
+<span class="nc" id="L92">                    Globals.journalAbbreviationLoader.getRepository(Globals.prefs.getJournalAbbreviationPreferences()),</span>
+<span class="nc" id="L93">                    Globals.prefs, databaseContext, entry.getType(), suggestionProviders, undoManager);</span>
+<span class="nc" id="L94">            fieldEditor.bindToEntry(entry);</span>
+
+<span class="nc" id="L96">            editors.put(fieldName, fieldEditor);</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">            if (isFirstField) {</span>
+<span class="nc" id="L98">                activeField = fieldEditor;</span>
+<span class="nc" id="L99">                isFirstField = false;</span>
+            }
+
+<span class="nc" id="L102">            labels.add(new FieldNameLabel(fieldName));</span>
+<span class="nc" id="L103">        }</span>
+
+<span class="nc" id="L105">        ColumnConstraints columnExpand = new ColumnConstraints();</span>
+<span class="nc" id="L106">        columnExpand.setHgrow(Priority.ALWAYS);</span>
+
+<span class="nc" id="L108">        ColumnConstraints columnDoNotContract = new ColumnConstraints();</span>
+<span class="nc" id="L109">        columnDoNotContract.setMinWidth(Region.USE_PREF_SIZE);</span>
+        int rows;
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (compressed) {</span>
+<span class="nc" id="L112">            rows = (int) Math.ceil((double) fields.size() / 2);</span>
+
+<span class="nc" id="L114">            addColumn(gridPane, 0, labels.subList(0, rows));</span>
+<span class="nc" id="L115">            addColumn(gridPane, 3, labels.subList(rows, labels.size()));</span>
+<span class="nc" id="L116">            addColumn(gridPane, 1, editors.values().stream().map(FieldEditorFX::getNode).limit(rows));</span>
+<span class="nc" id="L117">            addColumn(gridPane, 4, editors.values().stream().map(FieldEditorFX::getNode).skip(rows));</span>
+
+<span class="nc" id="L119">            gridPane.getColumnConstraints().addAll(columnDoNotContract, columnExpand, new ColumnConstraints(10),</span>
+                    columnDoNotContract, columnExpand);
+
+<span class="nc" id="L122">            setCompressedRowLayout(gridPane, rows);</span>
+        } else {
+<span class="nc" id="L124">            addColumn(gridPane, 0, labels);</span>
+<span class="nc" id="L125">            addColumn(gridPane, 1, editors.values().stream().map(FieldEditorFX::getNode));</span>
+
+<span class="nc" id="L127">            gridPane.getColumnConstraints().addAll(columnDoNotContract, columnExpand);</span>
+
+<span class="nc" id="L129">            setRegularRowLayout(gridPane);</span>
+        }
+<span class="nc" id="L131">    }</span>
+
+    private void setRegularRowLayout(GridPane gridPane) {
+<span class="nc" id="L134">        double totalWeight = fields.stream()</span>
+<span class="nc" id="L135">                                   .mapToDouble(field -&gt; editors.get(field).getWeight())</span>
+<span class="nc" id="L136">                                   .sum();</span>
+
+<span class="nc" id="L138">        List&lt;RowConstraints&gt; constraints = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        for (String field : fields) {</span>
+<span class="nc" id="L140">            RowConstraints rowExpand = new RowConstraints();</span>
+<span class="nc" id="L141">            rowExpand.setVgrow(Priority.ALWAYS);</span>
+<span class="nc" id="L142">            rowExpand.setValignment(VPos.TOP);</span>
+<span class="nc" id="L143">            rowExpand.setPercentHeight(100 * editors.get(field).getWeight() / totalWeight);</span>
+<span class="nc" id="L144">            constraints.add(rowExpand);</span>
+<span class="nc" id="L145">        }</span>
+<span class="nc" id="L146">        gridPane.getRowConstraints().addAll(constraints);</span>
+<span class="nc" id="L147">    }</span>
+
+    private void setCompressedRowLayout(GridPane gridPane, int rows) {
+<span class="nc" id="L150">        RowConstraints rowExpand = new RowConstraints();</span>
+<span class="nc" id="L151">        rowExpand.setVgrow(Priority.ALWAYS);</span>
+<span class="nc" id="L152">        rowExpand.setValignment(VPos.TOP);</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        if (rows == 0) {</span>
+<span class="nc" id="L154">            rowExpand.setPercentHeight(100);</span>
+        } else {
+<span class="nc" id="L156">            rowExpand.setPercentHeight(100 / (double) rows);</span>
+        }
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        for (int i = 0; i &lt; rows; i++) {</span>
+<span class="nc" id="L159">            gridPane.getRowConstraints().add(rowExpand);</span>
+        }
+<span class="nc" id="L161">    }</span>
+
+    private String getPrompt(String field) {
+
+<span class="nc" id="L165">        Set&lt;FieldProperty&gt; fieldProperties = InternalBibtexFields.getFieldProperties(field);</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        if (fieldProperties.contains(FieldProperty.PERSON_NAMES)) {</span>
+<span class="nc" id="L167">            return String.format(&quot;%1$s and %1$s and others&quot;, Localization.lang(&quot;Firstname Lastname&quot;));</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">        } else if (fieldProperties.contains(FieldProperty.DOI)) {</span>
+<span class="nc" id="L169">            return &quot;10.ORGANISATION/ID&quot;;</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">        } else if (fieldProperties.contains(FieldProperty.DATE)) {</span>
+<span class="nc" id="L171">            return &quot;YYYY-MM-DD&quot;;</span>
+        }
+
+<span class="nc bnc" id="L174" title="All 4 branches missed.">        switch (field) {</span>
+            case FieldName.YEAR:
+<span class="nc" id="L176">                return &quot;YYYY&quot;;</span>
+            case FieldName.MONTH:
+<span class="nc" id="L178">                return &quot;MM or #mmm#&quot;;</span>
+            case FieldName.URL:
+<span class="nc" id="L180">                return &quot;https://&quot;;</span>
+        }
+
+<span class="nc" id="L183">        return &quot;&quot;;</span>
+    }
+
+    /**
+     * Focuses the given field.
+     */
+    public void requestFocus(String fieldName) {
+<span class="nc bnc" id="L190" title="All 2 branches missed.">        if (editors.containsKey(fieldName)) {</span>
+<span class="nc" id="L191">            activeField = editors.get(fieldName);</span>
+<span class="nc" id="L192">            activeField.focus();</span>
+        }
+<span class="nc" id="L194">    }</span>
+
+    @Override
+    public boolean shouldShow(BibEntry entry) {
+<span class="nc" id="L198">        EntryType entryType = EntryTypes.getTypeOrDefault(entry.getType(), databaseContext.getMode());</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">        return !determineFieldsToShow(entry, entryType).isEmpty();</span>
+    }
+
+    @Override
+    public void handleFocus() {
+<span class="nc bnc" id="L204" title="All 2 branches missed.">        if (activeField != null) {</span>
+<span class="nc" id="L205">            activeField.focus();</span>
+        }
+<span class="nc" id="L207">    }</span>
+
+    @Override
+    protected void bindToEntry(BibEntry entry) {
+<span class="nc" id="L211">        Optional&lt;String&gt; selectedFieldName = editors.entrySet()</span>
+<span class="nc" id="L212">                                                    .stream()</span>
+<span class="nc" id="L213">                                                    .filter(editor -&gt; editor.getValue().childIsFocused())</span>
+<span class="nc" id="L214">                                                    .map(Map.Entry::getKey)</span>
+<span class="nc" id="L215">                                                    .findFirst();</span>
+
+<span class="nc" id="L217">        initPanel();</span>
+<span class="nc" id="L218">        setupPanel(entry, isCompressed, suggestionProviders, undoManager);</span>
+
+<span class="nc" id="L220">        Platform.runLater(() -&gt; {</span>
+            // Restore focus to field (run this async so that editor is already initialized correctly)
+<span class="nc" id="L222">            selectedFieldName.ifPresent(this::requestFocus);</span>
+<span class="nc" id="L223">        });</span>
+<span class="nc" id="L224">    }</span>
+
+    protected abstract Collection&lt;String&gt; determineFieldsToShow(BibEntry entry, EntryType entryType);
+
+    public Collection&lt;String&gt; getShownFields() {
+<span class="nc" id="L229">        return fields;</span>
+    }
+
+    private void initPanel() {
+<span class="nc bnc" id="L233" title="All 2 branches missed.">        if (gridPane == null) {</span>
+<span class="nc" id="L234">            gridPane = new GridPane();</span>
+<span class="nc" id="L235">            gridPane.getStyleClass().add(&quot;editorPane&quot;);</span>
+
+            // Warp everything in a scroll-pane
+<span class="nc" id="L238">            ScrollPane scrollPane = new ScrollPane();</span>
+<span class="nc" id="L239">            scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);</span>
+<span class="nc" id="L240">            scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);</span>
+<span class="nc" id="L241">            scrollPane.setContent(gridPane);</span>
+<span class="nc" id="L242">            scrollPane.setFitToWidth(true);</span>
+<span class="nc" id="L243">            scrollPane.setFitToHeight(true);</span>
+
+<span class="nc" id="L245">            setContent(scrollPane);</span>
+        }
+<span class="nc" id="L247">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

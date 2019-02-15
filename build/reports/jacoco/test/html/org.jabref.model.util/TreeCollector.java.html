@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TreeCollector.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.util</a> &gt; <span class="el_source">TreeCollector.java</span></div><h1>TreeCollector.java</h1><pre class="source lang-java linenums">package org.jabref.model.util;
+
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
+import org.jabref.model.TreeNode;
+
+/**
+ * Merges a list of nodes into a tree.
+ * Nodes with a common parent are added as direct children.
+ * For example, the list { A &gt; A1, A &gt; A2, B } is transformed into the forest { A &gt; A1, A2, B}.
+ */
+public class TreeCollector&lt;T&gt; implements Collector&lt;T, ObservableList&lt;T&gt;, ObservableList&lt;T&gt;&gt; {
+
+    private Function&lt;T, List&lt;T&gt;&gt; getChildren;
+    private BiConsumer&lt;T, T&gt; addChild;
+    private BiPredicate&lt;T, T&gt; equivalence;
+
+    /**
+     * @param getChildren a function that returns a list of children of the specified node
+     * @param addChild    a function that adds the second argument as a child to the first-specified node
+     * @param equivalence a function that tells us whether two nodes are equivalent
+     */
+<span class="fc" id="L36">    private TreeCollector(Function&lt;T, List&lt;T&gt;&gt; getChildren, BiConsumer&lt;T, T&gt; addChild, BiPredicate&lt;T, T&gt; equivalence) {</span>
+<span class="fc" id="L37">        this.getChildren = getChildren;</span>
+<span class="fc" id="L38">        this.addChild = addChild;</span>
+<span class="fc" id="L39">        this.equivalence = equivalence;</span>
+<span class="fc" id="L40">    }</span>
+
+    public static &lt;T extends TreeNode&lt;T&gt;&gt; TreeCollector&lt;T&gt; mergeIntoTree(BiPredicate&lt;T, T&gt; equivalence) {
+<span class="fc" id="L43">        return new TreeCollector&lt;&gt;(</span>
+                TreeNode::getChildren,
+<span class="fc" id="L45">                (parent, child) -&gt; child.moveTo(parent),</span>
+                equivalence);
+    }
+
+    @Override
+    public Supplier&lt;ObservableList&lt;T&gt;&gt; supplier() {
+<span class="fc" id="L51">        return FXCollections::observableArrayList;</span>
+    }
+
+    @Override
+    public BiConsumer&lt;ObservableList&lt;T&gt;, T&gt; accumulator() {
+<span class="fc" id="L56">        return (alreadyProcessed, newItem) -&gt; {</span>
+            // Check if the node is already in the tree
+<span class="fc" id="L58">            Optional&lt;T&gt; sameItemInTree = alreadyProcessed.stream()</span>
+<span class="fc" id="L59">                    .filter(item -&gt; equivalence.test(item, newItem))</span>
+<span class="fc" id="L60">                    .findFirst();</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            if (sameItemInTree.isPresent()) {</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                for (T child : new ArrayList&lt;&gt;(getChildren.apply(newItem))) {</span>
+<span class="fc" id="L63">                    merge(sameItemInTree.get(), child);</span>
+<span class="fc" id="L64">                }</span>
+            } else {
+<span class="fc" id="L66">                alreadyProcessed.add(newItem);</span>
+            }
+<span class="fc" id="L68">        };</span>
+    }
+
+    private void merge(T target, T node) {
+<span class="fc" id="L72">        Optional&lt;T&gt; sameItemInTree = getChildren.apply(target).stream()</span>
+<span class="fc" id="L73">                .filter(item -&gt; equivalence.test(item, node))</span>
+<span class="fc" id="L74">                .findFirst();</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        if (sameItemInTree.isPresent()) {</span>
+            // We need to copy the list because the #addChild method might remove the child from its own parent
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            for (T child : new ArrayList&lt;&gt;(getChildren.apply(node))) {</span>
+<span class="fc" id="L78">                merge(sameItemInTree.get(), child);</span>
+<span class="fc" id="L79">            }</span>
+        } else {
+<span class="fc" id="L81">            addChild.accept(target, node);</span>
+        }
+<span class="fc" id="L83">    }</span>
+
+    @Override
+    public BinaryOperator&lt;ObservableList&lt;T&gt;&gt; combiner() {
+<span class="fc" id="L87">        return (list1, list2) -&gt; {</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            for (T item : list2) {</span>
+<span class="nc" id="L89">                accumulator().accept(list1, item);</span>
+<span class="nc" id="L90">            }</span>
+<span class="nc" id="L91">            return list1;</span>
+        };
+    }
+
+    @Override
+    public Function&lt;ObservableList&lt;T&gt;, ObservableList&lt;T&gt;&gt; finisher() {
+<span class="nc" id="L97">        return i -&gt; i;</span>
+    }
+
+    @Override
+    public Set&lt;Characteristics&gt; characteristics() {
+<span class="fc" id="L102">        return EnumSet.of(Characteristics.UNORDERED, Characteristics.IDENTITY_FINISH);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

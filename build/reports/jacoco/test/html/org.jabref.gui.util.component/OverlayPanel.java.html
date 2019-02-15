@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OverlayPanel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util.component</a> &gt; <span class="el_source">OverlayPanel.java</span></div><h1>OverlayPanel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util.component;
+
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.OverlayLayout;
+import javax.swing.ScrollPaneConstants;
+
+/**
+ * Supports an underlying text for JComponent
+ */
+public class OverlayPanel extends JPanel {
+
+    private final JLabel label;
+
+
+<span class="nc" id="L23">    public OverlayPanel(JComponent overlay, String text) {</span>
+<span class="nc" id="L24">        OverlayLayout layout = new OverlayLayout(this);</span>
+<span class="nc" id="L25">        this.setLayout(layout);</span>
+
+<span class="nc" id="L27">        label = new JLabel(text);</span>
+<span class="nc" id="L28">        label.setFont(new Font(label.getFont().getName(), Font.ITALIC, 18));</span>
+<span class="nc" id="L29">        label.setForeground(new Color(224, 220, 220));</span>
+<span class="nc" id="L30">        label.setLocation(0, 0);</span>
+
+<span class="nc" id="L32">        JScrollPane scroller = new JScrollPane(overlay);</span>
+<span class="nc" id="L33">        scroller.setLocation(0, 0);</span>
+<span class="nc" id="L34">        scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);</span>
+
+<span class="nc" id="L36">        add(label);</span>
+<span class="nc" id="L37">        add(scroller);</span>
+<span class="nc" id="L38">    }</span>
+
+    @Override
+    public void paint(Graphics g) {
+<span class="nc" id="L42">        int len = label.getWidth();</span>
+
+<span class="nc" id="L44">        Dimension dim = this.getSize();</span>
+<span class="nc bnc" id="L45" title="All 4 branches missed.">        if ((dim.height &gt; 25) &amp;&amp; (dim.width &gt; (len + 10))) {</span>
+<span class="nc" id="L46">            int x = (dim.width - len) / 2;</span>
+<span class="nc" id="L47">            int y = dim.height / 2;</span>
+
+<span class="nc" id="L49">            label.setLocation(x, y);</span>
+        }
+
+<span class="nc" id="L52">        super.paint(g);</span>
+<span class="nc" id="L53">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

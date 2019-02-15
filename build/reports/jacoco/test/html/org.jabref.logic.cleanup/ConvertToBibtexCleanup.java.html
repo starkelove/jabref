@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConvertToBibtexCleanup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.cleanup</a> &gt; <span class="el_source">ConvertToBibtexCleanup.java</span></div><h1>ConvertToBibtexCleanup.java</h1><pre class="source lang-java linenums">package org.jabref.logic.cleanup;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.jabref.model.FieldChange;
+import org.jabref.model.cleanup.CleanupJob;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.EntryConverter;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.strings.StringUtil;
+
+/**
+ * Converts the entry to biblatex format.
+ */
+<span class="fc" id="L17">public class ConvertToBibtexCleanup implements CleanupJob {</span>
+
+    @Override
+    public List&lt;FieldChange&gt; cleanup(BibEntry entry) {
+<span class="fc" id="L21">        List&lt;FieldChange&gt; changes = new ArrayList&lt;&gt;();</span>
+
+        // Dates: get date and fill year and month
+        // If there already exists a non blank/empty value for the field, then it is not overwritten
+<span class="fc" id="L25">        entry.getPublicationDate().ifPresent(date -&gt; {</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">            if (StringUtil.isBlank(entry.getField(FieldName.YEAR))) {</span>
+<span class="fc" id="L27">                date.getYear().flatMap(year -&gt; entry.setField(FieldName.YEAR, year.toString())).ifPresent(changes::add);</span>
+            }
+
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">            if (StringUtil.isBlank(entry.getField(FieldName.MONTH))) {</span>
+<span class="fc" id="L31">                date.getMonth().flatMap(month -&gt; entry.setField(FieldName.MONTH, month.getJabRefFormat())).ifPresent(changes::add);</span>
+            }
+
+<span class="fc bfc" id="L34" title="All 2 branches covered.">            if (changes.size() &gt; 0) {</span>
+<span class="fc" id="L35">                entry.clearField(FieldName.DATE).ifPresent(changes::add);</span>
+            }
+<span class="fc" id="L37">        });</span>
+
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        for (Map.Entry&lt;String, String&gt; alias : EntryConverter.FIELD_ALIASES_TEX_TO_LTX.entrySet()) {</span>
+<span class="fc" id="L40">            String oldFieldName = alias.getValue();</span>
+<span class="fc" id="L41">            String newFieldName = alias.getKey();</span>
+<span class="fc" id="L42">            entry.getField(oldFieldName).ifPresent(oldValue -&gt; {</span>
+<span class="pc bpc" id="L43" title="2 of 4 branches missed.">                if (!oldValue.isEmpty() &amp;&amp; (!entry.getField(newFieldName).isPresent())) {</span>
+                    // There is content in the old field and no value in the new, so just copy
+<span class="fc" id="L45">                    entry.setField(newFieldName, oldValue).ifPresent(changes::add);</span>
+<span class="fc" id="L46">                    entry.clearField(oldFieldName).ifPresent(changes::add);</span>
+                }
+<span class="fc" id="L48">            });</span>
+<span class="fc" id="L49">        }</span>
+<span class="fc" id="L50">        return changes;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

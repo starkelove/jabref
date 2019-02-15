@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HitOrMissComparator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.search</a> &gt; <span class="el_source">HitOrMissComparator.java</span></div><h1>HitOrMissComparator.java</h1><pre class="source lang-java linenums">package org.jabref.gui.search;
+
+import java.util.Comparator;
+import java.util.Objects;
+
+import org.jabref.model.entry.BibEntry;
+
+import ca.odell.glazedlists.matchers.Matcher;
+
+/**
+ * This Comparator compares two objects based on whether none, one of them, or both
+ * match a given Matcher. It is used to &quot;float&quot; group and search hits in the main table.
+ */
+public class HitOrMissComparator implements Comparator&lt;BibEntry&gt; {
+
+    private final Matcher&lt;BibEntry&gt; hitOrMiss;
+
+<span class="nc" id="L18">    public HitOrMissComparator(Matcher&lt;BibEntry&gt; hitOrMiss) {</span>
+<span class="nc" id="L19">        this.hitOrMiss = Objects.requireNonNull(hitOrMiss);</span>
+<span class="nc" id="L20">    }</span>
+
+    @Override
+    public int compare(BibEntry o1, BibEntry o2) {
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        if (hitOrMiss == null) {</span>
+<span class="nc" id="L25">            return 0;</span>
+        }
+
+<span class="nc" id="L28">        return Boolean.compare(hitOrMiss.matches(o2), hitOrMiss.matches(o1));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

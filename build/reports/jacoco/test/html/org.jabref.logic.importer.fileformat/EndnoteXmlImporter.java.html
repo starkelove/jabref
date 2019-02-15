@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EndnoteXmlImporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fileformat</a> &gt; <span class="el_source">EndnoteXmlImporter.java</span></div><h1>EndnoteXmlImporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fileformat;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.Importer;
+import org.jabref.logic.importer.ParseException;
+import org.jabref.logic.importer.Parser;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.importer.fileformat.endnote.Abstract;
+import org.jabref.logic.importer.fileformat.endnote.Authors;
+import org.jabref.logic.importer.fileformat.endnote.Contributors;
+import org.jabref.logic.importer.fileformat.endnote.Dates;
+import org.jabref.logic.importer.fileformat.endnote.ElectronicResourceNum;
+import org.jabref.logic.importer.fileformat.endnote.Isbn;
+import org.jabref.logic.importer.fileformat.endnote.Keywords;
+import org.jabref.logic.importer.fileformat.endnote.Notes;
+import org.jabref.logic.importer.fileformat.endnote.Number;
+import org.jabref.logic.importer.fileformat.endnote.Pages;
+import org.jabref.logic.importer.fileformat.endnote.PdfUrls;
+import org.jabref.logic.importer.fileformat.endnote.Record;
+import org.jabref.logic.importer.fileformat.endnote.RefType;
+import org.jabref.logic.importer.fileformat.endnote.RelatedUrls;
+import org.jabref.logic.importer.fileformat.endnote.SecondaryTitle;
+import org.jabref.logic.importer.fileformat.endnote.Style;
+import org.jabref.logic.importer.fileformat.endnote.Title;
+import org.jabref.logic.importer.fileformat.endnote.Titles;
+import org.jabref.logic.importer.fileformat.endnote.Url;
+import org.jabref.logic.importer.fileformat.endnote.Urls;
+import org.jabref.logic.importer.fileformat.endnote.Volume;
+import org.jabref.logic.importer.fileformat.endnote.Xml;
+import org.jabref.logic.importer.fileformat.endnote.Year;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BiblatexEntryType;
+import org.jabref.model.entry.BiblatexEntryTypes;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.LinkedFile;
+import org.jabref.model.strings.StringUtil;
+import org.jabref.model.util.OptionalUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Importer for the Endnote XML format.
+ *
+ * Based on dtd scheme downloaded from Article #122577 in http://kbportal.thomson.com.
+ */
+public class EndnoteXmlImporter extends Importer implements Parser {
+
+<span class="fc" id="L69">    private static final Logger LOGGER = LoggerFactory.getLogger(EndnoteXmlImporter.class);</span>
+    private final ImportFormatPreferences preferences;
+    private Unmarshaller unmarshaller;
+
+<span class="fc" id="L73">    public EndnoteXmlImporter(ImportFormatPreferences preferences) {</span>
+<span class="fc" id="L74">        this.preferences = preferences;</span>
+<span class="fc" id="L75">    }</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L79">        return &quot;EndNote XML&quot;;</span>
+    }
+
+    @Override
+    public StandardFileType getFileType() {
+<span class="nc" id="L84">        return StandardFileType.XML;</span>
+    }
+
+    @Override
+    public String getId() {
+<span class="fc" id="L89">        return &quot;endnote&quot;;</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="nc" id="L94">        return &quot;Importer for the EndNote XML format.&quot;;</span>
+    }
+
+    @Override
+    public boolean isRecognizedFormat(BufferedReader reader) throws IOException {
+        String str;
+<span class="fc" id="L100">        int i = 0;</span>
+<span class="fc bfc" id="L101" title="All 4 branches covered.">        while (((str = reader.readLine()) != null) &amp;&amp; (i &lt; 50)) {</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">            if (str.toLowerCase(Locale.ENGLISH).contains(&quot;&lt;records&gt;&quot;)) {</span>
+<span class="fc" id="L103">                return true;</span>
+            }
+
+<span class="fc" id="L106">            i++;</span>
+        }
+<span class="fc" id="L108">        return false;</span>
+    }
+
+    @Override
+    public ParserResult importDatabase(BufferedReader reader) throws IOException {
+<span class="fc" id="L113">        Objects.requireNonNull(reader);</span>
+
+        try {
+<span class="fc" id="L116">            Object unmarshalledObject = unmarshallRoot(reader);</span>
+
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">            if (unmarshalledObject instanceof Xml) {</span>
+                // Check whether we have an article set, an article, a book article or a book article set
+<span class="fc" id="L120">                Xml root = (Xml) unmarshalledObject;</span>
+<span class="fc" id="L121">                List&lt;BibEntry&gt; bibEntries = root.getRecords()</span>
+<span class="fc" id="L122">                        .getRecord()</span>
+<span class="fc" id="L123">                        .stream()</span>
+<span class="fc" id="L124">                        .map(this::parseRecord)</span>
+<span class="fc" id="L125">                        .collect(Collectors.toList());</span>
+
+<span class="fc" id="L127">                return new ParserResult(bibEntries);</span>
+            } else {
+<span class="nc" id="L129">                return ParserResult.fromErrorMessage(&quot;File does not start with xml tag.&quot;);</span>
+            }
+<span class="nc" id="L131">        } catch (JAXBException | XMLStreamException e) {</span>
+<span class="nc" id="L132">            LOGGER.debug(&quot;could not parse document&quot;, e);</span>
+<span class="nc" id="L133">            return ParserResult.fromError(e);</span>
+        }
+    }
+
+    private Object unmarshallRoot(BufferedReader reader) throws XMLStreamException, JAXBException {
+<span class="fc" id="L138">        initUnmarshaller();</span>
+
+<span class="fc" id="L140">        XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();</span>
+<span class="fc" id="L141">        XMLStreamReader xmlStreamReader = xmlInputFactory.createXMLStreamReader(reader);</span>
+
+        // Go to the root element
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        while (!xmlStreamReader.isStartElement()) {</span>
+<span class="fc" id="L145">            xmlStreamReader.next();</span>
+        }
+
+<span class="fc" id="L148">        return unmarshaller.unmarshal(xmlStreamReader);</span>
+    }
+
+    private void initUnmarshaller() throws JAXBException {
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">        if (unmarshaller == null) {</span>
+            // Lazy init because this is expensive
+<span class="fc" id="L154">            JAXBContext context = JAXBContext.newInstance(&quot;org.jabref.logic.importer.fileformat.endnote&quot;);</span>
+<span class="fc" id="L155">            unmarshaller = context.createUnmarshaller();</span>
+        }
+<span class="fc" id="L157">    }</span>
+
+    private static BiblatexEntryType convertRefNameToType(String refName) {
+<span class="pc bpc" id="L160" title="5 of 7 branches missed.">        switch (refName.toLowerCase().trim()) {</span>
+            case &quot;artwork&quot;:
+<span class="nc" id="L162">                return BiblatexEntryTypes.MISC;</span>
+            case &quot;generic&quot;:
+<span class="nc" id="L164">                return BiblatexEntryTypes.MISC;</span>
+            case &quot;electronic rticle&quot;:
+<span class="nc" id="L166">                return BiblatexEntryTypes.ELECTRONIC;</span>
+            case &quot;book section&quot;:
+<span class="nc" id="L168">                return BiblatexEntryTypes.INBOOK;</span>
+            case &quot;book&quot;:
+<span class="fc" id="L170">                return BiblatexEntryTypes.BOOK;</span>
+            case &quot;journal article&quot;:
+<span class="fc" id="L172">                return BiblatexEntryTypes.ARTICLE;</span>
+
+            default:
+<span class="nc" id="L175">                return BiblatexEntryTypes.ARTICLE;</span>
+        }
+    }
+
+    private BibEntry parseRecord(Record record) {
+<span class="fc" id="L180">        BibEntry entry = new BibEntry();</span>
+
+<span class="fc" id="L182">        entry.setType(getType(record));</span>
+<span class="fc" id="L183">        Optional.ofNullable(getAuthors(record))</span>
+<span class="fc" id="L184">                .ifPresent(value -&gt; entry.setField(FieldName.AUTHOR, value));</span>
+<span class="fc" id="L185">        Optional.ofNullable(record.getTitles())</span>
+<span class="fc" id="L186">                .map(Titles::getTitle)</span>
+<span class="fc" id="L187">                .map(Title::getStyle)</span>
+<span class="fc" id="L188">                .map(Style::getvalue)</span>
+<span class="fc" id="L189">                .ifPresent(value -&gt; entry.setField(FieldName.TITLE, clean(value)));</span>
+<span class="fc" id="L190">        Optional.ofNullable(record.getTitles())</span>
+<span class="fc" id="L191">                .map(Titles::getSecondaryTitle)</span>
+<span class="fc" id="L192">                .map(SecondaryTitle::getStyle)</span>
+<span class="fc" id="L193">                .map(Style::getvalue)</span>
+<span class="fc" id="L194">                .ifPresent(value -&gt; entry.setField(FieldName.JOURNAL, clean(value)));</span>
+<span class="fc" id="L195">        Optional.ofNullable(record.getPages())</span>
+<span class="fc" id="L196">                .map(Pages::getStyle)</span>
+<span class="fc" id="L197">                .map(Style::getvalue)</span>
+<span class="fc" id="L198">                .ifPresent(value -&gt; entry.setField(FieldName.PAGES, value));</span>
+<span class="fc" id="L199">        Optional.ofNullable(record.getNumber())</span>
+<span class="fc" id="L200">                .map(Number::getStyle)</span>
+<span class="fc" id="L201">                .map(Style::getvalue)</span>
+<span class="fc" id="L202">                .ifPresent(value -&gt; entry.setField(FieldName.NUMBER, value));</span>
+<span class="fc" id="L203">        Optional.ofNullable(record.getVolume())</span>
+<span class="fc" id="L204">                .map(Volume::getStyle)</span>
+<span class="fc" id="L205">                .map(Style::getvalue)</span>
+<span class="fc" id="L206">                .ifPresent(value -&gt; entry.setField(FieldName.VOLUME, value));</span>
+<span class="fc" id="L207">        Optional.ofNullable(record.getDates())</span>
+<span class="fc" id="L208">                .map(Dates::getYear)</span>
+<span class="fc" id="L209">                .map(Year::getStyle)</span>
+<span class="fc" id="L210">                .map(Style::getvalue)</span>
+<span class="fc" id="L211">                .ifPresent(value -&gt; entry.setField(FieldName.YEAR, value));</span>
+<span class="fc" id="L212">        Optional.ofNullable(record.getNotes())</span>
+<span class="fc" id="L213">                .map(Notes::getStyle)</span>
+<span class="fc" id="L214">                .map(Style::getvalue)</span>
+<span class="fc" id="L215">                .ifPresent(value -&gt; entry.setField(FieldName.NOTE, value.trim()));</span>
+<span class="fc" id="L216">        getUrl(record)</span>
+<span class="fc" id="L217">                .ifPresent(value -&gt; entry.setField(FieldName.URL, value));</span>
+<span class="fc" id="L218">        entry.putKeywords(getKeywords(record), preferences.getKeywordSeparator());</span>
+<span class="fc" id="L219">        Optional.ofNullable(record.getAbstract())</span>
+<span class="fc" id="L220">                .map(Abstract::getStyle)</span>
+<span class="fc" id="L221">                .map(Style::getvalue)</span>
+<span class="fc" id="L222">                .ifPresent(value -&gt; entry.setField(FieldName.ABSTRACT, value.trim()));</span>
+<span class="fc" id="L223">        entry.setFiles(getLinkedFiles(record));</span>
+<span class="fc" id="L224">        Optional.ofNullable(record.getIsbn())</span>
+<span class="fc" id="L225">                .map(Isbn::getStyle)</span>
+<span class="fc" id="L226">                .map(Style::getvalue)</span>
+<span class="fc" id="L227">                .ifPresent(value -&gt; entry.setField(FieldName.ISBN, clean(value)));</span>
+<span class="fc" id="L228">        Optional.ofNullable(record.getElectronicResourceNum())</span>
+<span class="fc" id="L229">                .map(ElectronicResourceNum::getStyle)</span>
+<span class="fc" id="L230">                .map(Style::getvalue)</span>
+<span class="fc" id="L231">                .ifPresent(doi -&gt; entry.setField(FieldName.DOI, doi.trim()));</span>
+
+<span class="fc" id="L233">        return entry;</span>
+    }
+
+    private BiblatexEntryType getType(Record record) {
+<span class="fc" id="L237">        return Optional.ofNullable(record.getRefType())</span>
+<span class="fc" id="L238">                       .map(RefType::getName)</span>
+<span class="fc" id="L239">                       .map(EndnoteXmlImporter::convertRefNameToType)</span>
+<span class="fc" id="L240">                       .orElse(BiblatexEntryTypes.ARTICLE);</span>
+    }
+
+    private List&lt;LinkedFile&gt; getLinkedFiles(Record record) {
+<span class="fc" id="L244">        Optional&lt;PdfUrls&gt; urls = Optional.ofNullable(record.getUrls())</span>
+<span class="fc" id="L245">                                         .map(Urls::getPdfUrls);</span>
+<span class="fc" id="L246">        return OptionalUtil.toStream(urls)</span>
+<span class="fc" id="L247">                           .flatMap(pdfUrls -&gt; pdfUrls.getUrl().stream())</span>
+<span class="fc" id="L248">                           .flatMap(url -&gt; OptionalUtil.toStream(getUrlValue(url)))</span>
+<span class="fc" id="L249">                           .map(url -&gt; new LinkedFile(&quot;&quot;, url, &quot;PDF&quot;))</span>
+<span class="fc" id="L250">                           .collect(Collectors.toList());</span>
+    }
+
+    private Optional&lt;String&gt; getUrl(Record record) {
+<span class="fc" id="L254">        Optional&lt;RelatedUrls&gt; urls = Optional.ofNullable(record.getUrls())</span>
+<span class="fc" id="L255">                                             .map(Urls::getRelatedUrls);</span>
+<span class="fc" id="L256">        return OptionalUtil.toStream(urls)</span>
+<span class="fc" id="L257">                           .flatMap(url -&gt; url.getUrl().stream())</span>
+<span class="fc" id="L258">                           .flatMap(url -&gt; OptionalUtil.toStream(getUrlValue(url)))</span>
+<span class="fc" id="L259">                           .findFirst();</span>
+    }
+
+    private Optional&lt;String&gt; getUrlValue(Url url) {
+<span class="fc" id="L263">        return Optional.ofNullable(url)</span>
+<span class="fc" id="L264">                       .map(Url::getStyle)</span>
+<span class="fc" id="L265">                       .map(Style::getvalue)</span>
+<span class="fc" id="L266">                       .map(this::clean);</span>
+    }
+
+    private List&lt;String&gt; getKeywords(Record record) {
+<span class="fc" id="L270">        Keywords keywords = record.getKeywords();</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">        if (keywords != null) {</span>
+<span class="fc" id="L272">            return keywords.getKeyword()</span>
+<span class="fc" id="L273">                           .stream()</span>
+<span class="fc" id="L274">                           .map(keyword -&gt; keyword.getStyle().getvalue())</span>
+<span class="fc" id="L275">                           .collect(Collectors.toList());</span>
+        } else {
+<span class="fc" id="L277">            return Collections.emptyList();</span>
+        }
+    }
+
+    private String getAuthors(Record record) {
+<span class="fc" id="L282">        Optional&lt;Authors&gt; authors = Optional.ofNullable(record.getContributors())</span>
+<span class="fc" id="L283">                                            .map(Contributors::getAuthors);</span>
+<span class="fc" id="L284">        return OptionalUtil.toStream(authors)</span>
+<span class="fc" id="L285">                           .flatMap(value -&gt; value.getAuthor().stream())</span>
+<span class="fc" id="L286">                           .map(author -&gt; author.getStyle().getvalue())</span>
+<span class="fc" id="L287">                           .collect(Collectors.joining(&quot; and &quot;));</span>
+    }
+
+    private String clean(String input) {
+<span class="fc" id="L291">        return StringUtil.unifyLineBreaks(input, &quot; &quot;)</span>
+<span class="fc" id="L292">                .trim()</span>
+<span class="fc" id="L293">                .replaceAll(&quot; +&quot;, &quot; &quot;);</span>
+    }
+
+    @Override
+    public List&lt;BibEntry&gt; parseEntries(InputStream inputStream) throws ParseException {
+        try {
+<span class="nc" id="L299">            return importDatabase(</span>
+<span class="nc" id="L300">                    new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))).getDatabase().getEntries();</span>
+<span class="nc" id="L301">        } catch (IOException e) {</span>
+<span class="nc" id="L302">            LOGGER.error(e.getLocalizedMessage(), e);</span>
+        }
+<span class="nc" id="L304">        return Collections.emptyList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AppendDatabaseAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.importer.actions</a> &gt; <span class="el_source">AppendDatabaseAction.java</span></div><h1>AppendDatabaseAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.importer.actions;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import javax.swing.undo.CompoundEdit;
+
+import org.jabref.Globals;
+import org.jabref.JabRefExecutorService;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.actions.BaseAction;
+import org.jabref.gui.importer.AppendDatabaseDialog;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableInsertEntry;
+import org.jabref.gui.undo.UndoableInsertString;
+import org.jabref.gui.util.FileDialogConfiguration;
+import org.jabref.logic.importer.OpenDatabase;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.logic.util.UpdateField;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.database.KeyCollisionException;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BibtexString;
+import org.jabref.model.groups.AllEntriesGroup;
+import org.jabref.model.groups.ExplicitGroup;
+import org.jabref.model.groups.GroupHierarchyType;
+import org.jabref.model.groups.GroupTreeNode;
+import org.jabref.model.metadata.ContentSelector;
+import org.jabref.model.metadata.MetaData;
+import org.jabref.model.util.OptionalUtil;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class AppendDatabaseAction implements BaseAction {
+
+<span class="nc" id="L46">    private static final Logger LOGGER = LoggerFactory.getLogger(AppendDatabaseAction.class);</span>
+
+    private final JabRefFrame frame;
+    private final BasePanel panel;
+
+<span class="nc" id="L51">    private final List&lt;Path&gt; filesToOpen = new ArrayList&lt;&gt;();</span>
+    private final DialogService dialogService;
+
+<span class="nc" id="L54">    public AppendDatabaseAction(JabRefFrame frame, BasePanel panel) {</span>
+<span class="nc" id="L55">        this.frame = frame;</span>
+<span class="nc" id="L56">        this.panel = panel;</span>
+<span class="nc" id="L57">        dialogService = frame.getDialogService();</span>
+<span class="nc" id="L58">    }</span>
+
+    private static void mergeFromBibtex(BasePanel panel, ParserResult parserResult, boolean importEntries,
+                                        boolean importStrings, boolean importGroups, boolean importSelectorWords) throws KeyCollisionException {
+
+<span class="nc" id="L63">        BibDatabase fromDatabase = parserResult.getDatabase();</span>
+<span class="nc" id="L64">        List&lt;BibEntry&gt; appendedEntries = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L65">        List&lt;BibEntry&gt; originalEntries = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L66">        BibDatabase database = panel.getDatabase();</span>
+
+<span class="nc" id="L68">        NamedCompound ce = new NamedCompound(Localization.lang(&quot;Append library&quot;));</span>
+<span class="nc" id="L69">        MetaData meta = parserResult.getMetaData();</span>
+
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (importEntries) { // Add entries</span>
+<span class="nc" id="L72">            boolean overwriteOwner = Globals.prefs.getBoolean(JabRefPreferences.OVERWRITE_OWNER);</span>
+<span class="nc" id="L73">            boolean overwriteTimeStamp = Globals.prefs.getTimestampPreferences().overwriteTimestamp();</span>
+
+<span class="nc bnc" id="L75" title="All 2 branches missed.">            for (BibEntry originalEntry : fromDatabase.getEntries()) {</span>
+<span class="nc" id="L76">                BibEntry entry = (BibEntry) originalEntry.clone();</span>
+<span class="nc" id="L77">                UpdateField.setAutomaticFields(entry, overwriteOwner, overwriteTimeStamp,</span>
+<span class="nc" id="L78">                        Globals.prefs.getUpdateFieldPreferences());</span>
+<span class="nc" id="L79">                database.insertEntry(entry);</span>
+<span class="nc" id="L80">                appendedEntries.add(entry);</span>
+<span class="nc" id="L81">                originalEntries.add(originalEntry);</span>
+<span class="nc" id="L82">                ce.addEdit(new UndoableInsertEntry(database, entry));</span>
+<span class="nc" id="L83">            }</span>
+        }
+
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (importStrings) {</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">            for (BibtexString bs : fromDatabase.getStringValues()) {</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">                if (!database.hasStringLabel(bs.getName())) {</span>
+<span class="nc" id="L89">                    database.addString(bs);</span>
+<span class="nc" id="L90">                    ce.addEdit(new UndoableInsertString(panel, database, bs));</span>
+                }
+<span class="nc" id="L92">            }</span>
+        }
+
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (importGroups) {</span>
+<span class="nc" id="L96">            meta.getGroups().ifPresent(newGroups -&gt; {</span>
+                // ensure that there is always only one AllEntriesGroup
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                if (newGroups.getGroup() instanceof AllEntriesGroup) {</span>
+                    // create a dummy group
+                    try {
+<span class="nc" id="L101">                        ExplicitGroup group = new ExplicitGroup(&quot;Imported&quot;, GroupHierarchyType.INDEPENDENT,</span>
+<span class="nc" id="L102">                                Globals.prefs.getKeywordDelimiter());</span>
+<span class="nc" id="L103">                        newGroups.setGroup(group);</span>
+<span class="nc" id="L104">                        group.add(appendedEntries);</span>
+<span class="nc" id="L105">                    } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L106">                        LOGGER.error(&quot;Problem appending entries to group&quot;, e);</span>
+<span class="nc" id="L107">                    }</span>
+                }
+
+<span class="nc" id="L110">                addGroups(newGroups, ce);</span>
+<span class="nc" id="L111">            });</span>
+        }
+
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (importSelectorWords) {</span>
+
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            for (ContentSelector selector : meta.getContentSelectorList()) {</span>
+<span class="nc" id="L117">                panel.getBibDatabaseContext().getMetaData().addContentSelector(selector);</span>
+<span class="nc" id="L118">            }</span>
+        }
+<span class="nc" id="L120">        ce.end();</span>
+<span class="nc" id="L121">        panel.getUndoManager().addEdit(ce);</span>
+<span class="nc" id="L122">        panel.markBaseChanged();</span>
+<span class="nc" id="L123">    }</span>
+
+    /**
+     * Adds the specified node as a child of the current root. The group contained in &lt;b&gt;newGroups &lt;/b&gt; must not be of
+     * type AllEntriesGroup, since every tree has exactly one AllEntriesGroup (its root). The &lt;b&gt;newGroups &lt;/b&gt; are
+     * inserted directly, i.e. they are not deepCopy()'d.
+     */
+    private static void addGroups(GroupTreeNode newGroups, CompoundEdit ce) {
+
+        // paranoia: ensure that there are never two instances of AllEntriesGroup
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        if (newGroups.getGroup() instanceof AllEntriesGroup) {</span>
+<span class="nc" id="L134">            return; // this should be impossible anyway</span>
+        }
+
+<span class="nc" id="L137">        Globals.stateManager.getActiveDatabase()</span>
+<span class="nc" id="L138">                .map(BibDatabaseContext::getMetaData)</span>
+<span class="nc" id="L139">                .flatMap(MetaData::getGroups)</span>
+<span class="nc" id="L140">                .ifPresent(newGroups::moveTo);</span>
+
+        //UndoableAddOrRemoveGroup undo = new UndoableAddOrRemoveGroup(groupsRoot,
+        //        new GroupTreeNodeViewModel(newGroups), UndoableAddOrRemoveGroup.ADD_NODE);
+        //ce.addEdit(undo);
+<span class="nc" id="L145">    }</span>
+
+    @Override
+    public void action() {
+<span class="nc" id="L149">        filesToOpen.clear();</span>
+<span class="nc" id="L150">        final AppendDatabaseDialog dialog = new AppendDatabaseDialog();</span>
+<span class="nc" id="L151">        Optional&lt;Boolean&gt; response = dialog.showAndWait();</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">        if (OptionalUtil.isPresentAndTrue(response)) {</span>
+<span class="nc" id="L153">            FileDialogConfiguration fileDialogConfiguration = new FileDialogConfiguration.Builder()</span>
+<span class="nc" id="L154">                    .withDefaultExtension(StandardFileType.BIBTEX_DB)</span>
+<span class="nc" id="L155">                    .withInitialDirectory(Globals.prefs.get(JabRefPreferences.WORKING_DIRECTORY))</span>
+<span class="nc" id="L156">                    .build();</span>
+
+<span class="nc" id="L158">            List&lt;Path&gt; chosen = dialogService.showFileOpenDialogAndGetMultipleFiles(fileDialogConfiguration);</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">            if (chosen.isEmpty()) {</span>
+<span class="nc" id="L160">                return;</span>
+            }
+<span class="nc" id="L162">            filesToOpen.addAll(chosen);</span>
+
+            // Run the actual open in a thread to prevent the program locking until the file is loaded.
+<span class="nc" id="L165">            JabRefExecutorService.INSTANCE.execute(</span>
+<span class="nc" id="L166">                    () -&gt; openIt(dialog.importEntries(), dialog.importStrings(), dialog.importGroups(), dialog.importSelectorWords()));</span>
+        }
+<span class="nc" id="L168">    }</span>
+
+    private void openIt(boolean importEntries, boolean importStrings, boolean importGroups,
+                        boolean importSelectorWords) {
+<span class="nc bnc" id="L172" title="All 2 branches missed.">        if (filesToOpen.isEmpty()) {</span>
+<span class="nc" id="L173">            return;</span>
+        }
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        for (Path file : filesToOpen) {</span>
+            try {
+<span class="nc" id="L177">                Globals.prefs.put(JabRefPreferences.WORKING_DIRECTORY, file.getParent().toString());</span>
+                // Should this be done _after_ we know it was successfully opened?
+<span class="nc" id="L179">                ParserResult parserResult = OpenDatabase.loadDatabase(file.toFile(),</span>
+<span class="nc" id="L180">                        Globals.prefs.getImportFormatPreferences(), Globals.getFileUpdateMonitor());</span>
+<span class="nc" id="L181">                AppendDatabaseAction.mergeFromBibtex(panel, parserResult, importEntries, importStrings, importGroups,</span>
+                        importSelectorWords);
+<span class="nc" id="L183">                panel.output(Localization.lang(&quot;Imported from library&quot;) + &quot; '&quot; + file + &quot;'&quot;);</span>
+<span class="nc" id="L184">            } catch (IOException | KeyCollisionException ex) {</span>
+<span class="nc" id="L185">                LOGGER.warn(&quot;Could not open database&quot;, ex);</span>
+
+<span class="nc" id="L187">                dialogService.showErrorDialogAndWait(Localization.lang(&quot;Open library&quot;), ex);</span>
+<span class="nc" id="L188">            }</span>
+<span class="nc" id="L189">        }</span>
+<span class="nc" id="L190">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

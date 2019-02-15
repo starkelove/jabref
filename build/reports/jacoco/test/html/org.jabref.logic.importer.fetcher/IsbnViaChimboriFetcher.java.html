@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IsbnViaChimboriFetcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fetcher</a> &gt; <span class="el_source">IsbnViaChimboriFetcher.java</span></div><h1>IsbnViaChimboriFetcher.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fetcher;
+
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.List;
+import java.util.Optional;
+
+import org.jabref.logic.importer.FetcherException;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.ParseException;
+import org.jabref.model.entry.BibEntry;
+
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import org.jsoup.helper.StringUtil;
+
+/**
+ * Fetcher for ISBN using https://bibtex.chimbori.com/, which in turn uses Amazon's API.
+ */
+public class IsbnViaChimboriFetcher extends AbstractIsbnFetcher {
+
+    public IsbnViaChimboriFetcher(ImportFormatPreferences importFormatPreferences) {
+<span class="nc" id="L25">        super(importFormatPreferences);</span>
+<span class="nc" id="L26">    }</span>
+
+    @Override
+    public String getName() {
+<span class="nc" id="L30">        return &quot;ISBN (Chimbori/Amazon)&quot;;</span>
+    }
+
+    /**
+     * @return null, because the identifier is passed using form data. This method is not used.
+     */
+    @Override
+    public URL getURLForID(String identifier) throws URISyntaxException, MalformedURLException, FetcherException {
+<span class="nc" id="L38">        return null;</span>
+    }
+
+    @Override
+    public Optional&lt;BibEntry&gt; performSearchById(String identifier) throws FetcherException {
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (StringUtil.isBlank(identifier)) {</span>
+<span class="nc" id="L44">            return Optional.empty();</span>
+        }
+
+<span class="nc" id="L47">        this.ensureThatIsbnIsValid(identifier);</span>
+
+        HttpResponse&lt;String&gt; postResponse;
+        try {
+<span class="nc" id="L51">            postResponse = Unirest.post(&quot;https://bibtex.chimbori.com/isbn-bibtex&quot;)</span>
+<span class="nc" id="L52">                    .field(&quot;isbn&quot;, identifier)</span>
+<span class="nc" id="L53">                    .asString();</span>
+<span class="nc" id="L54">        } catch (UnirestException e) {</span>
+<span class="nc" id="L55">            throw new FetcherException(&quot;Could not retrieve data from chimbori.com&quot;, e);</span>
+<span class="nc" id="L56">        }</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (postResponse.getStatus() != 200) {</span>
+<span class="nc" id="L58">            throw new FetcherException(&quot;Error while retrieving data from chimbori.com: &quot; + postResponse.getBody());</span>
+        }
+
+        List&lt;BibEntry&gt; fetchedEntries;
+        try {
+<span class="nc" id="L63">            fetchedEntries = getParser().parseEntries(postResponse.getRawBody());</span>
+<span class="nc" id="L64">        } catch (ParseException e) {</span>
+<span class="nc" id="L65">            throw new FetcherException(&quot;An internal parser error occurred&quot;, e);</span>
+<span class="nc" id="L66">        }</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (fetchedEntries.isEmpty()) {</span>
+<span class="nc" id="L68">            return Optional.empty();</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        } else if (fetchedEntries.size() &gt; 1) {</span>
+<span class="nc" id="L70">            LOGGER.info(&quot;Fetcher &quot; + getName() + &quot;found more than one result for identifier &quot; + identifier</span>
+                    + &quot;. We will use the first entry.&quot;);
+        }
+
+<span class="nc" id="L74">        BibEntry entry = fetchedEntries.get(0);</span>
+
+        // chimbori does not return an ISBN. Thus, we add the one searched for
+<span class="nc" id="L77">        entry.setField(&quot;isbn&quot;, identifier);</span>
+
+<span class="nc" id="L79">        doPostCleanup(entry);</span>
+
+<span class="nc" id="L81">        return Optional.of(entry);</span>
+    }
+
+    @Override
+    public void doPostCleanup(BibEntry entry) {
+        // We MUST NOT clean the URL. this is the deal with @manastungare - see https://github.com/JabRef/jabref/issues/684#issuecomment-266541507
+        // DO NOT add following code:
+        // new FieldFormatterCleanup(FieldName.URL, new ClearFormatter()).cleanup(entry);
+<span class="nc" id="L89">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

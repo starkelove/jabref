@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileNameCleaner.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util.io</a> &gt; <span class="el_source">FileNameCleaner.java</span></div><h1>FileNameCleaner.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util.io;
+
+import java.util.Arrays;
+
+/**
+ * This class is based on http://stackoverflow.com/a/5626340/873282
+ *
+ * Replaces illegal characters in given file paths.
+ */
+public class FileNameCleaner {
+
+    /**
+     * MUST ALWAYS BE A SORTED ARRAY because it is used in a binary search
+     */
+    // @formatter:off
+<span class="fc" id="L16">    private static final int[] ILLEGAL_CHARS = {</span>
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+            10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+            20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+            30, 31, 34,
+            42,
+            58,
+            60, 62, 63,
+            124
+    };
+    // @formatter:on
+
+    private FileNameCleaner() {
+    }
+
+    /**
+     * Replaces illegal characters in given fileName by '_'
+     *
+     * @param badFileName the fileName to clean
+     * @return a clean filename
+     */
+    public static String cleanFileName(String badFileName) {
+<span class="fc" id="L38">        StringBuilder cleanName = new StringBuilder(badFileName.length());</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        for (int i = 0; i &lt; badFileName.length(); i++) {</span>
+<span class="fc" id="L40">            char c = badFileName.charAt(i);</span>
+<span class="pc bpc" id="L41" title="1 of 6 branches missed.">            if (FileNameCleaner.isCharLegal(c) &amp;&amp; (c != '/') &amp;&amp; (c != '\\')) {</span>
+<span class="fc" id="L42">                cleanName.append(c);</span>
+            } else {
+<span class="fc" id="L44">                cleanName.append('_');</span>
+            }
+        }
+<span class="fc" id="L47">        return cleanName.toString().trim();</span>
+    }
+
+    /**
+     * Replaces illegal characters in given directoryName by '_'.
+     * Directory name may contain directory separators, e.g. 'deep/in/a/tree'; these are left untouched.
+     *
+     * @param badFileName the fileName to clean
+     * @return a clean filename
+     */
+    public static String cleanDirectoryName(String badFileName) {
+<span class="fc" id="L58">        StringBuilder cleanName = new StringBuilder(badFileName.length());</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        for (int i = 0; i &lt; badFileName.length(); i++) {</span>
+<span class="fc" id="L60">            char c = badFileName.charAt(i);</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            if (FileNameCleaner.isCharLegal(c)) {</span>
+<span class="fc" id="L62">                cleanName.append(c);</span>
+            } else {
+<span class="fc" id="L64">                cleanName.append('_');</span>
+            }
+        }
+<span class="fc" id="L67">        return cleanName.toString().trim();</span>
+    }
+
+    private static boolean isCharLegal(char c) {
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        return Arrays.binarySearch(FileNameCleaner.ILLEGAL_CHARS, c) &lt; 0;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

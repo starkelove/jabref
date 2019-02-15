@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EntryComparator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.bibtex.comparator</a> &gt; <span class="el_source">EntryComparator.java</span></div><h1>EntryComparator.java</h1><pre class="source lang-java linenums">package org.jabref.logic.bibtex.comparator;
+
+import java.util.Comparator;
+import java.util.Locale;
+import java.util.Objects;
+
+import org.jabref.model.entry.AuthorList;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldProperty;
+import org.jabref.model.entry.InternalBibtexFields;
+
+/**
+ * This implementation of Comparator takes care of most of the details of sorting BibTeX entries in JabRef. It is
+ * structured as a node in a linked list of comparators, where each node can contain a link to a new comparator that
+ * decides the ordering (by recursion) if this one can't find a difference. The next node, if any, is given at
+ * construction time, and an arbitrary number of nodes can be included. If the entries are equal by this comparator, and
+ * there is no next entry, the entries' unique IDs will decide the ordering.
+ */
+public class EntryComparator implements Comparator&lt;BibEntry&gt; {
+
+    private final String sortField;
+    private final boolean descending;
+    private final boolean binary;
+    private final boolean numeric;
+    private final Comparator&lt;BibEntry&gt; next;
+
+
+<span class="fc" id="L28">    public EntryComparator(boolean binary, boolean descending, String field, Comparator&lt;BibEntry&gt; next) {</span>
+<span class="fc" id="L29">        this.binary = binary;</span>
+<span class="fc" id="L30">        this.sortField = field;</span>
+<span class="fc" id="L31">        this.descending = descending;</span>
+<span class="fc" id="L32">        this.next = next;</span>
+<span class="fc" id="L33">        this.numeric = InternalBibtexFields.isNumeric(sortField);</span>
+<span class="fc" id="L34">    }</span>
+
+<span class="fc" id="L36">    public EntryComparator(boolean binary, boolean descending, String field) {</span>
+<span class="fc" id="L37">        this.binary = binary;</span>
+<span class="fc" id="L38">        this.sortField = field;</span>
+<span class="fc" id="L39">        this.descending = descending;</span>
+<span class="fc" id="L40">        this.next = null;</span>
+<span class="fc" id="L41">        this.numeric = InternalBibtexFields.isNumeric(sortField);</span>
+<span class="fc" id="L42">    }</span>
+
+    @Override
+    public int compare(BibEntry e1, BibEntry e2) {
+        // default equals
+        // TODO: with the new default equals this does not only return 0 for identical objects,
+        // but for all objects that have the same id and same fields
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (Objects.equals(e1, e2)) {</span>
+<span class="fc" id="L50">            return 0;</span>
+        }
+
+<span class="fc" id="L53">        Object f1 = e1.getField(sortField).orElse(null);</span>
+<span class="fc" id="L54">        Object f2 = e2.getField(sortField).orElse(null);</span>
+
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        if (binary) {</span>
+            // We just separate on set and unset fields:
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            if (f1 == null) {</span>
+<span class="nc bnc" id="L59" title="All 4 branches missed.">                return f2 == null ? (next == null ? idCompare(e1, e2) : next.compare(e1, e2)) : 1;</span>
+            } else {
+<span class="nc bnc" id="L61" title="All 4 branches missed.">                return f2 == null ? -1 : (next == null ? idCompare(e1, e2) : next.compare(e1, e2));</span>
+            }
+        }
+
+        // If the field is author or editor, we rearrange names so they are
+        // sorted according to last name.
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        if (InternalBibtexFields.getFieldProperties(sortField).contains(FieldProperty.PERSON_NAMES)) {</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            if (f1 != null) {</span>
+<span class="nc" id="L69">                f1 = AuthorList.fixAuthorForAlphabetization((String) f1).toLowerCase(Locale.ROOT);</span>
+            }
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            if (f2 != null) {</span>
+<span class="nc" id="L72">                f2 = AuthorList.fixAuthorForAlphabetization((String) f2).toLowerCase(Locale.ROOT);</span>
+            }
+
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        } else if (sortField.equals(BibEntry.TYPE_HEADER)) {</span>
+            // Sort by type.
+<span class="nc" id="L77">            f1 = e1.getType();</span>
+<span class="nc" id="L78">            f2 = e2.getType();</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        } else if (numeric) {</span>
+            try {
+<span class="nc" id="L81">                Integer i1 = Integer.parseInt((String) f1);</span>
+<span class="nc" id="L82">                Integer i2 = Integer.parseInt((String) f2);</span>
+                // Ok, parsing was successful. Update f1 and f2:
+<span class="nc" id="L84">                f1 = i1;</span>
+<span class="nc" id="L85">                f2 = i2;</span>
+<span class="nc" id="L86">            } catch (NumberFormatException ex) {</span>
+                // Parsing failed. Give up treating these as numbers.
+                // TODO: should we check which of them failed, and sort based on that?
+<span class="nc" id="L89">            }</span>
+        }
+
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if (f2 == null) {</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            if (f1 == null) {</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                return next == null ? idCompare(e1, e2) : next.compare(e1, e2);</span>
+            } else {
+<span class="nc" id="L96">                return -1;</span>
+            }
+        }
+
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        if (f1 == null) { // f2 != null here automatically</span>
+<span class="nc" id="L101">            return 1;</span>
+        }
+
+        int result;
+
+<span class="pc bpc" id="L106" title="3 of 4 branches missed.">        if ((f1 instanceof Integer) &amp;&amp; (f2 instanceof Integer)) {</span>
+<span class="nc" id="L107">            result = -((Integer) f1).compareTo((Integer) f2);</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        } else if (f2 instanceof Integer) {</span>
+<span class="nc" id="L109">            Integer f1AsInteger = Integer.valueOf(f1.toString());</span>
+<span class="nc" id="L110">            result = -f1AsInteger.compareTo((Integer) f2);</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">        } else if (f1 instanceof Integer) {</span>
+<span class="nc" id="L112">            Integer f2AsInteger = Integer.valueOf(f2.toString());</span>
+<span class="nc" id="L113">            result = -((Integer) f1).compareTo(f2AsInteger);</span>
+<span class="nc" id="L114">        } else {</span>
+<span class="fc" id="L115">            String ours = ((String) f1).toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L116">            String theirs = ((String) f2).toLowerCase(Locale.ROOT);</span>
+<span class="fc" id="L117">            int comp = ours.compareTo(theirs);</span>
+<span class="fc" id="L118">            result = -comp;</span>
+        }
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (result != 0) {</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">            return descending ? result : -result; // Primary sort.</span>
+        }
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (next == null) {</span>
+<span class="nc" id="L124">            return idCompare(e1, e2); // If still equal, we use the unique IDs.</span>
+        } else {
+<span class="nc" id="L126">            return next.compare(e1, e2); // Secondary sort if existent.</span>
+        }
+    }
+
+    private static int idCompare(BibEntry b1, BibEntry b2) {
+<span class="nc" id="L131">        return b1.getId().compareTo(b2.getId());</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

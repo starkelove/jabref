@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.model.entry.BibEntryTests" tests="55" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:25" hostname="n184-p67.eduroam.kth.se" time="0.06">
+  <properties/>
+  <testcase name="addKeywordIsCaseSensitive()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="addNullKeywordThrowsNPE()" classname="org.jabref.model.entry.BibEntryTests" time="0.002"/>
+  <testcase name="testPutKeywordsHasChanged()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="allFieldsPresentDefault()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="testPutKeywordsPutEmpyListHasChanged()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="getFieldOrAliasLatexFreeBracesAreRemovedFromAlias()" classname="org.jabref.model.entry.BibEntryTests" time="0.002"/>
+  <testcase name="setNullField()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="texNewBibEntryHasNoKeywords()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="getFieldOrAliasMonthWithDateYYYYMM()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="testAddKeywordIsCorrect()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="texNewBibEntryAfterAddingEmptyKeywordNotChanged()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="getFieldOrAliasMonthWithDateYYYYReturnsNull()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="testGroupAndSearchHits()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="getFieldOrAliasYearWithDateYYYYMM()" classname="org.jabref.model.entry.BibEntryTests" time="0.002"/>
+  <testcase name="typeOfBibEntryIsMiscAfterSettingToNullString()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="testAddKeywordHasChanged()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="typeOfBibEntryIsMiscAfterSettingToEmptyString()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="putNullKeywordListThrowsNPE()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="testAddKeywordEmptyKeywordNotChanged()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="getKeywordsReturnsParsedKeywordListFromKeywordsField()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="setCiteKey()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="removeKeywordsWithExistingKeywordsRemovesThem()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="getFieldOrAliasDateWithYearAbbreviatedMonth()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="getFieldOrAliasMonthWithDateYYYYMMDD()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="putKeywordsToSameReturnsNoChange()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="isEmptyCiteKey()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="putNullKeywordSeparatorThrowsNPE()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="removeKeywordsWithNonExistingKeywordsDoesNothing()" classname="org.jabref.model.entry.BibEntryTests" time="0.004"/>
+  <testcase name="clearKeywordsReturnsChange()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="testPutKeywordsPutEmpyListErasesPreviousKeywords()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="getFieldOrAliasDateWithOnlyYear()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="testAddKeywordTwiceYiedsOnlyOne()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="getFieldOrAliasLatexFreeComplexConversionInAlias()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="testAddKeywordEmptyKeywordIsNotAdded()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="testPutKeywordsPutEmpyListToEmptyBibentry()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="getFieldOrAliasYearWithDateYYYYMMDD()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="testGetSeparatedKeywordsAreCorrect()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="removeKeywordsOnEntryWithoutKeywordsDoesNothing()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="getFieldOrAliasYearWithDateYYYY()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="testPutKeywordsOverwritesOldKeywords()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="testAddKeywordsWorksAsExpected()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="changeKeywordsReturnsChange()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="isNullCiteKeyThrowsNPE()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="getFieldOrAliasDateWithYearNumericalMonthString()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="putKeywordsToEmptyReturnsNoChange()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="allFieldsPresentOr()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="getFieldOrAliasDateWithYearAbbreviatedMonthString()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="getFieldOrAliasLatexFreeAlreadyFreeValueIsUnchanged()" classname="org.jabref.model.entry.BibEntryTests" time="0.003"/>
+  <testcase name="testAddKeywordWithDifferentCapitalizationChanges()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="getFieldOrAliasLatexFreeAlreadyFreeAliasValueIsUnchanged()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="testPutKeywordsPutEmpyListToEmptyBibentryNotChanged()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="texNewBibEntryHasNoKeywordsEvenAfterAddingEmptyKeyword()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="testDefaultConstructor()" classname="org.jabref.model.entry.BibEntryTests" time="0.0"/>
+  <testcase name="removeKeywordsWithEmptyListDoesNothing()" classname="org.jabref.model.entry.BibEntryTests" time="0.001"/>
+  <testcase name="getFieldOrAliasLatexFreeBracesAreRemoved()" classname="org.jabref.model.entry.BibEntryTests" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

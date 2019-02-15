@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocumentViewerView.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.documentviewer</a> &gt; <span class="el_source">DocumentViewerView.java</span></div><h1>DocumentViewerView.java</h1><pre class="source lang-java linenums">package org.jabref.gui.documentviewer;
+
+import javax.inject.Inject;
+
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollBar;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.BorderPane;
+import javafx.stage.Modality;
+
+import org.jabref.gui.StateManager;
+import org.jabref.gui.util.BaseDialog;
+import org.jabref.gui.util.OnlyIntegerFormatter;
+import org.jabref.gui.util.TaskExecutor;
+import org.jabref.gui.util.ViewModelListCellFactory;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.LinkedFile;
+
+import com.airhacks.afterburner.views.ViewLoader;
+
+public class DocumentViewerView extends BaseDialog&lt;Void&gt; {
+
+    @FXML private ScrollBar scrollBar;
+    @FXML private ComboBox&lt;LinkedFile&gt; fileChoice;
+    @FXML private BorderPane mainPane;
+    @FXML private ToggleButton modeLive;
+    @FXML private TextField currentPage;
+    @FXML private Label maxPages;
+
+    @Inject private StateManager stateManager;
+    @Inject private TaskExecutor taskExecutor;
+    private DocumentViewerControl viewer;
+    private DocumentViewerViewModel viewModel;
+
+<span class="nc" id="L41">    public DocumentViewerView() {</span>
+<span class="nc" id="L42">        this.setTitle(Localization.lang(&quot;Document viewer&quot;));</span>
+<span class="nc" id="L43">        this.initModality(Modality.NONE);</span>
+
+<span class="nc" id="L45">        ViewLoader.view(this)</span>
+<span class="nc" id="L46">                  .load()</span>
+<span class="nc" id="L47">                  .setAsContent(this.getDialogPane());</span>
+
+        // Remove button bar at bottom, but add close button to keep the dialog closable by clicking the &quot;x&quot; window symbol
+<span class="nc" id="L50">        getDialogPane().getButtonTypes().add(ButtonType.CLOSE);</span>
+<span class="nc" id="L51">        getDialogPane().getChildren().removeIf(node -&gt; node instanceof ButtonBar);</span>
+<span class="nc" id="L52">    }</span>
+
+    @FXML
+    private void initialize() {
+<span class="nc" id="L56">        viewModel = new DocumentViewerViewModel(stateManager);</span>
+
+<span class="nc" id="L58">        setupViewer();</span>
+<span class="nc" id="L59">        setupScrollbar();</span>
+<span class="nc" id="L60">        setupFileChoice();</span>
+<span class="nc" id="L61">        setupPageControls();</span>
+<span class="nc" id="L62">        setupModeButtons();</span>
+<span class="nc" id="L63">    }</span>
+
+    private void setupModeButtons() {
+<span class="nc" id="L66">        viewModel.liveModeProperty().bind(modeLive.selectedProperty());</span>
+<span class="nc" id="L67">    }</span>
+
+    private void setupScrollbar() {
+<span class="nc" id="L70">        scrollBar.valueProperty().bindBidirectional(viewer.scrollYProperty());</span>
+<span class="nc" id="L71">        scrollBar.maxProperty().bind(viewer.scrollYMaxProperty());</span>
+<span class="nc" id="L72">    }</span>
+
+    private void setupPageControls() {
+<span class="nc" id="L75">        OnlyIntegerFormatter integerFormatter = new OnlyIntegerFormatter(1);</span>
+<span class="nc" id="L76">        viewModel.currentPageProperty().bindBidirectional(integerFormatter.valueProperty());</span>
+<span class="nc" id="L77">        currentPage.setTextFormatter(integerFormatter);</span>
+<span class="nc" id="L78">        maxPages.textProperty().bind(viewModel.maxPagesProperty().asString());</span>
+<span class="nc" id="L79">    }</span>
+
+    private void setupFileChoice() {
+<span class="nc" id="L82">        ViewModelListCellFactory&lt;LinkedFile&gt; cellFactory = new ViewModelListCellFactory&lt;LinkedFile&gt;()</span>
+<span class="nc" id="L83">                .withText(LinkedFile::getLink);</span>
+<span class="nc" id="L84">        fileChoice.setButtonCell(cellFactory.call(null));</span>
+<span class="nc" id="L85">        fileChoice.setCellFactory(cellFactory);</span>
+<span class="nc" id="L86">        fileChoice.getSelectionModel().selectedItemProperty().addListener(</span>
+<span class="nc" id="L87">                (observable, oldValue, newValue) -&gt; viewModel.switchToFile(newValue));</span>
+        // We always want that the first item is selected after a change
+        // This also automatically selects the first file on the initial load
+<span class="nc" id="L90">        fileChoice.itemsProperty().addListener(</span>
+<span class="nc" id="L91">                (observable, oldValue, newValue) -&gt; fileChoice.getSelectionModel().selectFirst());</span>
+<span class="nc" id="L92">        fileChoice.itemsProperty().bind(viewModel.filesProperty());</span>
+<span class="nc" id="L93">    }</span>
+
+    private void setupViewer() {
+<span class="nc" id="L96">        viewer = new DocumentViewerControl(taskExecutor);</span>
+<span class="nc" id="L97">        viewModel.currentDocumentProperty().addListener((observable, oldDocument, newDocument) -&gt; {</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">            if (newDocument != null) {</span>
+<span class="nc" id="L99">                viewer.show(newDocument);</span>
+            }
+<span class="nc" id="L101">        });</span>
+<span class="nc" id="L102">        viewModel.currentPageProperty().bindBidirectional(viewer.currentPageProperty());</span>
+<span class="nc" id="L103">        mainPane.setCenter(viewer);</span>
+<span class="nc" id="L104">    }</span>
+
+    public void nextPage(ActionEvent actionEvent) {
+<span class="nc" id="L107">        viewModel.showNextPage();</span>
+<span class="nc" id="L108">    }</span>
+
+    public void previousPage(ActionEvent actionEvent) {
+<span class="nc" id="L111">        viewModel.showPreviousPage();</span>
+<span class="nc" id="L112">    }</span>
+
+    public void fitWidth(ActionEvent actionEvent) {
+<span class="nc" id="L115">        viewer.setPageWidth(viewer.getWidth());</span>
+<span class="nc" id="L116">    }</span>
+
+    public void zoomIn(ActionEvent actionEvent) {
+<span class="nc" id="L119">        viewer.changePageWidth(100);</span>
+<span class="nc" id="L120">    }</span>
+
+    public void zoomOut(ActionEvent actionEvent) {
+<span class="nc" id="L123">        viewer.changePageWidth(-100);</span>
+<span class="nc" id="L124">    }</span>
+
+    public void fitSinglePage(ActionEvent actionEvent) {
+<span class="nc" id="L127">        viewer.setPageHeight(viewer.getHeight());</span>
+<span class="nc" id="L128">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

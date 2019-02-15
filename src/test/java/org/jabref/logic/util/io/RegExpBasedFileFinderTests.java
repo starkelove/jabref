@@ -80,28 +80,6 @@ public class RegExpBasedFileFinderTests {
     }
 
     @Test
-    public void testAuthorWithDiacritics() throws Exception {
-        //given
-        BibEntry localEntry = new BibEntry(BibtexEntryTypes.ARTICLE);
-        localEntry.setCiteKey("Grazulis2017");
-        localEntry.setField("year", "2017");
-        localEntry.setField("author", "Gražulis, Saulius and O. Kitsune");
-        localEntry.setField("pages", "726--729");
-
-        List<String> extensions = Collections.singletonList("pdf");
-
-        List<Path> dirs = Collections.singletonList(Paths.get(FILES_DIRECTORY));
-        RegExpBasedFileFinder fileFinder = new RegExpBasedFileFinder("**/[year]_[auth]_[firstpage]\\\\.[extension]", ',');
-
-        //when
-        List<Path> result = fileFinder.findAssociatedFiles(localEntry, dirs, extensions);
-
-        //then
-        assertEquals(Collections.singletonList(Paths.get("src/test/resources/org/jabref/logic/importer/unlinkedFilesTestFolder/directory/subdirectory/2017_Gražulis_726.pdf")),
-                result);
-    }
-
-    @Test
     public void testFindFileInSubdirectory() throws Exception {
         //given
         BibEntry localEntry = new BibEntry(BibtexEntryTypes.ARTICLE);

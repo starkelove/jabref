@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KeyBindingsDialogViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.keyboard</a> &gt; <span class="el_source">KeyBindingsDialogViewModel.java</span></div><h1>KeyBindingsDialogViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.keyboard;
+
+import java.util.Objects;
+
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.input.KeyEvent;
+
+import org.jabref.gui.AbstractViewModel;
+import org.jabref.gui.DialogService;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.preferences.PreferencesService;
+
+public class KeyBindingsDialogViewModel extends AbstractViewModel {
+
+    private final KeyBindingRepository keyBindingRepository;
+    private final PreferencesService preferences;
+<span class="fc" id="L21">    private final ObjectProperty&lt;KeyBindingViewModel&gt; selectedKeyBinding = new SimpleObjectProperty&lt;&gt;();</span>
+<span class="fc" id="L22">    private final ObjectProperty&lt;KeyBindingViewModel&gt; rootKeyBinding = new SimpleObjectProperty&lt;&gt;();</span>
+    private final DialogService dialogService;
+
+<span class="fc" id="L25">    public KeyBindingsDialogViewModel(KeyBindingRepository keyBindingRepository, DialogService dialogService, PreferencesService preferences) {</span>
+<span class="fc" id="L26">        this.keyBindingRepository = Objects.requireNonNull(keyBindingRepository);</span>
+<span class="fc" id="L27">        this.dialogService = Objects.requireNonNull(dialogService);</span>
+<span class="fc" id="L28">        this.preferences = Objects.requireNonNull(preferences);</span>
+<span class="fc" id="L29">        populateTable();</span>
+<span class="fc" id="L30">    }</span>
+
+    public ObjectProperty&lt;KeyBindingViewModel&gt; selectedKeyBindingProperty() {
+<span class="fc" id="L33">        return selectedKeyBinding;</span>
+    }
+
+    public ObjectProperty&lt;KeyBindingViewModel&gt; rootKeyBindingProperty() {
+<span class="nc" id="L37">        return rootKeyBinding;</span>
+    }
+
+    /**
+     * Read all keybindings from the keybinding repository and create table keybinding models for them
+     */
+    private void populateTable() {
+<span class="fc" id="L44">        KeyBindingViewModel root = new KeyBindingViewModel(keyBindingRepository, KeyBindingCategory.FILE);</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        for (KeyBindingCategory category : KeyBindingCategory.values()) {</span>
+<span class="fc" id="L46">            KeyBindingViewModel categoryItem = new KeyBindingViewModel(keyBindingRepository, category);</span>
+<span class="fc" id="L47">            keyBindingRepository.getKeyBindings().forEach((keyBinding, bind) -&gt; {</span>
+<span class="fc bfc" id="L48" title="All 2 branches covered.">                if (keyBinding.getCategory() == category) {</span>
+<span class="fc" id="L49">                    KeyBindingViewModel keyBindViewModel = new KeyBindingViewModel(keyBindingRepository, keyBinding, bind);</span>
+<span class="fc" id="L50">                    categoryItem.getChildren().add(keyBindViewModel);</span>
+                }
+<span class="fc" id="L52">            });</span>
+<span class="fc" id="L53">            root.getChildren().add(categoryItem);</span>
+        }
+<span class="fc" id="L55">        rootKeyBinding.set(root);</span>
+<span class="fc" id="L56">    }</span>
+
+    public void setNewBindingForCurrent(KeyEvent event) {
+        // first check if a valid entry is selected
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        if (selectedKeyBinding.isNull().get()) {</span>
+<span class="nc" id="L61">            return;</span>
+        }
+<span class="fc" id="L63">        KeyBindingViewModel selectedEntry = selectedKeyBinding.get();</span>
+<span class="pc bpc" id="L64" title="1 of 4 branches missed.">        if ((selectedEntry == null) || (selectedEntry.isCategory())) {</span>
+<span class="fc" id="L65">            return;</span>
+        }
+
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (selectedEntry.setNewBinding(event)) {</span>
+<span class="fc" id="L69">            keyBindingRepository.put(selectedEntry.getKeyBinding(), selectedEntry.getBinding());</span>
+        }
+<span class="fc" id="L71">    }</span>
+
+    public void saveKeyBindings() {
+<span class="fc" id="L74">        preferences.storeKeyBindingRepository(keyBindingRepository);</span>
+
+<span class="fc" id="L76">        String title = Localization.lang(&quot;Key bindings changed&quot;);</span>
+<span class="fc" id="L77">        String content = Localization.lang(&quot;Your new key bindings have been stored.&quot;) + '\n'</span>
+<span class="fc" id="L78">                + Localization.lang(&quot;You must restart JabRef for the new key bindings to work properly.&quot;);</span>
+<span class="fc" id="L79">        dialogService.showInformationDialogAndWait(title, content);</span>
+<span class="fc" id="L80">    }</span>
+
+    public void resetToDefault() {
+<span class="nc" id="L83">        String title = Localization.lang(&quot;Resetting all key bindings&quot;);</span>
+<span class="nc" id="L84">        String content = Localization.lang(&quot;All key bindings will be reset to their defaults.&quot;);</span>
+<span class="nc" id="L85">        ButtonType resetButtonType = new ButtonType(&quot;Reset&quot;, ButtonBar.ButtonData.OK_DONE);</span>
+<span class="nc" id="L86">        dialogService.showCustomButtonDialogAndWait(Alert.AlertType.INFORMATION, title, content, resetButtonType,</span>
+<span class="nc" id="L87">                ButtonType.CANCEL).ifPresent(response -&gt; {</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">                    if (response == resetButtonType) {</span>
+<span class="nc" id="L89">                        keyBindingRepository.resetToDefault();</span>
+<span class="nc" id="L90">                        populateTable();</span>
+                    }
+<span class="nc" id="L92">                });</span>
+<span class="nc" id="L93">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

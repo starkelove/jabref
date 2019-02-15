@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" tests="50" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:23:40" hostname="n184-p67.eduroam.kth.se" time="0.177">
+  <properties/>
+  <testcase name="generateKeyTitleCapitalize()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.006"/>
+  <testcase name="generateKeyAuthN()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyCamel()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyTitle()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyAuthNMLargeM()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyAuthNMLargeN()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyAuthNShortName()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateDefaultKeyStartDuplicatesAtB()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.001"/>
+  <testcase name="generateKeyAuthNMLargeMReallyReturnsEmptyString()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyTitleTitleCaseAbbr()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.006"/>
+  <testcase name="generateKeyAuthUpperModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyShorttitle()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateDefaultKeyFirstTwoAlreadyExists()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.004"/>
+  <testcase name="generateKeyVeryshorttitleCapitalizeModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyVeryshorttitleUpperModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateDefaultKeyFixedValue()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyAuthIni()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyVeryshorttitleSentenceCaseModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.01"/>
+  <testcase name="generateKeyVeryshorttitle()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyTitleRegexe()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyShorttitleSentenceCaseModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyAuthCapitalizeModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyTitleAbbr()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyAuthTitleCaseModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyEmptyFieldDefaultText()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyShortYear()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.001"/>
+  <testcase name="generateKeyAuthNM()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyShorttitleLowerModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyTitleSentenceCaseAbbr()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateDefaultKeyAlreadyExistsDuplicatesStartAtA()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateDefaultKeyAlreadyExistsDuplicatesStartAtB()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyEmptyFieldNoColonInDefaultText()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateDefaultKey()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyEmptyField()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateDefaultKeyAlwaysLetter()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyAuthIniMany()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateDefaultKeyAlwaysLetterAlreadyExistsDuplicatesStartAtB()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyShorttitleTitleCaseModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyShorttitleCapitalizeModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.004"/>
+  <testcase name="generateKeyShorttitleINI()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.004"/>
+  <testcase name="generateDefaultKeyAlreadyExistsManyDuplicates()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.004"/>
+  <testcase name="generateKeyRegExReplace()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyAuthLowerModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyTitleCapitalizeAbbr()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyVeryshorttitleTitleCaseModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyTitleTitleCase()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyShorttitleUpperModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyVeryshorttitleLowerModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.002"/>
+  <testcase name="generateKeyAuthSentenceCaseModified()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <testcase name="generateKeyTitleSentenceCase()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithDatabaseTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

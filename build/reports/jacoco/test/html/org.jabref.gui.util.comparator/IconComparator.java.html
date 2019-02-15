@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IconComparator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util.comparator</a> &gt; <span class="el_source">IconComparator.java</span></div><h1>IconComparator.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util.comparator;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+
+import org.jabref.model.entry.BibEntry;
+
+/**
+ * Comparator that handles icon columns.
+ */
+public class IconComparator implements Comparator&lt;BibEntry&gt; {
+
+    private final List&lt;String&gt; fields;
+
+
+<span class="nc" id="L17">    public IconComparator(List&lt;String&gt; fields) {</span>
+<span class="nc" id="L18">        this.fields = fields;</span>
+<span class="nc" id="L19">    }</span>
+
+    @Override
+    public int compare(BibEntry e1, BibEntry e2) {
+
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        for (String field : fields) {</span>
+<span class="nc" id="L25">            Optional&lt;String&gt; val1 = e1.getField(field);</span>
+<span class="nc" id="L26">            Optional&lt;String&gt; val2 = e2.getField(field);</span>
+<span class="nc bnc" id="L27" title="All 2 branches missed.">            if (val1.isPresent()) {</span>
+<span class="nc bnc" id="L28" title="All 2 branches missed.">                if (val2.isPresent()) {</span>
+                    // val1 is not null AND val2 is not null
+<span class="nc" id="L30">                    int compareToRes = val1.get().compareTo(val2.get());</span>
+<span class="nc bnc" id="L31" title="All 2 branches missed.">                    if (compareToRes == 0) {</span>
+                        // continue loop as current two values are equal
+                    } else {
+<span class="nc" id="L34">                        return compareToRes;</span>
+                    }
+<span class="nc" id="L36">                } else {</span>
+<span class="nc" id="L37">                    return -1;</span>
+                }
+            } else {
+<span class="nc bnc" id="L40" title="All 2 branches missed.">                if (val2.isPresent()) {</span>
+<span class="nc" id="L41">                    return 1;</span>
+                } else {
+                    // continue loop and check for next field
+                }
+            }
+<span class="nc" id="L46">        }</span>
+<span class="nc" id="L47">        return 0;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

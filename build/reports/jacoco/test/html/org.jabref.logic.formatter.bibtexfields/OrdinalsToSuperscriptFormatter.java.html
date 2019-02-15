@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrdinalsToSuperscriptFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.formatter.bibtexfields</a> &gt; <span class="el_source">OrdinalsToSuperscriptFormatter.java</span></div><h1>OrdinalsToSuperscriptFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.formatter.bibtexfields;
+
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.cleanup.Formatter;
+
+/**
+ * This class transforms ordinal numbers into LaTex superscripts.
+ */
+<span class="fc" id="L13">public class OrdinalsToSuperscriptFormatter extends Formatter {</span>
+
+    // find possible superscripts on word boundaries
+<span class="fc" id="L16">    private static final Pattern SUPERSCRIPT_DETECT_PATTERN = Pattern.compile(&quot;\\b(\\d+)(st|nd|rd|th)\\b&quot;,</span>
+            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+
+    private static final String SUPERSCRIPT_REPLACE_PATTERN = &quot;$1\\\\textsuperscript{$2}&quot;;
+
+    @Override
+    public String getName() {
+<span class="fc" id="L23">        return Localization.lang(&quot;Ordinals to LaTeX superscript&quot;);</span>
+    }
+
+    @Override
+    public String getKey() {
+<span class="fc" id="L28">        return &quot;ordinals_to_superscript&quot;;</span>
+    }
+
+    /**
+     * Converts ordinal numbers to superscripts, e.g. 1st, 2nd or 3rd.
+     * Will replace ordinal numbers even if they are semantically wrong, e.g. 21rd
+     *
+     * &lt;example&gt;
+     * 1st Conf. Cloud Computing -&gt; 1\textsuperscript{st} Conf. Cloud Computing
+     * &lt;/example&gt;
+     */
+    @Override
+    public String format(String value) {
+<span class="fc" id="L41">        Objects.requireNonNull(value);</span>
+
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (value.isEmpty()) {</span>
+            // nothing to do
+<span class="fc" id="L45">            return value;</span>
+        }
+
+<span class="fc" id="L48">        Matcher matcher = SUPERSCRIPT_DETECT_PATTERN.matcher(value);</span>
+        // replace globally
+
+        // adds superscript tag
+<span class="fc" id="L52">        return matcher.replaceAll(SUPERSCRIPT_REPLACE_PATTERN);</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L57">        return Localization.lang(&quot;Converts ordinals to LaTeX superscripts.&quot;);</span>
+    }
+
+    @Override
+    public String getExampleInput() {
+<span class="fc" id="L62">        return &quot;11th&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringChangeViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.collab</a> &gt; <span class="el_source">StringChangeViewModel.java</span></div><h1>StringChangeViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.collab;
+
+import javax.swing.JComponent;
+import javax.swing.JScrollPane;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableInsertString;
+import org.jabref.gui.undo.UndoableStringChange;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.database.KeyCollisionException;
+import org.jabref.model.entry.BibtexString;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+class StringChangeViewModel extends ChangeViewModel {
+
+<span class="nc" id="L20">    private static final Logger LOGGER = LoggerFactory.getLogger(StringChangeViewModel.class);</span>
+    private final BibtexString string;
+    private final String disk;
+
+    private final String label;
+<span class="nc" id="L25">    private final InfoPane tp = new InfoPane();</span>
+<span class="nc" id="L26">    private final JScrollPane sp = new JScrollPane(tp);</span>
+
+    private final BibtexString tmpString;
+
+
+    public StringChangeViewModel(BibtexString string, BibtexString tmpString, String disk) {
+<span class="nc" id="L32">        super(Localization.lang(&quot;Modified string&quot;) + &quot;: '&quot; + tmpString.getName() + '\'');</span>
+<span class="nc" id="L33">        this.tmpString = tmpString;</span>
+<span class="nc" id="L34">        this.string = string;</span>
+<span class="nc" id="L35">        this.label = tmpString.getName();</span>
+<span class="nc" id="L36">        this.disk = disk;</span>
+
+<span class="nc" id="L38">        StringBuilder sb = new StringBuilder(46);</span>
+<span class="nc" id="L39">        sb.append(&quot;&lt;HTML&gt;&lt;H2&gt;&quot;).append(Localization.lang(&quot;Modified string&quot;)).append(&quot;&lt;/H2&gt;&lt;H3&gt;&quot;)</span>
+<span class="nc" id="L40">                .append(Localization.lang(&quot;Label&quot;)).append(&quot;:&lt;/H3&gt;&quot;).append(label).append(&quot;&lt;H3&gt;&quot;)</span>
+<span class="nc" id="L41">                .append(Localization.lang(&quot;New content&quot;)).append(&quot;:&lt;/H3&gt;&quot;).append(disk);</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (string == null) {</span>
+<span class="nc" id="L43">            sb.append(&quot;&lt;P&gt;&lt;I&gt;&quot;);</span>
+<span class="nc" id="L44">            sb.append(Localization.lang(&quot;Cannot merge this change&quot;)).append(&quot;: &quot;);</span>
+<span class="nc" id="L45">            sb.append(Localization.lang(&quot;The string has been removed locally&quot;)).append(&quot;&lt;/I&gt;&quot;);</span>
+        } else {
+<span class="nc" id="L47">            sb.append(&quot;&lt;H3&gt;&quot;);</span>
+<span class="nc" id="L48">            sb.append(Localization.lang(&quot;Current content&quot;)).append(&quot;:&lt;/H3&gt;&quot;);</span>
+<span class="nc" id="L49">            sb.append(string.getContent());</span>
+        }
+<span class="nc" id="L51">        sb.append(&quot;&lt;/HTML&gt;&quot;);</span>
+<span class="nc" id="L52">        tp.setText(sb.toString());</span>
+<span class="nc" id="L53">    }</span>
+
+    @Override
+    public boolean makeChange(BasePanel panel, BibDatabase secondary, NamedCompound undoEdit) {
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (string == null) {</span>
+            // The string was removed or renamed locally. We guess that it was removed.
+<span class="nc" id="L59">            BibtexString bs = new BibtexString(label, disk);</span>
+            try {
+<span class="nc" id="L61">                panel.getDatabase().addString(bs);</span>
+<span class="nc" id="L62">                undoEdit.addEdit(new UndoableInsertString(panel, panel.getDatabase(), bs));</span>
+<span class="nc" id="L63">            } catch (KeyCollisionException ex) {</span>
+<span class="nc" id="L64">                LOGGER.info(&quot;Error: could not add string '&quot; + bs.getName() + &quot;': &quot; + ex.getMessage(), ex);</span>
+<span class="nc" id="L65">            }</span>
+<span class="nc" id="L66">        } else {</span>
+<span class="nc" id="L67">            String mem = string.getContent();</span>
+<span class="nc" id="L68">            string.setContent(disk);</span>
+<span class="nc" id="L69">            undoEdit.addEdit(new UndoableStringChange(panel, string, false, mem, disk));</span>
+        }
+
+        // Update tmp database:
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (tmpString == null) {</span>
+<span class="nc" id="L74">            BibtexString bs = new BibtexString(label, disk);</span>
+<span class="nc" id="L75">            secondary.addString(bs);</span>
+<span class="nc" id="L76">        } else {</span>
+<span class="nc" id="L77">            tmpString.setContent(disk);</span>
+        }
+
+<span class="nc" id="L80">        return true;</span>
+    }
+
+    @Override
+    public JComponent description() {
+<span class="nc" id="L85">        return sp;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

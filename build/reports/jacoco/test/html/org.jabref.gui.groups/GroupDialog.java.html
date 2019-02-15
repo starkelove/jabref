@@ -1,0 +1,640 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.groups</a> &gt; <span class="el_source">GroupDialog.java</span></div><h1>GroupDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.groups;
+
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.geometry.Insets;
+import javafx.scene.Node;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.ScrollPane.ScrollBarPolicy;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
+import javafx.scene.web.WebView;
+
+import org.jabref.Globals;
+import org.jabref.JabRefGUI;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.search.rules.describer.SearchDescribers;
+import org.jabref.gui.util.BaseDialog;
+import org.jabref.gui.util.TooltipTextUtil;
+import org.jabref.logic.auxparser.DefaultAuxParser;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.search.SearchQuery;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.Keyword;
+import org.jabref.model.groups.AbstractGroup;
+import org.jabref.model.groups.AutomaticKeywordGroup;
+import org.jabref.model.groups.AutomaticPersonsGroup;
+import org.jabref.model.groups.ExplicitGroup;
+import org.jabref.model.groups.GroupHierarchyType;
+import org.jabref.model.groups.GroupTreeNode;
+import org.jabref.model.groups.RegexKeywordGroup;
+import org.jabref.model.groups.SearchGroup;
+import org.jabref.model.groups.TexGroup;
+import org.jabref.model.groups.WordKeywordGroup;
+import org.jabref.model.strings.StringUtil;
+import org.jabref.preferences.JabRefPreferences;
+
+import com.jfoenix.controls.JFXColorPicker;
+
+/**
+ * Dialog for creating or modifying groups. Operates directly on the Vector
+ * containing group information.
+ */
+class GroupDialog extends BaseDialog&lt;AbstractGroup&gt; {
+
+    private static final int INDEX_EXPLICIT_GROUP = 0;
+    private static final int INDEX_KEYWORD_GROUP = 1;
+    private static final int INDEX_SEARCH_GROUP = 2;
+    private static final int INDEX_AUTO_GROUP = 3;
+    private static final int INDEX_TEX_GROUP = 4;
+
+    // for all types
+<span class="nc" id="L71">    private final TextField nameField = new TextField();</span>
+<span class="nc" id="L72">    private final TextField descriptionField = new TextField();</span>
+<span class="nc" id="L73">    private final JFXColorPicker colorField = new JFXColorPicker();</span>
+<span class="nc" id="L74">    private final TextField iconField = new TextField();</span>
+<span class="nc" id="L75">    private final RadioButton explicitRadioButton = new RadioButton(Localization.lang(&quot;Statically group entries by manual assignment&quot;));</span>
+<span class="nc" id="L76">    private final RadioButton keywordsRadioButton = new RadioButton(Localization.lang(&quot;Dynamically group entries by searching a field for a keyword&quot;));</span>
+<span class="nc" id="L77">    private final RadioButton searchRadioButton = new RadioButton(Localization.lang(&quot;Dynamically group entries by a free-form search expression&quot;));</span>
+<span class="nc" id="L78">    private final RadioButton autoRadioButton = new RadioButton(Localization.lang(&quot;Automatically create groups&quot;));</span>
+<span class="nc" id="L79">    private final RadioButton texRadioButton = new RadioButton(Localization.lang(&quot;Group containing entries cited in a given TeX file&quot;));</span>
+<span class="nc" id="L80">    private final RadioButton independentButton = new RadioButton(Localization.lang(&quot;Independent group: When selected, view only this group's entries&quot;));</span>
+<span class="nc" id="L81">    private final RadioButton intersectionButton = new RadioButton(Localization.lang(&quot;Refine supergroup: When selected, view entries contained in both this group and its supergroup&quot;));</span>
+<span class="nc" id="L82">    private final RadioButton unionButton = new RadioButton(Localization.lang(&quot;Include subgroups: When selected, view entries contained in this group or its subgroups&quot;));</span>
+
+    // for KeywordGroup
+<span class="nc" id="L85">    private final TextField keywordGroupSearchTerm = new TextField();</span>
+<span class="nc" id="L86">    private final TextField keywordGroupSearchField = new TextField();</span>
+<span class="nc" id="L87">    private final CheckBox keywordGroupCaseSensitive = new CheckBox(Localization.lang(&quot;Case sensitive&quot;));</span>
+<span class="nc" id="L88">    private final CheckBox keywordGroupRegExp = new CheckBox(Localization.lang(&quot;regular expression&quot;));</span>
+
+    // for SearchGroup
+<span class="nc" id="L91">    private final TextField searchGroupSearchExpression = new TextField();</span>
+<span class="nc" id="L92">    private final CheckBox searchGroupCaseSensitive = new CheckBox(Localization.lang(&quot;Case sensitive&quot;));</span>
+<span class="nc" id="L93">    private final CheckBox searchGroupRegExp = new CheckBox(Localization.lang(&quot;regular expression&quot;));</span>
+
+    // for AutoGroup
+<span class="nc" id="L96">    private final RadioButton autoGroupKeywordsOption = new RadioButton(Localization.lang(&quot;Generate groups from keywords in a BibTeX field&quot;));</span>
+<span class="nc" id="L97">    private final TextField autoGroupKeywordsField = new TextField();</span>
+<span class="nc" id="L98">    private final TextField autoGroupKeywordsDeliminator = new TextField();</span>
+<span class="nc" id="L99">    private final TextField autoGroupKeywordsHierarchicalDeliminator = new TextField();</span>
+<span class="nc" id="L100">    private final RadioButton autoGroupPersonsOption = new RadioButton(Localization.lang(&quot;Generate groups for author last names&quot;));</span>
+<span class="nc" id="L101">    private final TextField autoGroupPersonsField = new TextField();</span>
+
+    // for TexGroup
+<span class="nc" id="L104">    private final TextField texGroupFilePath = new TextField();</span>
+
+    // for all types
+<span class="nc" id="L107">    private final WebView descriptionWebView = new WebView();</span>
+<span class="nc" id="L108">    private final StackPane optionsPanel = new StackPane();</span>
+
+
+    /**
+     * Shows a group add/edit dialog.
+     *
+     * @param jabrefFrame The parent frame.
+     * @param editedGroup The group being edited, or null if a new group is to be
+     *                    created.
+     */
+<span class="nc" id="L118">    public GroupDialog(JabRefFrame jabrefFrame, AbstractGroup editedGroup) {</span>
+<span class="nc" id="L119">        this.setTitle(Localization.lang(&quot;Edit group&quot;));</span>
+
+<span class="nc" id="L121">        explicitRadioButton.setSelected(true);</span>
+
+<span class="nc" id="L123">        descriptionWebView.setPrefWidth(585);</span>
+
+        // set default values (overwritten if editedGroup != null)
+<span class="nc" id="L126">        keywordGroupSearchField.setText(jabrefFrame.prefs().get(JabRefPreferences.GROUPS_DEFAULT_FIELD));</span>
+
+        // configure elements
+<span class="nc" id="L129">        ToggleGroup groupType = new ToggleGroup();</span>
+<span class="nc" id="L130">        explicitRadioButton.setToggleGroup(groupType);</span>
+<span class="nc" id="L131">        keywordsRadioButton.setToggleGroup(groupType);</span>
+<span class="nc" id="L132">        searchRadioButton.setToggleGroup(groupType);</span>
+<span class="nc" id="L133">        autoRadioButton.setToggleGroup(groupType);</span>
+<span class="nc" id="L134">        texRadioButton.setToggleGroup(groupType);</span>
+
+        // Build individual layout cards for each group
+<span class="nc" id="L137">        VBox explicitPanel = createOptionsExplicitGroup();</span>
+<span class="nc" id="L138">        explicitPanel.setVisible(true);</span>
+<span class="nc" id="L139">        VBox keywordPanel = createOptionsKeywordGroup();</span>
+<span class="nc" id="L140">        VBox searchPanel = createOptionsSearchGroup();</span>
+<span class="nc" id="L141">        VBox autoPanel = createOptionsAutoGroup();</span>
+<span class="nc" id="L142">        VBox texPanel = createOptionsTexGroup();</span>
+<span class="nc" id="L143">        optionsPanel.getChildren().addAll(explicitPanel, keywordPanel, searchPanel, autoPanel, texPanel);</span>
+<span class="nc" id="L144">        optionsPanel.setPadding(new Insets(0, 0, 0, 10));</span>
+
+        // ... for buttons panel
+<span class="nc" id="L147">        getDialogPane().getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);</span>
+
+        // General information
+<span class="nc" id="L150">        VBox contextPanel = new VBox(10);</span>
+<span class="nc" id="L151">        contextPanel.setPadding(new Insets(0, 0, 0, 10));</span>
+<span class="nc" id="L152">        contextPanel.getChildren().setAll(</span>
+                independentButton,
+                intersectionButton,
+                unionButton
+        );
+<span class="nc" id="L157">        ToggleGroup groupHierarchy = new ToggleGroup();</span>
+<span class="nc" id="L158">        independentButton.setToggleGroup(groupHierarchy);</span>
+<span class="nc" id="L159">        intersectionButton.setToggleGroup(groupHierarchy);</span>
+<span class="nc" id="L160">        unionButton.setToggleGroup(groupHierarchy);</span>
+
+<span class="nc" id="L162">        colorField.setMinHeight(20);</span>
+<span class="nc" id="L163">        VBox generalPanel = new VBox(10);</span>
+<span class="nc" id="L164">        generalPanel.getChildren().setAll(</span>
+                new VBox(
+<span class="nc" id="L166">                        new Label(Localization.lang(&quot;Name&quot;)),</span>
+                        nameField
+                ),
+                new VBox(
+<span class="nc" id="L170">                        new Label(Localization.lang(&quot;Description&quot;)),</span>
+                        descriptionField
+                ),
+                new HBox(30,
+                        new VBox(
+<span class="nc" id="L175">                                new Label(Localization.lang(&quot;Icon&quot;)),</span>
+                                iconField
+                        ),
+                        new VBox(
+<span class="nc" id="L179">                                new Label(Localization.lang(&quot;Color&quot;)),</span>
+                                colorField
+                        )
+                ),
+                new VBox(5,
+<span class="nc" id="L184">                        new Label(Localization.lang(&quot;Hierarchical context&quot;)),</span>
+                        contextPanel
+                )
+        );
+
+<span class="nc" id="L189">        VBox selectPanel = new VBox(10,</span>
+                explicitRadioButton,
+                keywordsRadioButton,
+                searchRadioButton,
+                autoRadioButton,
+                texRadioButton
+        );
+<span class="nc" id="L196">        selectPanel.setPadding(new Insets(0, 0, 0, 10));</span>
+
+        // Description panel
+<span class="nc" id="L199">        ScrollPane descriptionPane = new ScrollPane(descriptionWebView);</span>
+<span class="nc" id="L200">        descriptionPane.setHbarPolicy(ScrollBarPolicy.AS_NEEDED);</span>
+<span class="nc" id="L201">        descriptionPane.setVbarPolicy(ScrollBarPolicy.AS_NEEDED);</span>
+
+        // create layout
+<span class="nc" id="L204">        VBox mainPanel = new VBox(15);</span>
+<span class="nc" id="L205">        getDialogPane().setContent(mainPanel);</span>
+<span class="nc" id="L206">        mainPanel.setPadding(new Insets(5, 15, 5, 15));</span>
+<span class="nc" id="L207">        mainPanel.getChildren().setAll(</span>
+                generalPanel,
+                new VBox(5,
+<span class="nc" id="L210">                        new Label(Localization.lang(&quot;Type&quot;)),</span>
+                        selectPanel
+                ),
+                new VBox(
+<span class="nc" id="L214">                        new Label(Localization.lang(&quot;Options&quot;)),</span>
+                        optionsPanel
+                ),
+<span class="nc" id="L217">                new Label(Localization.lang(&quot;Description&quot;)),</span>
+                descriptionPane
+        );
+
+<span class="nc" id="L221">        updateComponents();</span>
+
+        // add listeners
+<span class="nc" id="L224">        groupType.selectedToggleProperty().addListener((ObservableValue&lt;? extends Toggle&gt; ov, Toggle old_Toggle,</span>
+                                                        Toggle new_Toggle) -&gt; {
+<span class="nc" id="L226">            int select = INDEX_EXPLICIT_GROUP;</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">            if (groupType.getSelectedToggle() == explicitRadioButton) {</span>
+<span class="nc" id="L228">                select = INDEX_EXPLICIT_GROUP;</span>
+<span class="nc bnc" id="L229" title="All 2 branches missed.">            } else if (groupType.getSelectedToggle() == keywordsRadioButton) {</span>
+<span class="nc" id="L230">                select = INDEX_KEYWORD_GROUP;</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">            } else if (groupType.getSelectedToggle() == searchRadioButton) {</span>
+<span class="nc" id="L232">                select = INDEX_SEARCH_GROUP;</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">            } else if (groupType.getSelectedToggle() == autoRadioButton) {</span>
+<span class="nc" id="L234">                select = INDEX_AUTO_GROUP;</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">            } else if (groupType.getSelectedToggle() == texRadioButton) {</span>
+<span class="nc" id="L236">                select = INDEX_TEX_GROUP;</span>
+            }
+<span class="nc bnc" id="L238" title="All 2 branches missed.">            for (Node n : optionsPanel.getChildren()) {</span>
+<span class="nc" id="L239">                n.setVisible(false);</span>
+<span class="nc" id="L240">            }</span>
+<span class="nc" id="L241">            optionsPanel.getChildren().get(select).setVisible(true);</span>
+<span class="nc" id="L242">            updateComponents();</span>
+<span class="nc" id="L243">        });</span>
+
+<span class="nc" id="L245">        setResultConverter(button -&gt; {</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">            if (button == ButtonType.OK) {</span>
+<span class="nc" id="L247">                AbstractGroup resultingGroup = null;</span>
+                try {
+<span class="nc" id="L249">                    String groupName = nameField.getText().trim();</span>
+<span class="nc bnc" id="L250" title="All 2 branches missed.">                    if (explicitRadioButton.isSelected()) {</span>
+<span class="nc" id="L251">                        Character keywordDelimiter = Globals.prefs.getKeywordDelimiter();</span>
+<span class="nc bnc" id="L252" title="All 2 branches missed.">                        if (groupName.contains(Character.toString(keywordDelimiter))) {</span>
+<span class="nc" id="L253">                            jabrefFrame.showMessage(</span>
+<span class="nc" id="L254">                                    Localization.lang(&quot;The group name contains the keyword separator \&quot;%0\&quot; and thus probably does not work as expected.&quot;, Character.toString(keywordDelimiter)));</span>
+                        }
+
+<span class="nc" id="L257">                        Optional&lt;GroupTreeNode&gt; rootGroup = jabrefFrame.getCurrentBasePanel().getBibDatabaseContext().getMetaData().getGroups();</span>
+<span class="nc bnc" id="L258" title="All 2 branches missed.">                        if (rootGroup.isPresent()) {</span>
+<span class="nc" id="L259">                            int groupsWithSameName = rootGroup.get().findChildrenSatisfying(group -&gt; group.getName().equals(groupName)).size();</span>
+<span class="nc" id="L260">                            boolean warnAboutSameName = false;</span>
+<span class="nc bnc" id="L261" title="All 4 branches missed.">                            if ((editedGroup == null) &amp;&amp; (groupsWithSameName &gt; 0)) {</span>
+                                // New group but there is already one group with the same name
+<span class="nc" id="L263">                                warnAboutSameName = true;</span>
+                            }
+<span class="nc bnc" id="L265" title="All 6 branches missed.">                            if ((editedGroup != null) &amp;&amp; !editedGroup.getName().equals(groupName) &amp;&amp; (groupsWithSameName &gt; 0)) {</span>
+                                // Edit group, changed name to something that is already present
+<span class="nc" id="L267">                                warnAboutSameName = true;</span>
+                            }
+
+<span class="nc bnc" id="L270" title="All 2 branches missed.">                            if (warnAboutSameName) {</span>
+<span class="nc" id="L271">                                jabrefFrame.showMessage(</span>
+<span class="nc" id="L272">                                        Localization.lang(&quot;There exists already a group with the same name.&quot;, Character.toString(keywordDelimiter)));</span>
+<span class="nc" id="L273">                                return null;</span>
+                            }
+                        }
+
+<span class="nc" id="L277">                        resultingGroup = new ExplicitGroup(groupName, getContext(),</span>
+                                keywordDelimiter);
+<span class="nc bnc" id="L279" title="All 2 branches missed.">                    } else if (keywordsRadioButton.isSelected()) {</span>
+                        // regex is correct, otherwise OK would have been disabled
+                        // therefore I don't catch anything here
+<span class="nc bnc" id="L282" title="All 2 branches missed.">                        if (keywordGroupRegExp.isSelected()) {</span>
+<span class="nc" id="L283">                            resultingGroup = new RegexKeywordGroup(groupName, getContext(),</span>
+<span class="nc" id="L284">                                    keywordGroupSearchField.getText().trim(), keywordGroupSearchTerm.getText().trim(),</span>
+<span class="nc" id="L285">                                    keywordGroupCaseSensitive.isSelected());</span>
+                        } else {
+<span class="nc" id="L287">                            resultingGroup = new WordKeywordGroup(groupName, getContext(),</span>
+<span class="nc" id="L288">                                    keywordGroupSearchField.getText().trim(), keywordGroupSearchTerm.getText().trim(),</span>
+<span class="nc" id="L289">                                    keywordGroupCaseSensitive.isSelected(), Globals.prefs.getKeywordDelimiter(), false);</span>
+                        }
+<span class="nc bnc" id="L291" title="All 2 branches missed.">                    } else if (searchRadioButton.isSelected()) {</span>
+<span class="nc" id="L292">                        resultingGroup = new SearchGroup(groupName, getContext(), searchGroupSearchExpression.getText().trim(),</span>
+<span class="nc" id="L293">                                isCaseSensitive(), isRegex());</span>
+<span class="nc bnc" id="L294" title="All 2 branches missed.">                    } else if (autoRadioButton.isSelected()) {</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">                        if (autoGroupKeywordsOption.isSelected()) {</span>
+<span class="nc" id="L296">                            resultingGroup = new AutomaticKeywordGroup(</span>
+<span class="nc" id="L297">                                    groupName, getContext(),</span>
+<span class="nc" id="L298">                                    autoGroupKeywordsField.getText().trim(),</span>
+<span class="nc" id="L299">                                    autoGroupKeywordsDeliminator.getText().charAt(0),</span>
+<span class="nc" id="L300">                                    autoGroupKeywordsHierarchicalDeliminator.getText().charAt(0));</span>
+                        } else {
+<span class="nc" id="L302">                            resultingGroup = new AutomaticPersonsGroup(groupName, getContext(),</span>
+<span class="nc" id="L303">                                    autoGroupPersonsField.getText().trim());</span>
+                        }
+<span class="nc bnc" id="L305" title="All 2 branches missed.">                    } else if (texRadioButton.isSelected()) {</span>
+<span class="nc" id="L306">                        resultingGroup = new TexGroup(groupName, getContext(),</span>
+<span class="nc" id="L307">                                Paths.get(texGroupFilePath.getText().trim()), new DefaultAuxParser(new BibDatabase()), Globals.getFileUpdateMonitor());</span>
+                    }
+
+<span class="nc" id="L310">                    resultingGroup.setColor(colorField.getValue());</span>
+<span class="nc" id="L311">                    resultingGroup.setDescription(descriptionField.getText());</span>
+<span class="nc" id="L312">                    resultingGroup.setIconName(iconField.getText());</span>
+<span class="nc" id="L313">                    return resultingGroup;</span>
+<span class="nc" id="L314">                } catch (IllegalArgumentException | IOException exception) {</span>
+<span class="nc" id="L315">                    jabrefFrame.showMessage(exception.getLocalizedMessage());</span>
+<span class="nc" id="L316">                    return null;</span>
+                }
+            }
+<span class="nc" id="L319">            return null;</span>
+        });
+
+<span class="nc" id="L322">        ChangeListener&lt;String&gt; caretListener = (ObservableValue&lt;? extends String&gt; ov, String oldValue,</span>
+<span class="nc" id="L323">                                                String newValue) -&gt; updateComponents();</span>
+<span class="nc" id="L324">        ChangeListener&lt;Boolean&gt; itemListener = (ObservableValue&lt;? extends Boolean&gt; ov, Boolean oldBoolean,</span>
+<span class="nc" id="L325">                                                Boolean newBoolean) -&gt; updateComponents();</span>
+
+<span class="nc" id="L327">        nameField.textProperty().addListener(caretListener);</span>
+<span class="nc" id="L328">        descriptionField.textProperty().addListener(caretListener);</span>
+<span class="nc" id="L329">        iconField.textProperty().addListener(caretListener);</span>
+<span class="nc" id="L330">        keywordGroupSearchField.textProperty().addListener(caretListener);</span>
+<span class="nc" id="L331">        keywordGroupSearchTerm.textProperty().addListener(caretListener);</span>
+<span class="nc" id="L332">        keywordGroupCaseSensitive.selectedProperty().addListener(itemListener);</span>
+<span class="nc" id="L333">        keywordGroupRegExp.selectedProperty().addListener(itemListener);</span>
+<span class="nc" id="L334">        searchGroupSearchExpression.textProperty().addListener(caretListener);</span>
+<span class="nc" id="L335">        searchGroupRegExp.selectedProperty().addListener(itemListener);</span>
+<span class="nc" id="L336">        searchGroupRegExp.selectedProperty().addListener(itemListener);</span>
+
+        // configure for current type
+<span class="nc bnc" id="L339" title="All 2 branches missed.">        if (editedGroup == null) {</span>
+            // creating new group -&gt; defaults!
+<span class="nc" id="L341">            explicitRadioButton.setSelected(true);</span>
+<span class="nc" id="L342">            setContext(GroupHierarchyType.INDEPENDENT);</span>
+        } else {
+<span class="nc" id="L344">            nameField.setText(editedGroup.getName());</span>
+<span class="nc" id="L345">            editedGroup.getColor().ifPresent(colorField::setValue);</span>
+<span class="nc" id="L346">            descriptionField.setText(editedGroup.getDescription().orElse(&quot;&quot;));</span>
+<span class="nc" id="L347">            iconField.setText(editedGroup.getIconName().orElse(&quot;&quot;));</span>
+
+<span class="nc bnc" id="L349" title="All 2 branches missed.">            if (editedGroup.getClass() == WordKeywordGroup.class) {</span>
+<span class="nc" id="L350">                WordKeywordGroup group = (WordKeywordGroup) editedGroup;</span>
+<span class="nc" id="L351">                keywordGroupSearchField.setText(group.getSearchField());</span>
+<span class="nc" id="L352">                keywordGroupSearchTerm.setText(group.getSearchExpression());</span>
+<span class="nc" id="L353">                keywordGroupCaseSensitive.setSelected(group.isCaseSensitive());</span>
+<span class="nc" id="L354">                keywordGroupRegExp.setSelected(false);</span>
+<span class="nc" id="L355">                keywordsRadioButton.setSelected(true);</span>
+<span class="nc" id="L356">                setContext(editedGroup.getHierarchicalContext());</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">            } else if (editedGroup.getClass() == RegexKeywordGroup.class) {</span>
+<span class="nc" id="L358">                RegexKeywordGroup group = (RegexKeywordGroup) editedGroup;</span>
+<span class="nc" id="L359">                keywordGroupSearchField.setText(group.getSearchField());</span>
+<span class="nc" id="L360">                keywordGroupSearchTerm.setText(group.getSearchExpression());</span>
+<span class="nc" id="L361">                keywordGroupCaseSensitive.setSelected(group.isCaseSensitive());</span>
+<span class="nc" id="L362">                keywordGroupRegExp.setSelected(true);</span>
+<span class="nc" id="L363">                keywordsRadioButton.setSelected(true);</span>
+<span class="nc" id="L364">                setContext(editedGroup.getHierarchicalContext());</span>
+<span class="nc bnc" id="L365" title="All 2 branches missed.">            } else if (editedGroup.getClass() == SearchGroup.class) {</span>
+<span class="nc" id="L366">                SearchGroup group = (SearchGroup) editedGroup;</span>
+<span class="nc" id="L367">                searchGroupSearchExpression.setText(group.getSearchExpression());</span>
+<span class="nc" id="L368">                searchGroupCaseSensitive.setSelected(group.isCaseSensitive());</span>
+<span class="nc" id="L369">                searchGroupRegExp.setSelected(group.isRegularExpression());</span>
+<span class="nc" id="L370">                searchRadioButton.setSelected(true);</span>
+<span class="nc" id="L371">                setContext(editedGroup.getHierarchicalContext());</span>
+<span class="nc bnc" id="L372" title="All 2 branches missed.">            } else if (editedGroup.getClass() == ExplicitGroup.class) {</span>
+<span class="nc" id="L373">                explicitRadioButton.setSelected(true);</span>
+<span class="nc" id="L374">                setContext(editedGroup.getHierarchicalContext());</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">            } else if (editedGroup.getClass() == AutomaticKeywordGroup.class) {</span>
+<span class="nc" id="L376">                autoRadioButton.setSelected(true);</span>
+<span class="nc" id="L377">                setContext(editedGroup.getHierarchicalContext());</span>
+
+<span class="nc bnc" id="L379" title="All 2 branches missed.">                if (editedGroup.getClass() == AutomaticKeywordGroup.class) {</span>
+<span class="nc" id="L380">                    AutomaticKeywordGroup group = (AutomaticKeywordGroup) editedGroup;</span>
+<span class="nc" id="L381">                    autoGroupKeywordsDeliminator.setText(group.getKeywordDelimiter().toString());</span>
+<span class="nc" id="L382">                    autoGroupKeywordsHierarchicalDeliminator.setText(group.getKeywordHierarchicalDelimiter().toString());</span>
+<span class="nc" id="L383">                    autoGroupKeywordsField.setText(group.getField());</span>
+<span class="nc bnc" id="L384" title="All 2 branches missed.">                } else if (editedGroup.getClass() == AutomaticPersonsGroup.class) {</span>
+<span class="nc" id="L385">                    AutomaticPersonsGroup group = (AutomaticPersonsGroup) editedGroup;</span>
+<span class="nc" id="L386">                    autoGroupPersonsField.setText(group.getField());</span>
+<span class="nc" id="L387">                }</span>
+<span class="nc bnc" id="L388" title="All 2 branches missed.">            } else if (editedGroup.getClass() == TexGroup.class) {</span>
+<span class="nc" id="L389">                texRadioButton.setSelected(true);</span>
+<span class="nc" id="L390">                setContext(editedGroup.getHierarchicalContext());</span>
+
+<span class="nc" id="L392">                TexGroup group = (TexGroup) editedGroup;</span>
+<span class="nc" id="L393">                texGroupFilePath.setText(group.getFilePath().toString());</span>
+            }
+        }
+<span class="nc" id="L396">    }</span>
+
+    public GroupDialog() {
+<span class="nc" id="L399">        this(JabRefGUI.getMainFrame(), null);</span>
+<span class="nc" id="L400">    }</span>
+
+    public GroupDialog(AbstractGroup editedGroup) {
+<span class="nc" id="L403">        this(JabRefGUI.getMainFrame(), editedGroup);</span>
+<span class="nc" id="L404">    }</span>
+
+    private static String formatRegExException(String regExp, Exception e) {
+<span class="nc" id="L407">        String[] sa = e.getMessage().split(&quot;\\n&quot;);</span>
+<span class="nc" id="L408">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc bnc" id="L409" title="All 2 branches missed.">        for (int i = 0; i &lt; sa.length; ++i) {</span>
+<span class="nc bnc" id="L410" title="All 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L411">                sb.append(&quot;&lt;br&gt;&quot;);</span>
+            }
+<span class="nc" id="L413">            sb.append(StringUtil.quoteForHTML(sa[i]));</span>
+        }
+<span class="nc" id="L415">        String s = Localization.lang(</span>
+                &quot;The regular expression &lt;b&gt;%0&lt;/b&gt; is invalid:&quot;,
+<span class="nc" id="L417">                StringUtil.quoteForHTML(regExp))</span>
+                + &quot;&lt;p&gt;&lt;tt&gt;&quot;
+                + sb
+                + &quot;&lt;/tt&gt;&quot;;
+<span class="nc bnc" id="L421" title="All 2 branches missed.">        if (!(e instanceof PatternSyntaxException)) {</span>
+<span class="nc" id="L422">            return s;</span>
+        }
+<span class="nc" id="L424">        int lastNewline = s.lastIndexOf(&quot;&lt;br&gt;&quot;);</span>
+<span class="nc" id="L425">        int hat = s.lastIndexOf('^');</span>
+<span class="nc bnc" id="L426" title="All 6 branches missed.">        if ((lastNewline &gt;= 0) &amp;&amp; (hat &gt;= 0) &amp;&amp; (hat &gt; lastNewline)) {</span>
+<span class="nc" id="L427">            return s.substring(0, lastNewline + 4) + s.substring(lastNewline + 4).replace(&quot; &quot;, &quot;&amp;nbsp;&quot;);</span>
+        }
+<span class="nc" id="L429">        return s;</span>
+    }
+
+    private VBox createOptionsTexGroup() {
+<span class="nc" id="L433">        VBox texPanel = new VBox();</span>
+<span class="nc" id="L434">        texPanel.setVisible(false);</span>
+<span class="nc" id="L435">        texPanel.getChildren().add(new Label(Localization.lang(&quot;Aux file&quot;)));</span>
+<span class="nc" id="L436">        texPanel.getChildren().add(texGroupFilePath);</span>
+<span class="nc" id="L437">        return texPanel;</span>
+    }
+
+    private VBox createOptionsAutoGroup() {
+<span class="nc" id="L441">        VBox autoPanel = new VBox(10);</span>
+<span class="nc" id="L442">        autoPanel.setVisible(false);</span>
+<span class="nc" id="L443">        ToggleGroup tg = new ToggleGroup();</span>
+<span class="nc" id="L444">        autoGroupKeywordsOption.setToggleGroup(tg);</span>
+<span class="nc" id="L445">        autoGroupPersonsOption.setToggleGroup(tg);</span>
+<span class="nc" id="L446">        VBox fieldToGroupByKeywords = new VBox(</span>
+<span class="nc" id="L447">                new Label(Localization.lang(&quot;Field to group by&quot;) + &quot;:&quot;),</span>
+                autoGroupKeywordsField
+        );
+<span class="nc" id="L450">        fieldToGroupByKeywords.setPadding(new Insets(0, 0, 0, 20));</span>
+<span class="nc" id="L451">        VBox delimiterCharacters = new VBox(</span>
+<span class="nc" id="L452">                new Label(Localization.lang(&quot;Use the following delimiter character(s):&quot;)),</span>
+                new HBox(10,
+                        autoGroupKeywordsDeliminator,
+                        autoGroupKeywordsHierarchicalDeliminator
+                )
+        );
+<span class="nc" id="L458">        delimiterCharacters.setPadding(new Insets(0, 0, 0, 20));</span>
+<span class="nc" id="L459">        VBox fieldToGroupByPersons = new VBox(</span>
+<span class="nc" id="L460">                new Label(Localization.lang(&quot;Field to group by&quot;) + &quot;:&quot;),</span>
+                autoGroupPersonsField
+        );
+<span class="nc" id="L463">        fieldToGroupByPersons.setPadding(new Insets(0, 0, 0, 20));</span>
+<span class="nc" id="L464">        autoPanel.getChildren().setAll(</span>
+                autoGroupKeywordsOption,
+                fieldToGroupByKeywords,
+                delimiterCharacters,
+                autoGroupPersonsOption,
+                fieldToGroupByPersons
+        );
+<span class="nc" id="L471">        autoGroupKeywordsOption.setSelected(true);</span>
+<span class="nc" id="L472">        autoGroupKeywordsField.setText(Globals.prefs.get(JabRefPreferences.GROUPS_DEFAULT_FIELD));</span>
+<span class="nc" id="L473">        autoGroupKeywordsDeliminator.setText(Globals.prefs.get(JabRefPreferences.KEYWORD_SEPARATOR));</span>
+<span class="nc" id="L474">        autoGroupKeywordsHierarchicalDeliminator.setText(Keyword.DEFAULT_HIERARCHICAL_DELIMITER.toString());</span>
+<span class="nc" id="L475">        autoGroupPersonsField.setText(FieldName.AUTHOR);</span>
+<span class="nc" id="L476">        return autoPanel;</span>
+    }
+
+    private VBox createOptionsSearchGroup() {
+<span class="nc" id="L480">        VBox searchPanel = new VBox(10);</span>
+<span class="nc" id="L481">        searchPanel.setVisible(false);</span>
+<span class="nc" id="L482">        searchPanel.getChildren().setAll(</span>
+                new VBox(
+<span class="nc" id="L484">                        new Label(Localization.lang(&quot;Search expression&quot;)),</span>
+                        searchGroupSearchExpression
+                ),
+                searchGroupCaseSensitive,
+                searchGroupRegExp
+        );
+<span class="nc" id="L490">        return searchPanel;</span>
+    }
+
+    private VBox createOptionsExplicitGroup() {
+<span class="nc" id="L494">        return new VBox();</span>
+    }
+
+    private VBox createOptionsKeywordGroup() {
+<span class="nc" id="L498">        VBox keywordPanel = new VBox(10);</span>
+<span class="nc" id="L499">        keywordPanel.setVisible(false);</span>
+<span class="nc" id="L500">        keywordPanel.getChildren().setAll(</span>
+                new VBox(
+<span class="nc" id="L502">                        new Label(Localization.lang(&quot;Field&quot;)),</span>
+                        keywordGroupSearchField
+                ),
+                new VBox(
+<span class="nc" id="L506">                        new Label(Localization.lang(&quot;Keyword&quot;)),</span>
+                        keywordGroupSearchTerm
+                ),
+                keywordGroupCaseSensitive,
+                keywordGroupRegExp
+        );
+<span class="nc" id="L512">        return keywordPanel;</span>
+    }
+
+    private void updateComponents() {
+        // all groups need a name
+<span class="nc bnc" id="L517" title="All 2 branches missed.">        boolean okEnabled = !nameField.getText().trim().isEmpty();</span>
+<span class="nc bnc" id="L518" title="All 2 branches missed.">        if (!okEnabled) {</span>
+<span class="nc" id="L519">            setDescription(Localization.lang(&quot;Please enter a name for the group.&quot;));</span>
+            //TODO: okButton.setDisable(true);
+<span class="nc" id="L521">            return;</span>
+        }
+        String s1;
+        String s2;
+<span class="nc bnc" id="L525" title="All 2 branches missed.">        if (keywordsRadioButton.isSelected()) {</span>
+<span class="nc" id="L526">            s1 = keywordGroupSearchField.getText().trim();</span>
+<span class="nc bnc" id="L527" title="All 4 branches missed.">            okEnabled = okEnabled &amp;&amp; s1.matches(&quot;\\w+&quot;);</span>
+<span class="nc" id="L528">            s2 = keywordGroupSearchTerm.getText().trim();</span>
+<span class="nc bnc" id="L529" title="All 4 branches missed.">            okEnabled = okEnabled &amp;&amp; !s2.isEmpty();</span>
+<span class="nc bnc" id="L530" title="All 2 branches missed.">            if (okEnabled) {</span>
+<span class="nc bnc" id="L531" title="All 2 branches missed.">                if (keywordGroupRegExp.isSelected()) {</span>
+                    try {
+<span class="nc" id="L533">                        Pattern.compile(s2);</span>
+<span class="nc" id="L534">                        setDescription(GroupDescriptions.getDescriptionForPreview(s1, s2, keywordGroupCaseSensitive.isSelected(),</span>
+<span class="nc" id="L535">                                                                                  keywordGroupRegExp.isSelected()));</span>
+<span class="nc" id="L536">                    } catch (PatternSyntaxException e) {</span>
+<span class="nc" id="L537">                        okEnabled = false;</span>
+<span class="nc" id="L538">                        setDescription(formatRegExException(s2, e));</span>
+<span class="nc" id="L539">                    }</span>
+                } else {
+<span class="nc" id="L541">                    setDescription(GroupDescriptions.getDescriptionForPreview(s1, s2, keywordGroupCaseSensitive.isSelected(),</span>
+<span class="nc" id="L542">                                                                              keywordGroupRegExp.isSelected()));</span>
+                }
+            } else {
+<span class="nc" id="L545">                setDescription(Localization.lang(</span>
+                                                 &quot;Please enter the field to search (e.g. &lt;b&gt;keywords&lt;/b&gt;) and the keyword to search it for (e.g. &lt;b&gt;electrical&lt;/b&gt;).&quot;));
+            }
+<span class="nc" id="L548">            setNameFontItalic(true);</span>
+<span class="nc bnc" id="L549" title="All 2 branches missed.">        } else if (searchRadioButton.isSelected()) {</span>
+<span class="nc" id="L550">            s1 = searchGroupSearchExpression.getText().trim();</span>
+<span class="nc bnc" id="L551" title="All 2 branches missed.">            okEnabled = okEnabled &amp; !s1.isEmpty();</span>
+<span class="nc bnc" id="L552" title="All 2 branches missed.">            if (okEnabled) {</span>
+<span class="nc" id="L553">                setDescription(fromTextFlowToHTMLString(SearchDescribers.getSearchDescriberFor(</span>
+<span class="nc" id="L554">                                                                                               new SearchQuery(s1, isCaseSensitive(), isRegex()))</span>
+<span class="nc" id="L555">                                                                        .getDescription()));</span>
+
+<span class="nc bnc" id="L557" title="All 2 branches missed.">                if (isRegex()) {</span>
+                    try {
+<span class="nc" id="L559">                        Pattern.compile(s1);</span>
+<span class="nc" id="L560">                    } catch (PatternSyntaxException e) {</span>
+<span class="nc" id="L561">                        okEnabled = false;</span>
+<span class="nc" id="L562">                        setDescription(formatRegExException(s1, e));</span>
+<span class="nc" id="L563">                    }</span>
+                }
+            } else {
+<span class="nc" id="L566">                setDescription(Localization</span>
+<span class="nc" id="L567">                                           .lang(&quot;Please enter a search term. For example, to search all fields for &lt;b&gt;Smith&lt;/b&gt;, enter:&lt;p&gt;&quot;</span>
+                                                 + &quot;&lt;tt&gt;smith&lt;/tt&gt;&lt;p&gt;&quot;
+                                                 + &quot;To search the field &lt;b&gt;Author&lt;/b&gt; for &lt;b&gt;Smith&lt;/b&gt; and the field &lt;b&gt;Title&lt;/b&gt; for &lt;b&gt;electrical&lt;/b&gt;, enter:&lt;p&gt;&quot;
+                                                 + &quot;&lt;tt&gt;author=smith and title=electrical&lt;/tt&gt;&quot;));
+            }
+<span class="nc" id="L572">            setNameFontItalic(true);</span>
+<span class="nc bnc" id="L573" title="All 2 branches missed.">        } else if (explicitRadioButton.isSelected()) {</span>
+<span class="nc" id="L574">            setDescription(GroupDescriptions.getDescriptionForPreview());</span>
+<span class="nc" id="L575">            setNameFontItalic(false);</span>
+        }
+        //TODO: okButton.setDisable(!okEnabled);
+<span class="nc" id="L578">    }</span>
+
+    private String fromTextFlowToHTMLString(TextFlow textFlow) {
+<span class="nc" id="L581">        StringBuilder htmlStringBuilder = new StringBuilder();</span>
+<span class="nc bnc" id="L582" title="All 2 branches missed.">        for (Node node : textFlow.getChildren()) {</span>
+<span class="nc bnc" id="L583" title="All 2 branches missed.">            if (node instanceof Text) {</span>
+<span class="nc" id="L584">                htmlStringBuilder.append(TooltipTextUtil.textToHTMLString((Text) node));</span>
+            }
+<span class="nc" id="L586">        }</span>
+<span class="nc" id="L587">        return htmlStringBuilder.toString();</span>
+    }
+
+    private boolean isRegex() {
+<span class="nc" id="L591">        return searchGroupRegExp.isSelected();</span>
+    }
+
+    private boolean isCaseSensitive() {
+<span class="nc" id="L595">        return searchGroupCaseSensitive.isSelected();</span>
+    }
+
+    private void setDescription(String description) {
+<span class="nc" id="L599">        descriptionWebView.getEngine().loadContent(&quot;&lt;html&gt;&quot; + description + &quot;&lt;/html&gt;&quot;);</span>
+<span class="nc" id="L600">    }</span>
+
+    /**
+     * Sets the font of the name entry field.
+     */
+    private void setNameFontItalic(boolean italic) {
+<span class="nc" id="L606">        Font f = nameField.getFont();</span>
+<span class="nc bnc" id="L607" title="All 2 branches missed.">        if (italic) {</span>
+<span class="nc" id="L608">            Font.font(f.getFamily(), FontPosture.ITALIC, f.getSize());</span>
+        } else {
+<span class="nc" id="L610">            Font.font(f.getFamily(), FontPosture.REGULAR, f.getSize());</span>
+        }
+<span class="nc" id="L612">    }</span>
+
+    /**
+     * Returns the int representing the selected hierarchical group context.
+     */
+    private GroupHierarchyType getContext() {
+<span class="nc bnc" id="L618" title="All 2 branches missed.">        if (independentButton.isSelected()) {</span>
+<span class="nc" id="L619">            return GroupHierarchyType.INDEPENDENT;</span>
+        }
+<span class="nc bnc" id="L621" title="All 2 branches missed.">        if (intersectionButton.isSelected()) {</span>
+<span class="nc" id="L622">            return GroupHierarchyType.REFINING;</span>
+        }
+<span class="nc bnc" id="L624" title="All 2 branches missed.">        if (unionButton.isSelected()) {</span>
+<span class="nc" id="L625">            return GroupHierarchyType.INCLUDING;</span>
+        }
+<span class="nc" id="L627">        return GroupHierarchyType.INDEPENDENT; // default</span>
+    }
+
+    private void setContext(GroupHierarchyType context) {
+<span class="nc bnc" id="L631" title="All 2 branches missed.">        if (context == GroupHierarchyType.REFINING) {</span>
+<span class="nc" id="L632">            intersectionButton.setSelected(true);</span>
+<span class="nc bnc" id="L633" title="All 2 branches missed.">        } else if (context == GroupHierarchyType.INCLUDING) {</span>
+<span class="nc" id="L634">            unionButton.setSelected(true);</span>
+        } else {
+<span class="nc" id="L636">            independentButton.setSelected(true);</span>
+        }
+<span class="nc" id="L638">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

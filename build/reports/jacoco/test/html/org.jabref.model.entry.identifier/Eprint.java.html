@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Eprint.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry.identifier</a> &gt; <span class="el_source">Eprint.java</span></div><h1>Eprint.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry.identifier;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jabref.model.entry.FieldName;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Class for working with Eprint identifiers
+ *
+ * @see https://arxiv.org/help/arxiv_identifier
+ * @see https://arxiv.org/hypertex/bibstyles/
+ */
+public class Eprint implements Identifier {
+<span class="fc" id="L22">    public static final URI RESOLVER = URI.create(&quot;https://arxiv.org&quot;);</span>
+<span class="fc" id="L23">    private static final Logger LOGGER = LoggerFactory.getLogger(Eprint.class);</span>
+
+    // Regex
+    // (see https://arxiv.org/help/arxiv_identifier)
+    private static final String EPRINT_EXP = &quot;&quot;
+            + &quot;(?:arXiv:)?&quot;                       // optional prefix
+            + &quot;(&quot;                               // begin group \1
+            + &quot;\\d{4}&quot;                          // YYMM
+            + &quot;\\.&quot;                             // divider
+            + &quot;\\d{4,5}&quot;                        // number
+            + &quot;(v\\d+)?&quot;                        // optional version
+            + &quot;|&quot;                               // old id
+            + &quot;.+&quot;                              // archive
+            + &quot;(\\.\\w{2})?&quot;                    // optional subject class
+            + &quot;\\/&quot;                             // divider
+            + &quot;\\d{7}&quot;                          // number
+            + &quot;)&quot;;                              // end group \1
+    private static final String HTTP_EXP = &quot;https?://[^\\s]+?&quot; + EPRINT_EXP;
+    // Pattern
+<span class="fc" id="L42">    private static final Pattern EXACT_EPRINT_PATT = Pattern.compile(&quot;^(?:https?://[^\\s]+?)?&quot; + EPRINT_EXP + &quot;$&quot;, Pattern.CASE_INSENSITIVE);</span>
+
+    // DOI
+    private final String eprint;
+
+    /**
+     * Creates a Eprint from various schemes including URL.
+     *
+     * @param eprint the Eprint identifier string
+     * @throws NullPointerException if eprint is null
+     * @throws IllegalArgumentException if eprint does not include a valid Eprint identifier
+     * @return an instance of the Eprint class
+     */
+<span class="fc" id="L55">    public Eprint(String eprint) {</span>
+<span class="fc" id="L56">        Objects.requireNonNull(eprint);</span>
+
+        // Remove whitespace
+<span class="fc" id="L59">        String trimmedId = eprint.trim();</span>
+
+        // HTTP URL decoding
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (eprint.matches(HTTP_EXP)) {</span>
+            try {
+                // decodes path segment
+<span class="fc" id="L65">                URI url = new URI(trimmedId);</span>
+<span class="fc" id="L66">                trimmedId = url.getScheme() + &quot;://&quot; + url.getHost() + url.getPath();</span>
+<span class="nc" id="L67">            } catch (URISyntaxException e) {</span>
+<span class="nc" id="L68">                throw new IllegalArgumentException(eprint + &quot; is not a valid HTTP Eprint identifier.&quot;);</span>
+<span class="fc" id="L69">            }</span>
+        }
+
+        // Extract DOI
+<span class="fc" id="L73">        Matcher matcher = EXACT_EPRINT_PATT.matcher(trimmedId);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (matcher.find()) {</span>
+            // match only group \1
+<span class="fc" id="L76">            this.eprint = matcher.group(1);</span>
+        } else {
+<span class="fc" id="L78">            throw new IllegalArgumentException(trimmedId + &quot; is not a valid Eprint identifier.&quot;);</span>
+        }
+<span class="fc" id="L80">    }</span>
+
+    /**
+     * Creates an Optional&lt;Eprint&gt; from various schemes including URL.
+     *
+     * Useful for suppressing the &lt;c&gt;IllegalArgumentException&lt;/c&gt; of the Constructor
+     * and checking for Optional.isPresent() instead.
+     *
+     * @param eprint the Eprint string
+     * @return an Optional containing the Eprint or an empty Optional
+     */
+    public static Optional&lt;Eprint&gt; build(String eprint) {
+        try {
+<span class="nc" id="L93">            return Optional.ofNullable(new Eprint(eprint));</span>
+<span class="nc" id="L94">        } catch (IllegalArgumentException | NullPointerException e) {</span>
+<span class="nc" id="L95">            return Optional.empty();</span>
+        }
+    }
+
+    /**
+     * Return a URI presentation for the Eprint identifier
+     *
+     * @return an encoded URI representation of the Eprint identifier
+     */
+    @Override
+    public Optional&lt;URI&gt; getExternalURI() {
+        try {
+<span class="fc" id="L107">            URI uri = new URI(RESOLVER.getScheme(), RESOLVER.getHost(), &quot;/abs/&quot; + eprint, null);</span>
+<span class="fc" id="L108">            return Optional.of(uri);</span>
+<span class="nc" id="L109">        } catch (URISyntaxException e) {</span>
+            // should never happen
+<span class="nc" id="L111">            LOGGER.error(eprint + &quot; could not be encoded as URI.&quot;, e);</span>
+<span class="nc" id="L112">            return Optional.empty();</span>
+        }
+    }
+
+    /**
+     * Return an ASCII URL presentation for the Eprint identifier
+     *
+     * @return an encoded URL representation of the Eprint identifier
+     */
+    public String getURIAsASCIIString() {
+<span class="fc" id="L122">        return getExternalURI().map(URI::toASCIIString).orElse(&quot;&quot;);</span>
+    }
+
+    /**
+     * Return the plain Eprint identifier
+     *
+     * @return the plain Eprint value.
+     */
+    public String getEprint() {
+<span class="fc" id="L131">        return eprint;</span>
+    }
+
+    @Override
+    public String getDefaultField() {
+<span class="nc" id="L136">        return FieldName.EPRINT;</span>
+    }
+
+    @Override
+    public String getNormalized() {
+<span class="nc" id="L141">        return eprint;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

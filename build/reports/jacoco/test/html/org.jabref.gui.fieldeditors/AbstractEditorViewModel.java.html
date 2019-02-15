@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractEditorViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.fieldeditors</a> &gt; <span class="el_source">AbstractEditorViewModel.java</span></div><h1>AbstractEditorViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.fieldeditors;
+
+import java.util.Collection;
+
+import javax.swing.undo.UndoManager;
+
+import javafx.beans.binding.ObjectBinding;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
+import org.jabref.JabRefGUI;
+import org.jabref.gui.AbstractViewModel;
+import org.jabref.gui.autocompleter.AutoCompleteSuggestionProvider;
+import org.jabref.gui.undo.UndoableFieldChange;
+import org.jabref.gui.util.BindingsHelper;
+import org.jabref.logic.integrity.FieldCheckers;
+import org.jabref.logic.integrity.ValueChecker;
+import org.jabref.model.entry.BibEntry;
+
+import de.saxsys.mvvmfx.utils.validation.CompositeValidator;
+import de.saxsys.mvvmfx.utils.validation.FunctionBasedValidator;
+import de.saxsys.mvvmfx.utils.validation.ValidationMessage;
+import de.saxsys.mvvmfx.utils.validation.Validator;
+import org.controlsfx.control.textfield.AutoCompletionBinding;
+
+public class AbstractEditorViewModel extends AbstractViewModel {
+    protected final String fieldName;
+<span class="fc" id="L28">    protected StringProperty text = new SimpleStringProperty(&quot;&quot;);</span>
+    protected BibEntry entry;
+    private final AutoCompleteSuggestionProvider&lt;?&gt; suggestionProvider;
+    private final CompositeValidator fieldValidator;
+    private ObjectBinding&lt;String&gt; fieldBinding;
+
+<span class="fc" id="L34">    public AbstractEditorViewModel(String fieldName, AutoCompleteSuggestionProvider&lt;?&gt; suggestionProvider, FieldCheckers fieldCheckers) {</span>
+<span class="fc" id="L35">        this.fieldName = fieldName;</span>
+<span class="fc" id="L36">        this.suggestionProvider = suggestionProvider;</span>
+
+<span class="fc" id="L38">        this.fieldValidator = new CompositeValidator();</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        for (ValueChecker checker : fieldCheckers.getForField(fieldName)) {</span>
+<span class="nc" id="L40">            FunctionBasedValidator&lt;String&gt; validator = new FunctionBasedValidator&lt;&gt;(text, value -&gt;</span>
+<span class="nc" id="L41">                    checker.checkValue(value).map(ValidationMessage::warning).orElse(null));</span>
+<span class="nc" id="L42">            fieldValidator.addValidators(validator);</span>
+<span class="nc" id="L43">        }</span>
+<span class="fc" id="L44">    }</span>
+
+    public Validator getFieldValidator() {
+<span class="nc" id="L47">        return fieldValidator;</span>
+    }
+
+    public StringProperty textProperty() {
+<span class="nc" id="L51">        return text;</span>
+    }
+
+    public void bindToEntry(BibEntry entry) {
+<span class="nc" id="L55">        this.entry = entry;</span>
+
+        // We need to keep a reference to the binding since it otherwise gets discarded
+<span class="nc" id="L58">        fieldBinding = entry.getFieldBinding(fieldName);</span>
+
+<span class="nc" id="L60">        BindingsHelper.bindBidirectional(</span>
+<span class="nc" id="L61">                this.textProperty(),</span>
+                fieldBinding,
+                newValue -&gt; {
+<span class="nc bnc" id="L64" title="All 2 branches missed.">                    if (newValue != null) {</span>
+<span class="nc" id="L65">                        String oldValue = entry.getField(fieldName).orElse(null);</span>
+<span class="nc" id="L66">                        entry.setField(fieldName, newValue);</span>
+<span class="nc" id="L67">                        UndoManager undoManager = JabRefGUI.getMainFrame().getUndoManager();</span>
+<span class="nc" id="L68">                        undoManager.addEdit(new UndoableFieldChange(entry, fieldName, oldValue, newValue));</span>
+                    }
+<span class="nc" id="L70">                });</span>
+<span class="nc" id="L71">    }</span>
+
+    public Collection&lt;?&gt; complete(AutoCompletionBinding.ISuggestionRequest request) {
+<span class="nc" id="L74">        return suggestionProvider.call(request);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

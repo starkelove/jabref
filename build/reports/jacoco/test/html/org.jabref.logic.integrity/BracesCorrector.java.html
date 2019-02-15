@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BracesCorrector.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.integrity</a> &gt; <span class="el_source">BracesCorrector.java</span></div><h1>BracesCorrector.java</h1><pre class="source lang-java linenums">package org.jabref.logic.integrity;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+<span class="nc" id="L6">public class BracesCorrector {</span>
+
+<span class="fc" id="L8">    private static final Pattern PATTERN_ESCAPED_CURLY_BRACES = Pattern.compile(&quot;(\\\\\\{)|(\\\\\\})&quot;);</span>
+    //private static final Pattern PATTERN_ESCAPED_CLOSING_CURLY_BRACE = Pattern.compile(&quot;&quot;);
+
+    public static String apply(String input) {
+<span class="fc bfc" id="L12" title="All 2 branches covered.">        if (input == null) {</span>
+<span class="fc" id="L13">            return null;</span>
+        } else {
+<span class="fc" id="L15">            Matcher matcher = PATTERN_ESCAPED_CURLY_BRACES.matcher(input);</span>
+<span class="fc" id="L16">            String addedBraces = input;</span>
+<span class="fc" id="L17">            String c = matcher.replaceAll(&quot;&quot;);</span>
+
+<span class="fc bfc" id="L19" title="All 4 branches covered.">            long diff = c.chars().filter(ch -&gt; ch == '{').count() - c.chars().filter(ch -&gt; ch == '}').count();</span>
+<span class="fc bfc" id="L20" title="All 2 branches covered.">            while (diff != 0) {</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">                if (diff &lt; 0) {</span>
+<span class="fc" id="L22">                    addedBraces = &quot;{&quot; + addedBraces;</span>
+<span class="fc" id="L23">                    diff++;</span>
+                } else {
+<span class="fc" id="L25">                    addedBraces = addedBraces + &quot;}&quot;;</span>
+<span class="fc" id="L26">                    diff--;</span>
+                }
+            }
+<span class="fc" id="L29">            return addedBraces;</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

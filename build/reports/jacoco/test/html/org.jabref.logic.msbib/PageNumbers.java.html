@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PageNumbers.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.msbib</a> &gt; <span class="el_source">PageNumbers.java</span></div><h1>PageNumbers.java</h1><pre class="source lang-java linenums">package org.jabref.logic.msbib;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
+public class PageNumbers {
+<span class="fc" id="L11">    private static final Pattern PAGE_PATTERN = Pattern.compile(&quot;\\s*(\\d+)\\s*-{1,2}\\s*(\\d+)\\s*&quot;);</span>
+    private String freeform;
+    private int start;
+
+    private int end;
+
+<span class="fc" id="L17">    public PageNumbers(String pages) {</span>
+<span class="fc" id="L18">        parsePageNums(pages);</span>
+<span class="fc" id="L19">    }</span>
+
+    private void parsePageNums(String pages) {
+<span class="fc" id="L22">        Matcher matcher = PAGE_PATTERN.matcher(pages);</span>
+<span class="fc bfc" id="L23" title="All 2 branches covered.">        if (matcher.matches()) {</span>
+<span class="fc" id="L24">            start = Integer.parseInt(matcher.group(1));</span>
+<span class="fc" id="L25">            end = Integer.parseInt(matcher.group(2));</span>
+        } else {
+<span class="fc" id="L27">            freeform = pages;</span>
+        }
+<span class="fc" id="L29">    }</span>
+
+    public Element getDOMrepresentation(Document document) {
+<span class="nc" id="L32">        Element result = document.createElement(&quot;extent&quot;);</span>
+<span class="nc" id="L33">        result.setAttribute(&quot;unit&quot;, &quot;page&quot;);</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (freeform == null) {</span>
+<span class="nc" id="L35">            Element tmpStart = document.createElement(&quot;start&quot;);</span>
+<span class="nc" id="L36">            Element tmpEnd = document.createElement(&quot;end&quot;);</span>
+<span class="nc" id="L37">            tmpStart.appendChild(document.createTextNode(String.valueOf(this.start)));</span>
+<span class="nc" id="L38">            tmpEnd.appendChild(document.createTextNode(String.valueOf(this.end)));</span>
+<span class="nc" id="L39">            result.appendChild(tmpStart);</span>
+<span class="nc" id="L40">            result.appendChild(tmpEnd);</span>
+<span class="nc" id="L41">        } else {</span>
+<span class="nc" id="L42">            Node textNode = document.createTextNode(freeform);</span>
+<span class="nc" id="L43">            result.appendChild(textNode);</span>
+        }
+<span class="nc" id="L45">        return result;</span>
+    }
+
+    public String toString(String separator) {
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (freeform != null) {</span>
+<span class="fc" id="L50">            return freeform;</span>
+        }
+<span class="fc" id="L52">        return start + separator + end;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L57">        return toString(&quot;-&quot;);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

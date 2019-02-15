@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CrossRefEntryComparator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.bibtex.comparator</a> &gt; <span class="el_source">CrossRefEntryComparator.java</span></div><h1>CrossRefEntryComparator.java</h1><pre class="source lang-java linenums">package org.jabref.logic.bibtex.comparator;
+
+import java.util.Comparator;
+
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+
+/**
+ * Compares Bibtex entries based on their 'crossref' fields. Entries including
+ * this field are deemed smaller than entries without this field. This serves
+ * the purpose of always placing referenced entries after referring entries in
+ * the .bib file. After this criterion comes comparisons of individual fields.
+ */
+<span class="fc" id="L14">public class CrossRefEntryComparator implements Comparator&lt;BibEntry&gt; {</span>
+
+    @Override
+    public int compare(BibEntry e1, BibEntry e2) {
+<span class="fc" id="L18">        boolean crEntry1 = e1.hasField(FieldName.CROSSREF);</span>
+<span class="fc" id="L19">        boolean crEntry2 = e2.hasField(FieldName.CROSSREF);</span>
+
+<span class="fc bfc" id="L21" title="All 8 branches covered.">        if ((crEntry1 &amp;&amp; crEntry2) || (!crEntry1 &amp;&amp; !crEntry2)) {</span>
+<span class="fc" id="L22">            return 0;</span>
+        }
+
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        if (!crEntry1) {</span>
+<span class="fc" id="L26">            return 1;</span>
+        } else {
+<span class="fc" id="L28">            return -1;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

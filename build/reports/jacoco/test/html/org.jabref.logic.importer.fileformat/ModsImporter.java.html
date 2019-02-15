@@ -1,0 +1,499 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ModsImporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fileformat</a> &gt; <span class="el_source">ModsImporter.java</span></div><h1>ModsImporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fileformat;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.Importer;
+import org.jabref.logic.importer.ParseException;
+import org.jabref.logic.importer.Parser;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.importer.fileformat.mods.AbstractDefinition;
+import org.jabref.logic.importer.fileformat.mods.DateDefinition;
+import org.jabref.logic.importer.fileformat.mods.DetailDefinition;
+import org.jabref.logic.importer.fileformat.mods.ExtentDefinition;
+import org.jabref.logic.importer.fileformat.mods.GenreDefinition;
+import org.jabref.logic.importer.fileformat.mods.HierarchicalGeographicDefinition;
+import org.jabref.logic.importer.fileformat.mods.IdentifierDefinition;
+import org.jabref.logic.importer.fileformat.mods.IssuanceDefinition;
+import org.jabref.logic.importer.fileformat.mods.LanguageDefinition;
+import org.jabref.logic.importer.fileformat.mods.LanguageTermDefinition;
+import org.jabref.logic.importer.fileformat.mods.LocationDefinition;
+import org.jabref.logic.importer.fileformat.mods.ModsCollectionDefinition;
+import org.jabref.logic.importer.fileformat.mods.ModsDefinition;
+import org.jabref.logic.importer.fileformat.mods.NameDefinition;
+import org.jabref.logic.importer.fileformat.mods.NamePartDefinition;
+import org.jabref.logic.importer.fileformat.mods.NoteDefinition;
+import org.jabref.logic.importer.fileformat.mods.OriginInfoDefinition;
+import org.jabref.logic.importer.fileformat.mods.PartDefinition;
+import org.jabref.logic.importer.fileformat.mods.PhysicalLocationDefinition;
+import org.jabref.logic.importer.fileformat.mods.PlaceDefinition;
+import org.jabref.logic.importer.fileformat.mods.PlaceTermDefinition;
+import org.jabref.logic.importer.fileformat.mods.RecordInfoDefinition;
+import org.jabref.logic.importer.fileformat.mods.RelatedItemDefinition;
+import org.jabref.logic.importer.fileformat.mods.StringPlusLanguage;
+import org.jabref.logic.importer.fileformat.mods.StringPlusLanguagePlusAuthority;
+import org.jabref.logic.importer.fileformat.mods.StringPlusLanguagePlusSupplied;
+import org.jabref.logic.importer.fileformat.mods.SubjectDefinition;
+import org.jabref.logic.importer.fileformat.mods.TitleInfoDefinition;
+import org.jabref.logic.importer.fileformat.mods.UrlDefinition;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+
+import com.google.common.base.Joiner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Importer for the MODS format.&lt;br&gt;
+ * More details about the format can be found here &lt;a href=&quot;http://www.loc.gov/standards/mods/&quot;&gt;http://www.loc.gov/standards/mods/&lt;/a&gt;. &lt;br&gt;
+ * The newest xml schema can also be found here &lt;a href=&quot;www.loc.gov/standards/mods/mods-schemas.html.&quot;&gt;www.loc.gov/standards/mods/mods-schemas.html.&lt;/a&gt;.
+ */
+public class ModsImporter extends Importer implements Parser {
+
+<span class="fc" id="L72">    private static final Logger LOGGER = LoggerFactory.getLogger(ModsImporter.class);</span>
+<span class="fc" id="L73">    private static final Pattern MODS_PATTERN = Pattern.compile(&quot;&lt;mods .*&gt;&quot;);</span>
+
+    private final String keywordSeparator;
+
+    private JAXBContext context;
+
+<span class="fc" id="L79">    public ModsImporter(ImportFormatPreferences importFormatPreferences) {</span>
+<span class="fc" id="L80">        keywordSeparator = importFormatPreferences.getKeywordSeparator() + &quot; &quot;;</span>
+<span class="fc" id="L81">    }</span>
+
+    @Override
+    public boolean isRecognizedFormat(BufferedReader input) throws IOException {
+<span class="fc" id="L85">        return input.lines().anyMatch(line -&gt; MODS_PATTERN.matcher(line).find());</span>
+    }
+
+    @Override
+    public ParserResult importDatabase(BufferedReader input) throws IOException {
+<span class="fc" id="L90">        Objects.requireNonNull(input);</span>
+
+<span class="fc" id="L92">        List&lt;BibEntry&gt; bibItems = new ArrayList&lt;&gt;();</span>
+
+        try {
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">            if (context == null) {</span>
+<span class="fc" id="L96">                context = JAXBContext.newInstance(&quot;org.jabref.logic.importer.fileformat.mods&quot;);</span>
+            }
+<span class="fc" id="L98">            Unmarshaller unmarshaller = context.createUnmarshaller();</span>
+
+            //The unmarshalled object is a jaxbElement.
+<span class="fc" id="L101">            JAXBElement&lt;?&gt; unmarshalledObject = (JAXBElement&lt;?&gt;) unmarshaller.unmarshal(input);</span>
+
+<span class="fc" id="L103">            Optional&lt;ModsCollectionDefinition&gt; collection = getElement(unmarshalledObject.getValue(),</span>
+                    ModsCollectionDefinition.class);
+<span class="fc" id="L105">            Optional&lt;ModsDefinition&gt; mods = getElement(unmarshalledObject.getValue(), ModsDefinition.class);</span>
+
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            if (collection.isPresent()) {</span>
+<span class="fc" id="L108">                List&lt;ModsDefinition&gt; modsDefinitions = collection.get().getMods();</span>
+<span class="fc" id="L109">                parseModsCollection(bibItems, modsDefinitions);</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">            } else if (mods.isPresent()) {</span>
+<span class="fc" id="L111">                ModsDefinition modsDefinition = mods.get();</span>
+<span class="fc" id="L112">                parseMods(bibItems, modsDefinition);</span>
+<span class="fc" id="L113">            } else {</span>
+<span class="nc" id="L114">                LOGGER.warn(&quot;Not expected root element found&quot;);</span>
+            }
+<span class="nc" id="L116">        } catch (JAXBException e) {</span>
+<span class="nc" id="L117">            LOGGER.debug(&quot;could not parse document&quot;, e);</span>
+<span class="nc" id="L118">            return ParserResult.fromError(e);</span>
+<span class="fc" id="L119">        }</span>
+<span class="fc" id="L120">        return new ParserResult(bibItems);</span>
+    }
+
+    private void parseModsCollection(List&lt;BibEntry&gt; bibItems, List&lt;ModsDefinition&gt; mods) {
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        for (ModsDefinition modsDefinition : mods) {</span>
+<span class="fc" id="L125">            parseMods(bibItems, modsDefinition);</span>
+<span class="fc" id="L126">        }</span>
+<span class="fc" id="L127">    }</span>
+
+    private void parseMods(List&lt;BibEntry&gt; bibItems, ModsDefinition modsDefinition) {
+<span class="fc" id="L130">        BibEntry entry = new BibEntry();</span>
+<span class="fc" id="L131">        Map&lt;String, String&gt; fields = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        if (modsDefinition.getID() != null) {</span>
+<span class="fc" id="L133">            entry.setCiteKey(modsDefinition.getID());</span>
+        }
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">        if (modsDefinition.getModsGroup() != null) {</span>
+<span class="fc" id="L136">            parseModsGroup(fields, modsDefinition.getModsGroup(), entry);</span>
+        }
+<span class="fc" id="L138">        entry.setField(fields);</span>
+<span class="fc" id="L139">        bibItems.add(entry);</span>
+<span class="fc" id="L140">    }</span>
+
+    private void parseModsGroup(Map&lt;String, String&gt; fields, List&lt;Object&gt; modsGroup, BibEntry entry) {
+<span class="fc" id="L143">        List&lt;String&gt; keywords = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L144">        List&lt;String&gt; authors = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L145">        List&lt;String&gt; notes = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L147" title="All 2 branches covered.">        for (Object groupElement : modsGroup) {</span>
+
+            //Get the element. Only one of the elements should be not an empty optional.
+<span class="fc" id="L150">            Optional&lt;AbstractDefinition&gt; abstractDefinition = getElement(groupElement, AbstractDefinition.class);</span>
+<span class="fc" id="L151">            Optional&lt;GenreDefinition&gt; genreDefinition = getElement(groupElement, GenreDefinition.class);</span>
+<span class="fc" id="L152">            Optional&lt;LanguageDefinition&gt; languageDefinition = getElement(groupElement, LanguageDefinition.class);</span>
+<span class="fc" id="L153">            Optional&lt;LocationDefinition&gt; locationDefinition = getElement(groupElement, LocationDefinition.class);</span>
+<span class="fc" id="L154">            Optional&lt;NameDefinition&gt; nameDefinition = getElement(groupElement, NameDefinition.class);</span>
+<span class="fc" id="L155">            Optional&lt;OriginInfoDefinition&gt; originInfoDefinition = getElement(groupElement, OriginInfoDefinition.class);</span>
+<span class="fc" id="L156">            Optional&lt;RecordInfoDefinition&gt; recordInfoDefinition = getElement(groupElement, RecordInfoDefinition.class);</span>
+<span class="fc" id="L157">            Optional&lt;NoteDefinition&gt; noteDefinition = getElement(groupElement, NoteDefinition.class);</span>
+<span class="fc" id="L158">            Optional&lt;RelatedItemDefinition&gt; relatedItemDefinition = getElement(groupElement,</span>
+                    RelatedItemDefinition.class);
+<span class="fc" id="L160">            Optional&lt;SubjectDefinition&gt; subjectDefinition = getElement(groupElement, SubjectDefinition.class);</span>
+<span class="fc" id="L161">            Optional&lt;IdentifierDefinition&gt; identifierDefinition = getElement(groupElement, IdentifierDefinition.class);</span>
+<span class="fc" id="L162">            Optional&lt;TitleInfoDefinition&gt; titleInfoDefinition = getElement(groupElement, TitleInfoDefinition.class);</span>
+
+            //Now parse the information if the element is present
+<span class="fc" id="L165">            abstractDefinition</span>
+<span class="fc" id="L166">                    .ifPresent(abstractDef -&gt; putIfValueNotNull(fields, FieldName.ABSTRACT, abstractDef.getValue()));</span>
+
+<span class="fc" id="L168">            genreDefinition.ifPresent(genre -&gt; entry.setType(genre.getValue()));</span>
+
+<span class="fc" id="L170">            languageDefinition.ifPresent(</span>
+<span class="fc" id="L171">                    languageDef -&gt; languageDef.getLanguageTerm().stream().map(LanguageTermDefinition::getValue)</span>
+<span class="fc" id="L172">                            .forEach(language -&gt; putIfValueNotNull(fields, FieldName.LANGUAGE, language)));</span>
+
+<span class="fc" id="L174">            locationDefinition.ifPresent(location -&gt; parseLocationAndUrl(fields, location));</span>
+
+<span class="fc" id="L176">            nameDefinition.ifPresent(name -&gt; handleAuthorsInNamePart(name, authors, fields));</span>
+
+<span class="fc" id="L178">            originInfoDefinition.ifPresent(originInfo -&gt; originInfo.getPlaceOrPublisherOrDateIssued().stream()</span>
+<span class="fc" id="L179">                    .forEach(element -&gt; putPlaceOrPublisherOrDate(fields, element.getName().getLocalPart(),</span>
+<span class="fc" id="L180">                            element.getValue())));</span>
+
+<span class="fc" id="L182">            recordInfoDefinition.ifPresent(recordInfo -&gt; parseRecordInfo(fields, recordInfo));</span>
+
+<span class="fc" id="L184">            noteDefinition.ifPresent(note -&gt; notes.add(note.getValue()));</span>
+
+<span class="fc" id="L186">            relatedItemDefinition.ifPresent(relatedItem -&gt; parseRelatedModsGroup(fields, relatedItem.getModsGroup()));</span>
+
+<span class="fc" id="L188">            subjectDefinition</span>
+<span class="fc" id="L189">                    .ifPresent(subject -&gt; parseTopic(fields, subject.getTopicOrGeographicOrTemporal(), keywords));</span>
+
+<span class="fc" id="L191">            identifierDefinition.ifPresent(identifier -&gt; parseIdentifier(fields, identifier, entry));</span>
+
+<span class="fc" id="L193">            titleInfoDefinition.ifPresent(titleInfo -&gt; parseTitle(fields, titleInfo.getTitleOrSubTitleOrPartNumber()));</span>
+
+<span class="fc" id="L195">        }</span>
+
+        //The element subject can appear more than one time, that's why the keywords has to be put out of the for loop
+<span class="fc" id="L198">        putIfListIsNotEmpty(fields, keywords, FieldName.KEYWORDS, this.keywordSeparator);</span>
+        //same goes for authors and notes
+<span class="fc" id="L200">        putIfListIsNotEmpty(fields, authors, FieldName.AUTHOR, &quot; and &quot;);</span>
+<span class="fc" id="L201">        putIfListIsNotEmpty(fields, notes, FieldName.NOTE, &quot;, &quot;);</span>
+
+<span class="fc" id="L203">    }</span>
+
+    private void parseTitle(Map&lt;String, String&gt; fields, List&lt;Object&gt; titleOrSubTitleOrPartNumber) {
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        for (Object object : titleOrSubTitleOrPartNumber) {</span>
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">            if (object instanceof JAXBElement) {</span>
+                @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L209">                JAXBElement&lt;StringPlusLanguage&gt; element = (JAXBElement&lt;StringPlusLanguage&gt;) object;</span>
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">                if (&quot;title&quot;.equals(element.getName().getLocalPart())) {</span>
+<span class="fc" id="L211">                    StringPlusLanguage title = element.getValue();</span>
+<span class="fc" id="L212">                    fields.put(FieldName.TITLE, title.getValue());</span>
+                }
+            }
+<span class="fc" id="L215">        }</span>
+<span class="fc" id="L216">    }</span>
+
+    private void parseIdentifier(Map&lt;String, String&gt; fields, IdentifierDefinition identifier, BibEntry entry) {
+<span class="fc" id="L219">        String type = identifier.getType();</span>
+<span class="fc bfc" id="L220" title="All 4 branches covered.">        if (&quot;citekey&quot;.equals(type) &amp;&amp; !entry.getCiteKeyOptional().isPresent()) {</span>
+<span class="fc" id="L221">            entry.setCiteKey(identifier.getValue());</span>
+<span class="fc bfc" id="L222" title="All 4 branches covered.">        } else if (!&quot;local&quot;.equals(type) &amp;&amp; !&quot;citekey&quot;.equals(type)) {</span>
+            //put all identifiers (doi, issn, isbn,...) except of local and citekey
+<span class="fc" id="L224">            putIfValueNotNull(fields, identifier.getType(), identifier.getValue());</span>
+        }
+<span class="fc" id="L226">    }</span>
+
+    private void parseTopic(Map&lt;String, String&gt; fields, List&lt;JAXBElement&lt;?&gt;&gt; topicOrGeographicOrTemporal,
+                            List&lt;String&gt; keywords) {
+<span class="fc bfc" id="L230" title="All 2 branches covered.">        for (JAXBElement&lt;?&gt; jaxbElement : topicOrGeographicOrTemporal) {</span>
+<span class="fc" id="L231">            Object value = jaxbElement.getValue();</span>
+<span class="fc" id="L232">            String elementName = jaxbElement.getName().getLocalPart();</span>
+<span class="fc bfc" id="L233" title="All 2 branches covered.">            if (value instanceof HierarchicalGeographicDefinition) {</span>
+<span class="fc" id="L234">                HierarchicalGeographicDefinition hierarchichalGeographic = (HierarchicalGeographicDefinition) value;</span>
+<span class="fc" id="L235">                parseGeographicInformation(fields, hierarchichalGeographic);</span>
+<span class="pc bpc" id="L236" title="2 of 4 branches missed.">            } else if ((value instanceof StringPlusLanguagePlusAuthority) &amp;&amp; &quot;topic&quot;.equals(elementName)) {</span>
+<span class="fc" id="L237">                StringPlusLanguagePlusAuthority topic = (StringPlusLanguagePlusAuthority) value;</span>
+<span class="fc" id="L238">                keywords.add(topic.getValue().trim());</span>
+            }
+<span class="fc" id="L240">        }</span>
+<span class="fc" id="L241">    }</span>
+
+    /**
+     * Returns an Optional which contains an instance of the given class, if the given element can be cast to this class.
+     * If the element cannot be cast to the given class, then an empty optional will be returned.
+     *
+     * @param groupElement The element that should be cast
+     * @param clazz        The class to which groupElement should be cast
+     * @return An Optional, that contains the groupElement as instance of clazz, if groupElement can be cast to clazz.
+     * An empty Optional, if groupElement cannot be cast to clazz
+     */
+    private &lt;T&gt; Optional&lt;T&gt; getElement(Object groupElement, Class&lt;T&gt; clazz) {
+<span class="fc bfc" id="L253" title="All 2 branches covered.">        if (clazz.isAssignableFrom(groupElement.getClass())) {</span>
+<span class="fc" id="L254">            return Optional.of(clazz.cast(groupElement));</span>
+        }
+<span class="fc" id="L256">        return Optional.empty();</span>
+    }
+
+    private void parseGeographicInformation(Map&lt;String, String&gt; fields,
+                                            HierarchicalGeographicDefinition hierarchichalGeographic) {
+<span class="fc" id="L261">        List&lt;JAXBElement&lt;? extends StringPlusLanguage&gt;&gt; areaOrContinentOrCountry = hierarchichalGeographic</span>
+<span class="fc" id="L262">                .getExtraTerrestrialAreaOrContinentOrCountry();</span>
+<span class="fc bfc" id="L263" title="All 2 branches covered.">        for (JAXBElement&lt;? extends StringPlusLanguage&gt; element : areaOrContinentOrCountry) {</span>
+<span class="fc" id="L264">            String localName = element.getName().getLocalPart();</span>
+<span class="fc bfc" id="L265" title="All 2 branches covered.">            if (&quot;city&quot;.equals(localName)) {</span>
+<span class="fc" id="L266">                StringPlusLanguage city = element.getValue();</span>
+<span class="fc" id="L267">                putIfValueNotNull(fields, &quot;city&quot;, city.getValue());</span>
+<span class="pc bpc" id="L268" title="1 of 2 branches missed.">            } else if (&quot;country&quot;.equals(localName)) {</span>
+<span class="fc" id="L269">                StringPlusLanguage country = element.getValue();</span>
+<span class="fc" id="L270">                putIfValueNotNull(fields, &quot;country&quot;, country.getValue());</span>
+            }
+<span class="fc" id="L272">        }</span>
+<span class="fc" id="L273">    }</span>
+
+    private void parseLocationAndUrl(Map&lt;String, String&gt; fields, LocationDefinition locationDefinition) {
+<span class="fc" id="L276">        List&lt;String&gt; locations = locationDefinition.getPhysicalLocation().stream()</span>
+<span class="fc" id="L277">                .map(PhysicalLocationDefinition::getValue).collect(Collectors.toList());</span>
+<span class="fc" id="L278">        putIfListIsNotEmpty(fields, locations, FieldName.LOCATION, &quot;, &quot;);</span>
+
+<span class="fc" id="L280">        List&lt;String&gt; urls = locationDefinition.getUrl().stream().map(UrlDefinition::getValue)</span>
+<span class="fc" id="L281">                .collect(Collectors.toList());</span>
+<span class="fc" id="L282">        putIfListIsNotEmpty(fields, urls, FieldName.URL, &quot;, &quot;);</span>
+<span class="fc" id="L283">    }</span>
+
+    private void parseRecordInfo(Map&lt;String, String&gt; fields, RecordInfoDefinition recordInfo) {
+<span class="fc" id="L286">        List&lt;JAXBElement&lt;?&gt;&gt; recordContent = recordInfo.getRecordContentSourceOrRecordCreationDateOrRecordChangeDate();</span>
+<span class="fc bfc" id="L287" title="All 2 branches covered.">        for (JAXBElement&lt;?&gt; jaxbElement : recordContent) {</span>
+<span class="fc" id="L288">            Object value = jaxbElement.getValue();</span>
+<span class="fc bfc" id="L289" title="All 2 branches covered.">            if (value instanceof StringPlusLanguagePlusAuthority) {</span>
+<span class="fc" id="L290">                StringPlusLanguagePlusAuthority source = (StringPlusLanguagePlusAuthority) value;</span>
+<span class="fc" id="L291">                putIfValueNotNull(fields, &quot;source&quot;, source.getValue());</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">            } else if (value instanceof LanguageDefinition) {</span>
+<span class="fc" id="L293">                LanguageDefinition language = (LanguageDefinition) value;</span>
+<span class="fc" id="L294">                List&lt;LanguageTermDefinition&gt; languageTerms = language.getLanguageTerm();</span>
+<span class="fc" id="L295">                List&lt;String&gt; languages = languageTerms.stream().map(LanguageTermDefinition::getValue)</span>
+<span class="fc" id="L296">                        .collect(Collectors.toList());</span>
+<span class="fc" id="L297">                putIfListIsNotEmpty(fields, languages, FieldName.LANGUAGE, &quot;, &quot;);</span>
+            }
+<span class="fc" id="L299">        }</span>
+<span class="fc" id="L300">    }</span>
+
+    /**
+     * Puts the Information from the RelatedModsGroup. It has the same elements like the ModsGroup.
+     * But Informations like volume, issue and the pages appear here instead of in the ModsGroup.
+     * Also if there appears a title field, then this indicates that is the name of journal which the article belongs to.
+     */
+    private void parseRelatedModsGroup(Map&lt;String, String&gt; fields, List&lt;Object&gt; relatedModsGroup) {
+<span class="fc bfc" id="L308" title="All 2 branches covered.">        for (Object groupElement : relatedModsGroup) {</span>
+<span class="fc bfc" id="L309" title="All 2 branches covered.">            if (groupElement instanceof PartDefinition) {</span>
+<span class="fc" id="L310">                PartDefinition part = (PartDefinition) groupElement;</span>
+<span class="fc" id="L311">                List&lt;Object&gt; detailOrExtentOrDate = part.getDetailOrExtentOrDate();</span>
+<span class="fc bfc" id="L312" title="All 2 branches covered.">                for (Object object : detailOrExtentOrDate) {</span>
+<span class="fc bfc" id="L313" title="All 2 branches covered.">                    if (object instanceof DetailDefinition) {</span>
+<span class="fc" id="L314">                        DetailDefinition detail = (DetailDefinition) object;</span>
+<span class="fc" id="L315">                        List&lt;JAXBElement&lt;StringPlusLanguage&gt;&gt; numberOrCaptionOrTitle = detail</span>
+<span class="fc" id="L316">                                .getNumberOrCaptionOrTitle();</span>
+
+                        //In the for loop should only be the value of the element that belongs to the detail not be null
+<span class="fc bfc" id="L319" title="All 2 branches covered.">                        for (JAXBElement&lt;StringPlusLanguage&gt; jaxbElement : numberOrCaptionOrTitle) {</span>
+<span class="fc" id="L320">                            StringPlusLanguage value = jaxbElement.getValue();</span>
+                            //put details like volume, issue,...
+<span class="fc" id="L322">                            putIfValueNotNull(fields, detail.getType(), value.getValue());</span>
+<span class="fc" id="L323">                        }</span>
+<span class="pc bpc" id="L324" title="1 of 2 branches missed.">                    } else if (object instanceof ExtentDefinition) {</span>
+<span class="fc" id="L325">                        ExtentDefinition extentDefinition = (ExtentDefinition) object;</span>
+<span class="fc" id="L326">                        putPageInformation(extentDefinition, fields);</span>
+                    }
+<span class="fc" id="L328">                }</span>
+<span class="fc bfc" id="L329" title="All 2 branches covered.">            } else if (groupElement instanceof TitleInfoDefinition) {</span>
+<span class="fc" id="L330">                TitleInfoDefinition titleInfo = (TitleInfoDefinition) groupElement;</span>
+<span class="fc" id="L331">                List&lt;Object&gt; titleOrSubTitleOrPartNumber = titleInfo.getTitleOrSubTitleOrPartNumber();</span>
+<span class="fc bfc" id="L332" title="All 2 branches covered.">                for (Object object : titleOrSubTitleOrPartNumber) {</span>
+<span class="pc bpc" id="L333" title="1 of 2 branches missed.">                    if (object instanceof JAXBElement) {</span>
+                        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L335">                        JAXBElement&lt;StringPlusLanguage&gt; element = (JAXBElement&lt;StringPlusLanguage&gt;) object;</span>
+<span class="pc bpc" id="L336" title="1 of 2 branches missed.">                        if (&quot;title&quot;.equals(element.getName().getLocalPart())) {</span>
+<span class="fc" id="L337">                            StringPlusLanguage journal = element.getValue();</span>
+<span class="fc" id="L338">                            fields.put(FieldName.JOURNAL, journal.getValue());</span>
+                        }
+                    }
+<span class="fc" id="L341">                }</span>
+            }
+<span class="fc" id="L343">        }</span>
+<span class="fc" id="L344">    }</span>
+
+    private void putPageInformation(ExtentDefinition extentDefinition, Map&lt;String, String&gt; fields) {
+<span class="fc bfc" id="L347" title="All 2 branches covered.">        if (extentDefinition.getTotal() != null) {</span>
+<span class="fc" id="L348">            putIfValueNotNull(fields, FieldName.PAGES, String.valueOf(extentDefinition.getTotal()));</span>
+<span class="pc bpc" id="L349" title="1 of 2 branches missed.">        } else if (extentDefinition.getStart() != null) {</span>
+<span class="fc" id="L350">            putIfValueNotNull(fields, FieldName.PAGES, extentDefinition.getStart().getValue());</span>
+<span class="pc bpc" id="L351" title="1 of 2 branches missed.">            if (extentDefinition.getEnd() != null) {</span>
+<span class="fc" id="L352">                String endPage = extentDefinition.getEnd().getValue();</span>
+                //if end appears, then there has to be a start page appeared, so get it and put it together with
+                //the end page
+<span class="fc" id="L355">                String startPage = fields.get(FieldName.PAGES);</span>
+<span class="fc" id="L356">                fields.put(FieldName.PAGES, startPage + &quot;-&quot; + endPage);</span>
+            }
+        }
+<span class="fc" id="L359">    }</span>
+
+    private void putPlaceOrPublisherOrDate(Map&lt;String, String&gt; fields, String elementName, Object object) {
+<span class="fc" id="L362">        Optional&lt;IssuanceDefinition&gt; issuanceDefinition = getElement(object, IssuanceDefinition.class);</span>
+<span class="fc" id="L363">        Optional&lt;PlaceDefinition&gt; placeDefinition = getElement(object, PlaceDefinition.class);</span>
+<span class="fc" id="L364">        Optional&lt;DateDefinition&gt; dateDefinition = getElement(object, DateDefinition.class);</span>
+<span class="fc" id="L365">        Optional&lt;StringPlusLanguagePlusSupplied&gt; publisherOrEdition = getElement(object,</span>
+                StringPlusLanguagePlusSupplied.class);
+
+<span class="fc" id="L368">        issuanceDefinition.ifPresent(issuance -&gt; putIfValueNotNull(fields, &quot;issuance&quot;, issuance.value()));</span>
+
+<span class="fc" id="L370">        List&lt;String&gt; places = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L371">        placeDefinition</span>
+<span class="pc bpc" id="L372" title="1 of 2 branches missed.">                .ifPresent(place -&gt; place.getPlaceTerm().stream().filter(placeTerm -&gt; placeTerm.getValue() != null)</span>
+<span class="fc" id="L373">                        .map(PlaceTermDefinition::getValue).forEach(element -&gt; places.add(element)));</span>
+<span class="fc" id="L374">        putIfListIsNotEmpty(fields, places, FieldName.ADDRESS, &quot;, &quot;);</span>
+
+<span class="fc" id="L376">        dateDefinition.ifPresent(date -&gt; putDate(fields, elementName, date));</span>
+
+<span class="fc" id="L378">        publisherOrEdition.ifPresent(pubOrEd -&gt; putPublisherOrEdition(fields, elementName, pubOrEd));</span>
+<span class="fc" id="L379">    }</span>
+
+    private void putPublisherOrEdition(Map&lt;String, String&gt; fields, String elementName,
+                                       StringPlusLanguagePlusSupplied pubOrEd) {
+<span class="fc bfc" id="L383" title="All 2 branches covered.">        if (&quot;publisher&quot;.equals(elementName)) {</span>
+<span class="fc" id="L384">            putIfValueNotNull(fields, FieldName.PUBLISHER, pubOrEd.getValue());</span>
+<span class="pc bpc" id="L385" title="1 of 2 branches missed.">        } else if (&quot;edition&quot;.equals(elementName)) {</span>
+<span class="fc" id="L386">            putIfValueNotNull(fields, FieldName.EDITION, pubOrEd.getValue());</span>
+        }
+<span class="fc" id="L388">    }</span>
+
+    private void putDate(Map&lt;String, String&gt; fields, String elementName, DateDefinition date) {
+<span class="pc bpc" id="L391" title="1 of 2 branches missed.">        if (date.getValue() != null) {</span>
+<span class="fc bfc" id="L392" title="All 5 branches covered.">            switch (elementName) {</span>
+
+                case &quot;dateIssued&quot;:
+                    //The first 4 digits of dateIssued should be the year
+<span class="fc" id="L396">                    fields.put(FieldName.YEAR, date.getValue().substring(0, 4));</span>
+<span class="fc" id="L397">                    break;</span>
+                case &quot;dateCreated&quot;:
+                    //If there was no year in date issued, then take the year from date created
+<span class="fc bfc" id="L400" title="All 2 branches covered.">                    if (fields.get(FieldName.YEAR) == null) {</span>
+<span class="fc" id="L401">                        fields.put(FieldName.YEAR, date.getValue().substring(0, 4));</span>
+                    }
+<span class="fc" id="L403">                    fields.put(&quot;created&quot;, date.getValue());</span>
+<span class="fc" id="L404">                    break;</span>
+                case &quot;dateCaptured&quot;:
+<span class="fc" id="L406">                    fields.put(&quot;captured&quot;, date.getValue());</span>
+<span class="fc" id="L407">                    break;</span>
+                case &quot;dateModified&quot;:
+<span class="fc" id="L409">                    fields.put(&quot;modified&quot;, date.getValue());</span>
+<span class="fc" id="L410">                    break;</span>
+                default:
+                    break;
+            }
+        }
+<span class="fc" id="L415">    }</span>
+
+    private void putIfListIsNotEmpty(Map&lt;String, String&gt; fields, List&lt;String&gt; list, String key, String separator) {
+<span class="fc bfc" id="L418" title="All 2 branches covered.">        if (!list.isEmpty()) {</span>
+<span class="fc" id="L419">            fields.put(key, list.stream().collect(Collectors.joining(separator)));</span>
+        }
+<span class="fc" id="L421">    }</span>
+
+    private void handleAuthorsInNamePart(NameDefinition name, List&lt;String&gt; authors, Map&lt;String, String&gt; fields) {
+<span class="fc" id="L424">        List&lt;JAXBElement&lt;?&gt;&gt; namePartOrDisplayFormOrAffiliation = name.getNamePartOrDisplayFormOrAffiliation();</span>
+<span class="fc" id="L425">        List&lt;String&gt; foreName = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L426">        String familyName = &quot;&quot;;</span>
+<span class="fc" id="L427">        String author = &quot;&quot;;</span>
+<span class="fc bfc" id="L428" title="All 2 branches covered.">        for (JAXBElement&lt;?&gt; element : namePartOrDisplayFormOrAffiliation) {</span>
+<span class="fc" id="L429">            Object value = element.getValue();</span>
+<span class="fc" id="L430">            String elementName = element.getName().getLocalPart();</span>
+<span class="fc bfc" id="L431" title="All 2 branches covered.">            if (value instanceof NamePartDefinition) {</span>
+<span class="fc" id="L432">                NamePartDefinition namePart = (NamePartDefinition) value;</span>
+<span class="fc" id="L433">                String type = namePart.getAtType();</span>
+<span class="pc bpc" id="L434" title="1 of 4 branches missed.">                if ((type == null) &amp;&amp; (namePart.getValue() != null)) {</span>
+<span class="fc" id="L435">                    authors.add(namePart.getValue());</span>
+<span class="pc bpc" id="L436" title="1 of 4 branches missed.">                } else if (&quot;family&quot;.equals(type) &amp;&amp; (namePart.getValue() != null)) {</span>
+                    //family should come first, so if family appears we can set the author then comes before
+                    //we have to check if forename and family name are not empty in case it's the first author
+<span class="pc bpc" id="L439" title="3 of 4 branches missed.">                    if (!foreName.isEmpty() &amp;&amp; !familyName.isEmpty()) {</span>
+                        //now set and add the old author
+<span class="nc" id="L441">                        author = familyName + &quot;, &quot; + Joiner.on(&quot; &quot;).join(foreName);</span>
+<span class="nc" id="L442">                        authors.add(author);</span>
+                        //remove old forenames
+<span class="nc" id="L444">                        foreName.clear();</span>
+<span class="pc bpc" id="L445" title="2 of 4 branches missed.">                    } else if (foreName.isEmpty() &amp;&amp; !familyName.isEmpty()) {</span>
+<span class="nc" id="L446">                        authors.add(familyName);</span>
+                    }
+<span class="fc" id="L448">                    familyName = namePart.getValue();</span>
+<span class="pc bpc" id="L449" title="2 of 4 branches missed.">                } else if (&quot;given&quot;.equals(type) &amp;&amp; (namePart.getValue() != null)) {</span>
+<span class="fc" id="L450">                    foreName.add(namePart.getValue());</span>
+                }
+<span class="pc bpc" id="L452" title="1 of 4 branches missed.">            } else if ((value instanceof StringPlusLanguage) &amp;&amp; &quot;affiliation&quot;.equals(elementName)) {</span>
+<span class="fc" id="L453">                StringPlusLanguage affiliation = (StringPlusLanguage) value;</span>
+<span class="fc" id="L454">                putIfValueNotNull(fields, &quot;affiliation&quot;, affiliation.getValue());</span>
+            }
+<span class="fc" id="L456">        }</span>
+
+        //last author is not added, so do it here
+<span class="pc bpc" id="L459" title="1 of 4 branches missed.">        if (!foreName.isEmpty() &amp;&amp; !familyName.isEmpty()) {</span>
+<span class="fc" id="L460">            author = familyName + &quot;, &quot; + Joiner.on(&quot; &quot;).join(foreName);</span>
+<span class="fc" id="L461">            authors.add(author.trim());</span>
+<span class="fc" id="L462">            foreName.clear();</span>
+<span class="pc bpc" id="L463" title="1 of 4 branches missed.">        } else if (foreName.isEmpty() &amp;&amp; !familyName.isEmpty()) {</span>
+<span class="fc" id="L464">            authors.add(familyName.trim());</span>
+        }
+<span class="fc" id="L466">    }</span>
+
+    private void putIfValueNotNull(Map&lt;String, String&gt; fields, String modsKey, String value) {
+<span class="pc bpc" id="L469" title="1 of 2 branches missed.">        if (value != null) {</span>
+<span class="fc" id="L470">            fields.put(modsKey, value);</span>
+        }
+<span class="fc" id="L472">    }</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L476">        return &quot;MODS&quot;;</span>
+    }
+
+    @Override
+    public StandardFileType getFileType() {
+<span class="fc" id="L481">        return StandardFileType.XML;</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L486">        return &quot;Importer for the MODS format&quot;;</span>
+    }
+
+    @Override
+    public List&lt;BibEntry&gt; parseEntries(InputStream inputStream) throws ParseException {
+        try {
+<span class="nc" id="L492">            return importDatabase(new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))).getDatabase().getEntries();</span>
+<span class="nc" id="L493">        } catch (IOException e) {</span>
+<span class="nc" id="L494">            LOGGER.error(e.getLocalizedMessage(), e);</span>
+        }
+<span class="nc" id="L496">        return Collections.emptyList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

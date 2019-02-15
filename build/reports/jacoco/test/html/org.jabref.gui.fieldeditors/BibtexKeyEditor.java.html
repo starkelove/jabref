@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibtexKeyEditor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.fieldeditors</a> &gt; <span class="el_source">BibtexKeyEditor.java</span></div><h1>BibtexKeyEditor.java</h1><pre class="source lang-java linenums">package org.jabref.gui.fieldeditors;
+
+import javax.swing.undo.UndoManager;
+
+import javafx.fxml.FXML;
+import javafx.scene.Parent;
+import javafx.scene.control.Button;
+import javafx.scene.layout.HBox;
+
+import org.jabref.gui.DialogService;
+import org.jabref.gui.actions.ActionFactory;
+import org.jabref.gui.actions.StandardActions;
+import org.jabref.gui.autocompleter.AutoCompleteSuggestionProvider;
+import org.jabref.logic.integrity.FieldCheckers;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.preferences.JabRefPreferences;
+
+import com.airhacks.afterburner.views.ViewLoader;
+
+public class BibtexKeyEditor extends HBox implements FieldEditorFX {
+
+    private final JabRefPreferences preferences;
+    @FXML private BibtexKeyEditorViewModel viewModel;
+    @FXML private Button generateCiteKeyButton;
+    @FXML private EditorTextField textField;
+
+<span class="nc" id="L28">    public BibtexKeyEditor(String fieldName, JabRefPreferences preferences, AutoCompleteSuggestionProvider&lt;?&gt; suggestionProvider, FieldCheckers fieldCheckers, BibDatabaseContext databaseContext, UndoManager undoManager, DialogService dialogService) {</span>
+<span class="nc" id="L29">        this.preferences = preferences;</span>
+<span class="nc" id="L30">        this.viewModel = new BibtexKeyEditorViewModel(fieldName, suggestionProvider, fieldCheckers, preferences.getEntryEditorPreferences(), databaseContext, undoManager, dialogService);</span>
+
+<span class="nc" id="L32">        ViewLoader.view(this)</span>
+<span class="nc" id="L33">                  .root(this)</span>
+<span class="nc" id="L34">                  .load();</span>
+
+<span class="nc" id="L36">        textField.textProperty().bindBidirectional(viewModel.textProperty());</span>
+
+<span class="nc" id="L38">        new EditorValidator(preferences).configureValidation(viewModel.getFieldValidator().getValidationStatus(), textField);</span>
+<span class="nc" id="L39">    }</span>
+
+    public BibtexKeyEditorViewModel getViewModel() {
+<span class="nc" id="L42">        return viewModel;</span>
+    }
+
+    @Override
+    public void bindToEntry(BibEntry entry) {
+<span class="nc" id="L47">        viewModel.bindToEntry(entry);</span>
+
+        // Configure cite key button
+<span class="nc" id="L50">        new ActionFactory(preferences.getKeyBindingRepository())</span>
+<span class="nc" id="L51">                .configureIconButton(</span>
+                        StandardActions.GENERATE_CITE_KEY,
+<span class="nc" id="L53">                        viewModel.getGenerateCiteKeyCommand(),</span>
+                        generateCiteKeyButton);
+<span class="nc" id="L55">    }</span>
+
+    @Override
+    public Parent getNode() {
+<span class="nc" id="L59">        return this;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.model.entry.IEEETranEntryTypesTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:26" hostname="n184-p67.eduroam.kth.se" time="0.0">
+  <properties/>
+  <testcase name="ctlTypeContainsYesNoFields()" classname="org.jabref.model.entry.IEEETranEntryTypesTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

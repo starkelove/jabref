@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OracleConnection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">oracle.jdbc</a> &gt; <span class="el_source">OracleConnection.java</span></div><h1>OracleConnection.java</h1><pre class="source lang-java linenums">package oracle.jdbc;
+
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.NClob;
+import java.sql.PreparedStatement;
+import java.sql.SQLClientInfoException;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Savepoint;
+import java.sql.Statement;
+import java.sql.Struct;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.Executor;
+
+import oracle.jdbc.dcn.DatabaseChangeRegistration;
+
+/**
+ * A mocking class used as a placeholder for the real Oracle JDBC drivers to prevent build errors.
+ */
+<span class="nc" id="L27">public class OracleConnection implements Connection {</span>
+
+    public static String DCN_NOTIFY_ROWIDS;
+    public static String DCN_QUERY_CHANGE_NOTIFICATION;
+
+    @Override
+    public &lt;T&gt; T unwrap(Class&lt;T&gt; iface) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L35">        return null;</span>
+    }
+
+    @Override
+    public boolean isWrapperFor(Class&lt;?&gt; iface) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L41">        return false;</span>
+    }
+
+    @Override
+    public Statement createStatement() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L47">        return null;</span>
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String sql) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L53">        return null;</span>
+    }
+
+    @Override
+    public CallableStatement prepareCall(String sql) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L59">        return null;</span>
+    }
+
+    @Override
+    public String nativeSQL(String sql) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L65">        return null;</span>
+    }
+
+    @Override
+    public void setAutoCommit(boolean autoCommit) throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L72">    }</span>
+
+    @Override
+    public boolean getAutoCommit() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L77">        return false;</span>
+    }
+
+    @Override
+    public void commit() throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L84">    }</span>
+
+    @Override
+    public void rollback() throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L90">    }</span>
+
+    @Override
+    public void close() throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L96">    }</span>
+
+    @Override
+    public boolean isClosed() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L101">        return false;</span>
+    }
+
+    @Override
+    public DatabaseMetaData getMetaData() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L107">        return null;</span>
+    }
+
+    @Override
+    public void setReadOnly(boolean readOnly) throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L114">    }</span>
+
+    @Override
+    public boolean isReadOnly() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L119">        return false;</span>
+    }
+
+    @Override
+    public void setCatalog(String catalog) throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L126">    }</span>
+
+    @Override
+    public String getCatalog() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L131">        return null;</span>
+    }
+
+    @Override
+    public void setTransactionIsolation(int level) throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L138">    }</span>
+
+    @Override
+    public int getTransactionIsolation() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L143">        return 0;</span>
+    }
+
+    @Override
+    public SQLWarning getWarnings() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L149">        return null;</span>
+    }
+
+    @Override
+    public void clearWarnings() throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L156">    }</span>
+
+    @Override
+    public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L161">        return null;</span>
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
+            throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L168">        return null;</span>
+    }
+
+    @Override
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L174">        return null;</span>
+    }
+
+    @Override
+    public Map&lt;String, Class&lt;?&gt;&gt; getTypeMap() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L180">        return null;</span>
+    }
+
+    @Override
+    public void setTypeMap(Map&lt;String, Class&lt;?&gt;&gt; map) throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L187">    }</span>
+
+    @Override
+    public void setHoldability(int holdability) throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L193">    }</span>
+
+    @Override
+    public int getHoldability() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L198">        return 0;</span>
+    }
+
+    @Override
+    public Savepoint setSavepoint() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L204">        return null;</span>
+    }
+
+    @Override
+    public Savepoint setSavepoint(String name) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L210">        return null;</span>
+    }
+
+    @Override
+    public void rollback(Savepoint savepoint) throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L217">    }</span>
+
+    @Override
+    public void releaseSavepoint(Savepoint savepoint) throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L223">    }</span>
+
+    @Override
+    public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
+            throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L229">        return null;</span>
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency,
+            int resultSetHoldability) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L236">        return null;</span>
+    }
+
+    @Override
+    public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency,
+            int resultSetHoldability) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L243">        return null;</span>
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L249">        return null;</span>
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L255">        return null;</span>
+    }
+
+    @Override
+    public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L261">        return null;</span>
+    }
+
+    @Override
+    public Clob createClob() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L267">        return null;</span>
+    }
+
+    @Override
+    public Blob createBlob() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L273">        return null;</span>
+    }
+
+    @Override
+    public NClob createNClob() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L279">        return null;</span>
+    }
+
+    @Override
+    public SQLXML createSQLXML() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L285">        return null;</span>
+    }
+
+    @Override
+    public boolean isValid(int timeout) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L291">        return false;</span>
+    }
+
+    @Override
+    public void setClientInfo(String name, String value) throws SQLClientInfoException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L298">    }</span>
+
+    @Override
+    public void setClientInfo(Properties properties) throws SQLClientInfoException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L304">    }</span>
+
+    @Override
+    public String getClientInfo(String name) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L309">        return null;</span>
+    }
+
+    @Override
+    public Properties getClientInfo() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L315">        return null;</span>
+    }
+
+    @Override
+    public Array createArrayOf(String typeName, Object[] elements) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L321">        return null;</span>
+    }
+
+    @Override
+    public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L327">        return null;</span>
+    }
+
+    @Override
+    public void setSchema(String schema) throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L334">    }</span>
+
+    @Override
+    public String getSchema() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L339">        return null;</span>
+    }
+
+    @Override
+    public void abort(Executor executor) throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L346">    }</span>
+
+    @Override
+    public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
+        //  Auto-generated method stub
+
+<span class="nc" id="L352">    }</span>
+
+    @Override
+    public int getNetworkTimeout() throws SQLException {
+        //  Auto-generated method stub
+<span class="nc" id="L357">        return 0;</span>
+    }
+
+    public DatabaseChangeRegistration registerDatabaseChangeNotification(@SuppressWarnings(&quot;unused&quot;) Properties properties) {
+<span class="nc" id="L361">        return new DatabaseChangeRegistration();</span>
+    }
+
+    public void unregisterDatabaseChangeNotification(@SuppressWarnings(&quot;unused&quot;) DatabaseChangeRegistration databaseChangeRegistration) {
+        // do nothing
+<span class="nc" id="L366">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

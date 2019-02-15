@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PdfDocumentPageViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.documentviewer</a> &gt; <span class="el_source">PdfDocumentPageViewModel.java</span></div><h1>PdfDocumentPageViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.documentviewer;
+
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.util.Objects;
+
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.image.Image;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.rendering.ImageType;
+import org.apache.pdfbox.rendering.PDFRenderer;
+
+/**
+ * Represents the view model of a pdf page backed by a {@link PDPage}.
+ */
+public class PdfDocumentPageViewModel extends DocumentPageViewModel {
+
+    private final PDPage page;
+    private final int pageNumber;
+    private final PDDocument document;
+
+<span class="nc" id="L26">    public PdfDocumentPageViewModel(PDPage page, int pageNumber, PDDocument document) {</span>
+<span class="nc" id="L27">        this.page = Objects.requireNonNull(page);</span>
+<span class="nc" id="L28">        this.pageNumber = pageNumber;</span>
+<span class="nc" id="L29">        this.document = document;</span>
+<span class="nc" id="L30">    }</span>
+
+    // Taken from http://stackoverflow.com/a/9417836/873661
+    private static BufferedImage resize(BufferedImage img, int newWidth, int newHeight) {
+<span class="nc" id="L34">        java.awt.Image tmp = img.getScaledInstance(newWidth, newHeight, java.awt.Image.SCALE_SMOOTH);</span>
+<span class="nc" id="L35">        BufferedImage dimg = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);</span>
+
+<span class="nc" id="L37">        Graphics2D g2d = dimg.createGraphics();</span>
+<span class="nc" id="L38">        g2d.drawImage(tmp, 0, 0, null);</span>
+<span class="nc" id="L39">        g2d.dispose();</span>
+
+<span class="nc" id="L41">        return dimg;</span>
+    }
+
+    @Override
+    // Taken from https://stackoverflow.com/questions/23326562/apache-pdfbox-convert-pdf-to-images
+    public Image render(int width, int height) {
+<span class="nc" id="L47">        PDFRenderer renderer = new PDFRenderer(document);</span>
+        try {
+<span class="nc" id="L49">            int resolution = 96;</span>
+<span class="nc" id="L50">            BufferedImage image = renderer.renderImageWithDPI(pageNumber, 2 * resolution, ImageType.RGB);</span>
+<span class="nc" id="L51">            return SwingFXUtils.toFXImage(resize(image, width, height), null);</span>
+<span class="nc" id="L52">        } catch (IOException e) {</span>
+            // TODO: LOG
+<span class="nc" id="L54">            return null;</span>
+        }
+    }
+
+    @Override
+    public int getPageNumber() {
+<span class="nc" id="L60">        return pageNumber;</span>
+    }
+
+    @Override
+    public double getAspectRatio() {
+<span class="nc" id="L65">        PDRectangle mediaBox = page.getMediaBox();</span>
+<span class="nc" id="L66">        return mediaBox.getWidth() / mediaBox.getHeight();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

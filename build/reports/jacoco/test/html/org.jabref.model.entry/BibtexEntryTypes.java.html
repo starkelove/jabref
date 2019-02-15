@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibtexEntryTypes.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry</a> &gt; <span class="el_source">BibtexEntryTypes.java</span></div><h1>BibtexEntryTypes.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * This class represents all supported BibTex entry types.
+ * &lt;p&gt;
+ * Article, Book, Booklet, Conference, Inbook, Incollection, Inproceedings,
+ * Manual, Mastersthesis, Misc, Phdthesis, Proceedings, Techreport, Unpublished
+ */
+public class BibtexEntryTypes {
+    /**
+     * An article from a journal or magazine.
+     * &lt;p&gt;
+     * Required fields: author, title, journal, year.
+     * Optional fields: volume, number, pages, month, note.
+     */
+<span class="fc" id="L20">    public static final EntryType ARTICLE = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L23">            addAllRequired(FieldName.AUTHOR, FieldName.TITLE, FieldName.JOURNAL, FieldName.YEAR);</span>
+<span class="fc" id="L24">            addAllOptional(FieldName.VOLUME, FieldName.NUMBER, FieldName.PAGES, FieldName.MONTH, FieldName.ISSN, FieldName.NOTE);</span>
+<span class="fc" id="L25">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L29">            return &quot;Article&quot;;</span>
+        }
+    };
+
+    /**
+     * A book with an explicit publisher.
+     * &lt;p&gt;
+     * Required fields: author or editor, title, publisher, year.
+     * Optional fields: volume or number, series, address, edition, month, note.
+     */
+<span class="fc" id="L39">    public static final EntryType BOOK = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L42">            addAllRequired(FieldName.TITLE, FieldName.PUBLISHER, FieldName.YEAR, FieldName.orFields(FieldName.AUTHOR, FieldName.EDITOR));</span>
+<span class="fc" id="L43">            addAllOptional(FieldName.VOLUME, FieldName.NUMBER, FieldName.SERIES, FieldName.ADDRESS, FieldName.EDITION, FieldName.MONTH, FieldName.ISBN, FieldName.NOTE);</span>
+<span class="fc" id="L44">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L48">            return &quot;Book&quot;;</span>
+        }
+    };
+
+    /**
+     * A work that is printed and bound, but without a named publisher or sponsoring institution.
+     * &lt;p&gt;
+     * Required field: title.
+     * Optional fields: author, howpublished, address, month, year, note.
+     */
+<span class="fc" id="L58">    public static final EntryType BOOKLET = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L61">            addAllRequired(FieldName.TITLE);</span>
+<span class="fc" id="L62">            addAllOptional(FieldName.AUTHOR, FieldName.HOWPUBLISHED, FieldName.ADDRESS, FieldName.MONTH, FieldName.YEAR, FieldName.NOTE);</span>
+<span class="fc" id="L63">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L67">            return &quot;Booklet&quot;;</span>
+        }
+    };
+
+    /**
+     * An article in a conference proceedings.
+     * &lt;p&gt;
+     * Required fields: author, title, booktitle, year.
+     * Optional fields: editor, volume or number, series, pages, address, month, organization, publisher, note.
+     */
+<span class="fc" id="L77">    public static final EntryType CONFERENCE = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L80">            addAllRequired(FieldName.AUTHOR, FieldName.TITLE, FieldName.BOOKTITLE, FieldName.YEAR);</span>
+<span class="fc" id="L81">            addAllOptional(FieldName.EDITOR, FieldName.VOLUME, FieldName.NUMBER, FieldName.SERIES, FieldName.PAGES, FieldName.ADDRESS, FieldName.MONTH, FieldName.ORGANIZATION,</span>
+                    FieldName.PUBLISHER, FieldName.NOTE);
+<span class="fc" id="L83">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L87">            return &quot;Conference&quot;;</span>
+        }
+    };
+
+    /**
+     * A part of a book, which may be a chapter (or section or whatever) and/or a range of pages.
+     * &lt;p&gt;
+     * Required fields: author or editor, title, chapter and/or pages, publisher, year.
+     * Optional fields: volume or number, series, type, address, edition, month, note.
+     */
+<span class="fc" id="L97">    public static final EntryType INBOOK = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L100">            addAllRequired(FieldName.orFields(FieldName.CHAPTER, FieldName.PAGES), FieldName.TITLE, FieldName.PUBLISHER, FieldName.YEAR, FieldName.orFields(FieldName.AUTHOR, FieldName.EDITOR));</span>
+<span class="fc" id="L101">            addAllOptional(FieldName.VOLUME, FieldName.NUMBER, FieldName.SERIES, FieldName.TYPE, FieldName.ADDRESS, FieldName.EDITION, FieldName.MONTH, FieldName.ISBN, FieldName.NOTE);</span>
+<span class="fc" id="L102">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L106">            return &quot;InBook&quot;;</span>
+        }
+    };
+
+    /**
+     * A part of a book having its own title.
+     * Required fields: author, title, booktitle, publisher, year.
+     * Optional fields: editor, volume or number, series, type, chapter, pages, address, edition, month, note.
+     */
+<span class="fc" id="L115">    public static final EntryType INCOLLECTION = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L118">            addAllRequired(FieldName.AUTHOR, FieldName.TITLE, FieldName.BOOKTITLE, FieldName.PUBLISHER, FieldName.YEAR);</span>
+<span class="fc" id="L119">            addAllOptional(FieldName.EDITOR, FieldName.VOLUME, FieldName.NUMBER, FieldName.SERIES, FieldName.TYPE, FieldName.CHAPTER, FieldName.PAGES, FieldName.ADDRESS, FieldName.EDITION,</span>
+                    FieldName.MONTH, FieldName.ISBN, FieldName.NOTE);
+<span class="fc" id="L121">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L125">            return &quot;InCollection&quot;;</span>
+        }
+    };
+
+    /**
+     * An article in a conference proceedings.
+     * &lt;p&gt;
+     * Required fields: author, title, booktitle, year.
+     * Optional fields: editor, volume or number, series, pages, address, month, organization, publisher, note.
+     */
+<span class="fc" id="L135">    public static final EntryType INPROCEEDINGS = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L138">            addAllRequired(FieldName.AUTHOR, FieldName.TITLE, FieldName.BOOKTITLE, FieldName.YEAR);</span>
+<span class="fc" id="L139">            addAllOptional(FieldName.EDITOR, FieldName.VOLUME, FieldName.NUMBER, FieldName.SERIES, FieldName.PAGES, FieldName.ADDRESS, FieldName.MONTH, FieldName.ORGANIZATION,</span>
+                    FieldName.PUBLISHER, FieldName.NOTE);
+<span class="fc" id="L141">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L145">            return &quot;InProceedings&quot;;</span>
+        }
+    };
+
+    /**
+     * Technical documentation.
+     * Required field: title.
+     * Optional fields: author, organization, address, edition, month, year, note.
+     */
+<span class="fc" id="L154">    public static final EntryType MANUAL = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L157">            addAllRequired(FieldName.TITLE);</span>
+<span class="fc" id="L158">            addAllOptional(FieldName.AUTHOR, FieldName.ORGANIZATION, FieldName.ADDRESS, FieldName.EDITION, FieldName.MONTH, FieldName.YEAR, FieldName.ISBN, FieldName.NOTE);</span>
+<span class="fc" id="L159">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L163">            return &quot;Manual&quot;;</span>
+        }
+    };
+
+    /**
+     * A Master's thesis.
+     * &lt;p&gt;
+     * Required fields: author, title, school, year.
+     * Optional fields: type, address, month, note.
+     */
+<span class="fc" id="L173">    public static final EntryType MASTERSTHESIS = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L176">            addAllRequired(FieldName.AUTHOR, FieldName.TITLE, FieldName.SCHOOL, FieldName.YEAR);</span>
+<span class="fc" id="L177">            addAllOptional(FieldName.TYPE, FieldName.ADDRESS, FieldName.MONTH, FieldName.NOTE);</span>
+<span class="fc" id="L178">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L182">            return &quot;MastersThesis&quot;;</span>
+        }
+    };
+
+    /**
+     * Use this type when nothing else fits.
+     * &lt;p&gt;
+     * Required fields: none.
+     * Optional fields: author, title, howpublished, month, year, note.
+     */
+<span class="fc" id="L192">    public static final EntryType MISC = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L195">            addAllOptional(FieldName.AUTHOR, FieldName.TITLE, FieldName.HOWPUBLISHED, FieldName.MONTH, FieldName.YEAR, FieldName.NOTE);</span>
+<span class="fc" id="L196">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L200">            return &quot;Misc&quot;;</span>
+        }
+    };
+
+    /**
+     * A PhD thesis.
+     * &lt;p&gt;
+     * Required fields: author, title, school, year.
+     * Optional fields: type, address, month, note.
+     */
+<span class="fc" id="L210">    public static final EntryType PHDTHESIS = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L213">            addAllRequired(FieldName.AUTHOR, FieldName.TITLE, FieldName.SCHOOL, FieldName.YEAR);</span>
+<span class="fc" id="L214">            addAllOptional(FieldName.TYPE, FieldName.ADDRESS, FieldName.MONTH, FieldName.NOTE);</span>
+<span class="fc" id="L215">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L219">            return &quot;PhdThesis&quot;;</span>
+        }
+    };
+
+    /**
+     * The proceedings of a conference.
+     * &lt;p&gt;
+     * Required fields: title, year.
+     * Optional fields: editor, volume or number, series, address, month, organization, publisher, note.
+     */
+<span class="fc" id="L229">    public static final EntryType PROCEEDINGS = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L232">            addAllRequired(FieldName.TITLE, FieldName.YEAR);</span>
+<span class="fc" id="L233">            addAllOptional(FieldName.EDITOR, FieldName.VOLUME, FieldName.NUMBER, FieldName.SERIES, FieldName.ADDRESS, FieldName.PUBLISHER, FieldName.MONTH,</span>
+                    FieldName.ORGANIZATION, FieldName.ISBN, FieldName.NOTE);
+<span class="fc" id="L235">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L239">            return &quot;Proceedings&quot;;</span>
+        }
+    };
+
+    /**
+     * A report published by a school or other institution, usually numbered within a series.
+     * &lt;p&gt;
+     * Required fields: author, title, institution, year.
+     * Optional fields: type, number, address, month, note.
+     */
+<span class="fc" id="L249">    public static final EntryType TECHREPORT = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L252">            addAllRequired(FieldName.AUTHOR, FieldName.TITLE, FieldName.INSTITUTION, FieldName.YEAR);</span>
+<span class="fc" id="L253">            addAllOptional(FieldName.TYPE, FieldName.NUMBER, FieldName.ADDRESS, FieldName.MONTH, FieldName.NOTE);</span>
+<span class="fc" id="L254">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L258">            return &quot;TechReport&quot;;</span>
+        }
+    };
+
+    /**
+     * A document having an author and title, but not formally published.
+     * &lt;p&gt;
+     * Required fields: author, title, note.
+     * Optional fields: month, year.
+     */
+<span class="fc" id="L268">    public static final EntryType UNPUBLISHED = new BibtexEntryType() {</span>
+
+        {
+<span class="fc" id="L271">            addAllRequired(FieldName.AUTHOR, FieldName.TITLE, FieldName.NOTE);</span>
+<span class="fc" id="L272">            addAllOptional(FieldName.MONTH, FieldName.YEAR);</span>
+<span class="fc" id="L273">        }</span>
+
+        @Override
+        public String getName() {
+<span class="fc" id="L277">            return &quot;Unpublished&quot;;</span>
+        }
+    };
+
+<span class="fc" id="L281">    public static final List&lt;EntryType&gt; ALL = Arrays.asList(ARTICLE, INBOOK, BOOK, BOOKLET, INCOLLECTION, CONFERENCE,</span>
+            INPROCEEDINGS, PROCEEDINGS, MANUAL, MASTERSTHESIS, PHDTHESIS, TECHREPORT, UNPUBLISHED, MISC);
+
+    private BibtexEntryTypes() {
+    }
+
+    public static Optional&lt;EntryType&gt; getType(String name) {
+<span class="fc" id="L288">        return ALL.stream().filter(e -&gt; e.getName().equalsIgnoreCase(name)).findFirst();</span>
+    }
+
+    public static EntryType getTypeOrDefault(String name) {
+<span class="fc" id="L292">        return getType(name).orElseGet(() -&gt; new CustomEntryType(name, &quot;required&quot;, &quot;optional&quot;));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FormatNameFunction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.bst</a> &gt; <span class="el_source">FormatNameFunction.java</span></div><h1>FormatNameFunction.java</h1><pre class="source lang-java linenums">package org.jabref.logic.bst;
+
+import java.util.Stack;
+
+import org.jabref.logic.bst.VM.BstEntry;
+import org.jabref.logic.bst.VM.BstFunction;
+import org.jabref.model.entry.Author;
+import org.jabref.model.entry.AuthorList;
+
+/**
+ * From Bibtex:
+ *
+ * &quot;The |built_in| function {\.{format.name\$}} pops the
+ * top three literals (they are a string, an integer, and a string
+ * literal, in that order). The last string literal represents a
+ * name list (each name corresponding to a person), the integer
+ * literal specifies which name to pick from this list, and the
+ * first string literal specifies how to format this name, as
+ * described in the \BibTeX\ documentation. Finally, this function
+ * pushes the formatted name. If any of the types is incorrect, it
+ * complains and pushes the null string.&quot;
+ *
+ * All the pain is encapsulated in BibtexNameFormatter. :-)
+ *
+ */
+public class FormatNameFunction implements BstFunction {
+
+    private final VM vm;
+
+
+<span class="fc" id="L31">    public FormatNameFunction(VM vm) {</span>
+<span class="fc" id="L32">        this.vm = vm;</span>
+<span class="fc" id="L33">    }</span>
+
+    @Override
+    public void execute(BstEntry context) {
+<span class="fc" id="L37">        Stack&lt;Object&gt; stack = vm.getStack();</span>
+
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        if (stack.size() &lt; 3) {</span>
+<span class="nc" id="L40">            throw new VMException(&quot;Not enough operands on stack for operation format.name$&quot;);</span>
+        }
+<span class="fc" id="L42">        Object o1 = stack.pop();</span>
+<span class="fc" id="L43">        Object o2 = stack.pop();</span>
+<span class="fc" id="L44">        Object o3 = stack.pop();</span>
+
+<span class="pc bpc" id="L46" title="5 of 6 branches missed.">        if (!(o1 instanceof String) &amp;&amp; !(o2 instanceof Integer) &amp;&amp; !(o3 instanceof String)) {</span>
+            // warning(&quot;A string is needed for change.case$&quot;);
+<span class="nc" id="L48">            stack.push(&quot;&quot;);</span>
+<span class="nc" id="L49">            return;</span>
+        }
+
+<span class="fc" id="L52">        String format = (String) o1;</span>
+<span class="fc" id="L53">        Integer name = (Integer) o2;</span>
+<span class="fc" id="L54">        String names = (String) o3;</span>
+
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        if (names == null) {</span>
+<span class="nc" id="L57">            stack.push(&quot;&quot;);</span>
+        } else {
+<span class="fc" id="L59">            AuthorList a = AuthorList.parse(names);</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">            if (name &gt; a.getNumberOfAuthors()) {</span>
+<span class="nc" id="L61">                throw new VMException(&quot;Author Out of Bounds. Number &quot; + name + &quot; invalid for &quot; + names);</span>
+            }
+<span class="fc" id="L63">            Author author = a.getAuthor(name - 1);</span>
+
+<span class="fc" id="L65">            stack.push(BibtexNameFormatter.formatName(author, format, vm));</span>
+        }
+<span class="fc" id="L67">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

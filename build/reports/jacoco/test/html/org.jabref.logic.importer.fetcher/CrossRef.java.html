@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CrossRef.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fetcher</a> &gt; <span class="el_source">CrossRef.java</span></div><h1>CrossRef.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fetcher;
+
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.jabref.logic.formatter.bibtexfields.ClearFormatter;
+import org.jabref.logic.formatter.bibtexfields.RemoveBracesFormatter;
+import org.jabref.logic.importer.EntryBasedParserFetcher;
+import org.jabref.logic.importer.FetcherException;
+import org.jabref.logic.importer.IdBasedParserFetcher;
+import org.jabref.logic.importer.IdParserFetcher;
+import org.jabref.logic.importer.ParseException;
+import org.jabref.logic.importer.Parser;
+import org.jabref.logic.importer.SearchBasedParserFetcher;
+import org.jabref.logic.importer.util.JsonReader;
+import org.jabref.logic.util.strings.StringSimilarity;
+import org.jabref.model.cleanup.FieldFormatterCleanup;
+import org.jabref.model.entry.AuthorList;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BiblatexEntryTypes;
+import org.jabref.model.entry.EntryType;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.identifier.DOI;
+import org.jabref.model.util.OptionalUtil;
+
+import org.apache.http.client.utils.URIBuilder;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+/**
+ * A class for fetching DOIs from CrossRef
+ *
+ * See https://github.com/CrossRef/rest-api-doc
+ */
+<span class="fc" id="L40">public class CrossRef implements IdParserFetcher&lt;DOI&gt;, EntryBasedParserFetcher, SearchBasedParserFetcher, IdBasedParserFetcher {</span>
+
+    private static final String API_URL = &quot;https://api.crossref.org/works&quot;;
+
+<span class="fc" id="L44">    private static final RemoveBracesFormatter REMOVE_BRACES_FORMATTER = new RemoveBracesFormatter();</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L48">        return &quot;Crossref&quot;;</span>
+    }
+
+    @Override
+    public URL getURLForEntry(BibEntry entry) throws URISyntaxException, MalformedURLException, FetcherException {
+<span class="fc" id="L53">        URIBuilder uriBuilder = new URIBuilder(API_URL);</span>
+<span class="pc" id="L54">        entry.getLatexFreeField(FieldName.TITLE).ifPresent(title -&gt; uriBuilder.addParameter(&quot;query.title&quot;, title));</span>
+<span class="pc" id="L55">        entry.getLatexFreeField(FieldName.AUTHOR).ifPresent(author -&gt; uriBuilder.addParameter(&quot;query.author&quot;, author));</span>
+<span class="fc" id="L56">        entry.getLatexFreeField(FieldName.YEAR).ifPresent(year -&gt;</span>
+<span class="nc" id="L57">                uriBuilder.addParameter(&quot;filter&quot;, &quot;from-pub-date:&quot; + year)</span>
+        );
+<span class="fc" id="L59">        uriBuilder.addParameter(&quot;rows&quot;, &quot;20&quot;); // = API default</span>
+<span class="fc" id="L60">        uriBuilder.addParameter(&quot;offset&quot;, &quot;0&quot;); // start at beginning</span>
+<span class="fc" id="L61">        return uriBuilder.build().toURL();</span>
+    }
+
+    @Override
+    public URL getURLForQuery(String query) throws URISyntaxException, MalformedURLException, FetcherException {
+<span class="nc" id="L66">        URIBuilder uriBuilder = new URIBuilder(API_URL);</span>
+<span class="nc" id="L67">        uriBuilder.addParameter(&quot;query&quot;, query);</span>
+<span class="nc" id="L68">        return uriBuilder.build().toURL();</span>
+    }
+
+    @Override
+    public URL getURLForID(String identifier) throws URISyntaxException, MalformedURLException, FetcherException {
+<span class="nc" id="L73">        URIBuilder uriBuilder = new URIBuilder(API_URL + &quot;/&quot; + identifier);</span>
+<span class="nc" id="L74">        return uriBuilder.build().toURL();</span>
+    }
+
+    @Override
+    public Parser getParser() {
+<span class="fc" id="L79">        return inputStream -&gt; {</span>
+<span class="fc" id="L80">            JSONObject response = JsonReader.toJsonObject(inputStream).getJSONObject(&quot;message&quot;);</span>
+
+<span class="fc" id="L82">            List&lt;BibEntry&gt; entries = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">            if (response.has(&quot;items&quot;)) {</span>
+                // Response contains a list
+<span class="fc" id="L85">                JSONArray items = response.getJSONArray(&quot;items&quot;);</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">                for (int i = 0; i &lt; items.length(); i++) {</span>
+<span class="fc" id="L87">                    JSONObject item = items.getJSONObject(i);</span>
+<span class="fc" id="L88">                    BibEntry entry = jsonItemToBibEntry(item);</span>
+<span class="fc" id="L89">                    entries.add(entry);</span>
+                }
+<span class="fc" id="L91">            } else {</span>
+                // Singleton response
+<span class="nc" id="L93">                BibEntry entry = jsonItemToBibEntry(response);</span>
+<span class="nc" id="L94">                entries.add(entry);</span>
+            }
+
+<span class="fc" id="L97">            return entries;</span>
+        };
+    }
+
+    @Override
+    public void doPostCleanup(BibEntry entry) {
+        // Sometimes the fetched entry returns the title also in the subtitle field; in this case only keep the title field
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (entry.getField(FieldName.TITLE).equals(entry.getField(FieldName.SUBTITLE))) {</span>
+<span class="fc" id="L105">            new FieldFormatterCleanup(FieldName.SUBTITLE, new ClearFormatter()).cleanup(entry);</span>
+        }
+<span class="fc" id="L107">    }</span>
+
+    private BibEntry jsonItemToBibEntry(JSONObject item) throws ParseException {
+        try {
+<span class="fc" id="L111">            BibEntry entry = new BibEntry();</span>
+<span class="fc" id="L112">            entry.setType(convertType(item.getString(&quot;type&quot;)));</span>
+<span class="fc" id="L113">            entry.setField(FieldName.TITLE,</span>
+<span class="fc" id="L114">                    Optional.ofNullable(item.optJSONArray(&quot;title&quot;))</span>
+<span class="fc" id="L115">                            .map(array -&gt; array.optString(0)).orElse(&quot;&quot;));</span>
+<span class="fc" id="L116">            entry.setField(FieldName.SUBTITLE,</span>
+<span class="fc" id="L117">                    Optional.ofNullable(item.optJSONArray(&quot;subtitle&quot;))</span>
+<span class="pc" id="L118">                            .map(array -&gt; array.optString(0)).orElse(&quot;&quot;));</span>
+<span class="fc" id="L119">            entry.setField(FieldName.AUTHOR, toAuthors(item.optJSONArray(&quot;author&quot;)));</span>
+<span class="fc" id="L120">            entry.setField(FieldName.YEAR,</span>
+<span class="fc" id="L121">                    Optional.ofNullable(item.optJSONObject(&quot;published-print&quot;))</span>
+<span class="fc" id="L122">                            .map(array -&gt; array.optJSONArray(&quot;date-parts&quot;))</span>
+<span class="fc" id="L123">                            .map(array -&gt; array.optJSONArray(0))</span>
+<span class="fc" id="L124">                            .map(array -&gt; array.optInt(0))</span>
+<span class="fc" id="L125">                            .map(year -&gt; Integer.toString(year)).orElse(&quot;&quot;)</span>
+            );
+<span class="fc" id="L127">            entry.setField(FieldName.DOI, item.getString(&quot;DOI&quot;));</span>
+<span class="fc" id="L128">            entry.setField(FieldName.PAGES, item.optString(&quot;page&quot;));</span>
+<span class="fc" id="L129">            entry.setField(FieldName.VOLUME, item.optString(&quot;volume&quot;));</span>
+<span class="fc" id="L130">            entry.setField(FieldName.ISSN, Optional.ofNullable(item.optJSONArray(&quot;ISSN&quot;)).map(array -&gt; array.getString(0)).orElse(&quot;&quot;));</span>
+<span class="fc" id="L131">            return entry;</span>
+<span class="nc" id="L132">        } catch (JSONException exception) {</span>
+<span class="nc" id="L133">            throw new ParseException(&quot;CrossRef API JSON format has changed&quot;, exception);</span>
+        }
+    }
+
+    private String toAuthors(JSONArray authors) {
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        if (authors == null) {</span>
+<span class="fc" id="L139">            return &quot;&quot;;</span>
+        }
+
+        // input: list of {&quot;given&quot;:&quot;A.&quot;,&quot;family&quot;:&quot;Riel&quot;,&quot;affiliation&quot;:[]}
+<span class="fc" id="L143">        AuthorList authorsParsed = new AuthorList();</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        for (int i = 0; i &lt; authors.length(); i++) {</span>
+<span class="fc" id="L145">            JSONObject author = authors.getJSONObject(i);</span>
+<span class="fc" id="L146">            authorsParsed.addAuthor(</span>
+<span class="fc" id="L147">                    author.optString(&quot;given&quot;, &quot;&quot;),</span>
+                    &quot;&quot;,
+                    &quot;&quot;,
+<span class="fc" id="L150">                    author.optString(&quot;family&quot;, &quot;&quot;),</span>
+                    &quot;&quot;);
+        }
+<span class="fc" id="L153">        return authorsParsed.getAsFirstLastNamesWithAnd();</span>
+    }
+
+    private EntryType convertType(String type) {
+<span class="pc bpc" id="L157" title="1 of 6 branches missed.">        switch (type) {</span>
+            case &quot;journal-article&quot;:
+<span class="fc" id="L159">                return BiblatexEntryTypes.ARTICLE;</span>
+            default:
+<span class="fc" id="L161">                return BiblatexEntryTypes.MISC;</span>
+        }
+    }
+
+    @Override
+    public Optional&lt;DOI&gt; extractIdentifier(BibEntry inputEntry, List&lt;BibEntry&gt; fetchedEntries) throws FetcherException {
+
+<span class="fc" id="L168">        final String entryTitle = REMOVE_BRACES_FORMATTER.format(inputEntry.getLatexFreeField(FieldName.TITLE).orElse(&quot;&quot;));</span>
+<span class="fc" id="L169">        final StringSimilarity stringSimilarity = new StringSimilarity();</span>
+
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        for (BibEntry fetchedEntry : fetchedEntries) {</span>
+            // currently only title-based comparison
+            // title
+<span class="fc" id="L174">            Optional&lt;String&gt; dataTitle = fetchedEntry.getField(FieldName.TITLE);</span>
+
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">            if (OptionalUtil.isPresentAnd(dataTitle, title -&gt; stringSimilarity.isSimilar(entryTitle, title))) {</span>
+<span class="nc" id="L177">                return fetchedEntry.getDOI();</span>
+            }
+
+            // subtitle
+            // additional check, as sometimes subtitle is needed but sometimes only duplicates the title
+<span class="fc" id="L182">            Optional&lt;String&gt; dataSubtitle = fetchedEntry.getField(FieldName.SUBTITLE);</span>
+<span class="pc" id="L183">            Optional&lt;String&gt; dataWithSubTitle = OptionalUtil.combine(dataTitle, dataSubtitle, (title, subtitle) -&gt; title + &quot; &quot; + subtitle);</span>
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">            if (OptionalUtil.isPresentAnd(dataWithSubTitle, titleWithSubtitle -&gt; stringSimilarity.isSimilar(entryTitle, titleWithSubtitle))) {</span>
+<span class="nc" id="L185">                return fetchedEntry.getDOI();</span>
+            }
+<span class="fc" id="L187">        }</span>
+
+<span class="fc" id="L189">        return Optional.empty();</span>
+    }
+
+    @Override
+    public String getIdentifierName() {
+<span class="nc" id="L194">        return &quot;DOI&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

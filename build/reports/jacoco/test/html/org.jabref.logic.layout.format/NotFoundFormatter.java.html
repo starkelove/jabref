@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NotFoundFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.layout.format</a> &gt; <span class="el_source">NotFoundFormatter.java</span></div><h1>NotFoundFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.layout.format;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.layout.LayoutFormatter;
+
+/**
+ * Formatter used to signal that a formatter hasn't been found. This can be
+ * used for graceful degradation if a layout uses an undefined format.
+ */
+public class NotFoundFormatter implements LayoutFormatter {
+
+    private final String notFound;
+
+
+<span class="nc" id="L15">    public NotFoundFormatter(String notFound) {</span>
+
+<span class="nc" id="L17">        this.notFound = notFound;</span>
+<span class="nc" id="L18">    }</span>
+
+    public String getNotFound() {
+<span class="nc" id="L21">        return notFound;</span>
+    }
+
+    @Override
+    public String format(String fieldText) {
+<span class="nc" id="L26">        return '[' + Localization.lang(&quot;Formatter not found: %0&quot;, notFound) + &quot;] &quot; + fieldText;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

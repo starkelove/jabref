@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EntryType.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry</a> &gt; <span class="el_source">EntryType.java</span></div><h1>EntryType.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+/**
+ * Interface for all EntryTypes.
+ */
+public interface EntryType extends Comparable&lt;EntryType&gt; {
+    /**
+     * Returns the tag name of the entry type.
+     *
+     * @return tag name of the entry type.
+     */
+    String getName();
+
+    /**
+     * Returns all supported optional field names.
+     *
+     * @return a List of optional field name Strings
+     */
+    Set&lt;String&gt; getOptionalFields();
+
+    /**
+     * Returns all required field names.
+     * If fields have an OR relationship the name includes both field names divided by /, e.g. author/editor.
+     * If you need all required fields as sole entities use @see{getRequiredFieldsFlat} .
+     *
+     * @return a List of required field name Strings
+     */
+    Set&lt;String&gt; getRequiredFields();
+
+    /**
+     * Returns all required field names.
+     * No OR relationships are captured here.
+     *
+     * @return a List of required field name Strings
+     */
+    default Set&lt;String&gt; getRequiredFieldsFlat() {
+<span class="fc" id="L45">        List&lt;String&gt; requiredFlat = getRequiredFields().stream()</span>
+<span class="fc" id="L46">                .map(field -&gt; field.split(FieldName.FIELD_SEPARATOR))</span>
+<span class="fc" id="L47">                .flatMap(Arrays::stream)</span>
+<span class="fc" id="L48">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L50">        return Collections.unmodifiableSet(new LinkedHashSet&lt;&gt;(requiredFlat));</span>
+    }
+
+    /**
+     * Returns all defined (required &amp; optional) fields.
+     * No OR relationships are captured here.
+     *
+     * @return a List of all defined field name Strings
+     */
+    default Set&lt;String&gt; getAllFields() {
+<span class="fc" id="L60">        List&lt;String&gt; allFields = Stream.concat(getRequiredFieldsFlat().stream(), getOptionalFields().stream())</span>
+<span class="fc" id="L61">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L63">        return Collections.unmodifiableSet(new LinkedHashSet&lt;&gt;(allFields));</span>
+    }
+
+    /**
+     * TODO: move inside GUI
+     */
+    Set&lt;String&gt; getPrimaryOptionalFields();
+
+    /**
+     * TODO: move inside GUI
+     */
+    Set&lt;String&gt; getSecondaryOptionalFields();
+
+    default Set&lt;String&gt; getDeprecatedFields() {
+<span class="nc" id="L77">        Set&lt;String&gt; deprecatedFields = new LinkedHashSet&lt;&gt;(EntryConverter.FIELD_ALIASES_TEX_TO_LTX.keySet());</span>
+<span class="nc" id="L78">        deprecatedFields.add(FieldName.YEAR);</span>
+<span class="nc" id="L79">        deprecatedFields.add(FieldName.MONTH);</span>
+
+<span class="nc" id="L81">        deprecatedFields.retainAll(getOptionalFieldsAndAliases());</span>
+
+<span class="nc" id="L83">        return deprecatedFields;</span>
+    }
+
+    default Set&lt;String&gt; getSecondaryOptionalNotDeprecatedFields() {
+<span class="nc" id="L87">        Set&lt;String&gt; optionalFieldsNotPrimaryOrDeprecated = new LinkedHashSet&lt;&gt;(getSecondaryOptionalFields());</span>
+<span class="nc" id="L88">        optionalFieldsNotPrimaryOrDeprecated.removeAll(getDeprecatedFields());</span>
+<span class="nc" id="L89">        return optionalFieldsNotPrimaryOrDeprecated;</span>
+    }
+
+    /**
+     * Get list of all optional fields of this entry and their aliases.
+     */
+    default Set&lt;String&gt; getOptionalFieldsAndAliases() {
+<span class="nc" id="L96">        Set&lt;String&gt; optionalFieldsAndAliases = new LinkedHashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        for (String field : getOptionalFields()) {</span>
+<span class="nc" id="L98">            optionalFieldsAndAliases.add(field);</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            if (EntryConverter.FIELD_ALIASES_LTX_TO_TEX.containsKey(field)) {</span>
+<span class="nc" id="L100">                optionalFieldsAndAliases.add(EntryConverter.FIELD_ALIASES_LTX_TO_TEX.get(field));</span>
+            }
+<span class="nc" id="L102">        }</span>
+<span class="nc" id="L103">        return optionalFieldsAndAliases;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

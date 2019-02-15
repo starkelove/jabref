@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IdentifierEditorViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.fieldeditors</a> &gt; <span class="el_source">IdentifierEditorViewModel.java</span></div><h1>IdentifierEditorViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.fieldeditors;
+
+import java.io.IOException;
+import java.util.Optional;
+
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
+
+import org.jabref.JabRefGUI;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.autocompleter.AutoCompleteSuggestionProvider;
+import org.jabref.gui.desktop.JabRefDesktop;
+import org.jabref.gui.mergeentries.FetchAndMergeEntry;
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.gui.util.TaskExecutor;
+import org.jabref.logic.importer.WebFetchers;
+import org.jabref.logic.importer.util.IdentifierParser;
+import org.jabref.logic.integrity.FieldCheckers;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.identifier.Identifier;
+
+import org.fxmisc.easybind.EasyBind;
+
+public class IdentifierEditorViewModel extends AbstractEditorViewModel {
+<span class="fc" id="L29">    private BooleanProperty validIdentifierIsNotPresent = new SimpleBooleanProperty(true);</span>
+<span class="fc" id="L30">    private BooleanProperty identifierLookupInProgress = new SimpleBooleanProperty(false);</span>
+<span class="fc" id="L31">    private BooleanProperty idFetcherAvailable = new SimpleBooleanProperty(true);</span>
+<span class="fc" id="L32">    private ObjectProperty&lt;Optional&lt;? extends Identifier&gt;&gt; identifier = new SimpleObjectProperty&lt;&gt;();</span>
+    private TaskExecutor taskExecutor;
+    private DialogService dialogService;
+
+    public IdentifierEditorViewModel(String fieldName, AutoCompleteSuggestionProvider&lt;?&gt; suggestionProvider, TaskExecutor taskExecutor, DialogService dialogService, FieldCheckers fieldCheckers) {
+<span class="fc" id="L37">        super(fieldName, suggestionProvider, fieldCheckers);</span>
+
+<span class="fc" id="L39">        this.taskExecutor = taskExecutor;</span>
+<span class="fc" id="L40">        this.dialogService = dialogService;</span>
+
+<span class="fc" id="L42">        identifier.bind(</span>
+<span class="fc" id="L43">                EasyBind.map(text, input -&gt; IdentifierParser.parse(fieldName, input))</span>
+        );
+
+<span class="fc" id="L46">        validIdentifierIsNotPresent.bind(</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">                EasyBind.map(identifier, parsedIdentifier -&gt; !parsedIdentifier.isPresent())</span>
+        );
+
+<span class="fc" id="L50">        idFetcherAvailable.setValue(WebFetchers.getIdFetcherForField(fieldName).isPresent());</span>
+<span class="fc" id="L51">    }</span>
+
+    public boolean isIdFetcherAvailable() {
+<span class="nc" id="L54">        return idFetcherAvailable.get();</span>
+    }
+
+    public BooleanProperty idFetcherAvailableProperty() {
+<span class="nc" id="L58">        return idFetcherAvailable;</span>
+    }
+
+    public boolean getValidIdentifierIsNotPresent() {
+<span class="nc" id="L62">        return validIdentifierIsNotPresent.get();</span>
+    }
+
+    public BooleanProperty validIdentifierIsNotPresentProperty() {
+<span class="fc" id="L66">        return validIdentifierIsNotPresent;</span>
+    }
+
+    public void openExternalLink() {
+<span class="nc" id="L70">        identifier.get().flatMap(Identifier::getExternalURI).ifPresent(</span>
+                url -&gt; {
+                    try {
+<span class="nc" id="L73">                        JabRefDesktop.openBrowser(url);</span>
+<span class="nc" id="L74">                    } catch (IOException ex) {</span>
+<span class="nc" id="L75">                        dialogService.showErrorDialogAndWait(Localization.lang(&quot;Unable to open link.&quot;), ex);</span>
+<span class="nc" id="L76">                    }</span>
+<span class="nc" id="L77">                }</span>
+        );
+
+<span class="nc" id="L80">    }</span>
+
+    public boolean getIdentifierLookupInProgress() {
+<span class="nc" id="L83">        return identifierLookupInProgress.get();</span>
+    }
+
+    public BooleanProperty identifierLookupInProgressProperty() {
+<span class="nc" id="L87">        return identifierLookupInProgress;</span>
+    }
+
+    public void fetchInformationByIdentifier(BibEntry entry) {
+<span class="nc" id="L91">        new FetchAndMergeEntry(JabRefGUI.getMainFrame().getCurrentBasePanel(), taskExecutor).fetchAndMerge(entry, fieldName);</span>
+<span class="nc" id="L92">    }</span>
+
+    public void lookupIdentifier(BibEntry entry) {
+<span class="nc" id="L95">        WebFetchers.getIdFetcherForField(fieldName).ifPresent(idFetcher -&gt; {</span>
+<span class="nc" id="L96">            BackgroundTask</span>
+<span class="nc" id="L97">                    .wrap(() -&gt; idFetcher.findIdentifier(entry))</span>
+<span class="nc" id="L98">                    .onRunning(() -&gt; identifierLookupInProgress.setValue(true))</span>
+<span class="nc" id="L99">                    .onFinished(() -&gt; identifierLookupInProgress.setValue(false))</span>
+<span class="nc" id="L100">                    .onSuccess(identifier -&gt; {</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                        if (identifier.isPresent()) {</span>
+<span class="nc" id="L102">                            entry.setField(fieldName, identifier.get().getNormalized());</span>
+                        } else {
+<span class="nc" id="L104">                            dialogService.notify(Localization.lang(&quot;No %0 found&quot;, FieldName.getDisplayName(fieldName)));</span>
+                        }
+<span class="nc" id="L106">                    })</span>
+<span class="nc" id="L107">                    .onFailure(dialogService::showErrorDialogAndWait)</span>
+<span class="nc" id="L108">                    .executeWith(taskExecutor);</span>
+<span class="nc" id="L109">        });</span>
+<span class="nc" id="L110">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

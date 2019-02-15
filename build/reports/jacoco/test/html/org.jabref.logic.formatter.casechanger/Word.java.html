@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Word.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.formatter.casechanger</a> &gt; <span class="el_source">Word.java</span></div><h1>Word.java</h1><pre class="source lang-java linenums">package org.jabref.logic.formatter.casechanger;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
+
+/**
+ * Represents a word in a title of a bibtex entry.
+ * &lt;p&gt;
+ * A word can have protected chars (enclosed in '{' '}') and may be a small (a, an, the, ...) word.
+ */
+public final class Word {
+    public static final Set&lt;String&gt; SMALLER_WORDS;
+
+    static {
+<span class="fc" id="L19">        Set&lt;String&gt; smallerWords = new HashSet&lt;&gt;();</span>
+
+        // Articles
+<span class="fc" id="L22">        smallerWords.addAll(Arrays.asList(&quot;a&quot;, &quot;an&quot;, &quot;the&quot;));</span>
+        // Prepositions
+<span class="fc" id="L24">        smallerWords.addAll(Arrays.asList(&quot;above&quot;, &quot;about&quot;, &quot;across&quot;, &quot;against&quot;, &quot;along&quot;, &quot;among&quot;, &quot;around&quot;, &quot;at&quot;, &quot;before&quot;, &quot;behind&quot;, &quot;below&quot;, &quot;beneath&quot;, &quot;beside&quot;, &quot;between&quot;, &quot;beyond&quot;, &quot;by&quot;, &quot;down&quot;, &quot;during&quot;, &quot;except&quot;, &quot;for&quot;, &quot;from&quot;, &quot;in&quot;, &quot;inside&quot;, &quot;into&quot;, &quot;like&quot;, &quot;near&quot;, &quot;of&quot;, &quot;off&quot;, &quot;on&quot;, &quot;onto&quot;, &quot;since&quot;, &quot;to&quot;, &quot;toward&quot;, &quot;through&quot;, &quot;under&quot;, &quot;until&quot;, &quot;up&quot;, &quot;upon&quot;, &quot;with&quot;, &quot;within&quot;, &quot;without&quot;));</span>
+        // Conjunctions
+<span class="fc" id="L26">        smallerWords.addAll(Arrays.asList(&quot;and&quot;, &quot;but&quot;, &quot;for&quot;, &quot;nor&quot;, &quot;or&quot;, &quot;so&quot;, &quot;yet&quot;));</span>
+
+        // unmodifiable for thread safety
+<span class="fc" id="L29">        SMALLER_WORDS = Collections.unmodifiableSet(smallerWords);</span>
+<span class="fc" id="L30">    }</span>
+
+    private final char[] chars;
+    private final boolean[] protectedChars;
+
+<span class="fc" id="L35">    public Word(char[] chars, boolean[] protectedChars) {</span>
+<span class="fc" id="L36">        this.chars = Objects.requireNonNull(chars);</span>
+<span class="fc" id="L37">        this.protectedChars = Objects.requireNonNull(protectedChars);</span>
+
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        if (this.chars.length != this.protectedChars.length) {</span>
+<span class="nc" id="L40">            throw new IllegalArgumentException(&quot;the chars and the protectedChars array must be of same length&quot;);</span>
+        }
+<span class="fc" id="L42">    }</span>
+
+    /**
+     * Only change letters of the word that are unprotected to upper case.
+     */
+    public void toUpperCase() {
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        for (int i = 0; i &lt; chars.length; i++) {</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">            if (protectedChars[i]) {</span>
+<span class="fc" id="L50">                continue;</span>
+            }
+
+<span class="fc" id="L53">            chars[i] = Character.toUpperCase(chars[i]);</span>
+        }
+<span class="fc" id="L55">    }</span>
+
+    /**
+     * Only change letters of the word that are unprotected to lower case.
+     */
+    public void toLowerCase() {
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        for (int i = 0; i &lt; chars.length; i++) {</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">            if (protectedChars[i]) {</span>
+<span class="fc" id="L63">                continue;</span>
+            }
+
+<span class="fc" id="L66">            chars[i] = Character.toLowerCase(chars[i]);</span>
+        }
+<span class="fc" id="L68">    }</span>
+
+    public void toUpperFirst() {
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        for (int i = 0; i &lt; chars.length; i++) {</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            if (protectedChars[i]) {</span>
+<span class="fc" id="L73">                continue;</span>
+            }
+
+<span class="fc bfc" id="L76" title="All 2 branches covered.">            if (i == 0) {</span>
+<span class="fc" id="L77">                chars[i] = Character.toUpperCase(chars[i]);</span>
+            } else {
+<span class="fc" id="L79">                chars[i] = Character.toLowerCase(chars[i]);</span>
+            }
+        }
+<span class="fc" id="L82">    }</span>
+
+    public boolean isSmallerWord() {
+        // &quot;word:&quot; is still a small &quot;word&quot;
+<span class="fc" id="L86">        return SMALLER_WORDS.contains(this.toString().replace(&quot;:&quot;, &quot;&quot;).toLowerCase(Locale.ROOT));</span>
+    }
+
+    public boolean isLargerWord() {
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        return !isSmallerWord();</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L95">        return new String(chars);</span>
+    }
+
+    public boolean endsWithColon() {
+<span class="fc" id="L99">        return this.toString().endsWith(&quot;:&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

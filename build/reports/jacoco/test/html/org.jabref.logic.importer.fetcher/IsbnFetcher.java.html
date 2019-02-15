@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IsbnFetcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fetcher</a> &gt; <span class="el_source">IsbnFetcher.java</span></div><h1>IsbnFetcher.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fetcher;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import org.jabref.logic.help.HelpFile;
+import org.jabref.logic.importer.EntryBasedFetcher;
+import org.jabref.logic.importer.FetcherException;
+import org.jabref.logic.importer.IdBasedFetcher;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.util.OptionalUtil;
+
+import org.jsoup.helper.StringUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Fetcher for ISBN trying ebook.de first and then chimbori.com
+ */
+public class IsbnFetcher implements EntryBasedFetcher, IdBasedFetcher {
+
+<span class="fc" id="L25">    private static final Logger LOGGER = LoggerFactory.getLogger(IsbnFetcher.class);</span>
+    protected final ImportFormatPreferences importFormatPreferences;
+
+<span class="fc" id="L28">    public IsbnFetcher(ImportFormatPreferences importFormatPreferences) {</span>
+<span class="fc" id="L29">        this.importFormatPreferences = importFormatPreferences;</span>
+<span class="fc" id="L30">    }</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L34">        return &quot;ISBN&quot;;</span>
+    }
+
+    @Override
+    public Optional&lt;HelpFile&gt; getHelpPage() {
+<span class="nc" id="L39">        return Optional.of(HelpFile.FETCHER_ISBN);</span>
+    }
+
+    @Override
+    public Optional&lt;BibEntry&gt; performSearchById(String identifier) throws FetcherException {
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        if (StringUtil.isBlank(identifier)) {</span>
+<span class="nc" id="L45">            return Optional.empty();</span>
+        }
+
+<span class="nc" id="L48">        IsbnViaEbookDeFetcher isbnViaEbookDeFetcher = new IsbnViaEbookDeFetcher(importFormatPreferences);</span>
+<span class="nc" id="L49">        Optional&lt;BibEntry&gt; bibEntry = isbnViaEbookDeFetcher.performSearchById(identifier);</span>
+        // nothing found at ebook.de, try chimbori.com
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (!bibEntry.isPresent()) {</span>
+<span class="nc" id="L52">            LOGGER.debug(&quot;No entry found at ebook.de try chimbori.com&quot;);</span>
+<span class="nc" id="L53">            IsbnViaChimboriFetcher isbnViaChimboriFetcher = new IsbnViaChimboriFetcher(importFormatPreferences);</span>
+<span class="nc" id="L54">            bibEntry = isbnViaChimboriFetcher.performSearchById(identifier);</span>
+
+        }
+
+<span class="nc" id="L58">        return bibEntry;</span>
+    }
+
+    @Override
+    public List&lt;BibEntry&gt; performSearch(BibEntry entry) throws FetcherException {
+<span class="nc" id="L63">        Optional&lt;String&gt; isbn = entry.getField(FieldName.ISBN);</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (isbn.isPresent()) {</span>
+<span class="nc" id="L65">            return OptionalUtil.toList(performSearchById(isbn.get()));</span>
+        } else {
+<span class="nc" id="L67">            return Collections.emptyList();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

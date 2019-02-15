@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FindUnlinkedFilesDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.externalfiles</a> &gt; <span class="el_source">FindUnlinkedFilesDialog.java</span></div><h1>FindUnlinkedFilesDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.externalfiles;
+
+import java.io.BufferedWriter;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBoxTreeItem;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+
+import org.jabref.Globals;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.externalfiletype.ExternalFileType;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.gui.importer.UnlinkedFilesCrawler;
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.gui.util.BaseDialog;
+import org.jabref.gui.util.DirectoryDialogConfiguration;
+import org.jabref.gui.util.FileDialogConfiguration;
+import org.jabref.gui.util.FileFilterConverter;
+import org.jabref.gui.util.ViewModelListCellFactory;
+import org.jabref.gui.util.ViewModelTreeCellFactory;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * GUI Dialog for the feature &quot;Find unlinked files&quot;.
+ */
+public class FindUnlinkedFilesDialog extends BaseDialog&lt;Void&gt; {
+
+<span class="nc" id="L65">    private static final Logger LOGGER = LoggerFactory.getLogger(FindUnlinkedFilesDialog.class);</span>
+    private final JabRefFrame frame;
+    private final BibDatabaseContext databaseContext;
+    private final ImportHandler importHandler;
+<span class="nc" id="L69">    private final JabRefPreferences preferences = Globals.prefs;</span>
+    private final DialogService dialogService;
+    private Button buttonScan;
+    private Button buttonExport;
+    private Button buttonApply;
+    private TextField textfieldDirectoryPath;
+    private TreeView&lt;FileNodeWrapper&gt; tree;
+    private ComboBox&lt;FileChooser.ExtensionFilter&gt; comboBoxFileTypeSelection;
+    private VBox panelSearchProgress;
+    private BackgroundTask findUnlinkedFilesTask;
+
+    public FindUnlinkedFilesDialog(JabRefFrame frame) {
+<span class="nc" id="L81">        super();</span>
+<span class="nc" id="L82">        this.setTitle(Localization.lang(&quot;Find unlinked files&quot;));</span>
+<span class="nc" id="L83">        this.frame = frame;</span>
+<span class="nc" id="L84">        dialogService = frame.getDialogService();</span>
+
+<span class="nc" id="L86">        databaseContext = frame.getCurrentBasePanel().getBibDatabaseContext();</span>
+<span class="nc" id="L87">        importHandler = new ImportHandler(</span>
+                dialogService,
+                databaseContext,
+<span class="nc" id="L90">                ExternalFileTypes.getInstance(),</span>
+<span class="nc" id="L91">                Globals.prefs.getFilePreferences(),</span>
+<span class="nc" id="L92">                Globals.prefs.getImportFormatPreferences(),</span>
+<span class="nc" id="L93">                Globals.prefs.getUpdateFieldPreferences(),</span>
+<span class="nc" id="L94">                Globals.getFileUpdateMonitor(),</span>
+<span class="nc" id="L95">                frame.getUndoManager()</span>
+        );
+
+<span class="nc" id="L98">        initialize();</span>
+<span class="nc" id="L99">    }</span>
+
+    /**
+     * Initializes the components, the layout, the data structure and the actions in this dialog.
+     */
+    private void initialize() {
+<span class="nc" id="L105">        Button buttonBrowse = new Button(Localization.lang(&quot;Browse&quot;));</span>
+<span class="nc" id="L106">        buttonBrowse.setTooltip(new Tooltip(Localization.lang(&quot;Opens the file browser.&quot;)));</span>
+<span class="nc" id="L107">        buttonBrowse.getStyleClass().add(&quot;text-button&quot;);</span>
+<span class="nc" id="L108">        buttonBrowse.setOnAction(e -&gt; {</span>
+<span class="nc" id="L109">            DirectoryDialogConfiguration directoryDialogConfiguration = new DirectoryDialogConfiguration.Builder()</span>
+<span class="nc" id="L110">                    .withInitialDirectory(preferences.get(JabRefPreferences.WORKING_DIRECTORY)).build();</span>
+<span class="nc" id="L111">            dialogService.showDirectorySelectionDialog(directoryDialogConfiguration)</span>
+<span class="nc" id="L112">                         .ifPresent(selectedDirectory -&gt; {</span>
+<span class="nc" id="L113">                             textfieldDirectoryPath.setText(selectedDirectory.toAbsolutePath().toString());</span>
+<span class="nc" id="L114">                             preferences.put(JabRefPreferences.WORKING_DIRECTORY, selectedDirectory.toAbsolutePath().toString());</span>
+<span class="nc" id="L115">                         });</span>
+<span class="nc" id="L116">        });</span>
+
+<span class="nc" id="L118">        buttonScan = new Button(Localization.lang(&quot;Scan directory&quot;));</span>
+<span class="nc" id="L119">        buttonScan.setTooltip(new Tooltip((Localization.lang(&quot;Searches the selected directory for unlinked files.&quot;))));</span>
+<span class="nc" id="L120">        buttonScan.setOnAction(e -&gt; startSearch());</span>
+<span class="nc" id="L121">        buttonScan.setDefaultButton(true);</span>
+<span class="nc" id="L122">        buttonScan.setPadding(new Insets(5, 0, 0, 0));</span>
+
+<span class="nc" id="L124">        buttonExport = new Button(Localization.lang(&quot;Export selected entries&quot;));</span>
+<span class="nc" id="L125">        buttonExport.setTooltip(new Tooltip(Localization.lang(&quot;Export to text file.&quot;)));</span>
+<span class="nc" id="L126">        buttonExport.getStyleClass().add(&quot;text-button&quot;);</span>
+<span class="nc" id="L127">        buttonExport.setDisable(true);</span>
+<span class="nc" id="L128">        buttonExport.setOnAction(e -&gt; startExport());</span>
+
+<span class="nc" id="L130">        ButtonType buttonTypeImport = new ButtonType(Localization.lang(&quot;Import&quot;), ButtonBar.ButtonData.OK_DONE);</span>
+<span class="nc" id="L131">        getDialogPane().getButtonTypes().setAll(</span>
+                buttonTypeImport,
+                ButtonType.CANCEL
+        );
+<span class="nc" id="L135">        buttonApply = (Button) getDialogPane().lookupButton(buttonTypeImport);</span>
+<span class="nc" id="L136">        buttonApply.setTooltip(new Tooltip((Localization.lang(&quot;Starts the import of BibTeX entries.&quot;))));</span>
+<span class="nc" id="L137">        buttonApply.setDisable(true);</span>
+
+        /* Actions for the TreeView */
+<span class="nc" id="L140">        Button buttonOptionSelectAll = new Button();</span>
+<span class="nc" id="L141">        buttonOptionSelectAll.setText(Localization.lang(&quot;Select all&quot;));</span>
+<span class="nc" id="L142">        buttonOptionSelectAll.getStyleClass().add(&quot;text-button&quot;);</span>
+<span class="nc" id="L143">        buttonOptionSelectAll.setOnAction(event -&gt; {</span>
+<span class="nc" id="L144">            CheckBoxTreeItem&lt;FileNodeWrapper&gt; root = (CheckBoxTreeItem&lt;FileNodeWrapper&gt;) tree.getRoot();</span>
+            // Need to toggle a twice to make sure everything is selected
+<span class="nc" id="L146">            root.setSelected(true);</span>
+<span class="nc" id="L147">            root.setSelected(false);</span>
+<span class="nc" id="L148">            root.setSelected(true);</span>
+<span class="nc" id="L149">        });</span>
+<span class="nc" id="L150">        Button buttonOptionDeselectAll = new Button();</span>
+<span class="nc" id="L151">        buttonOptionDeselectAll.setText(Localization.lang(&quot;Unselect all&quot;));</span>
+<span class="nc" id="L152">        buttonOptionDeselectAll.getStyleClass().add(&quot;text-button&quot;);</span>
+<span class="nc" id="L153">        buttonOptionDeselectAll.setOnAction(event -&gt; {</span>
+<span class="nc" id="L154">            CheckBoxTreeItem&lt;FileNodeWrapper&gt; root = (CheckBoxTreeItem&lt;FileNodeWrapper&gt;) tree.getRoot();</span>
+            // Need to toggle a twice to make sure nothing is selected
+<span class="nc" id="L156">            root.setSelected(false);</span>
+<span class="nc" id="L157">            root.setSelected(true);</span>
+<span class="nc" id="L158">            root.setSelected(false);</span>
+<span class="nc" id="L159">        });</span>
+<span class="nc" id="L160">        Button buttonOptionExpandAll = new Button();</span>
+<span class="nc" id="L161">        buttonOptionExpandAll.setText(Localization.lang(&quot;Expand all&quot;));</span>
+<span class="nc" id="L162">        buttonOptionExpandAll.getStyleClass().add(&quot;text-button&quot;);</span>
+<span class="nc" id="L163">        buttonOptionExpandAll.setOnAction(event -&gt; {</span>
+<span class="nc" id="L164">            CheckBoxTreeItem&lt;FileNodeWrapper&gt; root = (CheckBoxTreeItem&lt;FileNodeWrapper&gt;) tree.getRoot();</span>
+<span class="nc" id="L165">            expandTree(root, true);</span>
+<span class="nc" id="L166">        });</span>
+<span class="nc" id="L167">        Button buttonOptionCollapseAll = new Button();</span>
+<span class="nc" id="L168">        buttonOptionCollapseAll.setText(Localization.lang(&quot;Collapse all&quot;));</span>
+<span class="nc" id="L169">        buttonOptionCollapseAll.getStyleClass().add(&quot;text-button&quot;);</span>
+<span class="nc" id="L170">        buttonOptionCollapseAll.setOnAction(event -&gt; {</span>
+<span class="nc" id="L171">            CheckBoxTreeItem&lt;FileNodeWrapper&gt; root = (CheckBoxTreeItem&lt;FileNodeWrapper&gt;) tree.getRoot();</span>
+<span class="nc" id="L172">            expandTree(root, false);</span>
+<span class="nc" id="L173">            root.setExpanded(true);</span>
+<span class="nc" id="L174">        });</span>
+
+<span class="nc" id="L176">        textfieldDirectoryPath = new TextField();</span>
+<span class="nc" id="L177">        Path initialPath = databaseContext.getFirstExistingFileDir(preferences.getFilePreferences())</span>
+<span class="nc" id="L178">                                          .orElse(preferences.getWorkingDir());</span>
+<span class="nc" id="L179">        textfieldDirectoryPath.setText(initialPath.toAbsolutePath().toString());</span>
+
+<span class="nc" id="L181">        Label labelDirectoryDescription = new Label(Localization.lang(&quot;Select a directory where the search shall start.&quot;));</span>
+<span class="nc" id="L182">        Label labelFileTypesDescription = new Label(Localization.lang(&quot;Select file type:&quot;));</span>
+<span class="nc" id="L183">        Label labelFilesDescription = new Label(Localization.lang(&quot;These files are not linked in the active library.&quot;));</span>
+<span class="nc" id="L184">        Label labelSearchingDirectoryInfo = new Label(Localization.lang(&quot;Searching file system...&quot;));</span>
+
+<span class="nc" id="L186">        tree = new TreeView&lt;&gt;();</span>
+<span class="nc" id="L187">        tree.setPrefWidth(Double.POSITIVE_INFINITY);</span>
+
+<span class="nc" id="L189">        ScrollPane scrollPaneTree = new ScrollPane(tree);</span>
+<span class="nc" id="L190">        scrollPaneTree.setFitToWidth(true);</span>
+
+<span class="nc" id="L192">        ProgressIndicator progressBarSearching = new ProgressIndicator();</span>
+<span class="nc" id="L193">        progressBarSearching.setMaxSize(50, 50);</span>
+
+<span class="nc" id="L195">        setResultConverter(buttonPressed -&gt; {</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            if (buttonPressed == buttonTypeImport) {</span>
+<span class="nc" id="L197">                startImport();</span>
+            } else {
+<span class="nc bnc" id="L199" title="All 2 branches missed.">                if (findUnlinkedFilesTask != null) {</span>
+<span class="nc" id="L200">                    findUnlinkedFilesTask.cancel();</span>
+                }
+            }
+<span class="nc" id="L203">            return null;</span>
+        });
+
+<span class="nc" id="L206">        new ViewModelTreeCellFactory&lt;FileNodeWrapper&gt;()</span>
+<span class="nc" id="L207">                .withText(node -&gt; {</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                    if (Files.isRegularFile(node.path)) {</span>
+                        // File
+<span class="nc" id="L210">                        return node.path.getFileName().toString();</span>
+                    } else {
+                        // Directory
+<span class="nc bnc" id="L213" title="All 2 branches missed.">                        return node.path.getFileName() + &quot; (&quot; + node.fileCount + &quot; file&quot; + (node.fileCount &gt; 1 ? &quot;s&quot; : &quot;&quot;) + &quot;)&quot;;</span>
+                    }
+                })
+<span class="nc" id="L216">                .install(tree);</span>
+<span class="nc" id="L217">        List&lt;FileChooser.ExtensionFilter&gt; fileFilterList = Arrays.asList(</span>
+                FileFilterConverter.ANY_FILE,
+<span class="nc" id="L219">                FileFilterConverter.toExtensionFilter(StandardFileType.PDF),</span>
+<span class="nc" id="L220">                FileFilterConverter.toExtensionFilter(StandardFileType.BIBTEX_DB)</span>
+        );
+
+<span class="nc" id="L223">        comboBoxFileTypeSelection = new ComboBox&lt;&gt;(FXCollections.observableArrayList(fileFilterList));</span>
+<span class="nc" id="L224">        comboBoxFileTypeSelection.getSelectionModel().selectFirst();</span>
+<span class="nc" id="L225">        new ViewModelListCellFactory&lt;FileChooser.ExtensionFilter&gt;()</span>
+<span class="nc" id="L226">                .withText(fileFilter -&gt; fileFilter.getDescription() + fileFilter.getExtensions().stream().collect(Collectors.joining(&quot;, &quot;, &quot; (&quot;, &quot;)&quot;)))</span>
+<span class="nc" id="L227">                .withIcon(fileFilter -&gt; ExternalFileTypes.getInstance().getExternalFileTypeByExt(fileFilter.getExtensions().get(0))</span>
+<span class="nc" id="L228">                                                         .map(ExternalFileType::getIcon)</span>
+<span class="nc" id="L229">                                                         .orElse(null))</span>
+<span class="nc" id="L230">                .install(comboBoxFileTypeSelection);</span>
+
+<span class="nc" id="L232">        panelSearchProgress = new VBox(5, labelSearchingDirectoryInfo, progressBarSearching);</span>
+<span class="nc" id="L233">        panelSearchProgress.toFront();</span>
+<span class="nc" id="L234">        panelSearchProgress.setVisible(false);</span>
+
+//        panelDirectory.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
+//                Localization.lang(&quot;Select directory&quot;)));
+//        panelFiles.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
+//                Localization.lang(&quot;Select files&quot;)));
+//        panelEntryTypesSelection.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
+//                Localization.lang(&quot;BibTeX entry creation&quot;)));
+
+<span class="nc" id="L243">        VBox panelDirectory = new VBox(5);</span>
+<span class="nc" id="L244">        panelDirectory.getChildren().setAll(</span>
+                labelDirectoryDescription,
+                new HBox(10, textfieldDirectoryPath, buttonBrowse),
+                new HBox(15, labelFileTypesDescription, comboBoxFileTypeSelection),
+                buttonScan
+        );
+<span class="nc" id="L250">        HBox.setHgrow(textfieldDirectoryPath, Priority.ALWAYS);</span>
+
+<span class="nc" id="L252">        StackPane stackPaneTree = new StackPane(scrollPaneTree, panelSearchProgress);</span>
+<span class="nc" id="L253">        StackPane.setAlignment(panelSearchProgress, Pos.CENTER);</span>
+<span class="nc" id="L254">        BorderPane panelFiles = new BorderPane();</span>
+<span class="nc" id="L255">        panelFiles.setTop(labelFilesDescription);</span>
+<span class="nc" id="L256">        panelFiles.setCenter(stackPaneTree);</span>
+<span class="nc" id="L257">        panelFiles.setBottom(new HBox(5, buttonOptionSelectAll, buttonOptionDeselectAll, buttonOptionExpandAll, buttonOptionCollapseAll, buttonExport));</span>
+
+<span class="nc" id="L259">        VBox container = new VBox(20);</span>
+<span class="nc" id="L260">        container.getChildren().addAll(</span>
+                panelDirectory,
+                panelFiles
+        );
+<span class="nc" id="L264">        container.setPrefWidth(600);</span>
+<span class="nc" id="L265">        getDialogPane().setContent(container);</span>
+<span class="nc" id="L266">    }</span>
+
+    /**
+     * Expands or collapses the specified tree according to the &lt;code&gt;expand&lt;/code&gt;-parameter.
+     */
+    private void expandTree(TreeItem&lt;?&gt; item, boolean expand) {
+<span class="nc bnc" id="L272" title="All 4 branches missed.">        if (item != null &amp;&amp; !item.isLeaf()) {</span>
+<span class="nc" id="L273">            item.setExpanded(expand);</span>
+<span class="nc bnc" id="L274" title="All 2 branches missed.">            for (TreeItem&lt;?&gt; child : item.getChildren()) {</span>
+<span class="nc" id="L275">                expandTree(child, expand);</span>
+<span class="nc" id="L276">            }</span>
+        }
+<span class="nc" id="L278">    }</span>
+
+    /**
+     * Starts the search of unlinked files according chosen directory and the file type selection. The search will
+     * process in a separate thread and a progress indicator will be displayed.
+     */
+    private void startSearch() {
+<span class="nc" id="L285">        Path directory = getSearchDirectory();</span>
+<span class="nc" id="L286">        FileFilter selectedFileFilter = FileFilterConverter.toFileFilter(comboBoxFileTypeSelection.getValue());</span>
+
+<span class="nc" id="L288">        findUnlinkedFilesTask = new UnlinkedFilesCrawler(directory, selectedFileFilter, databaseContext)</span>
+<span class="nc" id="L289">                .onRunning(() -&gt; {</span>
+<span class="nc" id="L290">                    panelSearchProgress.setVisible(true);</span>
+<span class="nc" id="L291">                    buttonScan.setDisable(true);</span>
+<span class="nc" id="L292">                    tree.setRoot(null);</span>
+<span class="nc" id="L293">                })</span>
+<span class="nc" id="L294">                .onFinished(() -&gt; {</span>
+<span class="nc" id="L295">                    panelSearchProgress.setVisible(false);</span>
+<span class="nc" id="L296">                    buttonScan.setDisable(false);</span>
+<span class="nc" id="L297">                })</span>
+<span class="nc" id="L298">                .onSuccess(root -&gt; {</span>
+<span class="nc" id="L299">                    tree.setRoot(root);</span>
+<span class="nc" id="L300">                    root.setSelected(true);</span>
+<span class="nc" id="L301">                    root.setExpanded(true);</span>
+
+<span class="nc" id="L303">                    buttonApply.setDisable(false);</span>
+<span class="nc" id="L304">                    buttonExport.setDisable(false);</span>
+<span class="nc" id="L305">                    buttonScan.setDefaultButton(false);</span>
+<span class="nc" id="L306">                });</span>
+<span class="nc" id="L307">        findUnlinkedFilesTask.executeWith(Globals.TASK_EXECUTOR);</span>
+<span class="nc" id="L308">    }</span>
+
+    private Path getSearchDirectory() {
+<span class="nc" id="L311">        Path directory = Paths.get(textfieldDirectoryPath.getText());</span>
+<span class="nc bnc" id="L312" title="All 2 branches missed.">        if (Files.notExists(directory)) {</span>
+<span class="nc" id="L313">            directory = Paths.get(System.getProperty(&quot;user.dir&quot;));</span>
+<span class="nc" id="L314">            textfieldDirectoryPath.setText(directory.toAbsolutePath().toString());</span>
+        }
+<span class="nc bnc" id="L316" title="All 2 branches missed.">        if (!Files.isDirectory(directory)) {</span>
+<span class="nc" id="L317">            directory = directory.getParent();</span>
+<span class="nc" id="L318">            textfieldDirectoryPath.setText(directory.toAbsolutePath().toString());</span>
+        }
+<span class="nc" id="L320">        return directory;</span>
+    }
+
+    /**
+     * This will start the import of all file of all selected nodes in the file tree view.
+     */
+    private void startImport() {
+<span class="nc" id="L327">        CheckBoxTreeItem&lt;FileNodeWrapper&gt; root = (CheckBoxTreeItem&lt;FileNodeWrapper&gt;) tree.getRoot();</span>
+<span class="nc" id="L328">        final List&lt;Path&gt; fileList = getFileListFromNode(root);</span>
+
+<span class="nc bnc" id="L330" title="All 2 branches missed.">        if (fileList.isEmpty()) {</span>
+<span class="nc" id="L331">            return;</span>
+        }
+
+<span class="nc" id="L334">        importHandler.importAsNewEntries(fileList);</span>
+<span class="nc" id="L335">    }</span>
+
+    /**
+     * This starts the export of all files of all selected nodes in the file tree view.
+     */
+    private void startExport() {
+<span class="nc" id="L341">        CheckBoxTreeItem&lt;FileNodeWrapper&gt; root = (CheckBoxTreeItem&lt;FileNodeWrapper&gt;) tree.getRoot();</span>
+
+<span class="nc" id="L343">        final List&lt;Path&gt; fileList = getFileListFromNode(root);</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">        if (fileList.isEmpty()) {</span>
+<span class="nc" id="L345">            return;</span>
+        }
+
+<span class="nc" id="L348">        buttonExport.setVisible(false);</span>
+<span class="nc" id="L349">        buttonApply.setVisible(false);</span>
+
+<span class="nc" id="L351">        FileDialogConfiguration fileDialogConfiguration = new FileDialogConfiguration.Builder()</span>
+<span class="nc" id="L352">                .withInitialDirectory(preferences.get(JabRefPreferences.WORKING_DIRECTORY)).build();</span>
+<span class="nc" id="L353">        Optional&lt;Path&gt; exportPath = dialogService.showFileSaveDialog(fileDialogConfiguration);</span>
+
+<span class="nc bnc" id="L355" title="All 2 branches missed.">        if (!exportPath.isPresent()) {</span>
+<span class="nc" id="L356">            buttonExport.setVisible(true);</span>
+<span class="nc" id="L357">            buttonApply.setVisible(true);</span>
+<span class="nc" id="L358">            return;</span>
+        }
+
+<span class="nc" id="L361">        try (BufferedWriter writer =</span>
+<span class="nc" id="L362">                     Files.newBufferedWriter(exportPath.get(), StandardCharsets.UTF_8,</span>
+                             StandardOpenOption.CREATE)) {
+<span class="nc bnc" id="L364" title="All 2 branches missed.">            for (Path file : fileList) {</span>
+<span class="nc" id="L365">                writer.write(file.toString() + &quot;\n&quot;);</span>
+<span class="nc" id="L366">            }</span>
+<span class="nc" id="L367">        } catch (IOException e) {</span>
+<span class="nc" id="L368">            LOGGER.warn(&quot;IO Error.&quot;, e);</span>
+<span class="nc" id="L369">        }</span>
+
+<span class="nc" id="L371">        buttonExport.setVisible(true);</span>
+<span class="nc" id="L372">        buttonApply.setVisible(true);</span>
+<span class="nc" id="L373">    }</span>
+
+    /**
+     * Creates a list of all files (leaf nodes in the tree structure), which have been selected.
+     *
+     * @param node The root node representing a tree structure.
+     */
+    private List&lt;Path&gt; getFileListFromNode(CheckBoxTreeItem&lt;FileNodeWrapper&gt; node) {
+<span class="nc" id="L381">        List&lt;Path&gt; filesList = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L382" title="All 2 branches missed.">        for (TreeItem&lt;FileNodeWrapper&gt; childNode : node.getChildren()) {</span>
+<span class="nc" id="L383">            CheckBoxTreeItem&lt;FileNodeWrapper&gt; child = (CheckBoxTreeItem&lt;FileNodeWrapper&gt;) childNode;</span>
+<span class="nc bnc" id="L384" title="All 4 branches missed.">            if (child.isLeaf() &amp;&amp; child.isSelected()) {</span>
+<span class="nc" id="L385">                Path nodeFile = child.getValue().path;</span>
+<span class="nc bnc" id="L386" title="All 4 branches missed.">                if ((nodeFile != null) &amp;&amp; Files.isRegularFile(nodeFile)) {</span>
+<span class="nc" id="L387">                    filesList.add(nodeFile);</span>
+                }
+            }
+<span class="nc" id="L390">        }</span>
+<span class="nc" id="L391">        return filesList;</span>
+    }
+
+    public static class FileNodeWrapper {
+
+        public final Path path;
+        public final int fileCount;
+
+        public FileNodeWrapper(Path path) {
+<span class="nc" id="L400">            this(path, 0);</span>
+<span class="nc" id="L401">        }</span>
+
+<span class="nc" id="L403">        public FileNodeWrapper(Path path, int fileCount) {</span>
+<span class="nc" id="L404">            this.path = path;</span>
+<span class="nc" id="L405">            this.fileCount = fileCount;</span>
+<span class="nc" id="L406">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

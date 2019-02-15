@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RemoveHyphenatedNewlinesFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.formatter.bibtexfields</a> &gt; <span class="el_source">RemoveHyphenatedNewlinesFormatter.java</span></div><h1>RemoveHyphenatedNewlinesFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.formatter.bibtexfields;
+
+import java.util.Objects;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.cleanup.Formatter;
+
+/**
+ * Removes all hyphenated line breaks in the string.
+ */
+<span class="fc" id="L12">public class RemoveHyphenatedNewlinesFormatter extends Formatter {</span>
+<span class="fc" id="L13">    private static final Pattern HYPHENATED_WORDS = Pattern.compile(&quot;-\\R&quot;);</span>
+
+    @Override
+    public String getName() {
+<span class="nc" id="L17">        return Localization.lang(&quot;Remove hyphenated line breaks&quot;);</span>
+    }
+
+    @Override
+    public String getKey() {
+<span class="nc" id="L22">        return &quot;remove_hyphenated_newlines&quot;;</span>
+    }
+
+    @Override
+    public String format(String value) {
+<span class="fc" id="L27">        Objects.requireNonNull(value);</span>
+
+<span class="fc" id="L29">        value = HYPHENATED_WORDS.matcher(value).replaceAll(&quot;&quot;);</span>
+<span class="fc" id="L30">        return value.trim();</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="nc" id="L35">        return Localization.lang(&quot;Removes all hyphenated line breaks in the field content.&quot;);</span>
+    }
+
+    @Override
+    public String getExampleInput() {
+<span class="nc" id="L40">        return &quot;Gimme shel-\nter&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Formatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.cleanup</a> &gt; <span class="el_source">Formatter.java</span></div><h1>Formatter.java</h1><pre class="source lang-java linenums">package org.jabref.model.cleanup;
+
+/**
+ * The Formatter is used for a Filter design-pattern. Extending classes have to accept a String and returned a
+ * formatted version of it. Implementations have to reside in the logic package.
+ *
+ * Example:
+ *
+ * &quot;John von Neumann&quot; =&gt; &quot;von Neumann, John&quot;
+ *
+ */
+<span class="fc" id="L12">public abstract class Formatter {</span>
+
+    /**
+     * Returns a human readable name of the formatter usable for e.g. in the GUI
+     *
+     * @return the name of the formatter, always not null
+     */
+    public abstract String getName();
+
+
+    /**
+     * Returns a unique key for the formatter that can be used for its identification
+     * @return the key of the formatter, always not null
+     */
+    public abstract String getKey();
+
+    /**
+     * Formats a field value by with a particular formatter transformation.
+     *
+     * Calling this method with a null argument results in a NullPointerException.
+     *
+     * @param value the input String
+     * @return the formatted output String
+     */
+    public abstract String format(String value);
+
+    /**
+     * Returns a description of the formatter.
+     *
+     * @return the description string, always non empty
+     */
+    public abstract String getDescription();
+
+    /**
+     * Returns an example input string of the formatter.
+     * This example is used as input to the formatter to demonstrate its functionality
+     *
+     * @return the example input string, always non empty
+     */
+    public abstract String getExampleInput();
+
+    /**
+     * Returns a default hashcode of the formatter based on its key.
+     *
+     * @return the hash of the key of the formatter
+     */
+    @Override
+    public int hashCode() {
+<span class="fc" id="L60">        return getKey().hashCode();</span>
+    }
+
+    /**
+     * Indicates whether some other object is the same formatter as this one based on the key.
+     *
+     * @param obj the object to compare the formatter to
+     * @return true if the object is a formatter with the same key
+     */
+    @Override
+    public boolean equals(Object obj) {
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (obj instanceof Formatter) {</span>
+<span class="fc" id="L72">            return getKey().equals(((Formatter)obj).getKey());</span>
+        } else {
+<span class="nc" id="L74">            return false;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

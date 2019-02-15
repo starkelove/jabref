@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WindowLocation.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">WindowLocation.java</span></div><h1>WindowLocation.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Window;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+
+import javax.swing.JFrame;
+
+import org.jabref.Globals;
+
+/**
+ * Restores and saves the position of non-modal windows inside the JabRef preferences.
+ *
+ * Includes multi-monitor support.
+ * If a windows is placed on another monitor than the main one, it tries to restore that position afterwards.
+ * If the stored position in a multi-monitor setup is not available anymore, it places the window on an equivalent position on the main monitor.
+ */
+public class WindowLocation {
+    private final String posXKey;
+    private final String posYKey;
+    private final String sizeXKey;
+    private final String sizeYKey;
+    private final Window window;
+
+<span class="nc" id="L31">    public WindowLocation(Window window, String posXKey, String posYKey, String sizeXKey, String sizeYKey) {</span>
+<span class="nc" id="L32">        this.window = window;</span>
+<span class="nc" id="L33">        this.posXKey = posXKey;</span>
+<span class="nc" id="L34">        this.posYKey = posYKey;</span>
+<span class="nc" id="L35">        this.sizeXKey = sizeXKey;</span>
+<span class="nc" id="L36">        this.sizeYKey = sizeYKey;</span>
+
+        // set up a ComponentListener that saves the last size and position of the dialog
+<span class="nc" id="L39">        window.addComponentListener(new ComponentAdapter() {</span>
+            @Override
+            public void componentResized(ComponentEvent e) {
+<span class="nc" id="L42">                storeCurrentWindowLocation();</span>
+<span class="nc" id="L43">            }</span>
+
+            @Override
+            public void componentMoved(ComponentEvent e) {
+<span class="nc" id="L47">                storeCurrentWindowLocation();</span>
+<span class="nc" id="L48">            }</span>
+        });
+<span class="nc" id="L50">    }</span>
+
+    public void displayWindowAtStoredLocation() {
+<span class="nc" id="L53">        WindowPosition storedPosition = getStoredLocation();</span>
+
+        // preference values are wrong/not in multi-monitor setup anymore
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (!isDisplayable(storedPosition)) {</span>
+            // adapt position to be inside available boundaries
+<span class="nc" id="L58">            storedPosition = adaptPosition(storedPosition);</span>
+        }
+
+<span class="nc" id="L61">        setWindowLocation(storedPosition);</span>
+<span class="nc" id="L62">    }</span>
+
+    public void storeCurrentWindowLocation() {
+        // maximizing is handled explicitely
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (window instanceof Frame) {</span>
+<span class="nc" id="L67">            Frame frame = (Frame) window;</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            if (frame.getExtendedState() == Frame.MAXIMIZED_BOTH) {</span>
+<span class="nc" id="L69">                return;</span>
+            }
+        }
+<span class="nc" id="L72">        Point location = window.getLocation();</span>
+<span class="nc" id="L73">        Dimension dimensions = window.getSize();</span>
+
+<span class="nc" id="L75">        Globals.prefs.putInt(posXKey, location.x);</span>
+<span class="nc" id="L76">        Globals.prefs.putInt(posYKey, location.y);</span>
+<span class="nc" id="L77">        Globals.prefs.putInt(sizeXKey, dimensions.width);</span>
+<span class="nc" id="L78">        Globals.prefs.putInt(sizeYKey, dimensions.height);</span>
+<span class="nc" id="L79">    }</span>
+
+    private WindowPosition getStoredLocation() {
+<span class="nc" id="L82">        int sizeX = Globals.prefs.getInt(sizeXKey);</span>
+<span class="nc" id="L83">        int sizeY = Globals.prefs.getInt(sizeYKey);</span>
+<span class="nc" id="L84">        int posX = Globals.prefs.getInt(posXKey);</span>
+<span class="nc" id="L85">        int posY = Globals.prefs.getInt(posYKey);</span>
+
+<span class="nc" id="L87">        return new WindowPosition(posX, posY, sizeX, sizeY);</span>
+    }
+
+    private void setWindowLocation(WindowPosition storedPosition) {
+<span class="nc" id="L91">        window.setLocation(storedPosition.posX, storedPosition.posY);</span>
+<span class="nc" id="L92">        window.setSize(storedPosition.sizeX, storedPosition.sizeY);</span>
+<span class="nc" id="L93">    }</span>
+
+    private boolean isDisplayable(WindowPosition position) {
+<span class="nc" id="L96">        JFrame frame = new JFrame();</span>
+<span class="nc" id="L97">        frame.setBounds(position.posX, position.posY, position.sizeX, position.sizeY);</span>
+
+<span class="nc" id="L99">        return getVirtualBounds().contains(frame.getBounds());</span>
+    }
+
+    private Rectangle getVirtualBounds() {
+<span class="nc" id="L103">        Rectangle bounds = new Rectangle(0, 0, 0, 0);</span>
+<span class="nc" id="L104">        GraphicsDevice[] devices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();</span>
+
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        for (GraphicsDevice device : devices) {</span>
+<span class="nc" id="L107">            bounds.add(device.getDefaultConfiguration().getBounds());</span>
+        }
+<span class="nc" id="L109">        return bounds;</span>
+    }
+
+    private WindowPosition adaptPosition(WindowPosition position) {
+<span class="nc bnc" id="L113" title="All 2 branches missed.">        if (isDisplayable(position)) {</span>
+<span class="nc" id="L114">            return position;</span>
+        }
+
+        // current algorithm:
+        // 1. try to move to main screen
+        // 2. use default sizes on main monitor
+<span class="nc" id="L120">        GraphicsDevice mainScreen = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();</span>
+<span class="nc" id="L121">        int mainScreenHeight = mainScreen.getDisplayMode().getHeight();</span>
+<span class="nc" id="L122">        int mainScreenWidth = mainScreen.getDisplayMode().getWidth();</span>
+
+<span class="nc" id="L124">        int newPosX = position.posX;</span>
+<span class="nc" id="L125">        int newPosY = position.posY;</span>
+<span class="nc" id="L126">        int newSizeX = position.sizeX;</span>
+<span class="nc" id="L127">        int newSizeY = position.sizeY;</span>
+
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        if ((position.posX + position.sizeX) &gt; mainScreenWidth) {</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">            if (position.sizeX &lt;= mainScreenWidth) {</span>
+<span class="nc" id="L131">                newPosX = mainScreenWidth - position.sizeX;</span>
+            } else {
+<span class="nc" id="L133">                newPosX = Globals.prefs.getIntDefault(posXKey);</span>
+<span class="nc" id="L134">                newSizeX = Globals.prefs.getIntDefault(sizeXKey);</span>
+            }
+        }
+
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        if ((position.posY + position.sizeY) &gt; mainScreenHeight) {</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">            if (position.sizeY &lt;= mainScreenHeight) {</span>
+<span class="nc" id="L140">                newPosY = mainScreenHeight - position.sizeY;</span>
+            } else {
+<span class="nc" id="L142">                newPosY = Globals.prefs.getIntDefault(posYKey);</span>
+<span class="nc" id="L143">                newSizeY = Globals.prefs.getIntDefault(sizeYKey);</span>
+            }
+        }
+
+<span class="nc" id="L147">        return new WindowPosition(newPosX, newPosY, newSizeX, newSizeY);</span>
+    }
+
+    static class WindowPosition {
+        public final int posX;
+        public final int posY;
+        public final int sizeX;
+        public final int sizeY;
+
+<span class="nc" id="L156">        public WindowPosition(int posX, int posY, int sizeX, int sizeY) {</span>
+<span class="nc" id="L157">            this.posX = posX;</span>
+<span class="nc" id="L158">            this.posY = posY;</span>
+<span class="nc" id="L159">            this.sizeX = sizeX;</span>
+<span class="nc" id="L160">            this.sizeY = sizeY;</span>
+<span class="nc" id="L161">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

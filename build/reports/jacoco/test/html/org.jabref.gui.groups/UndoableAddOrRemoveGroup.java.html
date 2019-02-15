@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UndoableAddOrRemoveGroup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.groups</a> &gt; <span class="el_source">UndoableAddOrRemoveGroup.java</span></div><h1>UndoableAddOrRemoveGroup.java</h1><pre class="source lang-java linenums">package org.jabref.gui.groups;
+
+import java.util.List;
+
+import org.jabref.gui.undo.AbstractUndoableJabRefEdit;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.groups.GroupTreeNode;
+
+class UndoableAddOrRemoveGroup extends AbstractUndoableJabRefEdit {
+
+    /** Adding of a single node (group). */
+    public static final int ADD_NODE = 0;
+    /** Removal of a single node. Children, if any, are kept. */
+    public static final int REMOVE_NODE_KEEP_CHILDREN = 1;
+    /** Removal of a node and all of its children. */
+    public static final int REMOVE_NODE_AND_CHILDREN = 2;
+    /** The root of the global groups tree */
+    private final GroupTreeNodeViewModel m_groupsRootHandle;
+    /** The subtree that was added or removed */
+    private final GroupTreeNode m_subtreeBackup;
+    /**
+     * In case of removing a node but keeping all of its children, the number of
+     * children has to be stored.
+     */
+    private final int m_subtreeRootChildCount;
+    /** The path to the edited subtree's root node */
+    private final List&lt;Integer&gt; m_pathToNode;
+    /**
+     * The type of the editing (ADD_NODE, REMOVE_NODE_KEEP_CHILDREN,
+     * REMOVE_NODE_AND_CHILDREN)
+     */
+    private final int m_editType;
+
+    /**
+     * Creates an object that can undo/redo an edit event.
+     *
+     * @param groupsRoot
+     *            The global groups root.
+     * @param editType
+     *            The type of editing (ADD_NODE, REMOVE_NODE_KEEP_CHILDREN,
+     *            REMOVE_NODE_AND_CHILDREN)
+     * @param editedNode
+     *            The edited node (which was added or will be removed). The node
+     *            must be a descendant of node &lt;b&gt;groupsRoot&lt;/b&gt;! This means
+     *            that, in case of adding, you first have to add it to the tree,
+     *            then call this constructor. When removing, you first have to
+     *            call this constructor, then remove the node.
+     */
+    public UndoableAddOrRemoveGroup(GroupTreeNodeViewModel groupsRoot,
+<span class="nc" id="L50">            GroupTreeNodeViewModel editedNode, int editType) {</span>
+<span class="nc" id="L51">        m_groupsRootHandle = groupsRoot;</span>
+<span class="nc" id="L52">        m_editType = editType;</span>
+<span class="nc" id="L53">        m_subtreeRootChildCount = editedNode.getChildCount();</span>
+        // storing a backup of the whole subtree is not required when children
+        // are kept
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        m_subtreeBackup = editType != UndoableAddOrRemoveGroup.REMOVE_NODE_KEEP_CHILDREN ? editedNode.getNode()</span>
+<span class="nc" id="L57">                .copySubtree() : GroupTreeNode.fromGroup(editedNode.getNode().getGroup().deepCopy());</span>
+        // remember path to edited node. this cannot be stored as a reference,
+        // because the reference itself might change. the method below is more
+        // robust.
+<span class="nc" id="L61">        m_pathToNode = editedNode.getNode().getIndexedPathFromRoot();</span>
+<span class="nc" id="L62">    }</span>
+
+    @Override
+    public String getPresentationName() {
+<span class="nc bnc" id="L66" title="All 4 branches missed.">        switch (m_editType) {</span>
+        case ADD_NODE:
+<span class="nc" id="L68">            return Localization.lang(&quot;add group&quot;);</span>
+        case REMOVE_NODE_KEEP_CHILDREN:
+<span class="nc" id="L70">            return Localization.lang(&quot;remove group (keep subgroups)&quot;);</span>
+        case REMOVE_NODE_AND_CHILDREN:
+<span class="nc" id="L72">            return Localization.lang(&quot;remove group and subgroups&quot;);</span>
+        default:
+            break;
+        }
+<span class="nc" id="L76">        return &quot;? (&quot; + Localization.lang(&quot;unknown edit&quot;) + &quot;)&quot;;</span>
+    }
+
+    @Override
+    public void undo() {
+<span class="nc" id="L81">        super.undo();</span>
+<span class="nc" id="L82">        doOperation(true);</span>
+<span class="nc" id="L83">    }</span>
+
+    @Override
+    public void redo() {
+<span class="nc" id="L87">        super.redo();</span>
+<span class="nc" id="L88">        doOperation(false);</span>
+<span class="nc" id="L89">    }</span>
+
+    private void doOperation(boolean undo) {
+<span class="nc" id="L92">        GroupTreeNode cursor = m_groupsRootHandle.getNode();</span>
+<span class="nc" id="L93">        final int childIndex = m_pathToNode.get(m_pathToNode.size() - 1);</span>
+        // traverse path up to but last element
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        for (int i = 0; i &lt; (m_pathToNode.size() - 1); ++i) {</span>
+<span class="nc" id="L96">            cursor = cursor.getChildAt(m_pathToNode.get(i)).get();</span>
+        }
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (undo) {</span>
+<span class="nc bnc" id="L99" title="All 4 branches missed.">            switch (m_editType) {</span>
+            case ADD_NODE:
+<span class="nc" id="L101">                cursor.removeChild(childIndex);</span>
+<span class="nc" id="L102">                break;</span>
+            case REMOVE_NODE_KEEP_CHILDREN:
+                // move all children to newNode, then add newNode
+<span class="nc" id="L105">                GroupTreeNode newNode = m_subtreeBackup.copySubtree();</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">                for (int i = childIndex; i &lt; (childIndex</span>
+<span class="nc" id="L107">                        + m_subtreeRootChildCount); ++i) {</span>
+<span class="nc" id="L108">                    cursor.getChildAt(childIndex).get().moveTo(newNode);</span>
+                }
+<span class="nc" id="L110">                newNode.moveTo(cursor, childIndex);</span>
+<span class="nc" id="L111">                break;</span>
+            case REMOVE_NODE_AND_CHILDREN:
+<span class="nc" id="L113">                m_subtreeBackup.copySubtree().moveTo(cursor, childIndex);</span>
+<span class="nc" id="L114">                break;</span>
+            default:
+<span class="nc" id="L116">                break;</span>
+            }
+        } else { // redo
+<span class="nc bnc" id="L119" title="All 4 branches missed.">            switch (m_editType) {</span>
+            case ADD_NODE:
+<span class="nc" id="L121">                m_subtreeBackup.copySubtree().moveTo(cursor, childIndex);</span>
+<span class="nc" id="L122">                break;</span>
+            case REMOVE_NODE_KEEP_CHILDREN:
+                // remove node, then insert all children
+<span class="nc" id="L125">                GroupTreeNode removedNode = cursor</span>
+<span class="nc" id="L126">                        .getChildAt(childIndex).get();</span>
+<span class="nc" id="L127">                cursor.removeChild(childIndex);</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                while (removedNode.getNumberOfChildren() &gt; 0) {</span>
+<span class="nc" id="L129">                    removedNode.getFirstChild().get().moveTo(cursor, childIndex);</span>
+                }
+                break;
+            case REMOVE_NODE_AND_CHILDREN:
+<span class="nc" id="L133">                cursor.removeChild(childIndex);</span>
+<span class="nc" id="L134">                break;</span>
+            default:
+                break;
+            }
+        }
+<span class="nc" id="L139">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MedlineFetcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fetcher</a> &gt; <span class="el_source">MedlineFetcher.java</span></div><h1>MedlineFetcher.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fetcher;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+
+import org.jabref.logic.formatter.bibtexfields.ClearFormatter;
+import org.jabref.logic.formatter.bibtexfields.NormalizeMonthFormatter;
+import org.jabref.logic.help.HelpFile;
+import org.jabref.logic.importer.FetcherException;
+import org.jabref.logic.importer.IdBasedParserFetcher;
+import org.jabref.logic.importer.Parser;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.importer.SearchBasedFetcher;
+import org.jabref.logic.importer.fileformat.MedlineImporter;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.cleanup.FieldFormatterCleanup;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+
+import org.apache.http.client.utils.URIBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Fetch or search from PubMed &lt;a href=&quot;http://www.ncbi.nlm.nih.gov/sites/entrez/&quot;&gt;www.ncbi.nlm.nih.gov&lt;/a&gt;
+ * The MedlineFetcher fetches the entries from the PubMed database.
+ * See &lt;a href=&quot;http://help.jabref.org/en/MedlineRIS&quot;&gt;help.jabref.org&lt;/a&gt; for a detailed documentation of the available fields.
+ */
+<span class="fc" id="L45">public class MedlineFetcher implements IdBasedParserFetcher, SearchBasedFetcher {</span>
+<span class="fc" id="L46">    private static final Logger LOGGER = LoggerFactory.getLogger(MedlineFetcher.class);</span>
+
+    private static final int NUMBER_TO_FETCH = 50;
+    private static final String ID_URL = &quot;https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi&quot;;
+    private static final String SEARCH_URL = &quot;https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi&quot;;
+
+    private int numberOfResultsFound;
+
+
+    /**
+     * Replaces all commas in a given string with &quot; AND &quot;
+     *
+     * @param query input to remove commas
+     * @return input without commas
+     */
+    private static String replaceCommaWithAND(String query) {
+<span class="nc" id="L62">        return query.replaceAll(&quot;, &quot;, &quot; AND &quot;).replaceAll(&quot;,&quot;, &quot; AND &quot;);</span>
+    }
+
+    /**
+     * When using 'esearch.fcgi?db=&lt;database&gt;&amp;term=&lt;query&gt;' we will get a list of IDs matching the query.
+     * Input: Any text query (&amp;term)
+     * Output: List of UIDs matching the query
+     *
+     * @see &lt;a href=&quot;https://www.ncbi.nlm.nih.gov/books/NBK25500/&quot;&gt;www.ncbi.nlm.nih.gov/books/NBK25500/&lt;/a&gt;
+     */
+    private List&lt;String&gt; getPubMedIdsFromQuery(String query) throws FetcherException {
+<span class="nc" id="L73">        boolean fetchIDs = false;</span>
+<span class="nc" id="L74">        boolean firstOccurrenceOfCount = false;</span>
+<span class="nc" id="L75">        List&lt;String&gt; idList = new ArrayList&lt;&gt;();</span>
+        try {
+<span class="nc" id="L77">            URL ncbi = createSearchUrl(query);</span>
+
+<span class="nc" id="L79">            XMLInputFactory inputFactory = XMLInputFactory.newFactory();</span>
+<span class="nc" id="L80">            XMLStreamReader streamReader = inputFactory.createXMLStreamReader(ncbi.openStream());</span>
+
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            fetchLoop: while (streamReader.hasNext()) {</span>
+<span class="nc" id="L83">                int event = streamReader.getEventType();</span>
+
+<span class="nc bnc" id="L85" title="All 4 branches missed.">                switch (event) {</span>
+                case XMLStreamConstants.START_ELEMENT:
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                    if (streamReader.getName().toString().equals(&quot;Count&quot;)) {</span>
+<span class="nc" id="L88">                        firstOccurrenceOfCount = true;</span>
+                    }
+
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                    if (streamReader.getName().toString().equals(&quot;IdList&quot;)) {</span>
+<span class="nc" id="L92">                        fetchIDs = true;</span>
+                    }
+                    break;
+
+                case XMLStreamConstants.CHARACTERS:
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                    if (firstOccurrenceOfCount) {</span>
+<span class="nc" id="L98">                        numberOfResultsFound = Integer.parseInt(streamReader.getText());</span>
+<span class="nc" id="L99">                        firstOccurrenceOfCount = false;</span>
+                    }
+
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                    if (fetchIDs) {</span>
+<span class="nc" id="L103">                        idList.add(streamReader.getText());</span>
+                    }
+                    break;
+
+                case XMLStreamConstants.END_ELEMENT:
+                    //Everything relevant is listed before the IdList. So we break the loop right after the IdList tag closes.
+<span class="nc bnc" id="L109" title="All 2 branches missed.">                    if (streamReader.getName().toString().equals(&quot;IdList&quot;)) {</span>
+<span class="nc" id="L110">                        break fetchLoop;</span>
+                    }
+                }
+<span class="nc" id="L113">                streamReader.next();</span>
+<span class="nc" id="L114">            }</span>
+<span class="nc" id="L115">            streamReader.close();</span>
+<span class="nc" id="L116">            return idList;</span>
+<span class="nc" id="L117">        } catch (IOException | URISyntaxException e) {</span>
+<span class="nc" id="L118">            throw new FetcherException(&quot;Unable to get PubMed IDs&quot;, Localization.lang(&quot;Unable to get PubMed IDs&quot;), e);</span>
+<span class="nc" id="L119">        } catch (XMLStreamException e) {</span>
+<span class="nc" id="L120">            throw new FetcherException(&quot;Error while parsing ID list&quot;, Localization.lang(&quot;Error while parsing ID list&quot;),</span>
+                    e);
+        }
+    }
+
+    @Override
+    public String getName() {
+<span class="fc" id="L127">        return &quot;Medline/PubMed&quot;;</span>
+    }
+
+    @Override
+    public Optional&lt;HelpFile&gt; getHelpPage() {
+<span class="nc" id="L132">        return Optional.of(HelpFile.FETCHER_MEDLINE);</span>
+    }
+
+    @Override
+    public URL getURLForID(String identifier) throws URISyntaxException, MalformedURLException, FetcherException {
+<span class="nc" id="L137">        URIBuilder uriBuilder = new URIBuilder(ID_URL);</span>
+<span class="nc" id="L138">        uriBuilder.addParameter(&quot;db&quot;, &quot;pubmed&quot;);</span>
+<span class="nc" id="L139">        uriBuilder.addParameter(&quot;retmode&quot;, &quot;xml&quot;);</span>
+<span class="nc" id="L140">        uriBuilder.addParameter(&quot;id&quot;, identifier);</span>
+<span class="nc" id="L141">        return uriBuilder.build().toURL();</span>
+    }
+
+    @Override
+    public Parser getParser() {
+<span class="nc" id="L146">        return new MedlineImporter();</span>
+    }
+
+    @Override
+    public void doPostCleanup(BibEntry entry) {
+<span class="nc" id="L151">        new FieldFormatterCleanup(&quot;journal-abbreviation&quot;, new ClearFormatter()).cleanup(entry);</span>
+<span class="nc" id="L152">        new FieldFormatterCleanup(&quot;status&quot;, new ClearFormatter()).cleanup(entry);</span>
+<span class="nc" id="L153">        new FieldFormatterCleanup(&quot;copyright&quot;, new ClearFormatter()).cleanup(entry);</span>
+
+<span class="nc" id="L155">        new FieldFormatterCleanup(FieldName.MONTH, new NormalizeMonthFormatter()).cleanup(entry);</span>
+<span class="nc" id="L156">    }</span>
+
+    @Override
+    public List&lt;BibEntry&gt; performSearch(String query) throws FetcherException {
+<span class="nc" id="L160">        List&lt;BibEntry&gt; entryList = new LinkedList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        if (query.isEmpty()) {</span>
+<span class="nc" id="L163">            return Collections.emptyList();</span>
+        } else {
+<span class="nc" id="L165">            String searchTerm = replaceCommaWithAND(query);</span>
+
+            //searching for pubmed ids matching the query
+<span class="nc" id="L168">            List&lt;String&gt; idList = getPubMedIdsFromQuery(searchTerm);</span>
+
+<span class="nc bnc" id="L170" title="All 2 branches missed.">            if (idList.isEmpty()) {</span>
+<span class="nc" id="L171">                LOGGER.info(&quot;No results found.&quot;);</span>
+<span class="nc" id="L172">                return Collections.emptyList();</span>
+            }
+<span class="nc bnc" id="L174" title="All 2 branches missed.">            if (numberOfResultsFound &gt; NUMBER_TO_FETCH) {</span>
+<span class="nc" id="L175">                LOGGER.info(</span>
+                        numberOfResultsFound + &quot; results found. Only 50 relevant results will be fetched by default.&quot;);
+            }
+
+            //pass the list of ids to fetchMedline to download them. like a id fetcher for mutliple ids
+<span class="nc" id="L180">            entryList = fetchMedline(idList);</span>
+
+<span class="nc" id="L182">            return entryList;</span>
+        }
+    }
+
+    private URL createSearchUrl(String term) throws URISyntaxException, MalformedURLException {
+<span class="nc" id="L187">        term = replaceCommaWithAND(term);</span>
+<span class="nc" id="L188">        URIBuilder uriBuilder = new URIBuilder(SEARCH_URL);</span>
+<span class="nc" id="L189">        uriBuilder.addParameter(&quot;db&quot;, &quot;pubmed&quot;);</span>
+<span class="nc" id="L190">        uriBuilder.addParameter(&quot;sort&quot;, &quot;relevance&quot;);</span>
+<span class="nc" id="L191">        uriBuilder.addParameter(&quot;retmax&quot;, String.valueOf(NUMBER_TO_FETCH));</span>
+<span class="nc" id="L192">        uriBuilder.addParameter(&quot;term&quot;, term);</span>
+<span class="nc" id="L193">        return uriBuilder.build().toURL();</span>
+    }
+
+    /**
+     * Fetch and parse an medline item from eutils.ncbi.nlm.nih.gov.
+     * The E-utilities generate a huge XML file containing all entries for the ids
+     *
+     * @param ids A list of IDs to search for.
+     * @return Will return an empty list on error.
+     */
+    private List&lt;BibEntry&gt; fetchMedline(List&lt;String&gt; ids) throws FetcherException {
+        try {
+            //Separate the IDs with a comma to search multiple entries
+<span class="nc" id="L206">            URL fetchURL = getURLForID(String.join(&quot;,&quot;, ids));</span>
+<span class="nc" id="L207">            URLConnection data = fetchURL.openConnection();</span>
+<span class="nc" id="L208">            ParserResult result = new MedlineImporter().importDatabase(</span>
+<span class="nc" id="L209">                    new BufferedReader(new InputStreamReader(data.getInputStream(), StandardCharsets.UTF_8)));</span>
+<span class="nc bnc" id="L210" title="All 2 branches missed.">            if (result.hasWarnings()) {</span>
+<span class="nc" id="L211">                LOGGER.warn(result.getErrorMessage());</span>
+            }
+<span class="nc" id="L213">            List&lt;BibEntry&gt; resultList = result.getDatabase().getEntries();</span>
+<span class="nc" id="L214">            resultList.forEach(this::doPostCleanup);</span>
+<span class="nc" id="L215">            return resultList;</span>
+<span class="nc" id="L216">        } catch (URISyntaxException | MalformedURLException e) {</span>
+<span class="nc" id="L217">            throw new FetcherException(&quot;Error while generating fetch URL&quot;,</span>
+<span class="nc" id="L218">                    Localization.lang(&quot;Error while generating fetch URL&quot;), e);</span>
+<span class="nc" id="L219">        } catch (IOException e) {</span>
+<span class="nc" id="L220">            throw new FetcherException(&quot;Error while fetching from Medline&quot;,</span>
+<span class="nc" id="L221">                    Localization.lang(&quot;Error while fetching from %0&quot;, &quot;Medline&quot;), e);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

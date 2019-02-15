@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ImportAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.importer</a> &gt; <span class="el_source">ImportAction.java</span></div><h1>ImportAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.importer;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.swing.SwingUtilities;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.gui.util.TaskExecutor;
+import org.jabref.logic.importer.ImportException;
+import org.jabref.logic.importer.ImportFormatReader;
+import org.jabref.logic.importer.Importer;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.UpdateField;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.database.KeyCollisionException;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BibtexString;
+
+public class ImportAction {
+
+    private final JabRefFrame frame;
+    private final boolean openInNew;
+    private final Optional&lt;Importer&gt; importer;
+    private final DialogService dialogService;
+    private Exception importError;
+<span class="nc" id="L38">    private final TaskExecutor taskExecutor = Globals.TASK_EXECUTOR;</span>
+
+    public ImportAction(JabRefFrame frame, boolean openInNew) {
+<span class="nc" id="L41">        this(frame, openInNew, null);</span>
+<span class="nc" id="L42">    }</span>
+
+<span class="nc" id="L44">    public ImportAction(JabRefFrame frame, boolean openInNew, Importer importer) {</span>
+<span class="nc" id="L45">        this.importer = Optional.ofNullable(importer);</span>
+<span class="nc" id="L46">        this.frame = frame;</span>
+<span class="nc" id="L47">        this.dialogService = frame.getDialogService();</span>
+<span class="nc" id="L48">        this.openInNew = openInNew;</span>
+<span class="nc" id="L49">    }</span>
+
+    /**
+     * Automatically imports the files given as arguments.
+     * @param filenames List of files to import
+     */
+    public void automatedImport(List&lt;String&gt; filenames) {
+<span class="nc" id="L56">        List&lt;Path&gt; files = filenames.stream().map(Paths::get).collect(Collectors.toList());</span>
+<span class="nc" id="L57">        BackgroundTask.wrap(() -&gt; doImport(files))</span>
+<span class="nc" id="L58">                      .onSuccess(this::reportResult)</span>
+<span class="nc" id="L59">                      .executeWith(taskExecutor);</span>
+<span class="nc" id="L60">    }</span>
+
+    private void reportResult(List&lt;ImportFormatReader.UnknownFormatImport&gt; imports) {
+        // Ok, done. Then try to gather in all we have found. Since we might
+        // have found
+        // one or more bibtex results, it's best to gather them in a
+        // BibDatabase.
+<span class="nc" id="L67">        ParserResult bibtexResult = mergeImportResults(imports);</span>
+
+        /* show parserwarnings, if any. */
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        for (ImportFormatReader.UnknownFormatImport p : imports) {</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            if (p != null) {</span>
+<span class="nc" id="L72">                ParserResult pr = p.parserResult;</span>
+<span class="nc" id="L73">                ParserResultWarningDialog.showParserResultWarningDialog(pr, frame);</span>
+            }
+<span class="nc" id="L75">        }</span>
+
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (bibtexResult == null) {</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            if (importer == null) {</span>
+<span class="nc" id="L79">                frame.output(Localization.lang(&quot;Could not find a suitable import format.&quot;));</span>
+            } else {
+                // Import in a specific format was specified. Check if we have stored error information:
+<span class="nc bnc" id="L82" title="All 2 branches missed.">                if (importError == null) {</span>
+<span class="nc" id="L83">                    dialogService.showErrorDialogAndWait(Localization.lang(&quot;Import failed&quot;),</span>
+<span class="nc" id="L84">                                                         Localization.lang(&quot;No entries found. Please make sure you are using the correct import filter.&quot;));</span>
+                } else {
+<span class="nc" id="L86">                    dialogService.showErrorDialogAndWait(Localization.lang(&quot;Import failed&quot;), importError);</span>
+                }
+            }
+        } else {
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            if (openInNew) {</span>
+<span class="nc" id="L91">                frame.addTab(bibtexResult.getDatabaseContext(), true);</span>
+<span class="nc" id="L92">                frame.output(Localization.lang(&quot;Imported entries&quot;) + &quot;: &quot; + bibtexResult.getDatabase().getEntryCount());</span>
+            } else {
+<span class="nc" id="L94">                final BasePanel panel = frame.getCurrentBasePanel();</span>
+
+<span class="nc" id="L96">                SwingUtilities.invokeLater(() -&gt; {</span>
+<span class="nc" id="L97">                    ImportInspectionDialog diag = new ImportInspectionDialog(frame, panel, Localization.lang(&quot;Import&quot;), false);</span>
+<span class="nc" id="L98">                    diag.addEntries(bibtexResult.getDatabase().getEntries());</span>
+<span class="nc" id="L99">                    diag.entryListComplete();</span>
+<span class="nc" id="L100">                    diag.setVisible(true);</span>
+<span class="nc" id="L101">                    diag.toFront();</span>
+<span class="nc" id="L102">                });</span>
+            }
+        }
+<span class="nc" id="L105">    }</span>
+
+    private List&lt;ImportFormatReader.UnknownFormatImport&gt; doImport(List&lt;Path&gt; files) {
+        // We import all files and collect their results:
+<span class="nc" id="L109">        List&lt;ImportFormatReader.UnknownFormatImport&gt; imports = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        for (Path filename : files) {</span>
+            try {
+<span class="nc bnc" id="L112" title="All 2 branches missed.">                if (!importer.isPresent()) {</span>
+                    // Unknown format:
+<span class="nc" id="L114">                    frame.output(Localization.lang(&quot;Importing in unknown format&quot;) + &quot;...&quot;);</span>
+                    // This import method never throws an IOException:
+<span class="nc" id="L116">                    imports.add(Globals.IMPORT_FORMAT_READER.importUnknownFormat(filename, Globals.getFileUpdateMonitor()));</span>
+                } else {
+<span class="nc" id="L118">                    frame.output(Localization.lang(&quot;Importing in %0 format&quot;, importer.get().getName()) + &quot;...&quot;);</span>
+                    // Specific importer:
+<span class="nc" id="L120">                    ParserResult pr = importer.get().importDatabase(filename, Globals.prefs.getDefaultEncoding());</span>
+<span class="nc" id="L121">                    imports.add(new ImportFormatReader.UnknownFormatImport(importer.get().getName(), pr));</span>
+                }
+<span class="nc" id="L123">            } catch (ImportException | IOException e) {</span>
+                // This indicates that a specific importer was specified, and that
+                // this importer has thrown an IOException. We store the exception,
+                // so a relevant error message can be displayed.
+<span class="nc" id="L127">                importError = e;</span>
+<span class="nc" id="L128">            }</span>
+<span class="nc" id="L129">        }</span>
+<span class="nc" id="L130">        return imports;</span>
+    }
+
+    private ParserResult mergeImportResults(List&lt;ImportFormatReader.UnknownFormatImport&gt; imports) {
+<span class="nc" id="L134">        BibDatabase database = new BibDatabase();</span>
+<span class="nc" id="L135">        ParserResult directParserResult = null;</span>
+<span class="nc" id="L136">        boolean anythingUseful = false;</span>
+
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        for (ImportFormatReader.UnknownFormatImport importResult : imports) {</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">            if (importResult == null) {</span>
+<span class="nc" id="L140">                continue;</span>
+            }
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            if (ImportFormatReader.BIBTEX_FORMAT.equals(importResult.format)) {</span>
+                // Bibtex result. We must merge it into our main base.
+<span class="nc" id="L144">                ParserResult pr = importResult.parserResult;</span>
+
+<span class="nc bnc" id="L146" title="All 6 branches missed.">                anythingUseful = anythingUseful || pr.getDatabase().hasEntries() || (!pr.getDatabase().hasNoStrings());</span>
+
+                // Record the parserResult, as long as this is the first bibtex result:
+<span class="nc bnc" id="L149" title="All 2 branches missed.">                if (directParserResult == null) {</span>
+<span class="nc" id="L150">                    directParserResult = pr;</span>
+                }
+                // Merge entries:
+<span class="nc bnc" id="L153" title="All 2 branches missed.">                for (BibEntry entry : pr.getDatabase().getEntries()) {</span>
+<span class="nc" id="L154">                    database.insertEntry(entry);</span>
+<span class="nc" id="L155">                }</span>
+
+                // Merge strings:
+<span class="nc bnc" id="L158" title="All 2 branches missed.">                for (BibtexString bs : pr.getDatabase().getStringValues()) {</span>
+                    try {
+<span class="nc" id="L160">                        database.addString((BibtexString) bs.clone());</span>
+<span class="nc" id="L161">                    } catch (KeyCollisionException e) {</span>
+                        // TODO: This means a duplicate string name exists, so it's not
+                        // a very exceptional situation. We should maybe give a warning...?
+<span class="nc" id="L164">                    }</span>
+<span class="nc" id="L165">                }</span>
+<span class="nc" id="L166">            } else {</span>
+
+<span class="nc" id="L168">                ParserResult pr = importResult.parserResult;</span>
+<span class="nc" id="L169">                Collection&lt;BibEntry&gt; entries = pr.getDatabase().getEntries();</span>
+
+<span class="nc bnc" id="L171" title="All 2 branches missed.">                anythingUseful = anythingUseful | !entries.isEmpty();</span>
+
+                // set timestamp and owner
+<span class="nc" id="L174">                UpdateField.setAutomaticFields(entries, Globals.prefs.getUpdateFieldPreferences()); // set timestamp and owner</span>
+
+<span class="nc bnc" id="L176" title="All 2 branches missed.">                for (BibEntry entry : entries) {</span>
+<span class="nc" id="L177">                    database.insertEntry(entry);</span>
+<span class="nc" id="L178">                }</span>
+            }
+<span class="nc" id="L180">        }</span>
+
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if (!anythingUseful) {</span>
+<span class="nc" id="L183">            return null;</span>
+        }
+
+<span class="nc bnc" id="L186" title="All 4 branches missed.">        if ((imports.size() == 1) &amp;&amp; (directParserResult != null)) {</span>
+<span class="nc" id="L187">            return directParserResult;</span>
+        } else {
+
+<span class="nc" id="L190">            return new ParserResult(database);</span>
+
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

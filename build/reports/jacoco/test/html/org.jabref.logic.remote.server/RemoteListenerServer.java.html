@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RemoteListenerServer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.remote.server</a> &gt; <span class="el_source">RemoteListenerServer.java</span></div><h1>RemoteListenerServer.java</h1><pre class="source lang-java linenums">package org.jabref.logic.remote.server;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+
+import javafx.util.Pair;
+
+import org.jabref.logic.remote.RemotePreferences;
+import org.jabref.logic.remote.shared.Protocol;
+import org.jabref.logic.remote.shared.RemoteMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class RemoteListenerServer implements Runnable {
+<span class="fc" id="L18">    private static final Logger LOGGER = LoggerFactory.getLogger(RemoteListenerServer.class);</span>
+
+    private static final int BACKLOG = 1;
+
+    private static final int ONE_SECOND_TIMEOUT = 1000;
+
+    private final MessageHandler messageHandler;
+    private final ServerSocket serverSocket;
+
+
+<span class="fc" id="L28">    public RemoteListenerServer(MessageHandler messageHandler, int port) throws IOException {</span>
+<span class="fc" id="L29">        this.serverSocket = new ServerSocket(port, BACKLOG, RemotePreferences.getIpAddress());</span>
+<span class="fc" id="L30">        this.messageHandler = messageHandler;</span>
+<span class="fc" id="L31">    }</span>
+
+    @Override
+    public void run() {
+        try {
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">            while (!Thread.interrupted()) {</span>
+<span class="fc" id="L37">                try (Socket socket = serverSocket.accept()) {</span>
+<span class="fc" id="L38">                    socket.setSoTimeout(ONE_SECOND_TIMEOUT);</span>
+
+<span class="fc" id="L40">                    try (Protocol protocol = new Protocol(socket)) {</span>
+<span class="fc" id="L41">                        Pair&lt;RemoteMessage, Object&gt; input = protocol.receiveMessage();</span>
+<span class="fc" id="L42">                        handleMessage(protocol, input.getKey(), input.getValue());</span>
+                    }
+<span class="fc" id="L44">                } catch (SocketException ex) {</span>
+<span class="fc" id="L45">                    return;</span>
+<span class="nc" id="L46">                } catch (IOException e) {</span>
+<span class="nc" id="L47">                    LOGGER.warn(&quot;RemoteListenerServer crashed&quot;, e);</span>
+<span class="pc" id="L48">                }</span>
+            }
+        } finally {
+<span class="fc" id="L51">            closeServerSocket();</span>
+        }
+<span class="nc" id="L53">    }</span>
+
+    private void handleMessage(Protocol protocol, RemoteMessage type, Object argument) throws IOException {
+<span class="pc bpc" id="L56" title="1 of 3 branches missed.">        switch (type) {</span>
+            case PING:
+<span class="fc" id="L58">                protocol.sendMessage(RemoteMessage.PONG, Protocol.IDENTIFIER);</span>
+<span class="fc" id="L59">                break;</span>
+            case SEND_COMMAND_LINE_ARGUMENTS:
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">                if (argument instanceof String[]) {</span>
+<span class="fc" id="L62">                    messageHandler.handleCommandLineArguments((String[]) argument);</span>
+<span class="fc" id="L63">                    protocol.sendMessage(RemoteMessage.OK);</span>
+                } else {
+<span class="nc" id="L65">                    throw new IOException(&quot;Argument for 'SEND_COMMAND_LINE_ARGUMENTS' is not of type String[]. Got &quot; + argument);</span>
+                }
+                break;
+            default:
+<span class="nc" id="L69">                throw new IOException(&quot;Unhandled message to server &quot; + type);</span>
+        }
+<span class="fc" id="L71">    }</span>
+
+    public void closeServerSocket() {
+        try {
+<span class="fc" id="L75">            serverSocket.close();</span>
+<span class="nc" id="L76">        } catch (IOException ignored) {</span>
+            // Ignored
+<span class="fc" id="L78">        }</span>
+<span class="fc" id="L79">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

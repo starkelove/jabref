@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CitationStyleGenerator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.citationstyle</a> &gt; <span class="el_source">CitationStyleGenerator.java</span></div><h1>CitationStyleGenerator.java</h1><pre class="source lang-java linenums">package org.jabref.logic.citationstyle;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+
+import org.jbibtex.TokenMgrException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
+/**
+ * Facade to unify the access to the citation style engine. Use these methods if you need rendered BibTeX item(s) in a
+ * given journal style. This class uses {@link CSLAdapter} to create output.
+ */
+public class CitationStyleGenerator {
+
+<span class="fc" id="L21">    private static final Logger LOGGER = LoggerFactory.getLogger(CitationStyleGenerator.class);</span>
+<span class="fc" id="L22">    private static final CSLAdapter CSL_ADAPTER = new CSLAdapter();</span>
+
+    private CitationStyleGenerator() {
+    }
+
+    /**
+     * Generates a Citation based on the given entry and style
+     * @implNote the citation is generated using JavaScript which may take some time, better call it from outside the main Thread
+     */
+    protected static String generateCitation(BibEntry entry, CitationStyle style) {
+<span class="nc" id="L32">        return generateCitation(entry, style.getSource(), CitationStyleOutputFormat.HTML);</span>
+    }
+
+    /**
+     * Generates a Citation based on the given entry and style
+     * @implNote the citation is generated using JavaScript which may take some time, better call it from outside the main Thread
+     */
+    protected static String generateCitation(BibEntry entry, String style) {
+<span class="fc" id="L40">        return generateCitation(entry, style, CitationStyleOutputFormat.HTML);</span>
+    }
+
+    /**
+     * Generates a Citation based on the given entry, style, and output format
+     * @implNote the citation is generated using JavaScript which may take some time, better call it from outside the main Thread
+     */
+    protected static String generateCitation(BibEntry entry, String style, CitationStyleOutputFormat outputFormat) {
+<span class="fc" id="L48">        return generateCitations(Collections.singletonList(entry), style, outputFormat).stream().findFirst().orElse(&quot;&quot;);</span>
+    }
+
+    /**
+     * Generates the citation for multiple entries at once.
+     * @implNote The citations are generated using JavaScript which may take some time, better call it from outside the main thread.
+     */
+    public static List&lt;String&gt; generateCitations(List&lt;BibEntry&gt; bibEntries, String style, CitationStyleOutputFormat outputFormat) {
+        try {
+<span class="nc" id="L57">            return CSL_ADAPTER.makeBibliography(bibEntries, style, outputFormat);</span>
+<span class="nc" id="L58">        } catch (IllegalArgumentException ignored) {</span>
+<span class="nc" id="L59">            LOGGER.error(&quot;Could not generate BibEntry citation. The CSL engine could not create a preview for your item.&quot;);</span>
+<span class="nc" id="L60">            return Collections.singletonList(Localization.lang(&quot;Cannot generate preview based on selected citation style.&quot;));</span>
+<span class="fc" id="L61">        } catch (IOException | ArrayIndexOutOfBoundsException e) {</span>
+<span class="fc" id="L62">            LOGGER.error(&quot;Could not generate BibEntry citation&quot;, e);</span>
+<span class="fc" id="L63">            return Collections.singletonList(Localization.lang(&quot;Cannot generate preview based on selected citation style.&quot;));</span>
+<span class="nc" id="L64">        } catch (TokenMgrException e) {</span>
+<span class="nc" id="L65">            LOGGER.error(&quot;Bad character inside BibEntry&quot;, e);</span>
+            // sadly one cannot easily retrieve the bad char from the TokenMgrError
+<span class="nc" id="L67">            return Collections.singletonList(new StringBuilder()</span>
+<span class="nc" id="L68">                    .append(Localization.lang(&quot;Cannot generate preview based on selected citation style.&quot;))</span>
+<span class="nc" id="L69">                    .append(outputFormat.getLineSeparator())</span>
+<span class="nc" id="L70">                    .append(Localization.lang(&quot;Bad character inside entry&quot;))</span>
+<span class="nc" id="L71">                    .append(outputFormat.getLineSeparator())</span>
+<span class="nc" id="L72">                    .append(e.getLocalizedMessage())</span>
+<span class="nc" id="L73">                    .toString());</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

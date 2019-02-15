@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UpdateRefusedEvent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.shared.event</a> &gt; <span class="el_source">UpdateRefusedEvent.java</span></div><h1>UpdateRefusedEvent.java</h1><pre class="source lang-java linenums">package org.jabref.logic.shared.event;
+
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+
+/**
+ * A new {@link UpdateRefusedEvent} is fired, when the user tries to push changes of an obsolete
+ * {@link BibEntry} to the server.
+ */
+public class UpdateRefusedEvent {
+
+    private final BibDatabaseContext bibDatabaseContext;
+    private final BibEntry localBibEntry;
+    private final BibEntry sharedBibEntry;
+
+    /**
+     * @param bibDatabaseContext Affected {@link BibDatabaseContext}
+     * @param bibEntry Affected {@link BibEntry}
+     */
+<span class="nc" id="L20">    public UpdateRefusedEvent(BibDatabaseContext bibDatabaseContext, BibEntry localBibEntry, BibEntry sharedBibEntry) {</span>
+<span class="nc" id="L21">        this.bibDatabaseContext = bibDatabaseContext;</span>
+<span class="nc" id="L22">        this.localBibEntry = localBibEntry;</span>
+<span class="nc" id="L23">        this.sharedBibEntry = sharedBibEntry;</span>
+<span class="nc" id="L24">    }</span>
+
+    public BibDatabaseContext getBibDatabaseContext() {
+<span class="nc" id="L27">        return this.bibDatabaseContext;</span>
+    }
+
+    public BibEntry getLocalBibEntry() {
+<span class="nc" id="L31">        return localBibEntry;</span>
+    }
+
+    public BibEntry getSharedBibEntry() {
+<span class="nc" id="L35">        return sharedBibEntry;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

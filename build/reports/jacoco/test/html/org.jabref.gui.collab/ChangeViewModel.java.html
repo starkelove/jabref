@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChangeViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.collab</a> &gt; <span class="el_source">ChangeViewModel.java</span></div><h1>ChangeViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.collab;
+
+import javax.swing.JComponent;
+import javax.swing.tree.DefaultMutableTreeNode;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.model.database.BibDatabase;
+
+abstract class ChangeViewModel extends DefaultMutableTreeNode {
+
+    protected String name;
+<span class="nc" id="L13">    private boolean accepted = true;</span>
+
+
+<span class="nc" id="L16">    ChangeViewModel() {</span>
+<span class="nc" id="L17">        name = &quot;&quot;;</span>
+<span class="nc" id="L18">    }</span>
+
+<span class="nc" id="L20">    ChangeViewModel(String name) {</span>
+<span class="nc" id="L21">        this.name = name;</span>
+<span class="nc" id="L22">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L26">        return name;</span>
+    }
+
+    public boolean isAccepted() {
+<span class="nc" id="L30">        return accepted;</span>
+    }
+
+    public void setAccepted(boolean a) {
+<span class="nc" id="L34">        accepted = a;</span>
+<span class="nc" id="L35">    }</span>
+
+    /**
+     * This method is used to disable the &quot;accept&quot; box if the parent has been set to &quot;not accepted&quot;.
+     * Thus the user can disable e.g. an entry change without having to disable all field changes.
+     * @return boolean false if the parent overrides by not being accepted.
+     */
+    public boolean isAcceptable() {
+<span class="nc bnc" id="L43" title="All 4 branches missed.">        if ((getParent() != null) &amp;&amp; (getParent() instanceof ChangeViewModel)) {</span>
+<span class="nc" id="L44">            return ((ChangeViewModel) getParent()).isAccepted();</span>
+        } else {
+<span class="nc" id="L46">            return true;</span>
+        }
+    }
+
+    /**
+     * This method returns a JComponent detailing the nature of the change.
+     * @return JComponent
+     */
+    public abstract JComponent description();
+
+    /**
+     * Perform the change. This method is responsible for adding a proper undo edit to
+     * the NamedCompound, so the change can be undone.
+     * @param panel BasePanel The tab where the database lives.
+     * @param secondary BibDatabase The &quot;tmp&quot; database for which the change
+     *   should also be made.
+     * @param undoEdit NamedCompound The compound to hold the undo edits.
+     * @return true if all changes were made, false if not all were accepted.
+     */
+    public abstract boolean makeChange(BasePanel panel, BibDatabase secondary, NamedCompound undoEdit);
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

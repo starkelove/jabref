@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenOfficeDocumentCreator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.exporter</a> &gt; <span class="el_source">OpenOfficeDocumentCreator.java</span></div><h1>OpenOfficeDocumentCreator.java</h1><pre class="source lang-java linenums">package org.jabref.logic.exporter;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class OpenOfficeDocumentCreator extends Exporter {
+
+<span class="fc" id="L39">    private static final Logger LOGGER = LoggerFactory.getLogger(OpenOfficeDocumentCreator.class);</span>
+
+
+    /**
+     * Creates a new instance of OpenOfficeDocumentCreator
+     */
+    public OpenOfficeDocumentCreator() {
+<span class="fc" id="L46">        super(&quot;oocalc&quot;, &quot;Old OpenOffice/LibreOffice Calc format&quot;, StandardFileType.SXC);</span>
+<span class="fc" id="L47">    }</span>
+
+    private static void storeOpenOfficeFile(Path file, InputStream source) throws Exception {
+<span class="nc" id="L50">        try (ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(file)))) {</span>
+<span class="nc" id="L51">            ZipEntry zipEntry = new ZipEntry(&quot;content.xml&quot;);</span>
+<span class="nc" id="L52">            out.putNextEntry(zipEntry);</span>
+            int c;
+<span class="nc bnc" id="L54" title="All 2 branches missed.">            while ((c = source.read()) &gt;= 0) {</span>
+<span class="nc" id="L55">                out.write(c);</span>
+            }
+<span class="nc" id="L57">            out.closeEntry();</span>
+
+            // Add manifest (required for OOo 2.0), &quot;meta.xml&quot;, &quot;mimetype&quot; files. These are in the
+            // resource/openoffice directory, and are copied verbatim into the zip file.
+<span class="nc" id="L61">            OpenOfficeDocumentCreator.addResourceFile(&quot;meta.xml&quot;, &quot;/resource/openoffice/meta.xml&quot;, out);</span>
+<span class="nc" id="L62">            OpenOfficeDocumentCreator.addResourceFile(&quot;mimetype&quot;, &quot;/resource/openoffice/mimetype&quot;, out);</span>
+<span class="nc" id="L63">            OpenOfficeDocumentCreator.addResourceFile(&quot;META-INF/manifest.xml&quot;, &quot;/resource/openoffice/manifest.xml&quot;,</span>
+                    out);
+
+        }
+<span class="nc" id="L67">    }</span>
+
+    private static void exportOpenOfficeCalc(Path file, BibDatabase database, List&lt;BibEntry&gt; entries) throws Exception {
+        // First store the xml formatted content to a temporary file.
+<span class="nc" id="L71">        File tmpFile = File.createTempFile(&quot;oocalc&quot;, null);</span>
+<span class="nc" id="L72">        OpenOfficeDocumentCreator.exportOpenOfficeCalcXML(tmpFile, database, entries);</span>
+
+        // Then add the content to the zip file:
+<span class="nc" id="L75">        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(tmpFile))) {</span>
+<span class="nc" id="L76">            OpenOfficeDocumentCreator.storeOpenOfficeFile(file, in);</span>
+        }
+
+        // Delete the temporary file:
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        if (!tmpFile.delete()) {</span>
+<span class="nc" id="L81">            LOGGER.info(&quot;Cannot delete temporary export file&quot;);</span>
+        }
+<span class="nc" id="L83">    }</span>
+
+    @Override
+    public void export(final BibDatabaseContext databaseContext, final Path file,
+                       final Charset encoding, List&lt;BibEntry&gt; entries) throws Exception {
+<span class="fc" id="L88">        Objects.requireNonNull(databaseContext);</span>
+<span class="fc" id="L89">        Objects.requireNonNull(entries);</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">        if (!entries.isEmpty()) { // Do not export if no entries</span>
+<span class="nc" id="L91">            OpenOfficeDocumentCreator.exportOpenOfficeCalc(file, databaseContext.getDatabase(), entries);</span>
+        }
+<span class="fc" id="L93">    }</span>
+
+    private static void exportOpenOfficeCalcXML(File tmpFile, BibDatabase database, List&lt;BibEntry&gt; entries) {
+<span class="nc" id="L96">        OOCalcDatabase od = new OOCalcDatabase(database, entries);</span>
+
+<span class="nc" id="L98">        try (Writer ps = new OutputStreamWriter(new FileOutputStream(tmpFile), StandardCharsets.UTF_8)) {</span>
+<span class="nc" id="L99">            DOMSource source = new DOMSource(od.getDOMrepresentation());</span>
+<span class="nc" id="L100">            StreamResult result = new StreamResult(ps);</span>
+<span class="nc" id="L101">            Transformer trans = TransformerFactory.newInstance().newTransformer();</span>
+<span class="nc" id="L102">            trans.setOutputProperty(OutputKeys.INDENT, &quot;yes&quot;);</span>
+<span class="nc" id="L103">            trans.transform(source, result);</span>
+<span class="nc" id="L104">        } catch (Exception e) {</span>
+<span class="nc" id="L105">            throw new Error(e);</span>
+<span class="nc" id="L106">        }</span>
+
+<span class="nc" id="L108">    }</span>
+
+    private static void addResourceFile(String name, String resource, ZipOutputStream out) throws IOException {
+<span class="nc" id="L111">        ZipEntry zipEntry = new ZipEntry(name);</span>
+<span class="nc" id="L112">        out.putNextEntry(zipEntry);</span>
+<span class="nc" id="L113">        OpenOfficeDocumentCreator.addFromResource(resource, out);</span>
+<span class="nc" id="L114">        out.closeEntry();</span>
+<span class="nc" id="L115">    }</span>
+
+    private static void addFromResource(String resource, OutputStream out) {
+<span class="nc" id="L118">        URL url = OpenOfficeDocumentCreator.class.getResource(resource);</span>
+<span class="nc" id="L119">        try (InputStream in = url.openStream()) {</span>
+<span class="nc" id="L120">            byte[] buffer = new byte[256];</span>
+<span class="nc" id="L121">            synchronized (out) {</span>
+                while (true) {
+<span class="nc" id="L123">                    int bytesRead = in.read(buffer);</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">                    if (bytesRead == -1) {</span>
+<span class="nc" id="L125">                        break;</span>
+                    }
+<span class="nc" id="L127">                    out.write(buffer, 0, bytesRead);</span>
+<span class="nc" id="L128">                }</span>
+<span class="nc" id="L129">            }</span>
+<span class="nc" id="L130">        } catch (IOException e) {</span>
+<span class="nc" id="L131">            LOGGER.warn(&quot;Cannot get resource&quot;, e);</span>
+<span class="nc" id="L132">        }</span>
+<span class="nc" id="L133">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

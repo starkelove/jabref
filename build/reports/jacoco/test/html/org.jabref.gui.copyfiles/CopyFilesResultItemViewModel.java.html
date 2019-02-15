@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CopyFilesResultItemViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.copyfiles</a> &gt; <span class="el_source">CopyFilesResultItemViewModel.java</span></div><h1>CopyFilesResultItemViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.copyfiles;
+
+import java.nio.file.Path;
+
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
+import de.jensd.fx.glyphs.materialdesignicons.MaterialDesignIcon;
+
+public class CopyFilesResultItemViewModel {
+
+<span class="nc" id="L14">    private final StringProperty file = new SimpleStringProperty(&quot;&quot;);</span>
+<span class="nc" id="L15">    private final ObjectProperty&lt;MaterialDesignIcon&gt; icon = new SimpleObjectProperty&lt;&gt;(MaterialDesignIcon.ALERT);</span>
+<span class="nc" id="L16">    private final StringProperty message = new SimpleStringProperty(&quot;&quot;);</span>
+
+<span class="nc" id="L18">    public CopyFilesResultItemViewModel(Path file, boolean success, String message) {</span>
+<span class="nc" id="L19">        this.file.setValue(file.toString());</span>
+<span class="nc" id="L20">        this.message.setValue(message);</span>
+<span class="nc bnc" id="L21" title="All 2 branches missed.">        if (success) {</span>
+<span class="nc" id="L22">            this.icon.setValue(MaterialDesignIcon.CHECK);</span>
+        }
+<span class="nc" id="L24">    }</span>
+
+    public StringProperty getFile() {
+<span class="nc" id="L27">        return file;</span>
+    }
+
+    public StringProperty getMessage() {
+<span class="nc" id="L31">        return message;</span>
+    }
+
+    public ObjectProperty&lt;MaterialDesignIcon&gt; getIcon() {
+<span class="nc" id="L35">        return icon;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L40">        return &quot;CopyFilesResultItemViewModel [file=&quot; + file.get() + &quot;, message=&quot; + message.get() + &quot;]&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.gui.util.RecursiveTreeItemTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:15" hostname="n184-p67.eduroam.kth.se" time="0.018">
+  <properties/>
+  <testcase name="addsAllChildrenOfChildNode()" classname="org.jabref.gui.util.RecursiveTreeItemTest" time="0.012"/>
+  <testcase name="addsAllChildrenNodes()" classname="org.jabref.gui.util.RecursiveTreeItemTest" time="0.002"/>
+  <testcase name="respectsFilter()" classname="org.jabref.gui.util.RecursiveTreeItemTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

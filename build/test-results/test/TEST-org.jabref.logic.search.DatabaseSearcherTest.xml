@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.search.DatabaseSearcherTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:26" hostname="n184-p67.eduroam.kth.se" time="0.016">
+  <properties/>
+  <testcase name="testNoMatchesFromDatabaseWithArticleTypeEntry()" classname="org.jabref.logic.search.DatabaseSearcherTest" time="0.003"/>
+  <testcase name="testNoMatchFromDatabaseWithEmptyEntry()" classname="org.jabref.logic.search.DatabaseSearcherTest" time="0.001"/>
+  <testcase name="testGetDatabaseFromMatchesDatabaseWithEmptyEntries()" classname="org.jabref.logic.search.DatabaseSearcherTest" time="0.001"/>
+  <testcase name="testNoMatchesFromEmptyDatabaseWithInvalidSearchExpression()" classname="org.jabref.logic.search.DatabaseSearcherTest" time="0.001"/>
+  <testcase name="testCorrectMatchFromDatabaseWithArticleTypeEntry()" classname="org.jabref.logic.search.DatabaseSearcherTest" time="0.001"/>
+  <testcase name="testNoMatchesFromEmptyDatabaseWithInvalidQuery()" classname="org.jabref.logic.search.DatabaseSearcherTest" time="0.001"/>
+  <testcase name="testNoMatchesFromDabaseWithIncollectionTypeEntry()" classname="org.jabref.logic.search.DatabaseSearcherTest" time="0.001"/>
+  <testcase name="testCorrectMatchFromDatabaseWithIncollectionTypeEntry()" classname="org.jabref.logic.search.DatabaseSearcherTest" time="0.001"/>
+  <testcase name="testNoMatchesFromEmptyDatabase()" classname="org.jabref.logic.search.DatabaseSearcherTest" time="0.001"/>
+  <testcase name="testNoMatchesFromDatabaseWithTwoEntries()" classname="org.jabref.logic.search.DatabaseSearcherTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

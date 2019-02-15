@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CoarseChangeFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.database.event</a> &gt; <span class="el_source">CoarseChangeFilter.java</span></div><h1>CoarseChangeFilter.java</h1><pre class="source lang-java linenums">package org.jabref.model.database.event;
+
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.event.FieldChangedEvent;
+
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
+
+/**
+ * Filters change events and only relays major changes.
+ */
+public class CoarseChangeFilter {
+
+<span class="nc" id="L14">    private final EventBus eventBus = new EventBus();</span>
+    private String lastFieldChanged;
+    private final BibDatabaseContext context;
+
+<span class="nc" id="L18">    public CoarseChangeFilter(BibDatabaseContext bibDatabaseContext) {</span>
+        // Listen for change events
+<span class="nc" id="L20">        bibDatabaseContext.getDatabase().registerListener(this);</span>
+<span class="nc" id="L21">        bibDatabaseContext.getMetaData().registerListener(this);</span>
+<span class="nc" id="L22">        this.context = bibDatabaseContext;</span>
+<span class="nc" id="L23">    }</span>
+
+    @Subscribe
+    public synchronized void listen(@SuppressWarnings(&quot;unused&quot;) BibDatabaseContextChangedEvent event) {
+<span class="nc bnc" id="L27" title="All 2 branches missed.">        if (!(event instanceof FieldChangedEvent)) {</span>
+<span class="nc" id="L28">            eventBus.post(event);</span>
+        } else {
+            // Only relay event if the field changes are more than one character or a new field is edited
+<span class="nc" id="L31">            FieldChangedEvent fieldChange = (FieldChangedEvent) event;</span>
+<span class="nc bnc" id="L32" title="All 4 branches missed.">            boolean isEditOnNewField = lastFieldChanged == null || !lastFieldChanged.equals(fieldChange.getFieldName());</span>
+
+<span class="nc bnc" id="L34" title="All 4 branches missed.">            if (fieldChange.getDelta() &gt; 1 || isEditOnNewField) {</span>
+<span class="nc" id="L35">                lastFieldChanged = fieldChange.getFieldName();</span>
+<span class="nc" id="L36">                eventBus.post(event);</span>
+            }
+        }
+<span class="nc" id="L39">    }</span>
+
+    public void registerListener(Object listener) {
+<span class="nc" id="L42">        eventBus.register(listener);</span>
+<span class="nc" id="L43">    }</span>
+
+    public void unregisterListener(Object listener) {
+<span class="nc" id="L46">        eventBus.unregister(listener);</span>
+<span class="nc" id="L47">    }</span>
+
+    public void shutdown() {
+<span class="nc" id="L50">        context.getDatabase().unregisterListener(this);</span>
+<span class="nc" id="L51">        context.getMetaData().unregisterListener(this);</span>
+<span class="nc" id="L52">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

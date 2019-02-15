@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.exporter.GroupSerializerTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:01" hostname="n184-p67.eduroam.kth.se" time="0.01">
+  <properties/>
+  <testcase name="serializeSingleTexGroup()" classname="org.jabref.logic.exporter.GroupSerializerTest" time="0.002"/>
+  <testcase name="serializeSingleExplicitGroupWithEscapedSlash()" classname="org.jabref.logic.exporter.GroupSerializerTest" time="0.0"/>
+  <testcase name="serializeSingleSearchGroup()" classname="org.jabref.logic.exporter.GroupSerializerTest" time="0.001"/>
+  <testcase name="getTreeAsStringInSimpleTree()" classname="org.jabref.logic.exporter.GroupSerializerTest" time="0.001"/>
+  <testcase name="serializeSingleSearchGroupWithRegex()" classname="org.jabref.logic.exporter.GroupSerializerTest" time="0.001"/>
+  <testcase name="serializeSingleSimpleKeywordGroup()" classname="org.jabref.logic.exporter.GroupSerializerTest" time="0.0"/>
+  <testcase name="serializeSingleAutomaticPersonGroup()" classname="org.jabref.logic.exporter.GroupSerializerTest" time="0.0"/>
+  <testcase name="serializeSingleAllEntriesGroup()" classname="org.jabref.logic.exporter.GroupSerializerTest" time="0.0"/>
+  <testcase name="serializeSingleRegexKeywordGroup()" classname="org.jabref.logic.exporter.GroupSerializerTest" time="0.0"/>
+  <testcase name="getTreeAsStringInComplexTree()" classname="org.jabref.logic.exporter.GroupSerializerTest" time="0.0"/>
+  <testcase name="serializeSingleExplicitGroupWithIconAndDescription()" classname="org.jabref.logic.exporter.GroupSerializerTest" time="0.0"/>
+  <testcase name="serializeSingleExplicitGroup()" classname="org.jabref.logic.exporter.GroupSerializerTest" time="0.001"/>
+  <testcase name="serializeSingleAutomaticKeywordGroup()" classname="org.jabref.logic.exporter.GroupSerializerTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

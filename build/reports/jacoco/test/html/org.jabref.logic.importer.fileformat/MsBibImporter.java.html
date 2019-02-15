@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MsBibImporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fileformat</a> &gt; <span class="el_source">MsBibImporter.java</span></div><h1>MsBibImporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fileformat;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.Objects;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.jabref.logic.importer.Importer;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.msbib.MSBibDatabase;
+import org.jabref.logic.util.StandardFileType;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
+/**
+ * Importer for the MS Office 2007 XML bibliography format
+ *
+ * ...
+ */
+<span class="fc" id="L29">public class MsBibImporter extends Importer {</span>
+
+<span class="fc" id="L31">    private static final Logger LOGGER = LoggerFactory.getLogger(MsBibImporter.class);</span>
+    private static final String DISABLEDTD = &quot;http://apache.org/xml/features/disallow-doctype-decl&quot;;
+    private static final String DISABLEEXTERNALDTD = &quot;http://apache.org/xml/features/nonvalidating/load-external-dtd&quot;;
+
+    @Override
+    public boolean isRecognizedFormat(BufferedReader reader) throws IOException {
+<span class="fc" id="L37">        Objects.requireNonNull(reader);</span>
+
+        /*
+            The correct behavior is to return false if it is certain that the file is
+            not of the MsBib type, and true otherwise. Returning true is the safe choice
+            if not certain.
+         */
+        Document docin;
+        try {
+<span class="fc" id="L46">            DocumentBuilder dbuild = makeSafeDocBuilderFactory(DocumentBuilderFactory.newInstance()).newDocumentBuilder();</span>
+<span class="fc" id="L47">            dbuild.setErrorHandler(new ErrorHandler() {</span>
+
+                @Override
+                public void warning(SAXParseException exception) throws SAXException {
+                    // ignore warnings
+<span class="nc" id="L52">                }</span>
+
+                @Override
+                public void fatalError(SAXParseException exception) throws SAXException {
+<span class="fc" id="L56">                    throw exception;</span>
+                }
+
+                @Override
+                public void error(SAXParseException exception) throws SAXException {
+<span class="nc" id="L61">                    throw exception;</span>
+                }
+            });
+
+<span class="fc" id="L65">            docin = dbuild.parse(new InputSource(reader));</span>
+<span class="fc" id="L66">        } catch (Exception e) {</span>
+<span class="fc" id="L67">            return false;</span>
+<span class="fc" id="L68">        }</span>
+<span class="pc bpc" id="L69" title="1 of 4 branches missed.">        return (docin == null) || docin.getDocumentElement().getTagName().contains(&quot;Sources&quot;);</span>
+    }
+
+    @Override
+    public ParserResult importDatabase(BufferedReader reader) throws IOException {
+<span class="fc" id="L74">        Objects.requireNonNull(reader);</span>
+
+<span class="fc" id="L76">        MSBibDatabase dbase = new MSBibDatabase();</span>
+<span class="fc" id="L77">        return new ParserResult(dbase.importEntriesFromXml(reader));</span>
+    }
+
+    @Override
+    public String getName() {
+<span class="fc" id="L82">        return &quot;MSBib&quot;;</span>
+    }
+
+    @Override
+    public StandardFileType getFileType() {
+<span class="fc" id="L87">        return StandardFileType.XML;</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="fc" id="L92">        return &quot;Importer for the MS Office 2007 XML bibliography format.&quot;;</span>
+    }
+
+    /**
+     * DocumentBuilderFactory makes a XXE safe Builder factory from dBuild. If not supported by current
+     * XML then returns original builder given and logs error.
+     * @param dBuild | DocumentBuilderFactory to be made XXE safe.
+     * @return If supported, XXE safe DocumentBuilderFactory. Else, returns original builder given
+     */
+    private DocumentBuilderFactory makeSafeDocBuilderFactory(DocumentBuilderFactory dBuild) {
+<span class="fc" id="L102">        String feature = null;</span>
+
+        try {
+<span class="fc" id="L105">            feature = DISABLEDTD;</span>
+<span class="fc" id="L106">            dBuild.setFeature(feature, true);</span>
+
+<span class="fc" id="L108">            feature = DISABLEEXTERNALDTD;</span>
+<span class="fc" id="L109">            dBuild.setFeature(feature, false);</span>
+
+<span class="fc" id="L111">            dBuild.setXIncludeAware(false);</span>
+<span class="fc" id="L112">            dBuild.setExpandEntityReferences(false);</span>
+
+<span class="nc" id="L114">        } catch (ParserConfigurationException e) {</span>
+<span class="nc" id="L115">            LOGGER.warn(&quot;Builder not fully configured. Feature:'{}' is probably not supported by current XML processor. {}&quot;, feature, e);</span>
+<span class="fc" id="L116">        }</span>
+
+<span class="fc" id="L118">        return dBuild;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

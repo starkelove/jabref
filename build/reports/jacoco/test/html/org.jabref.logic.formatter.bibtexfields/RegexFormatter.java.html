@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegexFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.formatter.bibtexfields</a> &gt; <span class="el_source">RegexFormatter.java</span></div><h1>RegexFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.formatter.bibtexfields;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.cleanup.Formatter;
+
+public class RegexFormatter extends Formatter {
+
+    public static final String KEY = &quot;regex&quot;;
+<span class="fc" id="L15">    private static final Pattern PATTERN_ESCAPED_OPENING_CURLY_BRACE = Pattern.compile(&quot;\\\\\\{&quot;);</span>
+<span class="fc" id="L16">    private static final Pattern PATTERN_ESCAPED_CLOSING_CURLY_BRACE = Pattern.compile(&quot;\\\\\\}&quot;);</span>
+    // RegEx to match {...}
+    // \\ is required to have the { interpreted as character
+    // ? is required to disable the aggressive match
+<span class="fc" id="L20">    private static final Pattern PATTERN_ENCLOSED_IN_CURLY_BRACES = Pattern.compile(&quot;(\\{.*?})&quot;);</span>
+    // Magic arbitrary unicode char, which will never appear in bibtex files
+<span class="fc" id="L22">    private static final String PLACEHOLDER_FOR_PROTECTED_GROUP = Character.toString('\u0A14');</span>
+<span class="fc" id="L23">    private static final String PLACEHOLDER_FOR_OPENING_CURLY_BRACE = Character.toString('\u0A15');</span>
+<span class="fc" id="L24">    private static final String PLACEHOLDER_FOR_CLOSING_CURLY_BRACE = Character.toString('\u0A16');</span>
+    private static final String QUOTE_AND_OPENING_BRACE = &quot;\&quot;(&quot;;
+<span class="fc" id="L26">    private static final int LENGTH_OF_QUOTE_AND_OPENING_BRACE = QUOTE_AND_OPENING_BRACE.length();</span>
+    private static final String CLOSING_BRACE_AND_QUOTE = &quot;)\&quot;&quot;;
+<span class="fc" id="L28">    private static final int LENGTH_OF_CLOSING_BRACE_AND_QUOTE = CLOSING_BRACE_AND_QUOTE.length();</span>
+    private static String regex;
+    private String replacement;
+
+    /**
+     * Constructs a new regular expression-based formatter with the given RegEx.
+     *
+     * @param input the regular expressions for matching and replacing given in the form {@code (&lt;regex&gt;, &lt;replace&gt;)}.
+     */
+<span class="fc" id="L37">    public RegexFormatter(String input) {</span>
+        // formatting is like (&quot;exp1&quot;,&quot;exp2&quot;), we want to first remove (&quot; and &quot;)
+<span class="fc" id="L39">        String rexToSet = input.substring(LENGTH_OF_QUOTE_AND_OPENING_BRACE, input.length() - LENGTH_OF_CLOSING_BRACE_AND_QUOTE);</span>
+<span class="fc" id="L40">        String[] parts = rexToSet.split(&quot;\&quot;,\&quot;&quot;);</span>
+<span class="fc" id="L41">        regex = parts[0];</span>
+<span class="fc" id="L42">        replacement = parts[1];</span>
+<span class="fc" id="L43">    }</span>
+
+    @Override
+    public String getName() {
+<span class="nc" id="L47">        return Localization.lang(&quot;regular expression&quot;);</span>
+    }
+
+    @Override
+    public String getKey() {
+<span class="nc" id="L52">        return KEY;</span>
+    }
+
+    private String replaceHonoringProtectedGroups(final String input) {
+<span class="fc" id="L56">        Matcher matcher = PATTERN_ENCLOSED_IN_CURLY_BRACES.matcher(input);</span>
+
+<span class="fc" id="L58">        List&lt;String&gt; replaced = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        while (matcher.find()) {</span>
+<span class="fc" id="L60">            replaced.add(matcher.group(1));</span>
+        }
+<span class="fc" id="L62">        String workingString = matcher.replaceAll(PLACEHOLDER_FOR_PROTECTED_GROUP);</span>
+<span class="fc" id="L63">        workingString = workingString.replaceAll(regex, replacement);</span>
+
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        for (String r : replaced) {</span>
+<span class="fc" id="L66">            workingString = workingString.replaceFirst(PLACEHOLDER_FOR_PROTECTED_GROUP, r);</span>
+<span class="fc" id="L67">        }</span>
+<span class="fc" id="L68">        return workingString;</span>
+    }
+
+    @Override
+    public String format(final String input) {
+<span class="fc" id="L73">        Objects.requireNonNull(input);</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if (regex == null) {</span>
+<span class="nc" id="L75">            return input;</span>
+        }
+
+<span class="fc" id="L78">        Matcher matcherOpeningCurlyBrace = PATTERN_ESCAPED_OPENING_CURLY_BRACE.matcher(input);</span>
+<span class="fc" id="L79">        final String openingCurlyBraceReplaced = matcherOpeningCurlyBrace.replaceAll(PLACEHOLDER_FOR_OPENING_CURLY_BRACE);</span>
+
+<span class="fc" id="L81">        Matcher matcherClosingCurlyBrace = PATTERN_ESCAPED_CLOSING_CURLY_BRACE.matcher(openingCurlyBraceReplaced);</span>
+<span class="fc" id="L82">        final String closingCurlyBraceReplaced = matcherClosingCurlyBrace.replaceAll(PLACEHOLDER_FOR_CLOSING_CURLY_BRACE);</span>
+
+<span class="fc" id="L84">        final String regexApplied = replaceHonoringProtectedGroups(closingCurlyBraceReplaced);</span>
+
+<span class="fc" id="L86">        return regexApplied</span>
+<span class="fc" id="L87">                .replaceAll(PLACEHOLDER_FOR_OPENING_CURLY_BRACE, &quot;\\\\{&quot;)</span>
+<span class="fc" id="L88">                .replaceAll(PLACEHOLDER_FOR_CLOSING_CURLY_BRACE, &quot;\\\\}&quot;);</span>
+    }
+
+    @Override
+    public String getDescription() {
+<span class="nc" id="L93">        return Localization.lang(&quot;Add a regular expression for the key pattern.&quot;);</span>
+    }
+
+    @Override
+    public String getExampleInput() {
+<span class="fc" id="L98">        return &quot;Please replace the spaces&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

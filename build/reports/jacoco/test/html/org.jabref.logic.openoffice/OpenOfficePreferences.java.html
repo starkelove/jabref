@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenOfficePreferences.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.openoffice</a> &gt; <span class="el_source">OpenOfficePreferences.java</span></div><h1>OpenOfficePreferences.java</h1><pre class="source lang-java linenums">package org.jabref.logic.openoffice;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+public class OpenOfficePreferences {
+
+    public static final String DEFAULT_WINDOWS_PATH = &quot;C:\\Program Files\\LibreOffice 5&quot;;
+    public static final String DEFAULT_WIN_EXEC_PATH = &quot;C:\\Program Files\\LibreOffice 5\\program&quot;;
+    public static final String WINDOWS_EXECUTABLE = &quot;soffice.exe&quot;;
+
+    public static final String DEFAULT_OSX_PATH = &quot;/Applications/LibreOffice.app&quot;;
+    public static final String DEFAULT_OSX_EXEC_PATH = &quot;/Applications/LibreOffice.app/Contents/MacOS/soffice&quot;;
+    public static final String OSX_EXECUTABLE = &quot;soffice&quot;;
+
+    public static final String DEFAULT_LINUX_PATH = &quot;/usr/lib/libreoffice&quot;;
+    public static final String DEFAULT_LINUX_EXEC_PATH = &quot;/usr/lib/libreoffice/program/soffice&quot;;
+    public static final String LINUX_EXECUTABLE = &quot;soffice&quot;;
+
+<span class="fc" id="L21">    public static final List&lt;String&gt; OO_JARS = Arrays.asList(&quot;unoil.jar&quot;, &quot;jurt.jar&quot;, &quot;juh.jar&quot;, &quot;ridl.jar&quot;);</span>
+
+<span class="nc" id="L23">    private String executablePath = &quot;&quot;;</span>
+<span class="nc" id="L24">    private String installationPath = &quot;&quot;;</span>
+    private boolean useAllDatabases;
+    private boolean syncWhenCiting;
+    private boolean showPanel;
+<span class="nc" id="L28">    private List&lt;String&gt; externalStyles = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L29">    private String currentStyle = &quot;&quot;;</span>
+<span class="nc" id="L30">    private String jarsPath = &quot;&quot;;</span>
+
+    public OpenOfficePreferences(
+            String jarsPath,
+            String executablePath,
+            String installationPath,
+            boolean useAllDatabases,
+            boolean syncWhenCiting,
+            boolean showPanel,
+            List&lt;String&gt; externalStyles,
+            String currentStyle
+<span class="nc" id="L41">    ) {</span>
+<span class="nc" id="L42">        this.jarsPath = jarsPath;</span>
+<span class="nc" id="L43">        this.executablePath = executablePath;</span>
+<span class="nc" id="L44">        this.installationPath = installationPath;</span>
+<span class="nc" id="L45">        this.useAllDatabases = useAllDatabases;</span>
+<span class="nc" id="L46">        this.syncWhenCiting = syncWhenCiting;</span>
+<span class="nc" id="L47">        this.showPanel = showPanel;</span>
+<span class="nc" id="L48">        this.externalStyles = externalStyles;</span>
+<span class="nc" id="L49">        this.currentStyle = currentStyle;</span>
+<span class="nc" id="L50">    }</span>
+
+    public void clearCurrentStyle() {
+<span class="nc" id="L53">        this.currentStyle = null;</span>
+        // TODO: sync to prefs
+<span class="nc" id="L55">    }</span>
+
+    /**
+     * path to soffice-file
+     */
+    public String getExecutablePath() {
+<span class="nc" id="L61">        return executablePath;</span>
+    }
+
+    public void setExecutablePath(String executablePath) {
+<span class="nc" id="L65">        this.executablePath = executablePath;</span>
+<span class="nc" id="L66">    }</span>
+
+    /**
+     * main directory for OO/LO installation, used to detect location on Win/OS X when using manual connect
+     */
+    public String getInstallationPath() {
+<span class="nc" id="L72">        return installationPath;</span>
+    }
+
+    public void setInstallationPath(String installationPath) {
+<span class="nc" id="L76">        this.installationPath = installationPath;</span>
+<span class="nc" id="L77">    }</span>
+
+    /**
+     * true if all databases should be used when citing
+     */
+    public Boolean getUseAllDatabases() {
+<span class="nc" id="L83">        return useAllDatabases;</span>
+    }
+
+    public void setUseAllDatabases(Boolean useAllDatabases) {
+<span class="nc" id="L87">        this.useAllDatabases = useAllDatabases;</span>
+<span class="nc" id="L88">    }</span>
+
+    /**
+     * true if the reference list is updated when adding a new citation
+     */
+    public Boolean getSyncWhenCiting() {
+<span class="nc" id="L94">        return syncWhenCiting;</span>
+    }
+
+    public void setSyncWhenCiting(boolean syncWhenCiting) {
+<span class="nc" id="L98">        this.syncWhenCiting = syncWhenCiting;</span>
+<span class="nc" id="L99">    }</span>
+
+    /**
+     * true if the OO panel is shown on startup
+     */
+    public boolean getShowPanel() {
+<span class="nc" id="L105">        return showPanel;</span>
+    }
+
+    public void setShowPanel(boolean showPanel) {
+<span class="nc" id="L109">        this.showPanel = showPanel;</span>
+<span class="nc" id="L110">    }</span>
+
+    /**
+     * list with paths to external style files
+     */
+    public List&lt;String&gt; getExternalStyles() {
+<span class="nc" id="L116">        return externalStyles;</span>
+    }
+
+    public void setExternalStyles(List&lt;String&gt; externalStyles) {
+<span class="nc" id="L120">        this.externalStyles = externalStyles;</span>
+<span class="nc" id="L121">    }</span>
+
+    /**
+     * path to the used style file
+     */
+    public String getCurrentStyle() {
+<span class="nc" id="L127">        return currentStyle;</span>
+    }
+
+    public void setCurrentStyle(String currentStyle) {
+<span class="nc" id="L131">        this.currentStyle = currentStyle;</span>
+<span class="nc" id="L132">    }</span>
+
+    /**
+     * directory that contains juh.jar, jurt.jar, ridl.jar, unoil.jar
+     */
+    public String getJarsPath() {
+<span class="nc" id="L138">        return jarsPath;</span>
+    }
+
+    public void setJarsPath(String jarsPath) {
+<span class="nc" id="L142">        this.jarsPath = jarsPath;</span>
+<span class="nc" id="L143">    }</span>
+
+    public void updateConnectionParams(String ooPath, String execPath, String jarsPath) {
+<span class="nc" id="L146">        setInstallationPath(ooPath);</span>
+<span class="nc" id="L147">        setExecutablePath(execPath);</span>
+<span class="nc" id="L148">        setJarsPath(jarsPath);</span>
+<span class="nc" id="L149">    }</span>
+
+    public void clearConnectionSettings() {
+<span class="nc" id="L152">        this.installationPath = &quot;&quot;;</span>
+<span class="nc" id="L153">        this.executablePath = &quot;&quot;;</span>
+<span class="nc" id="L154">        this.jarsPath = &quot;&quot;;</span>
+<span class="nc" id="L155">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

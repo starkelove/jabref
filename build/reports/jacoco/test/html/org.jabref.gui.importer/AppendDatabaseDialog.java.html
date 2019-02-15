@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AppendDatabaseDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.importer</a> &gt; <span class="el_source">AppendDatabaseDialog.java</span></div><h1>AppendDatabaseDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.importer;
+
+import javafx.geometry.Insets;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.layout.GridPane;
+
+import org.jabref.gui.util.BaseDialog;
+import org.jabref.logic.l10n.Localization;
+
+/**
+ * Asks for details about merge database operation.
+ */
+public class AppendDatabaseDialog extends BaseDialog&lt;Boolean&gt; {
+
+<span class="nc" id="L16">    private final CheckBox entries = new CheckBox();</span>
+<span class="nc" id="L17">    private final CheckBox strings = new CheckBox();</span>
+<span class="nc" id="L18">    private final CheckBox groups = new CheckBox();</span>
+<span class="nc" id="L19">    private final CheckBox selector = new CheckBox();</span>
+
+<span class="nc" id="L21">    public AppendDatabaseDialog() {</span>
+<span class="nc" id="L22">        this.setTitle(Localization.lang(&quot;Append library&quot;));</span>
+
+<span class="nc" id="L24">        this.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);</span>
+<span class="nc bnc" id="L25" title="All 2 branches missed.">        this.setResultConverter(button -&gt; button == ButtonType.OK);</span>
+<span class="nc" id="L26">        init();</span>
+<span class="nc" id="L27">    }</span>
+
+    private void init() {
+<span class="nc" id="L30">        entries.setSelected(true);</span>
+<span class="nc" id="L31">        entries.setText(Localization.lang(&quot;Import entries&quot;));</span>
+<span class="nc" id="L32">        strings.setSelected(true);</span>
+<span class="nc" id="L33">        strings.setText(Localization.lang(&quot;Import strings&quot;));</span>
+<span class="nc" id="L34">        groups.setText(Localization.lang(&quot;Import group definitions&quot;));</span>
+<span class="nc" id="L35">        selector.setText(Localization.lang(&quot;Import word selector definitions&quot;));</span>
+
+<span class="nc" id="L37">        GridPane container = new GridPane();</span>
+<span class="nc" id="L38">        getDialogPane().setContent(container);</span>
+<span class="nc" id="L39">        container.setHgap(10);</span>
+<span class="nc" id="L40">        container.setVgap(10);</span>
+<span class="nc" id="L41">        container.setPadding(new Insets(15, 5, 0, 0));</span>
+<span class="nc" id="L42">        container.add(entries, 0, 0);</span>
+<span class="nc" id="L43">        container.add(strings, 0, 1);</span>
+<span class="nc" id="L44">        container.add(groups, 0, 2);</span>
+<span class="nc" id="L45">        container.add(selector, 0, 3);</span>
+<span class="nc" id="L46">        container.setPadding(new Insets(15, 5, 0, 0));</span>
+<span class="nc" id="L47">        container.setGridLinesVisible(false);</span>
+<span class="nc" id="L48">    }</span>
+
+    public boolean importEntries() {
+<span class="nc" id="L51">        return entries.isSelected();</span>
+    }
+
+    public boolean importGroups() {
+<span class="nc" id="L55">        return groups.isSelected();</span>
+    }
+
+    public boolean importStrings() {
+<span class="nc" id="L59">        return strings.isSelected();</span>
+    }
+
+    public boolean importSelectorWords() {
+<span class="nc" id="L63">        return selector.isSelected();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

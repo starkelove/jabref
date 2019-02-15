@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - MimeTypeDetectorTest</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<h1>MimeTypeDetectorTest</h1>
+<div class="breadcrumbs">
+<a href="../index.html">all</a> &gt; 
+<a href="../packages/org.jabref.logic.net.html">org.jabref.logic.net</a> &gt; MimeTypeDetectorTest</div>
+<div id="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox" id="tests">
+<div class="counter">7</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="failures">
+<div class="counter">0</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="ignored">
+<div class="counter">0</div>
+<p>ignored</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="duration">
+<div class="counter">2.888s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox success" id="successRate">
+<div class="percent">100%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="tabs">
+<ul class="tabLinks">
+<li>
+<a href="#tab0">Tests</a>
+</li>
+<li>
+<a href="#tab1">Standard output</a>
+</li>
+</ul>
+<div id="tab0" class="tab">
+<h2>Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Duration</th>
+<th>Result</th>
+</tr>
+</thead>
+<tr>
+<td class="success">beAbleToUseGetRequest()</td>
+<td class="success">0.140s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">beAbleToUseHeadRequest()</td>
+<td class="success">0.072s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">beFalseForUnreachableUrl()</td>
+<td class="success">0.027s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">beTrueForLocalPdfUri()</td>
+<td class="success">0.015s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">beTrueForPDFMimeTypeVariations()</td>
+<td class="success">0.072s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">beTrueForPdfMimeType()</td>
+<td class="success">0.320s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">handlePermanentRedirections()</td>
+<td class="success">2.242s</td>
+<td class="success">passed</td>
+</tr>
+</table>
+</div>
+<div id="tab1" class="tab">
+<h2>Standard output</h2>
+<span class="code">
+<pre>15:23:47.184 [Test worker] INFO  org.eclipse.jetty.util.log - Logging initialized @29636ms -  
+15:23:47.509 [Test worker] INFO  org.eclipse.jetty.server.Server - jetty-9.2.26.v20180806 -  
+15:23:47.577 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@46ee1d0c{/__admin,null,AVAILABLE} -  
+15:23:47.579 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@7d8bc5db{/,null,AVAILABLE} -  
+15:23:47.607 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Started NetworkTrafficServerConnector@23427bc7{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:47.607 [Test worker] INFO  org.eclipse.jetty.server.Server - Started @30062ms -  
+15:23:48.870 [qtp1692105014-27] INFO  /__admin - RequestHandlerClass from context returned com.github.tomakehurst.wiremock.http.AdminRequestHandler. Normalized mapped under returned 'null' -  
+15:23:49.331 [qtp1692105014-28] INFO  / - RequestHandlerClass from context returned com.github.tomakehurst.wiremock.http.StubRequestHandler. Normalized mapped under returned 'null' -  
+15:23:49.738 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Stopped NetworkTrafficServerConnector@23427bc7{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:49.741 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@7d8bc5db{/,null,UNAVAILABLE} -  
+15:23:49.741 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@46ee1d0c{/__admin,null,UNAVAILABLE} -  
+15:23:49.748 [Test worker] INFO  org.eclipse.jetty.server.Server - jetty-9.2.26.v20180806 -  
+15:23:49.751 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@121540ba{/__admin,null,AVAILABLE} -  
+15:23:49.751 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@7237b8b3{/,null,AVAILABLE} -  
+15:23:49.752 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Started NetworkTrafficServerConnector@4a9f36df{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:49.753 [Test worker] INFO  org.eclipse.jetty.server.Server - Started @32208ms -  
+15:23:49.758 [qtp1040820271-41] INFO  /__admin - RequestHandlerClass from context returned com.github.tomakehurst.wiremock.http.AdminRequestHandler. Normalized mapped under returned 'null' -  
+15:23:49.804 [Test worker] INFO  org.apache.http.impl.execchain.RetryExec - I/O exception (org.apache.http.NoHttpResponseException) caught when processing request to {}-&gt;http://localhost:8080: The target server failed to respond -  
+15:23:49.804 [Test worker] INFO  org.apache.http.impl.execchain.RetryExec - Retrying request to {}-&gt;http://localhost:8080 -  
+15:23:49.807 [qtp1040820271-42] INFO  / - RequestHandlerClass from context returned com.github.tomakehurst.wiremock.http.StubRequestHandler. Normalized mapped under returned 'null' -  
+15:23:49.817 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Stopped NetworkTrafficServerConnector@4a9f36df{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:49.817 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@7237b8b3{/,null,UNAVAILABLE} -  
+15:23:49.818 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@121540ba{/__admin,null,UNAVAILABLE} -  
+15:23:49.818 [Test worker] WARN  org.eclipse.jetty.util.thread.QueuedThreadPool - qtp1040820271{STOPPING,8&lt;=8&lt;=10,i=3,q=5} Couldn't stop Thread[qtp1040820271-37,5,] -  
+15:23:49.819 [Test worker] WARN  org.eclipse.jetty.util.thread.QueuedThreadPool - qtp1040820271{STOPPING,8&lt;=8&lt;=10,i=0,q=4} Couldn't stop Thread[qtp1040820271-38,5,] -  
+15:23:49.824 [Test worker] INFO  org.eclipse.jetty.server.Server - jetty-9.2.26.v20180806 -  
+15:23:49.827 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@5698922{/__admin,null,AVAILABLE} -  
+15:23:49.828 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@2d537d14{/,null,AVAILABLE} -  
+15:23:49.829 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Started NetworkTrafficServerConnector@71a7e5b5{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:49.829 [Test worker] INFO  org.eclipse.jetty.server.Server - Started @32284ms -  
+15:23:49.838 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Stopped NetworkTrafficServerConnector@71a7e5b5{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:49.839 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@2d537d14{/,null,UNAVAILABLE} -  
+15:23:49.839 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@5698922{/__admin,null,UNAVAILABLE} -  
+15:23:49.845 [Test worker] INFO  org.eclipse.jetty.server.Server - jetty-9.2.26.v20180806 -  
+15:23:49.861 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@6ef681b9{/__admin,null,AVAILABLE} -  
+15:23:49.862 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@44c84603{/,null,AVAILABLE} -  
+15:23:49.862 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Started NetworkTrafficServerConnector@1e69fc6a{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:49.862 [Test worker] INFO  org.eclipse.jetty.server.Server - Started @32318ms -  
+15:23:50.164 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Stopped NetworkTrafficServerConnector@1e69fc6a{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:50.164 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@44c84603{/,null,UNAVAILABLE} -  
+15:23:50.164 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@6ef681b9{/__admin,null,UNAVAILABLE} -  
+15:23:50.175 [Test worker] INFO  org.eclipse.jetty.server.Server - jetty-9.2.26.v20180806 -  
+15:23:50.178 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@5a3565e5{/__admin,null,AVAILABLE} -  
+15:23:50.179 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@7dbfc000{/,null,AVAILABLE} -  
+15:23:50.180 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Started NetworkTrafficServerConnector@27e55e6{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:50.180 [Test worker] INFO  org.eclipse.jetty.server.Server - Started @32636ms -  
+15:23:50.199 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Stopped NetworkTrafficServerConnector@27e55e6{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:50.199 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@7dbfc000{/,null,UNAVAILABLE} -  
+15:23:50.199 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@5a3565e5{/__admin,null,UNAVAILABLE} -  
+15:23:50.200 [Test worker] WARN  org.eclipse.jetty.util.thread.QueuedThreadPool - qtp574461625{STOPPING,8&lt;=8&lt;=10,i=4,q=5} Couldn't stop Thread[qtp574461625-71,5,] -  
+15:23:50.200 [Test worker] WARN  org.eclipse.jetty.util.thread.QueuedThreadPool - qtp574461625{STOPPING,8&lt;=8&lt;=10,i=0,q=5} Couldn't stop Thread[qtp574461625-72,5,] -  
+15:23:50.209 [Test worker] INFO  org.eclipse.jetty.server.Server - jetty-9.2.26.v20180806 -  
+15:23:50.212 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@4605a08d{/__admin,null,AVAILABLE} -  
+15:23:50.212 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@6fd6cf25{/,null,AVAILABLE} -  
+15:23:50.213 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Started NetworkTrafficServerConnector@6b06c3c1{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:50.213 [Test worker] INFO  org.eclipse.jetty.server.Server - Started @32669ms -  
+15:23:50.218 [qtp155892548-86] INFO  /__admin - RequestHandlerClass from context returned com.github.tomakehurst.wiremock.http.AdminRequestHandler. Normalized mapped under returned 'null' -  
+15:23:50.265 [Test worker] INFO  org.apache.http.impl.execchain.RetryExec - I/O exception (org.apache.http.NoHttpResponseException) caught when processing request to {}-&gt;http://localhost:8080: The target server failed to respond -  
+15:23:50.265 [Test worker] INFO  org.apache.http.impl.execchain.RetryExec - Retrying request to {}-&gt;http://localhost:8080 -  
+15:23:50.268 [qtp155892548-87] INFO  / - RequestHandlerClass from context returned com.github.tomakehurst.wiremock.http.StubRequestHandler. Normalized mapped under returned 'null' -  
+15:23:50.278 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Stopped NetworkTrafficServerConnector@6b06c3c1{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:50.279 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@6fd6cf25{/,null,UNAVAILABLE} -  
+15:23:50.280 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@4605a08d{/__admin,null,UNAVAILABLE} -  
+15:23:50.287 [Test worker] INFO  org.eclipse.jetty.server.Server - jetty-9.2.26.v20180806 -  
+15:23:50.289 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@46b2ab67{/__admin,null,AVAILABLE} -  
+15:23:50.289 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Started o.e.j.s.ServletContextHandler@4731c4da{/,null,AVAILABLE} -  
+15:23:50.290 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Started NetworkTrafficServerConnector@140ba6c8{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:50.290 [Test worker] INFO  org.eclipse.jetty.server.Server - Started @32746ms -  
+15:23:50.294 [qtp1948520541-98] INFO  /__admin - RequestHandlerClass from context returned com.github.tomakehurst.wiremock.http.AdminRequestHandler. Normalized mapped under returned 'null' -  
+15:23:50.380 [Test worker] INFO  org.apache.http.impl.execchain.RetryExec - I/O exception (org.apache.http.NoHttpResponseException) caught when processing request to {}-&gt;http://localhost:8080: The target server failed to respond -  
+15:23:50.380 [Test worker] INFO  org.apache.http.impl.execchain.RetryExec - Retrying request to {}-&gt;http://localhost:8080 -  
+15:23:50.383 [qtp1948520541-100] INFO  / - RequestHandlerClass from context returned com.github.tomakehurst.wiremock.http.StubRequestHandler. Normalized mapped under returned 'null' -  
+15:23:50.424 [Test worker] INFO  org.eclipse.jetty.server.NetworkTrafficServerConnector - Stopped NetworkTrafficServerConnector@140ba6c8{HTTP/1.1}{0.0.0.0:8080} -  
+15:23:50.425 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@4731c4da{/,null,UNAVAILABLE} -  
+15:23:50.425 [Test worker] INFO  org.eclipse.jetty.server.handler.ContextHandler - Stopped o.e.j.s.ServletContextHandler@46b2ab67{/__admin,null,UNAVAILABLE} -  
+</pre>
+</span>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="http://www.gradle.org">Gradle 4.10.2</a> at 2019-feb-15 15:25:27</p>
+</div>
+</div>
+</body>
+</html>

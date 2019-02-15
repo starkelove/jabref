@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.importer.fetcher.FulltextFetcherTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:23" hostname="n184-p67.eduroam.kth.se" time="0.861">
+  <properties/>
+  <testcase name="findFullTextRejectsNullParameter(FulltextFetcher)[1]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.001"/>
+  <testcase name="findFullTextRejectsNullParameter(FulltextFetcher)[2]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.0"/>
+  <testcase name="findFullTextRejectsNullParameter(FulltextFetcher)[3]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.0"/>
+  <testcase name="findFullTextRejectsNullParameter(FulltextFetcher)[4]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.0"/>
+  <testcase name="findFullTextRejectsNullParameter(FulltextFetcher)[5]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.001"/>
+  <testcase name="findFullTextRejectsNullParameter(FulltextFetcher)[6]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.001"/>
+  <testcase name="findFullTextRejectsNullParameter(FulltextFetcher)[7]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.001"/>
+  <testcase name="findFullTextRejectsNullParameter(FulltextFetcher)[8]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.001"/>
+  <testcase name="findFullTextWithEmptyEntryFindsNothing(FulltextFetcher)[1]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.001"/>
+  <testcase name="findFullTextWithEmptyEntryFindsNothing(FulltextFetcher)[2]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.001"/>
+  <testcase name="findFullTextWithEmptyEntryFindsNothing(FulltextFetcher)[3]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.001"/>
+  <testcase name="findFullTextWithEmptyEntryFindsNothing(FulltextFetcher)[4]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.001"/>
+  <testcase name="findFullTextWithEmptyEntryFindsNothing(FulltextFetcher)[5]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.84"/>
+  <testcase name="findFullTextWithEmptyEntryFindsNothing(FulltextFetcher)[6]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.001"/>
+  <testcase name="findFullTextWithEmptyEntryFindsNothing(FulltextFetcher)[7]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.0"/>
+  <testcase name="findFullTextWithEmptyEntryFindsNothing(FulltextFetcher)[8]" classname="org.jabref.logic.importer.fetcher.FulltextFetcherTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

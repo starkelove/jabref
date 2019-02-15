@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BackgroundTask.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">BackgroundTask.java</span></div><h1>BackgroundTask.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.concurrent.Task;
+
+import org.fxmisc.easybind.EasyBind;
+
+/**
+ * This class is essentially a wrapper around {@link Task}.
+ * We cannot use {@link Task} directly since it runs certain update notifications on the JavaFX thread,
+ * and so makes testing harder.
+ * We take the opportunity and implement a fluid interface.
+ *
+ * @param &lt;V&gt; type of the return value of the task
+ */
+public abstract class BackgroundTask&lt;V&gt; {
+    private Runnable onRunning;
+    private Consumer&lt;V&gt; onSuccess;
+    private Consumer&lt;Exception&gt; onException;
+    private Runnable onFinished;
+<span class="fc" id="L33">    private BooleanProperty isCanceled = new SimpleBooleanProperty(false);</span>
+<span class="fc" id="L34">    private ObjectProperty&lt;BackgroundProgress&gt; progress = new SimpleObjectProperty&lt;&gt;(new BackgroundProgress(0, 0));</span>
+<span class="fc" id="L35">    private StringProperty message = new SimpleStringProperty(&quot;&quot;);</span>
+<span class="fc" id="L36">    private DoubleProperty workDonePercentage = new SimpleDoubleProperty(0);</span>
+
+<span class="fc" id="L38">    public BackgroundTask() {</span>
+<span class="fc" id="L39">        workDonePercentage.bind(EasyBind.map(progress, BackgroundTask.BackgroundProgress::getWorkDonePercentage));</span>
+<span class="fc" id="L40">    }</span>
+
+    public static &lt;V&gt; BackgroundTask&lt;V&gt; wrap(Callable&lt;V&gt; callable) {
+<span class="fc" id="L43">        return new BackgroundTask&lt;V&gt;() {</span>
+            @Override
+            protected V call() throws Exception {
+<span class="fc" id="L46">                return callable.call();</span>
+            }
+        };
+    }
+
+    public static BackgroundTask&lt;Void&gt; wrap(Runnable runnable) {
+<span class="fc" id="L52">        return new BackgroundTask&lt;Void&gt;() {</span>
+            @Override
+            protected Void call() throws Exception {
+<span class="fc" id="L55">                runnable.run();</span>
+<span class="fc" id="L56">                return null;</span>
+            }
+        };
+    }
+
+    private static &lt;T&gt; Consumer&lt;T&gt; chain(Runnable first, Consumer&lt;T&gt; second) {
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (first != null) {</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">            if (second != null) {</span>
+<span class="nc" id="L64">                return result -&gt; {</span>
+<span class="nc" id="L65">                    first.run();</span>
+<span class="nc" id="L66">                    second.accept(result);</span>
+<span class="nc" id="L67">                };</span>
+            } else {
+<span class="nc" id="L69">                return result -&gt; first.run();</span>
+            }
+        } else {
+<span class="fc" id="L72">            return second;</span>
+        }
+    }
+
+    public boolean isCanceled() {
+<span class="nc" id="L77">        return isCanceled.get();</span>
+    }
+
+    public void cancel() {
+<span class="nc" id="L81">        this.isCanceled.set(true);</span>
+<span class="nc" id="L82">    }</span>
+
+    public BooleanProperty isCanceledProperty() {
+<span class="nc" id="L85">        return isCanceled;</span>
+    }
+
+    public StringProperty messageProperty() {
+<span class="nc" id="L89">        return message;</span>
+    }
+
+    public double getWorkDonePercentage() {
+<span class="nc" id="L93">        return workDonePercentage.get();</span>
+    }
+
+    public DoubleProperty workDonePercentageProperty() {
+<span class="nc" id="L97">        return workDonePercentage;</span>
+    }
+
+    public BackgroundProgress getProgress() {
+<span class="nc" id="L101">        return progress.get();</span>
+    }
+
+    public ObjectProperty&lt;BackgroundProgress&gt; progressProperty() {
+<span class="nc" id="L105">        return progress;</span>
+    }
+
+    /**
+     * Sets the {@link Runnable} that is invoked after the task is started.
+     */
+    public BackgroundTask&lt;V&gt; onRunning(Runnable onRunning) {
+<span class="fc" id="L112">        this.onRunning = onRunning;</span>
+<span class="fc" id="L113">        return this;</span>
+    }
+
+    /**
+     * Sets the {@link Consumer} that is invoked after the task is successfully finished.
+     * The consumer always runs on the JavaFX thread.
+     */
+    public BackgroundTask&lt;V&gt; onSuccess(Consumer&lt;V&gt; onSuccess) {
+<span class="fc" id="L121">        this.onSuccess = onSuccess;</span>
+<span class="fc" id="L122">        return this;</span>
+    }
+
+    protected abstract V call() throws Exception;
+
+    Runnable getOnRunning() {
+<span class="fc" id="L128">        return onRunning;</span>
+    }
+
+    Consumer&lt;V&gt; getOnSuccess() {
+<span class="fc" id="L132">        return chain(onFinished, onSuccess);</span>
+    }
+
+    Consumer&lt;Exception&gt; getOnException() {
+<span class="nc" id="L136">        return chain(onFinished, onException);</span>
+    }
+
+    /**
+     * Sets the {@link Consumer} that is invoked after the task has failed with an exception.
+     * The consumer always runs on the JavaFX thread.
+     */
+    public BackgroundTask&lt;V&gt; onFailure(Consumer&lt;Exception&gt; onException) {
+<span class="fc" id="L144">        this.onException = onException;</span>
+<span class="fc" id="L145">        return this;</span>
+    }
+
+    public Future&lt;?&gt; executeWith(TaskExecutor taskExecutor) {
+<span class="fc" id="L149">        return taskExecutor.execute(this);</span>
+    }
+
+    /**
+     * Sets the {@link Runnable} that is invoked after the task is finished, irrespectively if it was successful or
+     * failed with an error.
+     */
+    public BackgroundTask&lt;V&gt; onFinished(Runnable onFinished) {
+<span class="nc" id="L157">        this.onFinished = onFinished;</span>
+<span class="nc" id="L158">        return this;</span>
+    }
+
+    /**
+     * Creates a {@link BackgroundTask} that first runs this task and based on the result runs a second task.
+     *
+     * @param nextTaskFactory the function that creates the new task
+     * @param &lt;T&gt;             type of the return value of the second task
+     */
+    public &lt;T&gt; BackgroundTask&lt;T&gt; then(Function&lt;V, BackgroundTask&lt;T&gt;&gt; nextTaskFactory) {
+<span class="nc" id="L168">        return new BackgroundTask&lt;T&gt;() {</span>
+            @Override
+            protected T call() throws Exception {
+<span class="nc" id="L171">                V result = BackgroundTask.this.call();</span>
+<span class="nc" id="L172">                BackgroundTask&lt;T&gt; nextTask = nextTaskFactory.apply(result);</span>
+<span class="nc" id="L173">                EasyBind.subscribe(nextTask.progressProperty(), this::updateProgress);</span>
+<span class="nc" id="L174">                return nextTask.call();</span>
+            }
+        };
+    }
+
+    /**
+     * Creates a {@link BackgroundTask} that first runs this task and based on the result runs a second task.
+     *
+     * @param nextOperation the function that performs the next operation
+     * @param &lt;T&gt;           type of the return value of the second task
+     */
+    public &lt;T&gt; BackgroundTask&lt;T&gt; thenRun(Function&lt;V, T&gt; nextOperation) {
+<span class="nc" id="L186">        return new BackgroundTask&lt;T&gt;() {</span>
+            @Override
+            protected T call() throws Exception {
+<span class="nc" id="L189">                V result = BackgroundTask.this.call();</span>
+<span class="nc" id="L190">                BackgroundTask&lt;T&gt; nextTask = BackgroundTask.wrap(() -&gt; nextOperation.apply(result));</span>
+<span class="nc" id="L191">                EasyBind.subscribe(nextTask.progressProperty(), this::updateProgress);</span>
+<span class="nc" id="L192">                return nextTask.call();</span>
+            }
+        };
+    }
+
+    /**
+     * Creates a {@link BackgroundTask} that first runs this task and based on the result runs a second task.
+     *
+     * @param nextOperation the function that performs the next operation
+     */
+    public BackgroundTask&lt;Void&gt; thenRun(Consumer&lt;V&gt; nextOperation) {
+<span class="nc" id="L203">        return new BackgroundTask&lt;Void&gt;() {</span>
+            @Override
+            protected Void call() throws Exception {
+<span class="nc" id="L206">                V result = BackgroundTask.this.call();</span>
+<span class="nc" id="L207">                BackgroundTask&lt;Void&gt; nextTask = BackgroundTask.wrap(() -&gt; nextOperation.accept(result));</span>
+<span class="nc" id="L208">                EasyBind.subscribe(nextTask.progressProperty(), this::updateProgress);</span>
+<span class="nc" id="L209">                return nextTask.call();</span>
+            }
+        };
+    }
+
+    protected void updateProgress(BackgroundProgress newProgress) {
+<span class="nc" id="L215">        progress.setValue(newProgress);</span>
+<span class="nc" id="L216">    }</span>
+
+    protected void updateProgress(double workDone, double max) {
+<span class="nc" id="L219">        updateProgress(new BackgroundProgress(workDone, max));</span>
+<span class="nc" id="L220">    }</span>
+
+    protected void updateMessage(String newMessage) {
+<span class="nc" id="L223">        message.setValue(newMessage);</span>
+<span class="nc" id="L224">    }</span>
+
+    class BackgroundProgress {
+
+        private final double workDone;
+        private final double max;
+
+<span class="fc" id="L231">        public BackgroundProgress(double workDone, double max) {</span>
+<span class="fc" id="L232">            this.workDone = workDone;</span>
+<span class="fc" id="L233">            this.max = max;</span>
+<span class="fc" id="L234">        }</span>
+
+        public double getWorkDone() {
+<span class="nc" id="L237">            return workDone;</span>
+        }
+
+        public double getMax() {
+<span class="nc" id="L241">            return max;</span>
+        }
+
+        public double getWorkDonePercentage() {
+<span class="pc bpc" id="L245" title="1 of 2 branches missed.">            if (max == 0) {</span>
+<span class="fc" id="L246">                return 0;</span>
+            } else {
+<span class="nc" id="L248">                return workDone / max;</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

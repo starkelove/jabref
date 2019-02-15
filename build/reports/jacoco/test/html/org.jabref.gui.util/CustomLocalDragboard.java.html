@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CustomLocalDragboard.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">CustomLocalDragboard.java</span></div><h1>CustomLocalDragboard.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.jabref.gui.DragAndDropDataFormats;
+import org.jabref.gui.GUIGlobals;
+import org.jabref.model.entry.BibEntry;
+
+/**
+ * Placeholder class for a custom generic type safe dragboard to be used in drag and drop, does not depend on serialization
+ * Don't use this class directly. Use the instance provided in {@link GUIGlobals#localDragboard}
+ */
+<span class="fc" id="L16">public class CustomLocalDragboard {</span>
+
+<span class="fc" id="L18">    private final Map&lt;Class&lt;?&gt;, Object&gt; contents = new HashMap&lt;&gt;();</span>
+
+    /**
+     * Puts the value of the concrete class in a map. All previous content stored in the map is removed
+     * @param type The Type of the class
+     * @param value The value to store
+     */
+    public &lt;T&gt; void putValue(Class&lt;T&gt; type, T value) {
+<span class="nc" id="L26">        clearAll();</span>
+<span class="nc" id="L27">        contents.put(type, type.cast(value));</span>
+<span class="nc" id="L28">    }</span>
+
+    public &lt;T&gt; T getValue(Class&lt;T&gt; type) {
+<span class="nc" id="L31">        return type.cast(contents.get(type));</span>
+    }
+
+    public boolean hasType(Class&lt;?&gt; type) {
+<span class="nc" id="L35">        return contents.keySet().contains(type);</span>
+    }
+
+    public void clear(Class&lt;?&gt; type) {
+<span class="nc" id="L39">        contents.remove(type);</span>
+<span class="nc" id="L40">    }</span>
+
+    public void clearAll() {
+<span class="nc" id="L43">        contents.clear();</span>
+<span class="nc" id="L44">    }</span>
+
+    /**
+     * Puts A List of {@link BibEntry} in the map
+     * All previous content is cleared
+     * @param entries The list to put
+     */
+    public void putBibEntries(List&lt;BibEntry&gt; entries) {
+<span class="nc" id="L52">        putValue(DragAndDropDataFormats.BIBENTRY_LIST_CLASS, entries);</span>
+<span class="nc" id="L53">    }</span>
+
+    /**
+     * Get a List of {@link BibEntry} from the dragboard
+     * @return List of BibEntry or empty list if no entries are avaiable
+     */
+    public List&lt;BibEntry&gt; getBibEntries() {
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (hasType(DragAndDropDataFormats.BIBENTRY_LIST_CLASS)) {</span>
+<span class="nc" id="L61">            return getValue(DragAndDropDataFormats.BIBENTRY_LIST_CLASS);</span>
+        }
+<span class="nc" id="L63">        return Collections.emptyList();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

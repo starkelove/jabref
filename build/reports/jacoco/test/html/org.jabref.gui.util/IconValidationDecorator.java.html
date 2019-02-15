@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IconValidationDecorator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">IconValidationDecorator.java</span></div><h1>IconValidationDecorator.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.util.Arrays;
+import java.util.Collection;
+
+import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tooltip;
+
+import org.jabref.gui.icon.IconTheme;
+
+import org.controlsfx.control.decoration.Decoration;
+import org.controlsfx.control.decoration.GraphicDecoration;
+import org.controlsfx.validation.Severity;
+import org.controlsfx.validation.ValidationMessage;
+import org.controlsfx.validation.decoration.GraphicValidationDecoration;
+
+/**
+ * This class is similar to {@link GraphicValidationDecoration} but with a different style and font-based icon.
+ */
+public class IconValidationDecorator extends GraphicValidationDecoration {
+
+    private final Pos position;
+
+    public IconValidationDecorator() {
+<span class="nc" id="L27">        this(Pos.BOTTOM_LEFT);</span>
+<span class="nc" id="L28">    }</span>
+
+<span class="nc" id="L30">    public IconValidationDecorator(Pos position) {</span>
+<span class="nc" id="L31">        this.position = position;</span>
+<span class="nc" id="L32">    }</span>
+
+    protected Node createErrorNode() {
+<span class="nc" id="L35">        return IconTheme.JabRefIcons.ERROR.getGraphicNode();</span>
+    }
+
+    protected Node createWarningNode() {
+<span class="nc" id="L39">        return IconTheme.JabRefIcons.WARNING.getGraphicNode();</span>
+    }
+
+    public Node createDecorationNode(ValidationMessage message) {
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        Node graphic = Severity.ERROR == message.getSeverity() ? createErrorNode() : createWarningNode();</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        graphic.getStyleClass().add(Severity.ERROR == message.getSeverity() ? &quot;error-icon&quot; : &quot;warning-icon&quot;);</span>
+<span class="nc" id="L45">        Label label = new Label();</span>
+<span class="nc" id="L46">        label.setGraphic(graphic);</span>
+<span class="nc" id="L47">        label.setTooltip(createTooltip(message));</span>
+<span class="nc" id="L48">        label.setAlignment(Pos.CENTER);</span>
+<span class="nc" id="L49">        return label;</span>
+    }
+
+    protected Tooltip createTooltip(ValidationMessage message) {
+<span class="nc" id="L53">        Tooltip tooltip = new Tooltip(message.getText());</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        tooltip.getStyleClass().add(Severity.ERROR == message.getSeverity() ? &quot;tooltip-error&quot; : &quot;tooltip-warning&quot;);</span>
+<span class="nc" id="L55">        return tooltip;</span>
+    }
+
+    @Override
+    protected Collection&lt;Decoration&gt; createValidationDecorations(ValidationMessage message) {
+<span class="nc" id="L60">        return Arrays.asList(new GraphicDecoration(createDecorationNode(message), position));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

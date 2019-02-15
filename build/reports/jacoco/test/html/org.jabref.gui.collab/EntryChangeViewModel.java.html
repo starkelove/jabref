@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EntryChangeViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.collab</a> &gt; <span class="el_source">EntryChangeViewModel.java</span></div><h1>EntryChangeViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.collab;
+
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JScrollPane;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableFieldChange;
+import org.jabref.logic.bibtex.DuplicateCheck;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+class EntryChangeViewModel extends ChangeViewModel {
+
+<span class="nc" id="L26">    private static final Logger LOGGER = LoggerFactory.getLogger(EntryChangeViewModel.class);</span>
+
+    public EntryChangeViewModel(BibEntry memEntry, BibEntry tmpEntry, BibEntry diskEntry) {
+<span class="nc" id="L29">        super();</span>
+<span class="nc" id="L30">        Optional&lt;String&gt; key = tmpEntry.getCiteKeyOptional();</span>
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        if (key.isPresent()) {</span>
+<span class="nc" id="L32">            name = Localization.lang(&quot;Modified entry&quot;) + &quot;: '&quot; + key.get() + '\'';</span>
+        } else {
+<span class="nc" id="L34">            name = Localization.lang(&quot;Modified entry&quot;);</span>
+        }
+
+        // We know that tmpEntry is not equal to diskEntry. Check if it has been modified
+        // locally as well, since last tempfile was saved.
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        boolean isModifiedLocally = (DuplicateCheck.compareEntriesStrictly(memEntry, tmpEntry) &lt;= 1);</span>
+
+        // Another (unlikely?) possibility is that both disk and mem version has been modified
+        // in the same way. Check for this, too.
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        boolean modificationsAgree = (DuplicateCheck.compareEntriesStrictly(memEntry, diskEntry) &gt; 1);</span>
+
+<span class="nc" id="L45">        LOGGER.debug(&quot;Modified entry: &quot; + memEntry.getCiteKeyOptional().orElse(&quot;&lt;no BibTeX key set&gt;&quot;)</span>
+                + &quot;\n Modified locally: &quot; + isModifiedLocally + &quot; Modifications agree: &quot; + modificationsAgree);
+
+<span class="nc" id="L48">        Set&lt;String&gt; allFields = new TreeSet&lt;&gt;();</span>
+<span class="nc" id="L49">        allFields.addAll(memEntry.getFieldNames());</span>
+<span class="nc" id="L50">        allFields.addAll(tmpEntry.getFieldNames());</span>
+<span class="nc" id="L51">        allFields.addAll(diskEntry.getFieldNames());</span>
+
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        for (String field : allFields) {</span>
+<span class="nc" id="L54">            Optional&lt;String&gt; mem = memEntry.getField(field);</span>
+<span class="nc" id="L55">            Optional&lt;String&gt; tmp = tmpEntry.getField(field);</span>
+<span class="nc" id="L56">            Optional&lt;String&gt; disk = diskEntry.getField(field);</span>
+
+<span class="nc bnc" id="L58" title="All 4 branches missed.">            if ((tmp.isPresent()) &amp;&amp; (disk.isPresent())) {</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">                if (!tmp.equals(disk)) {</span>
+                    // Modified externally.
+<span class="nc" id="L61">                    add(new FieldChangeViewModel(field, memEntry, tmpEntry, mem.orElse(null), tmp.get(), disk.get()));</span>
+                }
+<span class="nc bnc" id="L63" title="All 6 branches missed.">            } else if (((!tmp.isPresent()) &amp;&amp; (disk.isPresent()) &amp;&amp; !disk.get().isEmpty())</span>
+<span class="nc bnc" id="L64" title="All 6 branches missed.">                    || ((!disk.isPresent()) &amp;&amp; (tmp.isPresent()) &amp;&amp; !tmp.get().isEmpty()</span>
+<span class="nc bnc" id="L65" title="All 4 branches missed.">                            &amp;&amp; (mem.isPresent()) &amp;&amp; !mem.get().isEmpty())) {</span>
+                // Added externally.
+<span class="nc" id="L67">                add(new FieldChangeViewModel(field, memEntry, tmpEntry, mem.orElse(null), tmp.orElse(null),</span>
+<span class="nc" id="L68">                        disk.orElse(null)));</span>
+            }
+<span class="nc" id="L70">        }</span>
+<span class="nc" id="L71">    }</span>
+
+    @Override
+    public boolean makeChange(BasePanel panel, BibDatabase secondary, NamedCompound undoEdit) {
+<span class="nc" id="L75">        boolean allAccepted = true;</span>
+
+<span class="nc" id="L77">        Enumeration&lt;ChangeViewModel&gt; e = children();</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        for (ChangeViewModel c : Collections.list(e)) {</span>
+<span class="nc bnc" id="L79" title="All 4 branches missed.">            if (c.isAcceptable() &amp;&amp; c.isAccepted()) {</span>
+<span class="nc" id="L80">                c.makeChange(panel, secondary, undoEdit);</span>
+            } else {
+<span class="nc" id="L82">                allAccepted = false;</span>
+            }
+<span class="nc" id="L84">        }</span>
+
+        /*panel.database().removeEntry(memEntry.getId());
+        try {
+          diskEntry.setId(Util.next());
+        } catch (KeyCollisionException ex) {}
+        panel.database().removeEntry(memEntry.getId());*/
+
+<span class="nc" id="L92">        return allAccepted;</span>
+    }
+
+    @Override
+    public JComponent description() {
+<span class="nc" id="L97">        return new JLabel(name);</span>
+    }
+
+    static class FieldChangeViewModel extends ChangeViewModel {
+
+        private final BibEntry entry;
+        private final BibEntry tmpEntry;
+        private final String field;
+        private final String inMem;
+        private final String onDisk;
+<span class="nc" id="L107">        private final InfoPane tp = new InfoPane();</span>
+<span class="nc" id="L108">        private final JScrollPane sp = new JScrollPane(tp);</span>
+
+
+        public FieldChangeViewModel(String field, BibEntry memEntry, BibEntry tmpEntry, String inMem, String onTmp, String onDisk) {
+<span class="nc" id="L112">            super(field);</span>
+<span class="nc" id="L113">            entry = memEntry;</span>
+<span class="nc" id="L114">            this.tmpEntry = tmpEntry;</span>
+<span class="nc" id="L115">            this.field = field;</span>
+<span class="nc" id="L116">            this.inMem = inMem;</span>
+<span class="nc" id="L117">            this.onDisk = onDisk;</span>
+
+<span class="nc" id="L119">            StringBuilder text = new StringBuilder(36);</span>
+<span class="nc" id="L120">            text.append(&quot;&lt;FONT SIZE=10&gt;&lt;H2&gt;&quot;).append(Localization.lang(&quot;Modification of field&quot;))</span>
+<span class="nc" id="L121">                    .append(&quot; &lt;I&gt;&quot;).append(field).append(&quot;&lt;/I&gt;&lt;/H2&gt;&quot;);</span>
+
+<span class="nc bnc" id="L123" title="All 4 branches missed.">            if ((onDisk != null) &amp;&amp; !onDisk.isEmpty()) {</span>
+<span class="nc" id="L124">                text.append(&quot;&lt;H3&gt;&quot;).append(Localization.lang(&quot;Value set externally&quot;)).append(&quot;:&lt;/H3&gt; &quot;).append(onDisk);</span>
+            } else {
+<span class="nc" id="L126">                text.append(&quot;&lt;H3&gt;&quot;).append(Localization.lang(&quot;Value cleared externally&quot;)).append(&quot;&lt;/H3&gt;&quot;);</span>
+            }
+
+<span class="nc bnc" id="L129" title="All 4 branches missed.">            if ((inMem != null) &amp;&amp; !inMem.isEmpty()) {</span>
+<span class="nc" id="L130">                text.append(&quot;&lt;H3&gt;&quot;).append(Localization.lang(&quot;Current value&quot;)).append(&quot;:&lt;/H3&gt; &quot;).append(inMem);</span>
+            }
+<span class="nc bnc" id="L132" title="All 4 branches missed.">            if ((onTmp != null) &amp;&amp; !onTmp.isEmpty()) {</span>
+<span class="nc" id="L133">                text.append(&quot;&lt;H3&gt;&quot;).append(Localization.lang(&quot;Current tmp value&quot;)).append(&quot;:&lt;/H3&gt; &quot;).append(onTmp);</span>
+            }
+<span class="nc" id="L135">            tp.setContentType(&quot;text/html&quot;);</span>
+<span class="nc" id="L136">            tp.setText(text.toString());</span>
+<span class="nc" id="L137">        }</span>
+
+        @Override
+        public boolean makeChange(BasePanel panel, BibDatabase secondary, NamedCompound undoEdit) {
+<span class="nc bnc" id="L141" title="All 2 branches missed.">            if (onDisk == null) {</span>
+<span class="nc" id="L142">                entry.clearField(field);</span>
+            } else {
+<span class="nc" id="L144">                entry.setField(field, onDisk);</span>
+            }
+<span class="nc" id="L146">            undoEdit.addEdit(new UndoableFieldChange(entry, field, inMem, onDisk));</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">            if (onDisk == null) {</span>
+<span class="nc" id="L148">                tmpEntry.clearField(field);</span>
+            } else {
+<span class="nc" id="L150">                tmpEntry.setField(field, onDisk);</span>
+            }
+<span class="nc" id="L152">            return true;</span>
+        }
+
+        @Override
+        public JComponent description() {
+<span class="nc" id="L157">            return sp;</span>
+        }
+
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

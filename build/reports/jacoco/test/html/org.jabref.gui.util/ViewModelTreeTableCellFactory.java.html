@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ViewModelTreeTableCellFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">ViewModelTreeTableCellFactory.java</span></div><h1>ViewModelTreeTableCellFactory.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import javafx.event.EventHandler;
+import javafx.scene.Node;
+import javafx.scene.control.Tooltip;
+import javafx.scene.control.TreeTableCell;
+import javafx.scene.control.TreeTableColumn;
+import javafx.scene.input.MouseEvent;
+import javafx.util.Callback;
+
+import org.jabref.gui.icon.JabRefIcon;
+import org.jabref.model.strings.StringUtil;
+
+/**
+ * Constructs a {@link TreeTableCell} based on the view model of the row and a bunch of specified converter methods.
+ *
+ * @param &lt;S&gt; view model
+ * @param &lt;T&gt; cell value
+ */
+<span class="nc" id="L20">public class ViewModelTreeTableCellFactory&lt;S, T&gt; implements Callback&lt;TreeTableColumn&lt;S, T&gt;, TreeTableCell&lt;S, T&gt;&gt; {</span>
+
+    private Callback&lt;S, String&gt; toText;
+    private Callback&lt;S, Node&gt; toGraphic;
+    private Callback&lt;S, EventHandler&lt;? super MouseEvent&gt;&gt; toOnMouseClickedEvent;
+    private Callback&lt;S, String&gt; toTooltip;
+
+    public ViewModelTreeTableCellFactory&lt;S, T&gt; withText(Callback&lt;S, String&gt; toText) {
+<span class="nc" id="L28">        this.toText = toText;</span>
+<span class="nc" id="L29">        return this;</span>
+    }
+
+    public ViewModelTreeTableCellFactory&lt;S, T&gt; withGraphic(Callback&lt;S, Node&gt; toGraphic) {
+<span class="nc" id="L33">        this.toGraphic = toGraphic;</span>
+<span class="nc" id="L34">        return this;</span>
+    }
+
+    public ViewModelTreeTableCellFactory&lt;S, T&gt; withIcon(Callback&lt;S, JabRefIcon&gt; toIcon) {
+<span class="nc" id="L38">        this.toGraphic = viewModel -&gt; toIcon.call(viewModel).getGraphicNode();</span>
+<span class="nc" id="L39">        return this;</span>
+    }
+
+    public ViewModelTreeTableCellFactory&lt;S, T&gt; withTooltip(Callback&lt;S, String&gt; toTooltip) {
+<span class="nc" id="L43">        this.toTooltip = toTooltip;</span>
+<span class="nc" id="L44">        return this;</span>
+    }
+
+    public ViewModelTreeTableCellFactory&lt;S, T&gt; withOnMouseClickedEvent(
+            Callback&lt;S, EventHandler&lt;? super MouseEvent&gt;&gt; toOnMouseClickedEvent) {
+<span class="nc" id="L49">        this.toOnMouseClickedEvent = toOnMouseClickedEvent;</span>
+<span class="nc" id="L50">        return this;</span>
+    }
+
+    @Override
+    public TreeTableCell&lt;S, T&gt; call(TreeTableColumn&lt;S, T&gt; param) {
+
+<span class="nc" id="L56">        return new TreeTableCell&lt;S, T&gt;() {</span>
+
+            @Override
+            protected void updateItem(T item, boolean empty) {
+<span class="nc" id="L60">                super.updateItem(item, empty);</span>
+
+<span class="nc bnc" id="L62" title="All 6 branches missed.">                if (empty || getTreeTableRow() == null || getTreeTableRow().getItem() == null) {</span>
+<span class="nc" id="L63">                    setText(null);</span>
+<span class="nc" id="L64">                    setGraphic(null);</span>
+<span class="nc" id="L65">                    setOnMouseClicked(null);</span>
+                } else {
+<span class="nc" id="L67">                    S viewModel = getTreeTableRow().getItem();</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">                    if (toText != null) {</span>
+<span class="nc" id="L69">                        setText(toText.call(viewModel));</span>
+                    }
+<span class="nc bnc" id="L71" title="All 2 branches missed.">                    if (toGraphic != null) {</span>
+<span class="nc" id="L72">                        setGraphic(toGraphic.call(viewModel));</span>
+                    }
+<span class="nc bnc" id="L74" title="All 2 branches missed.">                    if (toTooltip != null) {</span>
+<span class="nc" id="L75">                        String tooltip = toTooltip.call(viewModel);</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                        if (StringUtil.isNotBlank(tooltip)) {</span>
+<span class="nc" id="L77">                            setTooltip(new Tooltip(tooltip));</span>
+                        }
+                    }
+<span class="nc bnc" id="L80" title="All 2 branches missed.">                    if (toOnMouseClickedEvent != null) {</span>
+<span class="nc" id="L81">                        setOnMouseClicked(toOnMouseClickedEvent.call(viewModel));</span>
+                    }
+                }
+<span class="nc" id="L84">            }</span>
+        };
+    }
+
+    public void install(TreeTableColumn&lt;S, T&gt; column) {
+<span class="nc" id="L89">        column.setCellFactory(this);</span>
+<span class="nc" id="L90">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

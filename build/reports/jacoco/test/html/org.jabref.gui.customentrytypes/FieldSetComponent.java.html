@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldSetComponent.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.customentrytypes</a> &gt; <span class="el_source">FieldSetComponent.java</span></div><h1>FieldSetComponent.java</h1><pre class="source lang-java linenums">package org.jabref.gui.customentrytypes;
+
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+
+import javax.swing.Box;
+import javax.swing.DefaultListModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.JViewport;
+import javax.swing.ListSelectionModel;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.event.ListDataListener;
+import javax.swing.event.ListSelectionListener;
+
+import org.jabref.Globals;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.logic.bibtexkeypattern.BibtexKeyGenerator;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.preferences.JabRefPreferences;
+
+class FieldSetComponent extends JPanel {
+
+    protected final JList&lt;String&gt; list;
+    protected DefaultListModel&lt;String&gt; listModel;
+    protected final JButton remove;
+<span class="nc" id="L46">    protected final GridBagLayout gbl = new GridBagLayout();</span>
+<span class="nc" id="L47">    protected final GridBagConstraints con = new GridBagConstraints();</span>
+    protected final boolean forceLowerCase;
+    protected boolean changesMade;
+<span class="nc" id="L50">    private final Set&lt;ActionListener&gt; additionListeners = new HashSet&lt;&gt;();</span>
+    private final JScrollPane sp;
+    private JComboBox&lt;String&gt; sel;
+    private JTextField input;
+    private final JButton add;
+    private JButton up;
+    private JButton down;
+<span class="nc" id="L57">    private final Set&lt;ListDataListener&gt; modelListeners = new HashSet&lt;&gt;();</span>
+
+
+    /**
+     * Creates a new instance of FieldSetComponent, with preset selection
+     * values. These are put into a JComboBox.
+     */
+    public FieldSetComponent(String title, List&lt;String&gt; fields, List&lt;String&gt; preset, boolean arrows, boolean forceLowerCase) {
+<span class="nc" id="L65">        this(title, fields, preset, Localization.lang(&quot;Add&quot;),</span>
+<span class="nc" id="L66">                Localization.lang(&quot;Remove&quot;), arrows, forceLowerCase);</span>
+<span class="nc" id="L67">    }</span>
+
+    /**
+     * Creates a new instance of FieldSetComponent without preset selection
+     * values. Replaces the JComboBox with a JTextField.
+     */
+    FieldSetComponent(String title, List&lt;String&gt; fields, boolean arrows, boolean forceLowerCase) {
+<span class="nc" id="L74">        this(title, fields, null, Localization.lang(&quot;Add&quot;),</span>
+<span class="nc" id="L75">                Localization.lang(&quot;Remove&quot;), arrows, forceLowerCase);</span>
+<span class="nc" id="L76">    }</span>
+
+    private FieldSetComponent(String title, List&lt;String&gt; fields, List&lt;String&gt; preset, String addText, String removeText,
+<span class="nc" id="L79">                              boolean arrows, boolean forceLowerCase) {</span>
+<span class="nc" id="L80">        this.forceLowerCase = forceLowerCase;</span>
+<span class="nc" id="L81">        add = new JButton(addText);</span>
+<span class="nc" id="L82">        remove = new JButton(removeText);</span>
+<span class="nc" id="L83">        listModel = new DefaultListModel&lt;&gt;();</span>
+<span class="nc" id="L84">        JLabel title1 = null;</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (title != null) {</span>
+<span class="nc" id="L86">            title1 = new JLabel(title);</span>
+        }
+
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        for (String field : fields) {</span>
+<span class="nc" id="L90">            listModel.addElement(field);</span>
+<span class="nc" id="L91">        }</span>
+<span class="nc" id="L92">        list = new JList&lt;&gt;(listModel);</span>
+<span class="nc" id="L93">        list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);</span>
+        // Set up GUI:
+<span class="nc" id="L95">        add.addActionListener(e -&gt; {</span>
+            // Selection has been made, or add button pressed:
+<span class="nc bnc" id="L97" title="All 4 branches missed.">            if ((sel != null) &amp;&amp; (sel.getSelectedItem() != null)) {</span>
+<span class="nc" id="L98">                String s = sel.getSelectedItem().toString();</span>
+<span class="nc" id="L99">                addField(s);</span>
+<span class="nc bnc" id="L100" title="All 4 branches missed.">            } else if ((input != null) &amp;&amp; !&quot;&quot;.equals(input.getText())) {</span>
+<span class="nc" id="L101">                addField(input.getText());</span>
+            }
+<span class="nc" id="L103">        });</span>
+<span class="nc" id="L104">        remove.addActionListener(e -&gt; removeSelected()); // Remove button pressed</span>
+
+<span class="nc" id="L106">        setLayout(gbl);</span>
+<span class="nc" id="L107">        con.insets = new Insets(1, 1, 1, 1);</span>
+<span class="nc" id="L108">        con.fill = GridBagConstraints.BOTH;</span>
+<span class="nc" id="L109">        con.weightx = 1;</span>
+<span class="nc" id="L110">        con.gridwidth = GridBagConstraints.REMAINDER;</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (title1 != null) {</span>
+<span class="nc" id="L112">            gbl.setConstraints(title1, con);</span>
+<span class="nc" id="L113">            add(title1);</span>
+        }
+
+<span class="nc" id="L116">        con.weighty = 1;</span>
+<span class="nc" id="L117">        sp = new JScrollPane(list, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,</span>
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+<span class="nc" id="L119">        gbl.setConstraints(sp, con);</span>
+<span class="nc" id="L120">        add(sp);</span>
+<span class="nc" id="L121">        con.weighty = 0;</span>
+<span class="nc" id="L122">        con.gridwidth = 1;</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (arrows) {</span>
+<span class="nc" id="L124">            con.weightx = 0;</span>
+<span class="nc" id="L125">            up = new JButton(IconTheme.JabRefIcons.UP.getSmallIcon());</span>
+<span class="nc" id="L126">            down = new JButton(IconTheme.JabRefIcons.DOWN.getSmallIcon());</span>
+<span class="nc" id="L127">            up.addActionListener(e -&gt; move(-1));</span>
+<span class="nc" id="L128">            down.addActionListener(e -&gt; move(1));</span>
+<span class="nc" id="L129">            up.setToolTipText(Localization.lang(&quot;Move up&quot;));</span>
+<span class="nc" id="L130">            down.setToolTipText(Localization.lang(&quot;Move down&quot;));</span>
+<span class="nc" id="L131">            gbl.setConstraints(up, con);</span>
+<span class="nc" id="L132">            add(up);</span>
+<span class="nc" id="L133">            gbl.setConstraints(down, con);</span>
+<span class="nc" id="L134">            add(down);</span>
+<span class="nc" id="L135">            con.weightx = 0;</span>
+        }
+
+<span class="nc" id="L138">        Component strut = Box.createHorizontalStrut(5);</span>
+<span class="nc" id="L139">        gbl.setConstraints(strut, con);</span>
+<span class="nc" id="L140">        add(strut);</span>
+
+<span class="nc" id="L142">        con.weightx = 1;</span>
+<span class="nc" id="L143">        con.gridwidth = GridBagConstraints.REMAINDER;</span>
+
+        //Component b = Box.createHorizontalGlue();
+        //gbl.setConstraints(b, con);
+        //add(b);
+
+        //if (!arrows)
+<span class="nc" id="L150">        con.gridwidth = GridBagConstraints.REMAINDER;</span>
+<span class="nc" id="L151">        gbl.setConstraints(remove, con);</span>
+<span class="nc" id="L152">        add(remove);</span>
+
+<span class="nc" id="L154">        con.gridwidth = 3;</span>
+<span class="nc" id="L155">        con.weightx = 1;</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        if (preset == null) {</span>
+<span class="nc" id="L157">            input = new JTextField(20);</span>
+<span class="nc" id="L158">            input.addActionListener(e -&gt; addField(input.getText()));</span>
+<span class="nc" id="L159">            gbl.setConstraints(input, con);</span>
+<span class="nc" id="L160">            add(input);</span>
+        } else {
+<span class="nc" id="L162">            sel = new JComboBox&lt;&gt;(preset.toArray(new String[preset.size()]));</span>
+<span class="nc" id="L163">            sel.setEditable(true);</span>
+<span class="nc" id="L164">            gbl.setConstraints(sel, con);</span>
+<span class="nc" id="L165">            add(sel);</span>
+        }
+<span class="nc" id="L167">        con.gridwidth = GridBagConstraints.REMAINDER;</span>
+<span class="nc" id="L168">        con.weighty = 0;</span>
+<span class="nc" id="L169">        con.weightx = 0.5;</span>
+<span class="nc" id="L170">        con.gridwidth = 1;</span>
+<span class="nc" id="L171">        gbl.setConstraints(add, con);</span>
+<span class="nc" id="L172">        add(add);</span>
+
+<span class="nc" id="L174">        FieldListFocusListener&lt;String&gt; fieldListFocusListener = new FieldListFocusListener&lt;&gt;(list);</span>
+<span class="nc" id="L175">        list.addFocusListener(fieldListFocusListener);</span>
+<span class="nc" id="L176">    }</span>
+
+    public void setListSelectionMode(int mode) {
+<span class="nc" id="L179">        list.setSelectionMode(mode);</span>
+<span class="nc" id="L180">    }</span>
+
+    public void selectField(String fieldName) {
+<span class="nc" id="L183">        int idx = listModel.indexOf(fieldName);</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">        if (idx &gt;= 0) {</span>
+<span class="nc" id="L185">            list.setSelectedIndex(idx);</span>
+        }
+
+        // Make sure it is visible:
+<span class="nc" id="L189">        JViewport viewport = sp.getViewport();</span>
+<span class="nc" id="L190">        Rectangle rectangle = list.getCellBounds(idx, idx);</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        if (rectangle != null) {</span>
+<span class="nc" id="L192">            viewport.scrollRectToVisible(rectangle);</span>
+        }
+
+<span class="nc" id="L195">    }</span>
+
+    public String getFirstSelected() {
+<span class="nc" id="L198">        return list.getSelectedValue();</span>
+    }
+
+    @Override
+    public void setEnabled(boolean en) {
+<span class="nc bnc" id="L203" title="All 2 branches missed.">        if (input != null) {</span>
+<span class="nc" id="L204">            input.setEnabled(en);</span>
+        }
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (sel != null) {</span>
+<span class="nc" id="L207">            sel.setEnabled(en);</span>
+        }
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (up != null) {</span>
+<span class="nc" id="L210">            up.setEnabled(en);</span>
+<span class="nc" id="L211">            down.setEnabled(en);</span>
+        }
+<span class="nc" id="L213">        add.setEnabled(en);</span>
+<span class="nc" id="L214">        remove.setEnabled(en);</span>
+<span class="nc" id="L215">    }</span>
+
+    /**
+     * Return the current list.
+     */
+    public Set&lt;String&gt; getFields() {
+<span class="nc" id="L221">        Set&lt;String&gt; res = new LinkedHashSet&lt;&gt;(listModel.getSize());</span>
+<span class="nc" id="L222">        Enumeration&lt;String&gt; elements = listModel.elements();</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">        while (elements.hasMoreElements()) {</span>
+<span class="nc" id="L224">            res.add(elements.nextElement());</span>
+        }
+<span class="nc" id="L226">        return res;</span>
+    }
+
+    /**
+     * This method is called when a new field should be added to the list. Performs validation of the
+     * field.
+     */
+    protected void addField(String str) {
+<span class="nc" id="L234">        String s = str.trim();</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">        if (forceLowerCase) {</span>
+<span class="nc" id="L236">            s = s.toLowerCase(Locale.ROOT);</span>
+        }
+<span class="nc bnc" id="L238" title="All 4 branches missed.">        if (&quot;&quot;.equals(s) || listModel.contains(s)) {</span>
+<span class="nc" id="L239">            return;</span>
+        }
+
+<span class="nc" id="L242">        String testString = BibtexKeyGenerator.cleanKey(s,</span>
+<span class="nc" id="L243">                Globals.prefs.getBoolean(JabRefPreferences.ENFORCE_LEGAL_BIBTEX_KEY));</span>
+<span class="nc bnc" id="L244" title="All 4 branches missed.">        if (!testString.equals(s) || (s.indexOf('&amp;') &gt;= 0)) {</span>
+            // Report error and exit.
+<span class="nc" id="L246">            JOptionPane.showMessageDialog(this, Localization.lang(&quot;Field names are not allowed to contain white space or the following &quot;</span>
+                            + &quot;characters&quot;) + &quot;: # { } ~ , ^ &amp;&quot;,
+<span class="nc" id="L248">                    Localization.lang(&quot;Error&quot;), JOptionPane.ERROR_MESSAGE);</span>
+
+<span class="nc" id="L250">            return;</span>
+        }
+<span class="nc" id="L252">        addFieldUncritically(s);</span>
+<span class="nc" id="L253">    }</span>
+
+    /**
+     * This method adds a new field to the list, without any regard to validation. This method can be
+     * useful for classes that overrides addField(s) to provide different validation.
+     */
+    protected void addFieldUncritically(String s) {
+<span class="nc" id="L260">        listModel.addElement(s);</span>
+<span class="nc" id="L261">        changesMade = true;</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">        for (ActionListener additionListener : additionListeners) {</span>
+<span class="nc" id="L263">            additionListener.actionPerformed(new ActionEvent(this, 0, s));</span>
+<span class="nc" id="L264">        }</span>
+
+<span class="nc" id="L266">    }</span>
+
+    protected void removeSelected() {
+<span class="nc" id="L269">        int[] selected = list.getSelectedIndices();</span>
+<span class="nc bnc" id="L270" title="All 2 branches missed.">        if (selected.length &gt; 0) {</span>
+<span class="nc" id="L271">            changesMade = true;</span>
+        }
+<span class="nc bnc" id="L273" title="All 2 branches missed.">        for (int i = 0; i &lt; selected.length; i++) {</span>
+<span class="nc" id="L274">            listModel.removeElementAt(selected[selected.length - 1 - i]);</span>
+        }
+
+<span class="nc" id="L277">    }</span>
+
+    public void setFields(Set&lt;String&gt; fields) {
+<span class="nc" id="L280">        DefaultListModel&lt;String&gt; newListModel = new DefaultListModel&lt;&gt;();</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">        for (String field : fields) {</span>
+<span class="nc" id="L282">            newListModel.addElement(field);</span>
+<span class="nc" id="L283">        }</span>
+<span class="nc" id="L284">        this.listModel = newListModel;</span>
+<span class="nc bnc" id="L285" title="All 2 branches missed.">        for (ListDataListener modelListener : modelListeners) {</span>
+<span class="nc" id="L286">            newListModel.addListDataListener(modelListener);</span>
+<span class="nc" id="L287">        }</span>
+<span class="nc" id="L288">        list.setModel(newListModel);</span>
+<span class="nc" id="L289">    }</span>
+
+    /**
+     * Add a ListSelectionListener to the JList component displayed as part of this component.
+     */
+    public void addListSelectionListener(ListSelectionListener l) {
+<span class="nc" id="L295">        list.addListSelectionListener(l);</span>
+<span class="nc" id="L296">    }</span>
+
+    /**
+     * Adds an ActionListener that will receive events each time a field is added. The ActionEvent
+     * will specify this component as source, and the added field as action command.
+     */
+    public void addAdditionActionListener(ActionListener l) {
+<span class="nc" id="L303">        additionListeners.add(l);</span>
+<span class="nc" id="L304">    }</span>
+
+    public void addListDataListener(ListDataListener l) {
+<span class="nc" id="L307">        listModel.addListDataListener(l);</span>
+<span class="nc" id="L308">        modelListeners.add(l);</span>
+<span class="nc" id="L309">    }</span>
+
+    /**
+     * If a field is selected in the list, move it dy positions.
+     */
+    private void move(int dy) {
+<span class="nc" id="L315">        int oldIdx = list.getSelectedIndex();</span>
+<span class="nc bnc" id="L316" title="All 2 branches missed.">        if (oldIdx &lt; 0) {</span>
+<span class="nc" id="L317">            return;</span>
+        }
+<span class="nc" id="L319">        String o = listModel.get(oldIdx);</span>
+        // Compute the new index:
+<span class="nc" id="L321">        int newInd = Math.max(0, Math.min(listModel.size() - 1, oldIdx + dy));</span>
+<span class="nc" id="L322">        listModel.remove(oldIdx);</span>
+<span class="nc" id="L323">        listModel.add(newInd, o);</span>
+<span class="nc" id="L324">        list.setSelectedIndex(newInd);</span>
+<span class="nc" id="L325">    }</span>
+
+
+    /**
+     * FocusListener to select the first entry in the list of fields when they are focused
+     */
+    protected class FieldListFocusListener&lt;T&gt; implements FocusListener {
+
+        private final JList&lt;T&gt; list;
+
+<span class="nc" id="L335">        public FieldListFocusListener(JList&lt;T&gt; list) {</span>
+<span class="nc" id="L336">            this.list = list;</span>
+<span class="nc" id="L337">        }</span>
+
+        @Override
+        public void focusGained(FocusEvent e) {
+<span class="nc bnc" id="L341" title="All 2 branches missed.">            if (list.getSelectedValue() == null) {</span>
+<span class="nc" id="L342">                list.setSelectedIndex(0);</span>
+            }
+<span class="nc" id="L344">        }</span>
+
+        @Override
+        public void focusLost(FocusEvent e) {
+            //focus should remain at the same position so nothing to do here
+<span class="nc" id="L349">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

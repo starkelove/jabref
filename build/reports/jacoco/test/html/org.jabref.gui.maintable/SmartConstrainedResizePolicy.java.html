@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SmartConstrainedResizePolicy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.maintable</a> &gt; <span class="el_source">SmartConstrainedResizePolicy.java</span></div><h1>SmartConstrainedResizePolicy.java</h1><pre class="source lang-java linenums">package org.jabref.gui.maintable;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.List;
+
+import javafx.scene.control.ResizeFeaturesBase;
+import javafx.scene.control.TableColumnBase;
+import javafx.scene.control.TableView;
+import javafx.util.Callback;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * This resize policy is almost the same as {@link TableView#CONSTRAINED_RESIZE_POLICY}
+ * We make sure that the width of all columns sums up to the total width of the table.
+ * However, in contrast to {@link TableView#CONSTRAINED_RESIZE_POLICY} we size the columns initially by their preferred width.
+ */
+<span class="nc" id="L21">public class SmartConstrainedResizePolicy implements Callback&lt;TableView.ResizeFeatures, Boolean&gt; {</span>
+
+<span class="nc" id="L23">    private static final Logger LOGGER = LoggerFactory.getLogger(SmartConstrainedResizePolicy.class);</span>
+
+    @Override
+    public Boolean call(TableView.ResizeFeatures prop) {
+<span class="nc bnc" id="L27" title="All 2 branches missed.">        if (prop.getColumn() == null) {</span>
+<span class="nc" id="L28">            return initColumnSize(prop.getTable());</span>
+        } else {
+<span class="nc" id="L30">            return constrainedResize(prop);</span>
+        }
+    }
+
+    private Boolean initColumnSize(TableView&lt;?&gt; table) {
+<span class="nc" id="L35">        double tableWidth = getContentWidth(table);</span>
+<span class="nc" id="L36">        List&lt;? extends TableColumnBase&lt;?, ?&gt;&gt; visibleLeafColumns = table.getVisibleLeafColumns();</span>
+<span class="nc" id="L37">        double totalWidth = visibleLeafColumns.stream().mapToDouble(TableColumnBase::getWidth).sum();</span>
+
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (Math.abs(totalWidth - tableWidth) &gt; 1) {</span>
+<span class="nc" id="L40">            double totalPrefWidth = visibleLeafColumns.stream().mapToDouble(TableColumnBase::getPrefWidth).sum();</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">            if (totalPrefWidth &gt; 0) {</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">                for (TableColumnBase col : visibleLeafColumns) {</span>
+<span class="nc" id="L43">                    double share = col.getPrefWidth() / totalPrefWidth;</span>
+<span class="nc" id="L44">                    double newSize = tableWidth * share;</span>
+<span class="nc" id="L45">                    resize(col, newSize - col.getWidth());</span>
+<span class="nc" id="L46">                }</span>
+            }
+        }
+
+<span class="nc" id="L50">        return false;</span>
+    }
+
+    private void resize(TableColumnBase column, double delta) {
+        // We have to use reflection since TableUtil is not visible to us
+        try {
+<span class="nc" id="L56">            Class&lt;?&gt; clazz = Class.forName(&quot;javafx.scene.control.TableUtil&quot;);</span>
+<span class="nc" id="L57">            Method constrainedResize = clazz.getDeclaredMethod(&quot;resize&quot;, TableColumnBase.class, double.class);</span>
+<span class="nc" id="L58">            constrainedResize.setAccessible(true);</span>
+<span class="nc" id="L59">            constrainedResize.invoke(null, column, delta);</span>
+<span class="nc" id="L60">        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | ClassNotFoundException e) {</span>
+<span class="nc" id="L61">            LOGGER.error(&quot;Could not invoke resize in TableUtil&quot;, e);</span>
+<span class="nc" id="L62">        }</span>
+<span class="nc" id="L63">    }</span>
+
+    private Boolean constrainedResize(TableView.ResizeFeatures&lt;?&gt; prop) {
+<span class="nc" id="L66">        TableView&lt;?&gt; table = prop.getTable();</span>
+<span class="nc" id="L67">        List&lt;? extends TableColumnBase&lt;?, ?&gt;&gt; visibleLeafColumns = table.getVisibleLeafColumns();</span>
+<span class="nc" id="L68">        return constrainedResize(prop,</span>
+<span class="nc" id="L69">                false,</span>
+<span class="nc" id="L70">                getContentWidth(table),</span>
+                visibleLeafColumns);
+    }
+
+    private Boolean constrainedResize(TableView.ResizeFeatures prop, Boolean isFirstRun, Double contentWidth, List&lt;? extends TableColumnBase&lt;?, ?&gt;&gt; visibleLeafColumns) {
+        // We have to use reflection since TableUtil is not visible to us
+        try {
+<span class="nc" id="L77">            Class&lt;?&gt; clazz = Class.forName(&quot;javafx.scene.control.TableUtil&quot;);</span>
+<span class="nc" id="L78">            Method constrainedResize = clazz.getDeclaredMethod(&quot;constrainedResize&quot;, ResizeFeaturesBase.class, Boolean.TYPE, Double.TYPE, List.class);</span>
+<span class="nc" id="L79">            constrainedResize.setAccessible(true);</span>
+<span class="nc" id="L80">            Object returnValue = constrainedResize.invoke(null, prop, isFirstRun, contentWidth, visibleLeafColumns);</span>
+<span class="nc" id="L81">            return (Boolean) returnValue;</span>
+<span class="nc" id="L82">        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | ClassNotFoundException e) {</span>
+<span class="nc" id="L83">            LOGGER.error(&quot;Could not invoke constrainedResize in TableUtil&quot;, e);</span>
+<span class="nc" id="L84">            return false;</span>
+        }
+    }
+
+    private Double getContentWidth(TableView&lt;?&gt; table) {
+        try {
+<span class="nc" id="L90">            Field privateStringField = TableView.class.getDeclaredField(&quot;contentWidth&quot;);</span>
+<span class="nc" id="L91">            privateStringField.setAccessible(true);</span>
+<span class="nc" id="L92">            return (Double) privateStringField.get(table);</span>
+<span class="nc" id="L93">        } catch (IllegalAccessException | NoSuchFieldException e) {</span>
+<span class="nc" id="L94">            return 0d;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

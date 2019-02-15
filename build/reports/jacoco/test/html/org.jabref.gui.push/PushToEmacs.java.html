@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PushToEmacs.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.push</a> &gt; <span class="el_source">PushToEmacs.java</span></div><h1>PushToEmacs.java</h1><pre class="source lang-java linenums">package org.jabref.gui.push;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+
+import org.jabref.Globals;
+import org.jabref.JabRefExecutorService;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.icon.JabRefIcon;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.OS;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.metadata.MetaData;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class PushToEmacs extends AbstractPushToApplication implements PushToApplication {
+
+<span class="nc" id="L25">    private static final Logger LOGGER = LoggerFactory.getLogger(PushToEmacs.class);</span>
+
+    public PushToEmacs(DialogService dialogService) {
+<span class="nc" id="L28">        super(dialogService);</span>
+<span class="nc" id="L29">    }</span>
+
+    @Override
+    public String getApplicationName() {
+<span class="nc" id="L33">        return &quot;Emacs&quot;;</span>
+    }
+
+    @Override
+    public JabRefIcon getIcon() {
+<span class="nc" id="L38">        return IconTheme.JabRefIcons.APPLICATION_EMACS;</span>
+    }
+
+    @Override
+    public void pushEntries(BibDatabase database, List&lt;BibEntry&gt; entries, String keys, MetaData metaData) {
+
+<span class="nc" id="L44">        couldNotConnect = false;</span>
+<span class="nc" id="L45">        couldNotCall = false;</span>
+<span class="nc" id="L46">        notDefined = false;</span>
+
+<span class="nc" id="L48">        initParameters();</span>
+<span class="nc" id="L49">        commandPath = Globals.prefs.get(commandPathPreferenceKey);</span>
+
+<span class="nc bnc" id="L51" title="All 4 branches missed.">        if ((commandPath == null) || commandPath.trim().isEmpty()) {</span>
+<span class="nc" id="L52">            notDefined = true;</span>
+<span class="nc" id="L53">            return;</span>
+        }
+
+<span class="nc" id="L56">        commandPath = Globals.prefs.get(commandPathPreferenceKey);</span>
+<span class="nc" id="L57">        String[] addParams = Globals.prefs.get(JabRefPreferences.EMACS_ADDITIONAL_PARAMETERS).split(&quot; &quot;);</span>
+        try {
+<span class="nc" id="L59">            String[] com = new String[addParams.length + 2];</span>
+<span class="nc" id="L60">            com[0] = commandPath;</span>
+<span class="nc" id="L61">            System.arraycopy(addParams, 0, com, 1, addParams.length);</span>
+            String prefix;
+            String suffix;
+<span class="nc" id="L64">            prefix = &quot;(with-current-buffer (window-buffer) (insert &quot;;</span>
+<span class="nc" id="L65">            suffix = &quot;))&quot;;</span>
+
+<span class="nc bnc" id="L67" title="All 2 branches missed.">            com[com.length - 1] = OS.WINDOWS ?</span>
+            // Windows gnuclient/emacsclient escaping:
+            // java string: &quot;(insert \\\&quot;\\\\cite{Blah2001}\\\&quot;)&quot;;
+            // so cmd receives: (insert \&quot;\\cite{Blah2001}\&quot;)
+            // so emacs receives: (insert &quot;\cite{Blah2001}&quot;)
+<span class="nc" id="L72">                    prefix.concat(&quot;\\\&quot;\\&quot; + getCiteCommand().replaceAll(&quot;\\\\&quot;, &quot;\\\\\\\\&quot;) + &quot;{&quot; + keys + &quot;}\\\&quot;&quot;).concat(suffix) :</span>
+                    // Linux gnuclient/emacslient escaping:
+                    // java string: &quot;(insert \&quot;\\\\cite{Blah2001}\&quot;)&quot;
+                    // so sh receives: (insert &quot;\\cite{Blah2001}&quot;)
+                    // so emacs receives: (insert &quot;\cite{Blah2001}&quot;)
+<span class="nc" id="L77">                    prefix.concat(&quot;\&quot;&quot; + getCiteCommand().replaceAll(&quot;\\\\&quot;, &quot;\\\\\\\\&quot;) + &quot;{&quot; + keys + &quot;}\&quot;&quot;).concat(suffix);</span>
+
+<span class="nc" id="L79">            final Process p = Runtime.getRuntime().exec(com);</span>
+
+<span class="nc" id="L81">            JabRefExecutorService.INSTANCE.executeAndWait(() -&gt; {</span>
+<span class="nc" id="L82">                try (InputStream out = p.getErrorStream()) {</span>
+                    int c;
+<span class="nc" id="L84">                    StringBuilder sb = new StringBuilder();</span>
+                    try {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                        while ((c = out.read()) != -1) {</span>
+<span class="nc" id="L87">                            sb.append((char) c);</span>
+                        }
+<span class="nc" id="L89">                    } catch (IOException e) {</span>
+<span class="nc" id="L90">                        LOGGER.warn(&quot;Could not read from stderr.&quot;, e);</span>
+<span class="nc" id="L91">                    }</span>
+                    // Error stream has been closed. See if there were any errors:
+<span class="nc bnc" id="L93" title="All 2 branches missed.">                    if (!sb.toString().trim().isEmpty()) {</span>
+<span class="nc" id="L94">                        LOGGER.warn(&quot;Push to Emacs error: &quot; + sb);</span>
+<span class="nc" id="L95">                        couldNotConnect = true;</span>
+                    }
+<span class="nc" id="L97">                } catch (IOException e) {</span>
+<span class="nc" id="L98">                    LOGGER.warn(&quot;File problem.&quot;, e);</span>
+<span class="nc" id="L99">                }</span>
+<span class="nc" id="L100">            });</span>
+<span class="nc" id="L101">        } catch (IOException excep) {</span>
+<span class="nc" id="L102">            couldNotCall = true;</span>
+<span class="nc" id="L103">            LOGGER.warn(&quot;Problem pushing to Emacs.&quot;, excep);</span>
+<span class="nc" id="L104">        }</span>
+<span class="nc" id="L105">    }</span>
+
+    @Override
+    public void operationCompleted(BasePanel panel) {
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (couldNotConnect) {</span>
+
+<span class="nc" id="L111">            dialogService.showErrorDialogAndWait(Localization.lang(&quot;Error pushing entries&quot;),</span>
+<span class="nc" id="L112">                    Localization.lang(&quot;Could not connect to a running gnuserv process. Make sure that &quot;</span>
+                            + &quot;Emacs or XEmacs is running, and that the server has been started &quot;
+                            + &quot;(by running the command 'server-start'/'gnuserv-start').&quot;));
+
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        } else if (couldNotCall) {</span>
+<span class="nc" id="L117">            dialogService.showErrorDialogAndWait(Localization.lang(&quot;Error pushing entries&quot;),</span>
+<span class="nc" id="L118">                    Localization.lang(&quot;Could not run the gnuclient/emacsclient program. Make sure you have &quot;</span>
+                            + &quot;the emacsclient/gnuclient program installed and available in the PATH.&quot;));
+
+        } else {
+<span class="nc" id="L122">            super.operationCompleted(panel);</span>
+        }
+<span class="nc" id="L124">    }</span>
+
+    @Override
+    protected void initParameters() {
+<span class="nc" id="L128">        commandPathPreferenceKey = JabRefPreferences.EMACS_PATH;</span>
+<span class="nc" id="L129">    }</span>
+
+    @Override
+    protected String getCommandName() {
+<span class="nc" id="L133">        return &quot;gnuclient &quot; + Localization.lang(&quot;or&quot;) + &quot; emacsclient&quot;;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

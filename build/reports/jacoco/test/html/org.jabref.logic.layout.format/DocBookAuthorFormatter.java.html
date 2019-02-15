@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DocBookAuthorFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.layout.format</a> &gt; <span class="el_source">DocBookAuthorFormatter.java</span></div><h1>DocBookAuthorFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.layout.format;
+
+import org.jabref.model.entry.Author;
+import org.jabref.model.entry.AuthorList;
+
+/**
+ * DocBook author formatter for both version 4 and 5
+ *
+ */
+<span class="fc" id="L10">public class DocBookAuthorFormatter {</span>
+
+<span class="fc" id="L12">    private static final XMLChars XML_CHARS = new XMLChars();</span>
+
+    /**
+     * @param sb      {@link StringBuilder}
+     * @param al      {@link AuthorList}
+     * @param tagName Editor or author field/tag
+     * @param version @link {@link DocBookVersion}
+     */
+    public void addBody(StringBuilder sb, AuthorList al, String tagName, DocBookVersion version) {
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        for (int i = 0; i &lt; al.getNumberOfAuthors(); i++) {</span>
+<span class="fc" id="L22">            sb.append('&lt;').append(tagName).append('&gt;');</span>
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">            if (version == DocBookVersion.DOCBOOK_5) {</span>
+<span class="fc" id="L24">                sb.append(&quot;&lt;personname&gt;&quot;);</span>
+            }
+<span class="fc" id="L26">            Author a = al.getAuthor(i);</span>
+<span class="pc bpc" id="L27" title="1 of 2 branches missed.">            a.getFirst().filter(first -&gt; !first.isEmpty()).ifPresent(first -&gt; sb.append(&quot;&lt;firstname&gt;&quot;)</span>
+<span class="fc" id="L28">                                                                                .append(XML_CHARS.format(first)).append(&quot;&lt;/firstname&gt;&quot;));</span>
+<span class="pc bnc" id="L29" title="All 2 branches missed.">            a.getVon().filter(von -&gt; !von.isEmpty()).ifPresent(von -&gt; sb.append(&quot;&lt;othername&gt;&quot;)</span>
+<span class="nc" id="L30">                                                                        .append(XML_CHARS.format(von)).append(&quot;&lt;/othername&gt;&quot;));</span>
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">            a.getLast().filter(last -&gt; !last.isEmpty()).ifPresent(last -&gt; {</span>
+<span class="fc" id="L32">                sb.append(&quot;&lt;surname&gt;&quot;).append(XML_CHARS.format(last));</span>
+<span class="pc bnc" id="L33" title="All 2 branches missed.">                a.getJr().filter(jr -&gt; !jr.isEmpty())</span>
+<span class="pc" id="L34">                 .ifPresent(jr -&gt; sb.append(' ').append(XML_CHARS.format(jr)));</span>
+<span class="fc" id="L35">                sb.append(&quot;&lt;/surname&gt;&quot;);</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">                if (version == DocBookVersion.DOCBOOK_5) {</span>
+<span class="fc" id="L37">                    sb.append(&quot;&lt;/personname&gt;&quot;);</span>
+                }
+<span class="fc" id="L39">            });</span>
+
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (i &lt; (al.getNumberOfAuthors() - 1)) {</span>
+<span class="fc" id="L42">                sb.append(&quot;&lt;/&quot;).append(tagName).append(&quot;&gt;\n       &quot;);</span>
+            } else {
+<span class="fc" id="L44">                sb.append(&quot;&lt;/&quot;).append(tagName).append('&gt;');</span>
+            }
+        }
+<span class="fc" id="L47">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

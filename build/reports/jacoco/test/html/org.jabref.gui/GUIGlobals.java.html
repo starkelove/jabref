@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GUIGlobals.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui</a> &gt; <span class="el_source">GUIGlobals.java</span></div><h1>GUIGlobals.java</h1><pre class="source lang-java linenums">package org.jabref.gui;
+
+import java.awt.Color;
+import java.awt.Font;
+
+import org.jabref.Globals;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.keyboard.EmacsKeyBindings;
+import org.jabref.gui.util.CustomLocalDragboard;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Static variables for graphics files and keyboard shortcuts.
+ */
+public class GUIGlobals {
+
+    public static Color editorTextColor;
+    public static Color validFieldBackgroundColor;
+    public static Color activeBackgroundColor;
+    public static Color invalidFieldBackgroundColor;
+    public static Font currentFont;
+
+<span class="nc" id="L27">    public static CustomLocalDragboard localDragboard = new CustomLocalDragboard();</span>
+
+    public static final int WIDTH_ICON_COL = 16 + 12; // add some additional space to improve appearance
+
+    public static final int WIDTH_ICON_COL_RANKING = 5 * 16; // Width of Ranking Icon Column
+
+<span class="nc" id="L33">    public static final String UNTITLED_TITLE = Localization.lang(&quot;untitled&quot;);</span>
+
+    //	Colors.
+<span class="nc" id="L36">    public static final Color ENTRY_EDITOR_LABEL_COLOR = new Color(100, 100, 150); // Empty field, blue.</span>
+
+<span class="nc" id="L38">    private static final Logger LOGGER = LoggerFactory.getLogger(GUIGlobals.class);</span>
+
+    private GUIGlobals() {
+    }
+
+    public static void updateEntryEditorColors() {
+<span class="nc" id="L44">        GUIGlobals.activeBackgroundColor = JabRefPreferences.getInstance().getColor(JabRefPreferences.ACTIVE_FIELD_EDITOR_BACKGROUND_COLOR);</span>
+<span class="nc" id="L45">        GUIGlobals.validFieldBackgroundColor = JabRefPreferences.getInstance().getColor(JabRefPreferences.VALID_FIELD_BACKGROUND_COLOR);</span>
+<span class="nc" id="L46">        GUIGlobals.invalidFieldBackgroundColor = JabRefPreferences.getInstance().getColor(JabRefPreferences.INVALID_FIELD_BACKGROUND_COLOR);</span>
+<span class="nc" id="L47">        GUIGlobals.editorTextColor = JabRefPreferences.getInstance().getColor(JabRefPreferences.FIELD_EDITOR_TEXT_COLOR);</span>
+<span class="nc" id="L48">    }</span>
+
+    /**
+     * Perform initializations that are only used in graphical mode. This is to prevent
+     * the &quot;Xlib: connection to &quot;:0.0&quot; refused by server&quot; error when access to the X server
+     * on Un*x is unavailable.
+     */
+    public static void init() {
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (Globals.prefs.getBoolean(JabRefPreferences.EDITOR_EMACS_KEYBINDINGS)) {</span>
+<span class="nc" id="L57">            EmacsKeyBindings.load();</span>
+        }
+
+        // Set up entry editor colors, first time:
+<span class="nc" id="L61">        GUIGlobals.updateEntryEditorColors();</span>
+
+<span class="nc" id="L63">        IconTheme.loadFonts();</span>
+<span class="nc" id="L64">        GUIGlobals.currentFont = new Font(Globals.prefs.get(JabRefPreferences.FONT_FAMILY),</span>
+<span class="nc" id="L65">                                          Globals.prefs.getInt(JabRefPreferences.FONT_STYLE), Globals.prefs.getInt(JabRefPreferences.FONT_SIZE));</span>
+<span class="nc" id="L66">    }</span>
+
+    public static void setFont(int size) {
+<span class="nc" id="L69">        currentFont = new Font(currentFont.getFamily(), currentFont.getStyle(), size);</span>
+        // update preferences
+<span class="nc" id="L71">        Globals.prefs.putInt(JabRefPreferences.FONT_SIZE, size);</span>
+<span class="nc" id="L72">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

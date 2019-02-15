@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.integrity.IntegrityCheckTest" tests="27" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:47" hostname="n184-p67.eduroam.kth.se" time="0.553">
+  <properties/>
+  <testcase name="testHowpublishedChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.046"/>
+  <testcase name="testPageNumbersChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.042"/>
+  <testcase name="testDOIChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.013"/>
+  <testcase name="testAbbreviationChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.021"/>
+  <testcase name="fileCheckFindsFilesRelativeToBibFile(Path)" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.007"/>
+  <testcase name="testJournaltitleChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.004"/>
+  <testcase name="testTitleChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.02"/>
+  <testcase name="testMonthChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.021"/>
+  <testcase name="testBooktitleChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.004"/>
+  <testcase name="testBiblatexPageNumbersChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.005"/>
+  <testcase name="testUrlChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.014"/>
+  <testcase name="testHTMLCharacterChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.015"/>
+  <testcase name="testFileChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.116"/>
+  <testcase name="testYearChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.027"/>
+  <testcase name="testBibStringChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.013"/>
+  <testcase name="testEntryIsUnchangedAfterChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.014"/>
+  <testcase name="testAuthorNameChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.089"/>
+  <testcase name="testEntryTypeChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.005"/>
+  <testcase name="testEditionChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.01"/>
+  <testcase name="testISSNChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.01"/>
+  <testcase name="testTypeChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.004"/>
+  <testcase name="testJournalIsKnownInAbbreviationList()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.005"/>
+  <testcase name="testASCIIChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.006"/>
+  <testcase name="testBracketChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.009"/>
+  <testcase name="testISBNChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.009"/>
+  <testcase name="testBibtexkeyChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.004"/>
+  <testcase name="testNoteChecks()" classname="org.jabref.logic.integrity.IntegrityCheckTest" time="0.006"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DuplicateSearch.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui</a> &gt; <span class="el_source">DuplicateSearch.java</span></div><h1>DuplicateSearch.java</h1><pre class="source lang-java linenums">package org.jabref.gui;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.jabref.Globals;
+import org.jabref.JabRefExecutorService;
+import org.jabref.gui.DuplicateResolverDialog.DuplicateResolverResult;
+import org.jabref.gui.DuplicateResolverDialog.DuplicateResolverType;
+import org.jabref.gui.actions.SimpleCommand;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableInsertEntry;
+import org.jabref.gui.undo.UndoableRemoveEntry;
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.logic.bibtex.DuplicateCheck;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.BibEntry;
+
+public class DuplicateSearch extends SimpleCommand {
+
+    private final JabRefFrame frame;
+<span class="nc" id="L33">    private final BlockingQueue&lt;List&lt;BibEntry&gt;&gt; duplicates = new LinkedBlockingQueue&lt;&gt;();</span>
+
+<span class="nc" id="L35">    private final AtomicBoolean libraryAnalyzed = new AtomicBoolean();</span>
+<span class="nc" id="L36">    private final AtomicBoolean autoRemoveExactDuplicates = new AtomicBoolean();</span>
+<span class="nc" id="L37">    private final AtomicInteger duplicateCount = new AtomicInteger();</span>
+    private final DialogService dialogService;
+
+<span class="nc" id="L40">    public DuplicateSearch(JabRefFrame frame, DialogService dialogService) {</span>
+<span class="nc" id="L41">        this.frame = frame;</span>
+<span class="nc" id="L42">        this.dialogService = dialogService;</span>
+<span class="nc" id="L43">    }</span>
+
+    @Override
+    public void execute() {
+<span class="nc" id="L47">        BasePanel panel = frame.getCurrentBasePanel();</span>
+<span class="nc" id="L48">        dialogService.notify(Localization.lang(&quot;Searching for duplicates...&quot;));</span>
+
+<span class="nc" id="L50">        List&lt;BibEntry&gt; entries = panel.getDatabase().getEntries();</span>
+<span class="nc" id="L51">        duplicates.clear();</span>
+<span class="nc" id="L52">        libraryAnalyzed.set(false);</span>
+<span class="nc" id="L53">        autoRemoveExactDuplicates.set(false);</span>
+<span class="nc" id="L54">        duplicateCount.set(0);</span>
+
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (entries.size() &lt; 2) {</span>
+<span class="nc" id="L57">            return;</span>
+        }
+
+<span class="nc" id="L60">        JabRefExecutorService.INSTANCE.executeInterruptableTask(() -&gt; searchPossibleDuplicates(entries, panel.getBibDatabaseContext().getMode()), &quot;DuplicateSearcher&quot;);</span>
+<span class="nc" id="L61">        BackgroundTask.wrap(this::verifyDuplicates)</span>
+<span class="nc" id="L62">                      .onSuccess(this::handleDuplicates)</span>
+<span class="nc" id="L63">                      .executeWith(Globals.TASK_EXECUTOR);</span>
+
+<span class="nc" id="L65">    }</span>
+
+    private void searchPossibleDuplicates(List&lt;BibEntry&gt; entries, BibDatabaseMode databaseMode) {
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        for (int i = 0; (i &lt; (entries.size() - 1)); i++) {</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">            for (int j = i + 1; (j &lt; entries.size()); j++) {</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">                if (Thread.interrupted()) {</span>
+<span class="nc" id="L71">                    return;</span>
+                }
+
+<span class="nc" id="L74">                BibEntry first = entries.get(i);</span>
+<span class="nc" id="L75">                BibEntry second = entries.get(j);</span>
+
+<span class="nc bnc" id="L77" title="All 2 branches missed.">                if (DuplicateCheck.isDuplicate(first, second, databaseMode)) {</span>
+<span class="nc" id="L78">                    duplicates.add(Arrays.asList(first, second));</span>
+<span class="nc" id="L79">                    duplicateCount.getAndIncrement();</span>
+                }
+            }
+        }
+<span class="nc" id="L83">        libraryAnalyzed.set(true);</span>
+<span class="nc" id="L84">    }</span>
+
+    private DuplicateSearchResult verifyDuplicates() {
+<span class="nc" id="L87">        DuplicateSearchResult result = new DuplicateSearchResult();</span>
+
+<span class="nc bnc" id="L89" title="All 4 branches missed.">        while (!libraryAnalyzed.get() || !duplicates.isEmpty()) {</span>
+            List&lt;BibEntry&gt; dups;
+            try {
+                // poll with timeout in case the library is not analyzed completely, but contains no more duplicates
+<span class="nc" id="L93">                dups = this.duplicates.poll(100, TimeUnit.MILLISECONDS);</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                if (dups == null) {</span>
+<span class="nc" id="L95">                    continue;</span>
+                }
+<span class="nc" id="L97">            } catch (InterruptedException e) {</span>
+<span class="nc" id="L98">                return null;</span>
+<span class="nc" id="L99">            }</span>
+
+<span class="nc" id="L101">            BibEntry first = dups.get(0);</span>
+<span class="nc" id="L102">            BibEntry second = dups.get(1);</span>
+
+<span class="nc bnc" id="L104" title="All 4 branches missed.">            if (!result.isToRemove(first) &amp;&amp; !result.isToRemove(second)) {</span>
+                // Check if they are exact duplicates:
+<span class="nc" id="L106">                boolean askAboutExact = false;</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                if (DuplicateCheck.compareEntriesStrictly(first, second) &gt; 1) {</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">                    if (autoRemoveExactDuplicates.get()) {</span>
+<span class="nc" id="L109">                        result.remove(second);</span>
+<span class="nc" id="L110">                        continue;</span>
+                    }
+<span class="nc" id="L112">                    askAboutExact = true;</span>
+                }
+
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                DuplicateResolverType resolverType = askAboutExact ? DuplicateResolverType.DUPLICATE_SEARCH_WITH_EXACT : DuplicateResolverType.DUPLICATE_SEARCH;</span>
+
+<span class="nc" id="L117">                DefaultTaskExecutor.runAndWaitInJavaFXThread(() -&gt; askResolveStrategy(result, first, second, resolverType));</span>
+            }
+<span class="nc" id="L119">        }</span>
+
+<span class="nc" id="L121">        return result;</span>
+    }
+
+    private void askResolveStrategy(DuplicateSearchResult result, BibEntry first, BibEntry second, DuplicateResolverType resolverType) {
+<span class="nc" id="L125">        DuplicateResolverDialog dialog = new DuplicateResolverDialog(frame, first, second, resolverType);</span>
+
+<span class="nc" id="L127">        DuplicateResolverResult resolverResult = dialog.showAndWait().orElse(DuplicateResolverResult.BREAK);</span>
+
+<span class="nc bnc" id="L129" title="All 4 branches missed.">        if ((resolverResult == DuplicateResolverResult.KEEP_LEFT)</span>
+                || (resolverResult == DuplicateResolverResult.AUTOREMOVE_EXACT)) {
+<span class="nc" id="L131">            result.remove(second);</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">            if (resolverResult == DuplicateResolverResult.AUTOREMOVE_EXACT) {</span>
+<span class="nc" id="L133">                autoRemoveExactDuplicates.set(true); // Remember choice</span>
+            }
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        } else if (resolverResult == DuplicateResolverResult.KEEP_RIGHT) {</span>
+<span class="nc" id="L136">            result.remove(first);</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        } else if (resolverResult == DuplicateResolverResult.BREAK) {</span>
+<span class="nc" id="L138">            libraryAnalyzed.set(true);</span>
+<span class="nc" id="L139">            duplicates.clear();</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">        } else if (resolverResult == DuplicateResolverResult.KEEP_MERGE) {</span>
+<span class="nc" id="L141">            result.replace(first, second, dialog.getMergedEntry());</span>
+        }
+<span class="nc" id="L143">    }</span>
+
+    private void handleDuplicates(DuplicateSearchResult result) {
+<span class="nc bnc" id="L146" title="All 2 branches missed.">        if (result == null) {</span>
+<span class="nc" id="L147">            return;</span>
+        }
+
+<span class="nc" id="L150">        BasePanel panel = frame.getCurrentBasePanel();</span>
+<span class="nc" id="L151">        final NamedCompound compoundEdit = new NamedCompound(Localization.lang(&quot;duplicate removal&quot;));</span>
+        // Now, do the actual removal:
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        if (!result.getToRemove().isEmpty()) {</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">            for (BibEntry entry : result.getToRemove()) {</span>
+<span class="nc" id="L155">                panel.getDatabase().removeEntry(entry);</span>
+<span class="nc" id="L156">                compoundEdit.addEdit(new UndoableRemoveEntry(panel.getDatabase(), entry, panel));</span>
+<span class="nc" id="L157">            }</span>
+<span class="nc" id="L158">            panel.markBaseChanged();</span>
+        }
+        // and adding merged entries:
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        if (!result.getToAdd().isEmpty()) {</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">            for (BibEntry entry : result.getToAdd()) {</span>
+<span class="nc" id="L163">                panel.getDatabase().insertEntry(entry);</span>
+<span class="nc" id="L164">                compoundEdit.addEdit(new UndoableInsertEntry(panel.getDatabase(), entry));</span>
+<span class="nc" id="L165">            }</span>
+<span class="nc" id="L166">            panel.markBaseChanged();</span>
+        }
+
+<span class="nc" id="L169">        dialogService.notify(Localization.lang(&quot;Duplicates found&quot;) + &quot;: &quot; + duplicateCount.get() + ' '</span>
+<span class="nc" id="L170">                + Localization.lang(&quot;pairs processed&quot;) + &quot;: &quot; + result.getDuplicateCount());</span>
+<span class="nc" id="L171">        compoundEdit.end();</span>
+<span class="nc" id="L172">        panel.getUndoManager().addEdit(compoundEdit);</span>
+
+<span class="nc" id="L174">    }</span>
+
+    /**
+     * Result of a duplicate search.
+     * Uses {@link System#identityHashCode(Object)} for identifying objects for removal, as completely identical
+     * {@link BibEntry BibEntries} are equal to each other.
+     */
+<span class="nc" id="L181">    class DuplicateSearchResult {</span>
+
+<span class="nc" id="L183">        private final Map&lt;Integer, BibEntry&gt; toRemove = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L184">        private final List&lt;BibEntry&gt; toAdd = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L186">        private int duplicates = 0;</span>
+
+        public synchronized Collection&lt;BibEntry&gt; getToRemove() {
+<span class="nc" id="L189">            return toRemove.values();</span>
+        }
+
+        public synchronized List&lt;BibEntry&gt; getToAdd() {
+<span class="nc" id="L193">            return toAdd;</span>
+        }
+
+        public synchronized void remove(BibEntry entry) {
+<span class="nc" id="L197">            toRemove.put(System.identityHashCode(entry), entry);</span>
+<span class="nc" id="L198">            duplicates++;</span>
+<span class="nc" id="L199">        }</span>
+
+        public synchronized void replace(BibEntry first, BibEntry second, BibEntry replacement) {
+<span class="nc" id="L202">            remove(first);</span>
+<span class="nc" id="L203">            remove(second);</span>
+<span class="nc" id="L204">            toAdd.add(replacement);</span>
+<span class="nc" id="L205">            duplicates++;</span>
+<span class="nc" id="L206">        }</span>
+
+        public synchronized boolean isToRemove(BibEntry entry) {
+<span class="nc" id="L209">            return toRemove.containsKey(System.identityHashCode(entry));</span>
+        }
+
+        public synchronized int getDuplicateCount() {
+<span class="nc" id="L213">            return duplicates;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

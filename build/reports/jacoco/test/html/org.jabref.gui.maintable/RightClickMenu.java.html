@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RightClickMenu.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.maintable</a> &gt; <span class="el_source">RightClickMenu.java</span></div><h1>RightClickMenu.java</h1><pre class="source lang-java linenums">package org.jabref.gui.maintable;
+
+import java.util.Collections;
+import java.util.List;
+
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Menu;
+import javafx.scene.control.SeparatorMenuItem;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.actions.ActionFactory;
+import org.jabref.gui.actions.Actions;
+import org.jabref.gui.actions.OldCommandWrapper;
+import org.jabref.gui.actions.StandardActions;
+import org.jabref.gui.exporter.ExportToClipboardAction;
+import org.jabref.gui.filelist.AttachFileAction;
+import org.jabref.gui.keyboard.KeyBindingRepository;
+import org.jabref.gui.menus.ChangeEntryTypeMenu;
+import org.jabref.gui.mergeentries.FetchAndMergeEntry;
+import org.jabref.gui.specialfields.SpecialFieldMenuItemFactory;
+import org.jabref.logic.citationstyle.CitationStyle;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.specialfields.SpecialField;
+import org.jabref.preferences.JabRefPreferences;
+import org.jabref.preferences.PreviewPreferences;
+
+<span class="nc" id="L31">public class RightClickMenu {</span>
+
+    public static ContextMenu create(BibEntryTableViewModel entry, KeyBindingRepository keyBindingRepository, BasePanel panel, KeyBindingRepository keyBindings, DialogService dialogService) {
+<span class="nc" id="L34">        ContextMenu contextMenu = new ContextMenu();</span>
+<span class="nc" id="L35">        ActionFactory factory = new ActionFactory(keyBindingRepository);</span>
+
+<span class="nc" id="L37">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.COPY, new OldCommandWrapper(Actions.COPY, panel)));</span>
+<span class="nc" id="L38">        contextMenu.getItems().add(createCopySubMenu(panel, factory, dialogService));</span>
+<span class="nc" id="L39">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.PASTE, new OldCommandWrapper(Actions.PASTE, panel)));</span>
+<span class="nc" id="L40">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.CUT, new OldCommandWrapper(Actions.CUT, panel)));</span>
+<span class="nc" id="L41">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.DELETE, new OldCommandWrapper(Actions.DELETE, panel)));</span>
+
+<span class="nc" id="L43">        contextMenu.getItems().add(new SeparatorMenuItem());</span>
+
+<span class="nc" id="L45">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.SEND_AS_EMAIL, new OldCommandWrapper(Actions.SEND_AS_EMAIL, panel)));</span>
+
+<span class="nc" id="L47">        contextMenu.getItems().add(new SeparatorMenuItem());</span>
+
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        if (Globals.prefs.getBoolean(JabRefPreferences.SPECIALFIELDSENABLED)) {</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            if (Globals.prefs.getBoolean(JabRefPreferences.SHOWCOLUMN_RANKING)) {</span>
+<span class="nc" id="L51">                contextMenu.getItems().add(SpecialFieldMenuItemFactory.createSpecialFieldMenu(SpecialField.RANKING, factory, panel));</span>
+            }
+
+<span class="nc bnc" id="L54" title="All 2 branches missed.">            if (Globals.prefs.getBoolean(JabRefPreferences.SHOWCOLUMN_RELEVANCE)) {</span>
+<span class="nc" id="L55">                contextMenu.getItems().add(SpecialFieldMenuItemFactory.getSpecialFieldSingleItem(SpecialField.RELEVANCE, factory, panel));</span>
+            }
+
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            if (Globals.prefs.getBoolean(JabRefPreferences.SHOWCOLUMN_QUALITY)) {</span>
+<span class="nc" id="L59">                contextMenu.getItems().add(SpecialFieldMenuItemFactory.getSpecialFieldSingleItem(SpecialField.QUALITY, factory, panel));</span>
+            }
+
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            if (Globals.prefs.getBoolean(JabRefPreferences.SHOWCOLUMN_PRINTED)) {</span>
+<span class="nc" id="L63">                contextMenu.getItems().add(SpecialFieldMenuItemFactory.getSpecialFieldSingleItem(SpecialField.PRINTED, factory, panel));</span>
+            }
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            if (Globals.prefs.getBoolean(JabRefPreferences.SHOWCOLUMN_PRIORITY)) {</span>
+<span class="nc" id="L67">                contextMenu.getItems().add(SpecialFieldMenuItemFactory.createSpecialFieldMenu(SpecialField.PRIORITY, factory, panel));</span>
+            }
+
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (Globals.prefs.getBoolean(JabRefPreferences.SHOWCOLUMN_READ)) {</span>
+<span class="nc" id="L71">                contextMenu.getItems().add(SpecialFieldMenuItemFactory.createSpecialFieldMenu(SpecialField.READ_STATUS, factory, panel));</span>
+            }
+        }
+
+<span class="nc" id="L75">        contextMenu.getItems().add(new SeparatorMenuItem());</span>
+
+<span class="nc" id="L77">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.OPEN_FOLDER, getOpenFolderCommand(panel)));</span>
+<span class="nc" id="L78">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.OPEN_EXTERNAL_FILE, getOpenExternalFileCommand(panel)));</span>
+<span class="nc" id="L79">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.OPEN_URL, getOpenUrlCommand(panel)));</span>
+
+<span class="nc" id="L81">        contextMenu.getItems().add(new SeparatorMenuItem());</span>
+
+<span class="nc" id="L83">        contextMenu.getItems().add(new ChangeEntryTypeMenu(keyBindings).getChangeEntryTypeMenu(entry.getEntry(), panel.getBibDatabaseContext(), panel.getUndoManager()));</span>
+<span class="nc" id="L84">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.MERGE_WITH_FETCHED_ENTRY, getFetchEntryData(panel)));</span>
+<span class="nc" id="L85">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.ATTACH_FILE, new AttachFileAction(panel, dialogService)));</span>
+<span class="nc" id="L86">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.MERGE_ENTRIES, mergeEntries(panel)));</span>
+
+<span class="nc" id="L88">        contextMenu.getItems().add(new SeparatorMenuItem());</span>
+
+<span class="nc" id="L90">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.ADD_TO_GROUP, addToGroup(panel)));</span>
+<span class="nc" id="L91">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.REMOVE_FROM_GROUP, removeFromGroup(panel)));</span>
+<span class="nc" id="L92">        contextMenu.getItems().add(factory.createMenuItem(StandardActions.MOVE_TO_GROUP, moveToGroup(panel)));</span>
+
+<span class="nc" id="L94">        return contextMenu;</span>
+    }
+
+    private static OldCommandWrapper moveToGroup(BasePanel panel) {
+<span class="nc" id="L98">        OldCommandWrapper command = new OldCommandWrapper(Actions.MOVE_TO_GROUP, panel);</span>
+<span class="nc" id="L99">        command.setExecutable(areGroupsPresent(panel.getBibDatabaseContext()));</span>
+<span class="nc" id="L100">        return command;</span>
+    }
+
+    private static OldCommandWrapper removeFromGroup(BasePanel panel) {
+<span class="nc" id="L104">        OldCommandWrapper command = new OldCommandWrapper(Actions.REMOVE_FROM_GROUP, panel);</span>
+<span class="nc" id="L105">        command.setExecutable(areGroupsPresent(panel.getBibDatabaseContext()));</span>
+<span class="nc" id="L106">        return command;</span>
+    }
+
+    private static OldCommandWrapper addToGroup(BasePanel panel) {
+<span class="nc" id="L110">        OldCommandWrapper command = new OldCommandWrapper(Actions.ADD_TO_GROUP, panel);</span>
+<span class="nc" id="L111">        command.setExecutable(areGroupsPresent(panel.getBibDatabaseContext()));</span>
+<span class="nc" id="L112">        return command;</span>
+    }
+
+    private static OldCommandWrapper mergeEntries(BasePanel panel) {
+<span class="nc" id="L116">        OldCommandWrapper command = new OldCommandWrapper(Actions.MERGE_ENTRIES, panel);</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        command.setExecutable(panel.getMainTable().getSelectedEntries().size() == 2);</span>
+<span class="nc" id="L118">        return command;</span>
+    }
+
+    private static OldCommandWrapper getFetchEntryData(BasePanel panel) {
+<span class="nc" id="L122">        OldCommandWrapper command = new OldCommandWrapper(Actions.MERGE_WITH_FETCHED_ENTRY, panel);</span>
+<span class="nc" id="L123">        command.setExecutable(isAnyFieldSetForSelectedEntry(FetchAndMergeEntry.SUPPORTED_FIELDS, panel));</span>
+<span class="nc" id="L124">        return command;</span>
+    }
+
+    private static OldCommandWrapper getOpenUrlCommand(BasePanel panel) {
+<span class="nc" id="L128">        OldCommandWrapper command = new OldCommandWrapper(Actions.OPEN_URL, panel);</span>
+<span class="nc bnc" id="L129" title="All 4 branches missed.">        command.setExecutable(isFieldSetForSelectedEntry(FieldName.URL, panel) || isFieldSetForSelectedEntry(FieldName.DOI, panel));</span>
+<span class="nc" id="L130">        return command;</span>
+    }
+
+    private static OldCommandWrapper getOpenExternalFileCommand(BasePanel panel) {
+<span class="nc" id="L134">        OldCommandWrapper command = new OldCommandWrapper(Actions.OPEN_EXTERNAL_FILE, panel);</span>
+<span class="nc" id="L135">        command.setExecutable(isFieldSetForSelectedEntry(FieldName.FILE, panel));</span>
+<span class="nc" id="L136">        return command;</span>
+    }
+
+    private static OldCommandWrapper getOpenFolderCommand(BasePanel panel) {
+<span class="nc" id="L140">        OldCommandWrapper command = new OldCommandWrapper(Actions.OPEN_FOLDER, panel);</span>
+<span class="nc" id="L141">        command.setExecutable(isFieldSetForSelectedEntry(FieldName.FILE, panel));</span>
+<span class="nc" id="L142">        return command;</span>
+    }
+
+    private static Menu createCopySubMenu(BasePanel panel, ActionFactory factory, DialogService dialogService) {
+<span class="nc" id="L146">        Menu copySpecialMenu = factory.createMenu(StandardActions.COPY_MORE);</span>
+<span class="nc" id="L147">        copySpecialMenu.getItems().add(factory.createMenuItem(StandardActions.COPY_TITLE, new OldCommandWrapper(Actions.COPY_TITLE, panel)));</span>
+<span class="nc" id="L148">        copySpecialMenu.getItems().add(factory.createMenuItem(StandardActions.COPY_KEY, new OldCommandWrapper(Actions.COPY_KEY, panel)));</span>
+<span class="nc" id="L149">        copySpecialMenu.getItems().add(factory.createMenuItem(StandardActions.COPY_CITE_KEY, new OldCommandWrapper(Actions.COPY_CITE_KEY, panel)));</span>
+<span class="nc" id="L150">        copySpecialMenu.getItems().add(factory.createMenuItem(StandardActions.COPY_KEY_AND_TITLE, new OldCommandWrapper(Actions.COPY_KEY_AND_TITLE, panel)));</span>
+<span class="nc" id="L151">        copySpecialMenu.getItems().add(factory.createMenuItem(StandardActions.COPY_KEY_AND_LINK, new OldCommandWrapper(Actions.COPY_KEY_AND_LINK, panel)));</span>
+
+        // the submenu will behave dependent on what style is currently selected (citation/preview)
+<span class="nc" id="L154">        PreviewPreferences previewPreferences = Globals.prefs.getPreviewPreferences();</span>
+<span class="nc" id="L155">        String style = previewPreferences.getPreviewCycle().get(previewPreferences.getPreviewCyclePosition());</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        if (CitationStyle.isCitationStyleFile(style)) {</span>
+<span class="nc" id="L157">            copySpecialMenu.getItems().add(factory.createMenuItem(StandardActions.COPY_CITATION_HTML, new OldCommandWrapper(Actions.COPY_CITATION_HTML, panel)));</span>
+<span class="nc" id="L158">            Menu copyCitationMenu = factory.createMenu(StandardActions.COPY_CITATION_MORE);</span>
+<span class="nc" id="L159">            copyCitationMenu.getItems().add(factory.createMenuItem(StandardActions.COPY_CITATION_TEXT, new OldCommandWrapper(Actions.COPY_CITATION_TEXT, panel)));</span>
+<span class="nc" id="L160">            copyCitationMenu.getItems().add(factory.createMenuItem(StandardActions.COPY_CITATION_RTF, new OldCommandWrapper(Actions.COPY_CITATION_RTF, panel)));</span>
+<span class="nc" id="L161">            copyCitationMenu.getItems().add(factory.createMenuItem(StandardActions.COPY_CITATION_ASCII_DOC, new OldCommandWrapper(Actions.COPY_CITATION_ASCII_DOC, panel)));</span>
+<span class="nc" id="L162">            copyCitationMenu.getItems().add(factory.createMenuItem(StandardActions.COPY_CITATION_XSLFO, new OldCommandWrapper(Actions.COPY_CITATION_XSLFO, panel)));</span>
+<span class="nc" id="L163">            copySpecialMenu.getItems().add(copyCitationMenu);</span>
+<span class="nc" id="L164">        } else {</span>
+<span class="nc" id="L165">            copySpecialMenu.getItems().add(factory.createMenuItem(StandardActions.COPY_CITATION_PREVIEW, new OldCommandWrapper(Actions.COPY_CITATION_HTML, panel)));</span>
+        }
+
+<span class="nc" id="L168">        copySpecialMenu.getItems().add(factory.createMenuItem(StandardActions.EXPORT_TO_CLIPBOARD, new ExportToClipboardAction(panel, dialogService)));</span>
+<span class="nc" id="L169">        return copySpecialMenu;</span>
+    }
+
+    private static boolean areGroupsPresent(BibDatabaseContext database) {
+<span class="nc" id="L173">        return database.getMetaData().getGroups().isPresent();</span>
+    }
+
+    private static boolean isFieldSetForSelectedEntry(String field, BasePanel panel) {
+<span class="nc" id="L177">        return isAnyFieldSetForSelectedEntry(Collections.singletonList(field), panel);</span>
+    }
+
+    private static boolean isAnyFieldSetForSelectedEntry(List&lt;String&gt; fields, BasePanel panel) {
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        if (panel.getMainTable().getSelectedEntries().size() == 1) {</span>
+<span class="nc" id="L182">            BibEntry entry = panel.getMainTable().getSelectedEntries().get(0);</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">            return !Collections.disjoint(fields, entry.getFieldNames());</span>
+        }
+<span class="nc" id="L185">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

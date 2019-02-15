@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OptionalFieldsTab.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.entryeditor</a> &gt; <span class="el_source">OptionalFieldsTab.java</span></div><h1>OptionalFieldsTab.java</h1><pre class="source lang-java linenums">package org.jabref.gui.entryeditor;
+
+import java.util.Collection;
+
+import javax.swing.undo.UndoManager;
+
+import javafx.scene.control.Tooltip;
+
+import org.jabref.gui.DialogService;
+import org.jabref.gui.autocompleter.SuggestionProviders;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.EntryType;
+
+public class OptionalFieldsTab extends FieldsEditorTab {
+    public OptionalFieldsTab(BibDatabaseContext databaseContext, SuggestionProviders suggestionProviders, UndoManager undoManager, DialogService dialogService) {
+<span class="nc" id="L19">        super(true, databaseContext, suggestionProviders, undoManager, dialogService);</span>
+
+<span class="nc" id="L21">        setText(Localization.lang(&quot;Optional fields&quot;));</span>
+<span class="nc" id="L22">        setTooltip(new Tooltip(Localization.lang(&quot;Show optional fields&quot;)));</span>
+<span class="nc" id="L23">        setGraphic(IconTheme.JabRefIcons.OPTIONAL.getGraphicNode());</span>
+<span class="nc" id="L24">    }</span>
+
+    @Override
+    protected Collection&lt;String&gt; determineFieldsToShow(BibEntry entry, EntryType entryType) {
+<span class="nc" id="L28">        return entryType.getPrimaryOptionalFields();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

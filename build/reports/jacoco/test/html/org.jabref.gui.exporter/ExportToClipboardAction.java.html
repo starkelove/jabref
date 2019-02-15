@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExportToClipboardAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.exporter</a> &gt; <span class="el_source">ExportToClipboardAction.java</span></div><h1>ExportToClipboardAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.exporter;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javafx.scene.input.ClipboardContent;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.actions.SimpleCommand;
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.logic.exporter.Exporter;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.OS;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class ExportToClipboardAction extends SimpleCommand {
+
+<span class="nc" id="L32">    private static final Logger LOGGER = LoggerFactory.getLogger(ExportToClipboardAction.class);</span>
+
+    private JabRefFrame frame;
+    private final DialogService dialogService;
+    private BasePanel panel;
+<span class="nc" id="L37">    private final List&lt;BibEntry&gt; entries = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L39">    public ExportToClipboardAction(JabRefFrame frame, DialogService dialogService) {</span>
+<span class="nc" id="L40">        this.frame = frame;</span>
+<span class="nc" id="L41">        this.dialogService = dialogService;</span>
+<span class="nc" id="L42">    }</span>
+
+<span class="nc" id="L44">    public ExportToClipboardAction(BasePanel panel, DialogService dialogService) {</span>
+<span class="nc" id="L45">        this.panel = panel;</span>
+<span class="nc" id="L46">        this.dialogService = dialogService;</span>
+<span class="nc" id="L47">    }</span>
+
+    @Override
+    public void execute() {
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (panel == null) {</span>
+<span class="nc" id="L52">            panel = frame.getCurrentBasePanel();</span>
+        }
+
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (panel.getSelectedEntries().isEmpty()) {</span>
+<span class="nc" id="L56">            panel.output(Localization.lang(&quot;This operation requires one or more entries to be selected.&quot;));</span>
+<span class="nc" id="L57">            return;</span>
+        }
+
+<span class="nc" id="L60">        List&lt;Exporter&gt; exporters = Globals.exportFactory.getExporters().stream()</span>
+<span class="nc" id="L61">                                                        .sorted(Comparator.comparing(Exporter::getName))</span>
+<span class="nc" id="L62">                                                        .collect(Collectors.toList());</span>
+
+        //Find default choice, if any
+<span class="nc" id="L65">        Exporter defaultChoice = exporters.stream()</span>
+<span class="nc" id="L66">                                          .filter(exporter -&gt; exporter.getName().equals(Globals.prefs.get(JabRefPreferences.LAST_USED_EXPORT)))</span>
+<span class="nc" id="L67">                                          .findAny()</span>
+<span class="nc" id="L68">                                          .orElse(null);</span>
+
+<span class="nc" id="L70">        Optional&lt;Exporter&gt; selectedExporter = dialogService.showChoiceDialogAndWait(Localization.lang(&quot;Export&quot;), Localization.lang(&quot;Select export format&quot;),</span>
+<span class="nc" id="L71">                Localization.lang(&quot;Export&quot;), defaultChoice, exporters);</span>
+
+<span class="nc" id="L73">        selectedExporter.ifPresent(exporter -&gt; BackgroundTask.wrap(() -&gt; exportToClipboard(exporter))</span>
+<span class="nc" id="L74">                                                             .onSuccess(this::setContentToClipboard)</span>
+<span class="nc" id="L75">                                                             .executeWith(Globals.TASK_EXECUTOR));</span>
+
+<span class="nc" id="L77">    }</span>
+
+    private String exportToClipboard(Exporter exporter) {
+        // Set the global variable for this database's file directory before exporting,
+        // so formatters can resolve linked files correctly.
+        // (This is an ugly hack!)
+<span class="nc" id="L83">        Globals.prefs.fileDirForDatabase = panel.getBibDatabaseContext().getFileDirectoriesAsPaths(Globals.prefs.getFilePreferences()).stream().map(Path::toString).collect(Collectors.toList());</span>
+
+        //Add chosen export type to last used pref, to become default
+<span class="nc" id="L86">        Globals.prefs.put(JabRefPreferences.LAST_USED_EXPORT, exporter.getName());</span>
+
+<span class="nc" id="L88">        Path tmp = null;</span>
+        try {
+            // To simplify the exporter API we simply do a normal export to a temporary
+            // file, and read the contents afterwards:
+<span class="nc" id="L92">            tmp = Files.createTempFile(&quot;jabrefCb&quot;, &quot;.tmp&quot;);</span>
+
+<span class="nc" id="L94">            entries.addAll(panel.getSelectedEntries());</span>
+
+            // Write to file:
+<span class="nc" id="L97">            exporter.export(panel.getBibDatabaseContext(), tmp,</span>
+<span class="nc" id="L98">                            panel.getBibDatabaseContext()</span>
+<span class="nc" id="L99">                                 .getMetaData()</span>
+<span class="nc" id="L100">                                 .getEncoding()</span>
+<span class="nc" id="L101">                                 .orElse(Globals.prefs.getDefaultEncoding()),</span>
+                            entries);
+            // Read the file and put the contents on the clipboard:
+
+<span class="nc" id="L105">            return readFileToString(tmp);</span>
+<span class="nc" id="L106">        } catch (Exception e) {</span>
+<span class="nc" id="L107">            LOGGER.error(&quot;Error exporting to clipboard&quot;, e);</span>
+        } finally {
+            // Clean up:
+<span class="nc bnc" id="L110" title="All 4 branches missed.">            if ((tmp != null) &amp;&amp; Files.exists(tmp)) {</span>
+                try {
+<span class="nc" id="L112">                    Files.delete(tmp);</span>
+<span class="nc" id="L113">                } catch (IOException e) {</span>
+<span class="nc" id="L114">                    LOGGER.info(&quot;Cannot delete temporary clipboard file&quot;, e);</span>
+<span class="nc" id="L115">                }</span>
+            }
+        }
+<span class="nc" id="L118">        return &quot;&quot;;</span>
+    }
+
+    private void setContentToClipboard(String content) {
+<span class="nc" id="L122">        ClipboardContent clipboardContent = new ClipboardContent();</span>
+<span class="nc" id="L123">        clipboardContent.putRtf(content);</span>
+<span class="nc" id="L124">        Globals.clipboardManager.setContent(clipboardContent);</span>
+
+<span class="nc" id="L126">        panel.output(Localization.lang(&quot;Entries exported to clipboard&quot;) + &quot;: &quot; + entries.size());</span>
+
+<span class="nc" id="L128">    }</span>
+
+    private String readFileToString(Path tmp) throws IOException {
+<span class="nc" id="L131">        try (BufferedReader reader = Files.newBufferedReader(tmp, panel.getBibDatabaseContext()</span>
+<span class="nc" id="L132">                                                                       .getMetaData()</span>
+<span class="nc" id="L133">                                                                       .getEncoding()</span>
+<span class="nc" id="L134">                                                                       .orElse(Globals.prefs.getDefaultEncoding()))) {</span>
+<span class="nc" id="L135">            return reader.lines().collect(Collectors.joining(OS.NEWLINE));</span>
+<span class="nc" id="L136">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

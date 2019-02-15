@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConversionMenu.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.fieldeditors.contextmenu</a> &gt; <span class="el_source">ConversionMenu.java</span></div><h1>ConversionMenu.java</h1><pre class="source lang-java linenums">package org.jabref.gui.fieldeditors.contextmenu;
+
+import javafx.beans.property.StringProperty;
+import javafx.scene.control.CustomMenuItem;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.Tooltip;
+
+import org.jabref.logic.formatter.Formatters;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.cleanup.Formatter;
+
+/**
+ * Menu to show up on right-click in a text field for converting text formats
+ */
+class ConversionMenu extends Menu {
+
+    public ConversionMenu(StringProperty text) {
+<span class="nc" id="L19">        super(Localization.lang(&quot;Convert&quot;));</span>
+
+        // create menu items, one for each converter
+<span class="nc bnc" id="L22" title="All 2 branches missed.">        for (Formatter converter : Formatters.getConverters()) {</span>
+<span class="nc" id="L23">            CustomMenuItem menuItem = new CustomMenuItem(new Label(converter.getName()));</span>
+<span class="nc" id="L24">            Tooltip toolTip = new Tooltip(converter.getDescription());</span>
+<span class="nc" id="L25">            Tooltip.install(menuItem.getContent(), toolTip);</span>
+<span class="nc" id="L26">            menuItem.setOnAction(event -&gt; text.set(converter.format(text.get())));</span>
+<span class="nc" id="L27">            this.getItems().add(menuItem);</span>
+<span class="nc" id="L28">        }</span>
+<span class="nc" id="L29">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AutoSetLinks.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.externalfiles</a> &gt; <span class="el_source">AutoSetLinks.java</span></div><h1>AutoSetLinks.java</h1><pre class="source lang-java linenums">package org.jabref.gui.externalfiles;
+
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+import javax.swing.BorderFactory;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JProgressBar;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+
+import org.jabref.Globals;
+import org.jabref.gui.externalfiletype.ExternalFileType;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableFieldChange;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.FileFieldWriter;
+import org.jabref.model.entry.LinkedFile;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class AutoSetLinks {
+
+<span class="nc" id="L38">    private static final Logger LOGGER = LoggerFactory.getLogger(AutoSetLinks.class);</span>
+
+    private AutoSetLinks() {
+    }
+
+    /**
+     * Shortcut method if links are set without using the GUI
+     *
+     * @param entries  the entries for which links should be set
+     * @param databaseContext the database for which links are set
+     */
+    public static void autoSetLinks(List&lt;BibEntry&gt; entries, BibDatabaseContext databaseContext) {
+<span class="nc" id="L50">        autoSetLinks(entries, null, null, databaseContext, null, null);</span>
+<span class="nc" id="L51">    }</span>
+
+    /**
+     * Automatically add links for this set of entries, based on the globally stored list of external file types. The
+     * entries are modified, and corresponding UndoEdit elements added to the NamedCompound given as argument.
+     * Furthermore, all entries which are modified are added to the Set of entries given as an argument.
+     * &lt;p&gt;
+     * The entries' bibtex keys must have been set - entries lacking key are ignored. The operation is done in a new
+     * thread, which is returned for the caller to wait for if needed.
+     *
+     * @param entries          A collection of BibEntry objects to find links for.
+     * @param ce               A NamedCompound to add UndoEdit elements to.
+     * @param changedEntries   MODIFIED, optional. A Set of BibEntry objects to which all modified entries is added.
+
+     * @param databaseContext  The database providing the relevant file directory, if any.
+     * @param callback         An ActionListener that is notified (on the event dispatch thread) when the search is finished.
+     *                         The ActionEvent has id=0 if no new links were added, and id=1 if one or more links were added. This
+     *                         parameter can be null, which means that no callback will be notified.
+     * @param diag             An instantiated modal JDialog which will be used to display the progress of the automatically setting. This
+     *                         parameter can be null, which means that no progress update will be shown.
+     * @return the thread performing the automatically setting
+     */
+    public static Runnable autoSetLinks(final List&lt;BibEntry&gt; entries, final NamedCompound ce,
+            final Set&lt;BibEntry&gt; changedEntries,
+            final BibDatabaseContext databaseContext, final ActionListener callback, final JDialog diag) {
+<span class="nc" id="L76">        final Collection&lt;ExternalFileType&gt; types = ExternalFileTypes.getInstance().getExternalFileTypeSelection();</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (diag != null) {</span>
+<span class="nc" id="L78">            final JProgressBar prog = new JProgressBar(SwingConstants.HORIZONTAL, 0, types.size() - 1);</span>
+<span class="nc" id="L79">            final JLabel label = new JLabel(Localization.lang(&quot;Searching for files&quot;));</span>
+<span class="nc" id="L80">            prog.setIndeterminate(true);</span>
+<span class="nc" id="L81">            prog.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));</span>
+<span class="nc" id="L82">            diag.setTitle(Localization.lang(&quot;Automatically setting file links&quot;));</span>
+<span class="nc" id="L83">            diag.getContentPane().add(prog, BorderLayout.CENTER);</span>
+<span class="nc" id="L84">            diag.getContentPane().add(label, BorderLayout.SOUTH);</span>
+
+<span class="nc" id="L86">            diag.pack();</span>
+<span class="nc" id="L87">            diag.setLocationRelativeTo(diag.getParent());</span>
+        }
+
+<span class="nc" id="L90">        Runnable r = () -&gt; {</span>
+<span class="nc" id="L91">            boolean foundAny = false;</span>
+<span class="nc" id="L92">            AutoSetFileLinksUtil util = new AutoSetFileLinksUtil(databaseContext, Globals.prefs.getFilePreferences(), Globals.prefs.getAutoLinkPreferences(), ExternalFileTypes.getInstance());</span>
+
+<span class="nc bnc" id="L94" title="All 2 branches missed.">            for (BibEntry entry : entries) {</span>
+
+<span class="nc" id="L96">                List&lt;LinkedFile&gt; linkedFiles = new ArrayList&lt;&gt;();</span>
+                try {
+<span class="nc" id="L98">                    linkedFiles = util.findAssociatedNotLinkedFiles(entry);</span>
+<span class="nc" id="L99">                } catch (IOException e) {</span>
+<span class="nc" id="L100">                    LOGGER.error(&quot;Problem finding files&quot;, e);</span>
+<span class="nc" id="L101">                }</span>
+
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                if (ce != null) {</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                    for (LinkedFile linkedFile : linkedFiles) {</span>
+                        // store undo information
+<span class="nc" id="L106">                        String newVal = FileFieldWriter.getStringRepresentation(linkedFile);</span>
+
+<span class="nc" id="L108">                        String oldVal = entry.getField(FieldName.FILE).orElse(null);</span>
+
+<span class="nc" id="L110">                        UndoableFieldChange fieldChange = new UndoableFieldChange(entry, FieldName.FILE, oldVal, newVal);</span>
+<span class="nc" id="L111">                        ce.addEdit(fieldChange);</span>
+
+<span class="nc" id="L113">                        DefaultTaskExecutor.runInJavaFXThread(() -&gt; {</span>
+<span class="nc" id="L114">                            entry.addFile(linkedFile);</span>
+<span class="nc" id="L115">                        });</span>
+<span class="nc" id="L116">                        foundAny = true;</span>
+<span class="nc" id="L117">                    }</span>
+
+<span class="nc bnc" id="L119" title="All 2 branches missed.">                    if (changedEntries != null) {</span>
+<span class="nc" id="L120">                        changedEntries.add(entry);</span>
+                    }
+                }
+
+<span class="nc" id="L124">            }</span>
+
+<span class="nc bnc" id="L126" title="All 2 branches missed.">            final int id = foundAny ? 1 : 0;</span>
+<span class="nc" id="L127">            SwingUtilities.invokeLater(() -&gt; {</span>
+
+<span class="nc bnc" id="L129" title="All 2 branches missed.">                if (diag != null) {</span>
+<span class="nc" id="L130">                    diag.dispose();</span>
+                }
+<span class="nc bnc" id="L132" title="All 2 branches missed.">                if (callback != null) {</span>
+<span class="nc" id="L133">                    callback.actionPerformed(new ActionEvent(AutoSetLinks.class, id, &quot;&quot;));</span>
+                }
+
+<span class="nc" id="L136">            });</span>
+
+<span class="nc" id="L138">        };</span>
+
+<span class="nc" id="L140">        SwingUtilities.invokeLater(() -&gt; {</span>
+            // show dialog which will be hidden when the task is done
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            if (diag != null) {</span>
+<span class="nc" id="L143">                diag.setVisible(true);</span>
+            }
+<span class="nc" id="L145">        });</span>
+
+<span class="nc" id="L147">        return r;</span>
+    }
+
+    /**
+     * Automatically add links for this entry to the table model given as an argument, based on the globally stored list
+     * of external file types. The entry itself is not modified. The entry's bibtex key must have been set.
+     *
+     * @param entry            The BibEntry to find links for.
+
+     * @param databaseContext  The database providing the relevant file directory, if any.
+     * @param callback         An ActionListener that is notified (on the event dispatch thread) when the search is finished.
+     *                         The ActionEvent has id=0 if no new links were added, and id=1 if one or more links were added. This
+     *                         parameter can be null, which means that no callback will be notified. The passed ActionEvent is
+     *                         constructed with (this, id, &quot;&quot;), where id is 1 if something has been done and 0 if nothing has been
+     *                         done.
+     * @param diag             An instantiated modal JDialog which will be used to display the progress of the automatically setting. This
+     *                         parameter can be null, which means that no progress update will be shown.
+     * @return the runnable able to perform the automatically setting
+     */
+    public static Runnable autoSetLinks(final BibEntry entry,
+            final BibDatabaseContext databaseContext, final ActionListener callback, final JDialog diag) {
+<span class="nc" id="L168">        return autoSetLinks(Collections.singletonList(entry), null, null, databaseContext, callback,</span>
+                diag);
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ISSN.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry.identifier</a> &gt; <span class="el_source">ISSN.java</span></div><h1>ISSN.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry.identifier;
+
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class ISSN {
+
+<span class="fc" id="L9">    private static final Pattern ISSN_PATTERN = Pattern.compile(&quot;^\\d{4}-\\d{3}[\\dxX]$&quot;);</span>
+<span class="fc" id="L10">    private static final Pattern ISSN_PATTERN_NODASH = Pattern.compile(&quot;^(\\d{4})(\\d{3}[\\dxX])$&quot;);</span>
+
+    private final String issnString;
+
+
+<span class="fc" id="L15">    public ISSN(String issnString) {</span>
+<span class="fc" id="L16">        this.issnString = Objects.requireNonNull(issnString).trim();</span>
+<span class="fc" id="L17">    }</span>
+
+    public boolean isValidFormat() {
+<span class="fc" id="L20">        Matcher issnMatcher = ISSN_PATTERN.matcher(issnString);</span>
+<span class="fc" id="L21">        return (issnMatcher.matches());</span>
+    }
+
+    public boolean isCanBeCleaned() {
+<span class="fc" id="L25">        Matcher issnNoDashMatcher = ISSN_PATTERN_NODASH.matcher(issnString);</span>
+<span class="fc" id="L26">        return (issnNoDashMatcher.matches());</span>
+    }
+
+    public String getCleanedISSN() {
+<span class="fc" id="L30">        Matcher issnNoDashMatcher = ISSN_PATTERN_NODASH.matcher(issnString);</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        if (issnNoDashMatcher.find()) {</span>
+<span class="fc" id="L32">            return issnNoDashMatcher.replaceFirst(&quot;$1-$2&quot;);</span>
+        }
+<span class="fc" id="L34">        return issnString;</span>
+    }
+
+    public boolean isValidChecksum() {
+        // Check that the control digit is correct, see e.g. https://en.wikipedia.org/wiki/International_Standard_Serial_Number
+<span class="fc" id="L39">        int sum = 0;</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        for (int pos = 0; pos &lt;= 7; pos++) {</span>
+<span class="fc" id="L41">            char c = issnString.charAt(pos);</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">            if (pos != 4) {</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">                sum += (c - '0') * ((8 - pos) + (pos &gt; 4 ? 1 : 0));</span>
+            }
+        }
+<span class="fc" id="L46">        char control = issnString.charAt(8);</span>
+<span class="fc bfc" id="L47" title="All 4 branches covered.">        if ((control == 'x') || (control == 'X')) {</span>
+<span class="fc" id="L48">            control = '9' + 1;</span>
+        }
+<span class="fc bfc" id="L50" title="All 4 branches covered.">        return (((((sum % 11) + control) - '0') == 11) || ((sum % 11) == 0));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

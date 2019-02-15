@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AstrophysicsDataSystem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fetcher</a> &gt; <span class="el_source">AstrophysicsDataSystem.java</span></div><h1>AstrophysicsDataSystem.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fetcher;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.logic.cleanup.MoveFieldCleanup;
+import org.jabref.logic.formatter.bibtexfields.ClearFormatter;
+import org.jabref.logic.formatter.bibtexfields.NormalizeNamesFormatter;
+import org.jabref.logic.formatter.bibtexfields.RemoveBracesFormatter;
+import org.jabref.logic.formatter.bibtexfields.RemoveNewlinesFormatter;
+import org.jabref.logic.help.HelpFile;
+import org.jabref.logic.importer.EntryBasedParserFetcher;
+import org.jabref.logic.importer.FetcherException;
+import org.jabref.logic.importer.IdBasedParserFetcher;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.ParseException;
+import org.jabref.logic.importer.Parser;
+import org.jabref.logic.importer.SearchBasedParserFetcher;
+import org.jabref.logic.importer.fileformat.BibtexParser;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.net.URLDownload;
+import org.jabref.model.cleanup.FieldFormatterCleanup;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.util.DummyFileUpdateMonitor;
+
+import org.apache.http.client.utils.URIBuilder;
+import org.jsoup.helper.StringUtil;
+
+/**
+ * Fetches data from the SAO/NASA Astrophysics Data System (http://www.adsabs.harvard.edu/)
+ *
+ * Search query-based: http://adsabs.harvard.edu/basic_search.html
+ * Entry -based: http://adsabs.harvard.edu/abstract_service.html
+ *
+ * There is also a new API (https://github.com/adsabs/adsabs-dev-api) but it returns JSON
+ * (or at least needs multiple calls to get BibTeX, status: September 2016)
+ */
+public class AstrophysicsDataSystem implements IdBasedParserFetcher, SearchBasedParserFetcher, EntryBasedParserFetcher {
+
+<span class="fc" id="L49">    private static String API_QUERY_URL = &quot;http://adsabs.harvard.edu/cgi-bin/nph-basic_connect&quot;;</span>
+<span class="fc" id="L50">    private static String API_ENTRY_URL = &quot;http://adsabs.harvard.edu/cgi-bin/nph-abs_connect&quot;;</span>
+<span class="fc" id="L51">    private static String API_DOI_URL = &quot;http://adsabs.harvard.edu/doi/&quot;;</span>
+
+<span class="fc" id="L53">    private final String patternRemoveDOI = &quot;^(doi:|DOI:)&quot;;</span>
+    private final ImportFormatPreferences preferences;
+
+<span class="fc" id="L56">    public AstrophysicsDataSystem(ImportFormatPreferences preferences) {</span>
+<span class="fc" id="L57">        this.preferences = Objects.requireNonNull(preferences);</span>
+<span class="fc" id="L58">    }</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L62">        return &quot;SAO/NASA Astrophysics Data System&quot;;</span>
+    }
+
+    private URIBuilder getBaseUrl(String apiUrl) throws URISyntaxException {
+<span class="nc" id="L66">        URIBuilder uriBuilder = new URIBuilder(apiUrl);</span>
+<span class="nc" id="L67">        uriBuilder.addParameter(&quot;data_type&quot;, &quot;BIBTEXPLUS&quot;);</span>
+<span class="nc" id="L68">        uriBuilder.addParameter(&quot;start_nr&quot;, String.valueOf(1));</span>
+<span class="nc" id="L69">        uriBuilder.addParameter(&quot;nr_to_return&quot;, String.valueOf(200));</span>
+<span class="nc" id="L70">        return uriBuilder;</span>
+    }
+
+    @Override
+    public URL getURLForQuery(String query) throws URISyntaxException, MalformedURLException, FetcherException {
+<span class="nc" id="L75">        URIBuilder uriBuilder = getBaseUrl(API_QUERY_URL);</span>
+<span class="nc" id="L76">        uriBuilder.addParameter(&quot;qsearch&quot;, query);</span>
+<span class="nc" id="L77">        return uriBuilder.build().toURL();</span>
+    }
+
+    @Override
+    public URL getURLForEntry(BibEntry entry) throws URISyntaxException, MalformedURLException, FetcherException {
+<span class="nc" id="L82">        URIBuilder uriBuilder = getBaseUrl(API_ENTRY_URL);</span>
+
+        // Search astronomy + physics + arXiv db
+<span class="nc" id="L85">        uriBuilder.addParameter(&quot;db_key&quot;, &quot;AST&quot;);</span>
+<span class="nc" id="L86">        uriBuilder.addParameter(&quot;db_key&quot;, &quot;PHY&quot;);</span>
+<span class="nc" id="L87">        uriBuilder.addParameter(&quot;db_key&quot;, &quot;PRE&quot;);</span>
+
+        // Add title search
+<span class="nc" id="L90">        entry.getFieldOrAlias(FieldName.TITLE).ifPresent(title -&gt; {</span>
+<span class="nc" id="L91">            uriBuilder.addParameter(&quot;ttl_logic&quot;, &quot;OR&quot;);</span>
+<span class="nc" id="L92">            uriBuilder.addParameter(&quot;title&quot;, title);</span>
+<span class="nc" id="L93">            uriBuilder.addParameter(&quot;ttl_syn&quot;, &quot;YES&quot;); // Synonym replacement</span>
+<span class="nc" id="L94">            uriBuilder.addParameter(&quot;ttl_wt&quot;, &quot;0.3&quot;); // Weight</span>
+<span class="nc" id="L95">            uriBuilder.addParameter(&quot;ttl_wgt&quot;, &quot;YES&quot;); // Consider Weight</span>
+<span class="nc" id="L96">        });</span>
+
+        // Add author search
+<span class="nc" id="L99">        entry.getFieldOrAlias(FieldName.AUTHOR).ifPresent(author -&gt; {</span>
+<span class="nc" id="L100">            uriBuilder.addParameter(&quot;aut_logic&quot;, &quot;OR&quot;);</span>
+<span class="nc" id="L101">            uriBuilder.addParameter(&quot;author&quot;, author);</span>
+<span class="nc" id="L102">            uriBuilder.addParameter(&quot;aut_syn&quot;, &quot;YES&quot;); // Synonym replacement</span>
+<span class="nc" id="L103">            uriBuilder.addParameter(&quot;aut_wt&quot;, &quot;1.0&quot;); // Weight</span>
+<span class="nc" id="L104">            uriBuilder.addParameter(&quot;aut_wgt&quot;, &quot;YES&quot;); // Consider weight</span>
+<span class="nc" id="L105">        });</span>
+
+<span class="nc" id="L107">        return uriBuilder.build().toURL();</span>
+    }
+
+    @Override
+    public URL getURLForID(String identifier) throws URISyntaxException, MalformedURLException, FetcherException {
+<span class="nc" id="L112">        String key = identifier.replaceAll(patternRemoveDOI, &quot;&quot;);</span>
+<span class="nc" id="L113">        URIBuilder uriBuilder = new URIBuilder(API_DOI_URL + key);</span>
+<span class="nc" id="L114">        uriBuilder.addParameter(&quot;data_type&quot;, &quot;BIBTEXPLUS&quot;);</span>
+<span class="nc" id="L115">        return uriBuilder.build().toURL();</span>
+    }
+
+    @Override
+    public Optional&lt;HelpFile&gt; getHelpPage() {
+<span class="nc" id="L120">        return Optional.of(HelpFile.FETCHER_ADS);</span>
+    }
+
+    @Override
+    public Parser getParser() {
+<span class="nc" id="L125">        return new BibtexParser(preferences, new DummyFileUpdateMonitor());</span>
+    }
+
+    @Override
+    public List&lt;BibEntry&gt; performSearch(String query) throws FetcherException {
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (StringUtil.isBlank(query)) {</span>
+<span class="nc" id="L131">            return Collections.emptyList();</span>
+        }
+
+        try {
+<span class="nc" id="L135">            URLConnection connection = getURLForQuery(query).openConnection();</span>
+<span class="nc" id="L136">            connection.setRequestProperty(&quot;User-Agent&quot;, URLDownload.USER_AGENT);</span>
+<span class="nc" id="L137">            try (InputStream stream = connection.getInputStream()) {</span>
+<span class="nc" id="L138">                List&lt;BibEntry&gt; fetchedEntries = getParser().parseEntries(stream);</span>
+
+                // Post-cleanup
+<span class="nc" id="L141">                fetchedEntries.forEach(this::doPostCleanup);</span>
+<span class="nc" id="L142">                return fetchedEntries;</span>
+<span class="nc" id="L143">            } catch (IOException e) {</span>
+<span class="nc" id="L144">                throw new FetcherException(&quot;An I/O exception occurred&quot;, e);</span>
+            }
+<span class="nc" id="L146">        } catch (URISyntaxException | MalformedURLException e) {</span>
+<span class="nc" id="L147">            throw new FetcherException(&quot;Search URI is malformed&quot;, e);</span>
+<span class="nc" id="L148">        } catch (IOException e) {</span>
+<span class="nc" id="L149">            throw new FetcherException(&quot;An I/O exception occurred&quot;, e);</span>
+<span class="nc" id="L150">        } catch (ParseException e) {</span>
+<span class="nc" id="L151">            throw new FetcherException(&quot;Error occurred when parsing entry&quot;, Localization.lang(&quot;Error occurred when parsing entry&quot;), e);</span>
+        }
+    }
+
+    @Override
+    public void doPostCleanup(BibEntry entry) {
+<span class="nc" id="L157">        new FieldFormatterCleanup(FieldName.ABSTRACT, new RemoveBracesFormatter()).cleanup(entry);</span>
+<span class="nc" id="L158">        new FieldFormatterCleanup(FieldName.ABSTRACT, new RemoveNewlinesFormatter()).cleanup(entry);</span>
+<span class="nc" id="L159">        new FieldFormatterCleanup(FieldName.TITLE, new RemoveBracesFormatter()).cleanup(entry);</span>
+<span class="nc" id="L160">        new FieldFormatterCleanup(FieldName.AUTHOR, new NormalizeNamesFormatter()).cleanup(entry);</span>
+
+        // Remove ADS note
+<span class="nc" id="L163">        new FieldFormatterCleanup(&quot;adsnote&quot;, new ClearFormatter()).cleanup(entry);</span>
+        // Move adsurl to url field
+<span class="nc" id="L165">        new MoveFieldCleanup(&quot;adsurl&quot;, FieldName.URL).cleanup(entry);</span>
+        // The fetcher adds some garbage (number of found entries etc before)
+<span class="nc" id="L167">        entry.setCommentsBeforeEntry(&quot;&quot;);</span>
+<span class="nc" id="L168">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

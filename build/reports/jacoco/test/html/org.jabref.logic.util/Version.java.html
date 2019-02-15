@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Version.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util</a> &gt; <span class="el_source">Version.java</span></div><h1>Version.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Represents the Application Version with the major and minor number, the full Version String and if it's a developer
+ * version
+ */
+public class Version {
+
+    public static final String JABREF_DOWNLOAD_URL = &quot;https://downloads.jabref.org&quot;;
+<span class="fc" id="L27">    private static final Logger LOGGER = LoggerFactory.getLogger(Version.class);</span>
+
+<span class="fc" id="L29">    private static final Version UNKNOWN_VERSION = new Version();</span>
+
+<span class="fc" id="L31">    private final static Pattern VERSION_PATTERN = Pattern.compile(&quot;(?&lt;major&gt;\\d+)(\\.(?&lt;minor&gt;\\d+))?(\\.(?&lt;patch&gt;\\d+))?(?&lt;stage&gt;-alpha|-beta)?(?&lt;dev&gt;-?dev)?.*&quot;);</span>
+    private static final String JABREF_GITHUB_RELEASES = &quot;https://api.github.com/repos/JabRef/JabRef/releases&quot;;
+
+
+<span class="fc" id="L35">    private String fullVersion = BuildInfo.UNKNOWN_VERSION;</span>
+<span class="fc" id="L36">    private int major = -1;</span>
+<span class="fc" id="L37">    private int minor = -1;</span>
+<span class="fc" id="L38">    private int patch = -1;</span>
+<span class="fc" id="L39">    private DevelopmentStage developmentStage = DevelopmentStage.UNKNOWN;</span>
+    private boolean isDevelopmentVersion;
+
+    /**
+     * Dummy constructor to create a local object (and  {@link Version#UNKNOWN_VERSION})
+     */
+<span class="fc" id="L45">    private Version() {</span>
+<span class="fc" id="L46">    }</span>
+
+    /**
+     * @param version must be in form of following pattern: {@code (\d+)(\.(\d+))?(\.(\d+))?(-alpha|-beta)?(-?dev)?}
+     *                (e.g., 3.3; 3.4-dev)
+     * @return the parsed version or {@link Version#UNKNOWN_VERSION} if an error occurred
+     */
+    public static Version parse(String version) {
+<span class="fc bfc" id="L54" title="All 6 branches covered.">        if ((version == null) || &quot;&quot;.equals(version) || version.equals(BuildInfo.UNKNOWN_VERSION)</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">                || &quot;${version}&quot;.equals(version)) {</span>
+<span class="fc" id="L56">            return UNKNOWN_VERSION;</span>
+        }
+
+<span class="fc" id="L59">        Version parsedVersion = new Version();</span>
+
+<span class="fc" id="L61">        parsedVersion.fullVersion = version;</span>
+<span class="fc" id="L62">        Matcher matcher = VERSION_PATTERN.matcher(version);</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">        if (matcher.find()) {</span>
+            try {
+<span class="fc" id="L65">                parsedVersion.major = Integer.parseInt(matcher.group(&quot;major&quot;));</span>
+
+<span class="fc" id="L67">                String minorString = matcher.group(&quot;minor&quot;);</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">                parsedVersion.minor = minorString == null ? 0 : Integer.parseInt(minorString);</span>
+
+<span class="fc" id="L70">                String patchString = matcher.group(&quot;patch&quot;);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">                parsedVersion.patch = patchString == null ? 0 : Integer.parseInt(patchString);</span>
+
+<span class="fc" id="L73">                String versionStageString = matcher.group(&quot;stage&quot;);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">                parsedVersion.developmentStage = versionStageString == null ? DevelopmentStage.STABLE : DevelopmentStage.parse(versionStageString);</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">                parsedVersion.isDevelopmentVersion = matcher.group(&quot;dev&quot;) != null;</span>
+<span class="nc" id="L76">            } catch (NumberFormatException e) {</span>
+<span class="nc" id="L77">                LOGGER.warn(&quot;Invalid version string used: &quot; + version, e);</span>
+<span class="nc" id="L78">                return UNKNOWN_VERSION;</span>
+<span class="nc" id="L79">            } catch (IllegalArgumentException e) {</span>
+<span class="nc" id="L80">                LOGGER.warn(&quot;Invalid version pattern is used&quot;, e);</span>
+<span class="nc" id="L81">                return UNKNOWN_VERSION;</span>
+<span class="fc" id="L82">            }</span>
+        } else {
+<span class="nc" id="L84">            LOGGER.warn(&quot;Version could not be recognized by the pattern&quot;);</span>
+<span class="nc" id="L85">            return UNKNOWN_VERSION;</span>
+        }
+<span class="fc" id="L87">        return parsedVersion;</span>
+    }
+
+    /**
+     * Grabs all the available releases from the GitHub repository
+     */
+    public static List&lt;Version&gt; getAllAvailableVersions() throws IOException {
+<span class="nc" id="L94">        URLConnection connection = new URL(JABREF_GITHUB_RELEASES).openConnection();</span>
+<span class="nc" id="L95">        connection.setRequestProperty(&quot;Accept-Charset&quot;, &quot;UTF-8&quot;);</span>
+<span class="nc" id="L96">        try (BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {</span>
+
+<span class="nc" id="L98">            List&lt;Version&gt; versions = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L99">            JSONArray objects = new JSONArray(rd.readLine());</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            for (int i = 0; i &lt; objects.length(); i++) {</span>
+<span class="nc" id="L101">                JSONObject jsonObject = objects.getJSONObject(i);</span>
+<span class="nc" id="L102">                Version version = Version.parse(jsonObject.getString(&quot;tag_name&quot;).replaceFirst(&quot;v&quot;, &quot;&quot;));</span>
+<span class="nc" id="L103">                versions.add(version);</span>
+            }
+<span class="nc" id="L105">            return versions;</span>
+<span class="nc" id="L106">        }</span>
+    }
+
+    /**
+     * @return true if this version is newer than the passed one
+     */
+    public boolean isNewerThan(Version otherVersion) {
+<span class="fc" id="L113">        Objects.requireNonNull(otherVersion);</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (Objects.equals(this, otherVersion)) {</span>
+<span class="fc" id="L115">            return false;</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        } else if (this.getFullVersion().equals(BuildInfo.UNKNOWN_VERSION)) {</span>
+<span class="fc" id="L117">            return false;</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        } else if (otherVersion.getFullVersion().equals(BuildInfo.UNKNOWN_VERSION)) {</span>
+<span class="fc" id="L119">            return false;</span>
+        }
+
+        // compare the majors
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (this.getMajor() &gt; otherVersion.getMajor()) {</span>
+<span class="fc" id="L124">            return true;</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        } else if (this.getMajor() == otherVersion.getMajor()) {</span>
+            // if the majors are equal compare the minors
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            if (this.getMinor() &gt; otherVersion.getMinor()) {</span>
+<span class="fc" id="L128">                return true;</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">            } else if (this.getMinor() == otherVersion.getMinor()) {</span>
+                // if the minors are equal compare the patch numbers
+<span class="fc bfc" id="L131" title="All 2 branches covered.">                if (this.getPatch() &gt; otherVersion.getPatch()) {</span>
+<span class="fc" id="L132">                    return true;</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">                } else if (this.getPatch() == otherVersion.getPatch()) {</span>
+                    // if the patch numbers are equal compare the development stages
+<span class="fc bfc" id="L135" title="All 2 branches covered.">                    if (this.developmentStage.isMoreStableThan(otherVersion.developmentStage)) {</span>
+<span class="fc" id="L136">                        return true;</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">                    } else if (this.developmentStage == otherVersion.developmentStage) {</span>
+                        // if the stage is equal check if this version is in development and the other is not
+<span class="pc bpc" id="L139" title="1 of 4 branches missed.">                        return !this.isDevelopmentVersion &amp;&amp; otherVersion.isDevelopmentVersion;</span>
+                    }
+                }
+            }
+        }
+<span class="fc" id="L144">        return false;</span>
+    }
+
+
+    /**
+     * Checks if this version should be updated to one of the given ones.
+     * Ignoring the other Version if this one is Stable and the other one is not.
+     *
+     * @return The version this one should be updated to, or an empty Optional
+     */
+    public Optional&lt;Version&gt; shouldBeUpdatedTo(List&lt;Version&gt; availableVersions) {
+<span class="fc" id="L155">        Optional&lt;Version&gt; newerVersion = Optional.empty();</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        for (Version version : availableVersions) {</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">            if (this.shouldBeUpdatedTo(version)</span>
+<span class="pc bpc" id="L158" title="1 of 4 branches missed.">                    &amp;&amp; (!newerVersion.isPresent() || version.isNewerThan(newerVersion.get()))) {</span>
+<span class="fc" id="L159">                newerVersion = Optional.of(version);</span>
+            }
+<span class="fc" id="L161">        }</span>
+<span class="fc" id="L162">        return newerVersion;</span>
+    }
+
+    /**
+     * Checks if this version should be updated to the given one.
+     * Ignoring the other Version if this one is Stable and the other one is not.
+     *
+     * @return True if this version should be updated to the given one
+     */
+    public boolean shouldBeUpdatedTo(Version otherVersion) {
+        // ignoring the other version if it is not stable, except if this version itself is not stable
+<span class="pc bpc" id="L173" title="1 of 4 branches missed.">        if (developmentStage == Version.DevelopmentStage.STABLE</span>
+                &amp;&amp; otherVersion.developmentStage != Version.DevelopmentStage.STABLE) {
+<span class="fc" id="L175">            return false;</span>
+        }
+
+        // check if the other version is newer than given one
+<span class="fc" id="L179">        return otherVersion.isNewerThan(this);</span>
+    }
+
+    public String getFullVersion() {
+<span class="fc" id="L183">        return fullVersion;</span>
+    }
+
+    public int getMajor() {
+<span class="fc" id="L187">        return major;</span>
+    }
+
+    public int getMinor() {
+<span class="fc" id="L191">        return minor;</span>
+    }
+
+    public int getPatch() {
+<span class="fc" id="L195">        return patch;</span>
+    }
+
+    public boolean isDevelopmentVersion() {
+<span class="fc" id="L199">        return isDevelopmentVersion;</span>
+    }
+
+    /**
+     * @return The link to the changelog on GitHub to this specific version (https://github.com/JabRef/jabref/blob/vX.X/CHANGELOG.md)
+     */
+    public String getChangelogUrl() {
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (isDevelopmentVersion) {</span>
+<span class="fc" id="L207">            return &quot;https://github.com/JabRef/jabref/blob/master/CHANGELOG.md#unreleased&quot;;</span>
+        } else {
+<span class="fc" id="L209">            StringBuilder changelogLink = new StringBuilder()</span>
+<span class="fc" id="L210">                    .append(&quot;https://github.com/JabRef/jabref/blob/v&quot;)</span>
+<span class="fc" id="L211">                    .append(this.getMajor())</span>
+<span class="fc" id="L212">                    .append(&quot;.&quot;)</span>
+<span class="fc" id="L213">                    .append(this.getMinor());</span>
+
+<span class="fc bfc" id="L215" title="All 2 branches covered.">            if (this.getPatch() != 0) {</span>
+<span class="fc" id="L216">                changelogLink</span>
+<span class="fc" id="L217">                        .append(&quot;.&quot;)</span>
+<span class="fc" id="L218">                        .append(this.getPatch());</span>
+            }
+
+<span class="fc" id="L221">            changelogLink</span>
+<span class="fc" id="L222">                    .append(this.developmentStage.stage)</span>
+<span class="fc" id="L223">                    .append(&quot;/CHANGELOG.md&quot;);</span>
+
+<span class="fc" id="L225">            return changelogLink.toString();</span>
+        }
+    }
+
+    @Override
+    public boolean equals(Object other) {
+<span class="pc bpc" id="L231" title="1 of 2 branches missed.">        if (this == other) {</span>
+<span class="nc" id="L232">            return true;</span>
+        }
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">        if (!(other instanceof Version)) {</span>
+<span class="nc" id="L235">            return false;</span>
+        }
+
+        // till all the information are stripped from the fullversion this should suffice
+<span class="fc" id="L239">        return this.getFullVersion().equals(((Version) other).getFullVersion());</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L244">        return getFullVersion().hashCode();</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L249">        return this.getFullVersion();</span>
+    }
+
+<span class="fc" id="L252">    public enum DevelopmentStage {</span>
+<span class="fc" id="L253">        UNKNOWN(&quot;&quot;, 0),</span>
+<span class="fc" id="L254">        ALPHA(&quot;-alpha&quot;, 1),</span>
+<span class="fc" id="L255">        BETA(&quot;-beta&quot;, 2),</span>
+<span class="fc" id="L256">        STABLE(&quot;&quot;, 3);</span>
+
+        /**
+         * describes how stable this stage is, the higher the better
+         */
+        private final int stability;
+        private final String stage;
+
+<span class="fc" id="L264">        DevelopmentStage(String stage, int stability) {</span>
+<span class="fc" id="L265">            this.stage = stage;</span>
+<span class="fc" id="L266">            this.stability = stability;</span>
+<span class="fc" id="L267">        }</span>
+
+        public static DevelopmentStage parse(String stage) {
+<span class="fc bfc" id="L270" title="All 2 branches covered.">            if (stage == null) {</span>
+<span class="fc" id="L271">                LOGGER.warn(&quot;The stage cannot be null&quot;);</span>
+<span class="fc" id="L272">                return UNKNOWN;</span>
+<span class="fc bfc" id="L273" title="All 2 branches covered.">            } else if (stage.equals(STABLE.stage)) {</span>
+<span class="fc" id="L274">                return STABLE;</span>
+<span class="fc bfc" id="L275" title="All 2 branches covered.">            } else if (stage.equals(ALPHA.stage)) {</span>
+<span class="fc" id="L276">                return ALPHA;</span>
+<span class="fc bfc" id="L277" title="All 2 branches covered.">            } else if (stage.equals(BETA.stage)) {</span>
+<span class="fc" id="L278">                return BETA;</span>
+            }
+<span class="fc" id="L280">            LOGGER.warn(&quot;Unknown development stage: &quot; + stage);</span>
+<span class="fc" id="L281">            return UNKNOWN;</span>
+        }
+
+        /**
+         * @return true if this stage is more stable than the {@code otherStage}
+         */
+        public boolean isMoreStableThan(DevelopmentStage otherStage) {
+<span class="fc bfc" id="L288" title="All 2 branches covered.">            return this.stability &gt; otherStage.stability;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

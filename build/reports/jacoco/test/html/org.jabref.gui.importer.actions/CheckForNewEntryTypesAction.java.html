@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CheckForNewEntryTypesAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.importer.actions</a> &gt; <span class="el_source">CheckForNewEntryTypesAction.java</span></div><h1>CheckForNewEntryTypesAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.importer.actions;
+
+import java.awt.Font;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import javax.swing.BoxLayout;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.customentrytypes.CustomEntryTypesManager;
+import org.jabref.logic.importer.ParserResult;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.EntryTypes;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.CustomEntryType;
+import org.jabref.model.entry.EntryType;
+
+/**
+ * This action checks whether any new custom entry types were loaded from this
+ * BIB file. If so, an offer to remember these entry types is given.
+ */
+<span class="nc" id="L31">public class CheckForNewEntryTypesAction implements GUIPostOpenAction {</span>
+
+    @Override
+    public boolean isActionNecessary(ParserResult parserResult) {
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        return !getListOfUnknownAndUnequalCustomizations(parserResult).isEmpty();</span>
+    }
+
+    @Override
+    public void performAction(BasePanel panel, ParserResult parserResult) {
+<span class="nc" id="L40">        BibDatabaseMode mode = getBibDatabaseModeFromParserResult(parserResult);</span>
+
+<span class="nc" id="L42">        List&lt;EntryType&gt; typesToStore = determineEntryTypesToSave(panel, getListOfUnknownAndUnequalCustomizations(parserResult), mode);</span>
+
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        if (!typesToStore.isEmpty()) {</span>
+<span class="nc" id="L45">            typesToStore.forEach(type -&gt; EntryTypes.addOrModifyCustomEntryType((CustomEntryType) type, mode));</span>
+<span class="nc" id="L46">            CustomEntryTypesManager.saveCustomEntryTypes(Globals.prefs);</span>
+        }
+<span class="nc" id="L48">    }</span>
+
+    private List&lt;EntryType&gt; getListOfUnknownAndUnequalCustomizations(ParserResult parserResult) {
+<span class="nc" id="L51">        BibDatabaseMode mode = getBibDatabaseModeFromParserResult(parserResult);</span>
+
+<span class="nc" id="L53">        return parserResult.getEntryTypes().values().stream()</span>
+<span class="nc" id="L54">                .filter(type -&gt;</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">                    (!EntryTypes.getType(type.getName(), mode).isPresent())</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">                        || !EntryTypes.isEqualNameAndFieldBased(type, EntryTypes.getType(type.getName(), mode).get()))</span>
+<span class="nc" id="L57">                .collect(Collectors.toList());</span>
+    }
+
+    private List&lt;EntryType&gt; determineEntryTypesToSave(BasePanel panel, List&lt;EntryType&gt; allCustomizedEntryTypes, BibDatabaseMode databaseMode) {
+<span class="nc" id="L61">        List&lt;EntryType&gt; newTypes = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L62">        List&lt;EntryType&gt; differentCustomizations = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        for (EntryType customType : allCustomizedEntryTypes) {</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">            if (!EntryTypes.getType(customType.getName(), databaseMode).isPresent()) {</span>
+<span class="nc" id="L66">                newTypes.add(customType);</span>
+            } else {
+<span class="nc" id="L68">                EntryType currentlyStoredType = EntryTypes.getType(customType.getName(), databaseMode).get();</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">                if (!EntryTypes.isEqualNameAndFieldBased(customType, currentlyStoredType)) {</span>
+<span class="nc" id="L70">                    differentCustomizations.add(customType);</span>
+                }
+            }
+<span class="nc" id="L73">        }</span>
+
+<span class="nc" id="L75">        Map&lt;EntryType, JCheckBox&gt; typeCheckBoxMap = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L77">        JPanel checkboxPanel = createCheckBoxPanel(newTypes, differentCustomizations, typeCheckBoxMap);</span>
+
+<span class="nc" id="L79">        int answer = JOptionPane.showConfirmDialog(null,</span>
+                checkboxPanel,
+<span class="nc" id="L81">                Localization.lang(&quot;Custom entry types&quot;),</span>
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (answer == JOptionPane.YES_OPTION) {</span>
+<span class="nc" id="L86">            return typeCheckBoxMap.entrySet().stream().filter(entry -&gt; entry.getValue().isSelected())</span>
+<span class="nc" id="L87">                    .map(Map.Entry::getKey).collect(Collectors.toList());</span>
+        } else {
+<span class="nc" id="L89">            return Collections.emptyList();</span>
+        }
+
+    }
+
+    private JPanel createCheckBoxPanel(List&lt;EntryType&gt; newTypes, List&lt;EntryType&gt; differentCustomizations,
+            Map&lt;EntryType, JCheckBox&gt; typeCheckBoxMap) {
+<span class="nc" id="L96">        JPanel checkboxPanel = new JPanel();</span>
+<span class="nc" id="L97">        checkboxPanel.setLayout(new BoxLayout(checkboxPanel, BoxLayout.PAGE_AXIS));</span>
+
+<span class="nc" id="L99">        JLabel customFoundLabel = new JLabel(Localization.lang(&quot;Custom entry types found in file&quot;) + &quot;.&quot;);</span>
+<span class="nc" id="L100">        Font boldStandardFont = new Font(customFoundLabel.getFont().getFontName(), Font.BOLD, customFoundLabel.getFont().getSize());</span>
+<span class="nc" id="L101">        customFoundLabel.setFont(boldStandardFont);</span>
+<span class="nc" id="L102">        checkboxPanel.add(customFoundLabel);</span>
+
+<span class="nc" id="L104">        JLabel selectLabel = new JLabel(Localization.lang(&quot;Select all customized types to be stored in local preferences&quot;) + &quot;:&quot;);</span>
+<span class="nc" id="L105">        selectLabel.setFont(boldStandardFont);</span>
+<span class="nc" id="L106">        checkboxPanel.add(selectLabel);</span>
+
+<span class="nc" id="L108">        checkboxPanel.add(new JLabel(&quot; &quot;));</span>
+
+        // add all unknown types:
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (!newTypes.isEmpty()) {</span>
+<span class="nc" id="L112">            checkboxPanel.add(new JLabel(Localization.lang(&quot;Currently unknown&quot;) + &quot;:&quot;));</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            for (EntryType type : newTypes) {</span>
+<span class="nc" id="L114">                JCheckBox box = new JCheckBox(type.getName(), true);</span>
+<span class="nc" id="L115">                checkboxPanel.add(box);</span>
+<span class="nc" id="L116">                typeCheckBoxMap.put(type, box);</span>
+<span class="nc" id="L117">            }</span>
+        }
+
+        // add all different customizations
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (!differentCustomizations.isEmpty()) {</span>
+<span class="nc" id="L122">            checkboxPanel.add(new JLabel(Localization.lang(&quot;Different customization, current settings will be overwritten&quot;) + &quot;:&quot;));</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">            for (EntryType type : differentCustomizations) {</span>
+<span class="nc" id="L124">                JCheckBox box = new JCheckBox(type.getName(), true);</span>
+<span class="nc" id="L125">                checkboxPanel.add(box);</span>
+<span class="nc" id="L126">                typeCheckBoxMap.put(type, box);</span>
+<span class="nc" id="L127">            }</span>
+        }
+<span class="nc" id="L129">        return checkboxPanel;</span>
+    }
+
+    private BibDatabaseMode getBibDatabaseModeFromParserResult(ParserResult parserResult) {
+<span class="nc" id="L133">        return parserResult.getMetaData().getMode().orElse(Globals.prefs.getDefaultBibDatabaseMode());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

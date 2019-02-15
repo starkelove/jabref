@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AtomicFileOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.exporter</a> &gt; <span class="el_source">AtomicFileOutputStream.java</span></div><h1>AtomicFileOutputStream.java</h1><pre class="source lang-java linenums">package org.jabref.logic.exporter;
+
+import java.io.FileOutputStream;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.EnumSet;
+import java.util.Set;
+
+import org.jabref.logic.util.io.FileUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * A file output stream that is similar to the standard {@link FileOutputStream}, except that all writes are first
+ * redirected to a temporary file. When the stream is closed, the temporary file (atomically) replaces the target file.
+ *
+ * In detail, the strategy is to:
+ * &lt;ol&gt;
+ * &lt;li&gt;Write to a temporary file (with .tmp suffix) in the same directory as the destination file.&lt;/li&gt;
+ * &lt;li&gt;Create a backup (with .bak suffix) of the original file (if it exists) in the same directory.&lt;/li&gt;
+ * &lt;li&gt;Move the temporary file to the correct place, overwriting any file that already exists at that location.&lt;/li&gt;
+ * &lt;li&gt;Delete the backup file (if configured to do so).&lt;/li&gt;
+ * &lt;/ol&gt;
+ * If all goes well, no temporary or backup files will remain on disk after closing the stream.
+ *
+ * Errors are handled as follows:
+ * &lt;ol&gt;
+ * &lt;li&gt;If anything goes wrong while writing to the temporary file, the temporary file will be deleted (leaving the
+ * original file untouched).&lt;/li&gt;
+ * &lt;li&gt;If anything goes wrong while copying the temporary file to the target file, the backup of the original file is
+ * kept.&lt;/li&gt;
+ * &lt;/ol&gt;
+ *
+ * Implementation inspired by code from &lt;a href=&quot;https://github.com/martylamb/atomicfileoutputstream/blob/master/src/main/java/com/martiansoftware/io/AtomicFileOutputStream.java&quot;&gt;Marty
+ * Lamb&lt;/a&gt; and &lt;a href=&quot;https://github.com/apache/zookeeper/blob/master/src/java/main/org/apache/zookeeper/common/AtomicFileOutputStream.java&quot;&gt;Apache&lt;/a&gt;.
+ */
+public class AtomicFileOutputStream extends FilterOutputStream {
+
+<span class="fc" id="L46">    private static final Logger LOGGER = LoggerFactory.getLogger(AtomicFileOutputStream.class);</span>
+
+    private static final String TEMPORARY_EXTENSION = &quot;.tmp&quot;;
+    private static final String BACKUP_EXTENSION = &quot;.bak&quot;;
+
+    /**
+     * The file we want to create/replace.
+     */
+    private final Path targetFile;
+
+    /**
+     * The file to which writes are redirected to.
+     */
+    private final Path temporaryFile;
+    private final FileLock temporaryFileLock;
+    /**
+     * A backup of the target file (if it exists), created when the stream is closed
+     */
+    private final Path backupFile;
+    private final boolean keepBackup;
+
+    /**
+     * Creates a new output stream to write to or replace the file at the specified path.
+     *
+     * @param path the path of the file to write to or replace
+     * @param keepBackup whether to keep the backup file after a successful write process
+     */
+    public AtomicFileOutputStream(Path path, boolean keepBackup) throws IOException {
+<span class="fc" id="L74">        super(Files.newOutputStream(getPathOfTemporaryFile(path)));</span>
+
+<span class="fc" id="L76">        this.targetFile = path;</span>
+<span class="fc" id="L77">        this.temporaryFile = getPathOfTemporaryFile(path);</span>
+<span class="fc" id="L78">        this.backupFile = getPathOfBackupFile(path);</span>
+<span class="fc" id="L79">        this.keepBackup = keepBackup;</span>
+
+        try {
+            // Lock files (so that at least not another JabRef instance writes at the same time to the same tmp file)
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">            if (out instanceof FileOutputStream) {</span>
+<span class="nc" id="L84">                temporaryFileLock = ((FileOutputStream) out).getChannel().lock();</span>
+            } else {
+<span class="fc" id="L86">                temporaryFileLock = null;</span>
+            }
+<span class="nc" id="L88">        } catch (OverlappingFileLockException exception) {</span>
+<span class="nc" id="L89">            throw new IOException(&quot;Could not obtain write access to &quot; + temporaryFile + &quot;. Maybe another instance of JabRef is currently writing to the same file?&quot;, exception);</span>
+<span class="fc" id="L90">        }</span>
+<span class="fc" id="L91">    }</span>
+
+    /**
+     * Creates a new output stream to write to or replace the file at the specified path. The backup file is deleted
+     * when the write was successful.
+     *
+     * @param path the path of the file to write to or replace
+     */
+    public AtomicFileOutputStream(Path path) throws IOException {
+<span class="nc" id="L100">        this(path, false);</span>
+<span class="nc" id="L101">    }</span>
+
+    private static Path getPathOfTemporaryFile(Path targetFile) {
+<span class="fc" id="L104">        return FileUtil.addExtension(targetFile, TEMPORARY_EXTENSION);</span>
+    }
+
+    private static Path getPathOfBackupFile(Path targetFile) {
+<span class="fc" id="L108">        return FileUtil.addExtension(targetFile, BACKUP_EXTENSION);</span>
+    }
+
+    /**
+     * Returns the path of the backup copy of the original file (may not exist)
+     */
+    public Path getBackup() {
+<span class="nc" id="L115">        return backupFile;</span>
+    }
+
+    /**
+     * Override for performance reasons.
+     */
+    @Override
+    public void write(byte b[], int off, int len) throws IOException {
+        try {
+<span class="fc" id="L124">            out.write(b, off, len);</span>
+<span class="nc" id="L125">        } catch (IOException exception) {</span>
+<span class="nc" id="L126">            cleanup();</span>
+<span class="nc" id="L127">            throw exception;</span>
+<span class="fc" id="L128">        }</span>
+<span class="fc" id="L129">    }</span>
+
+    /**
+     * Closes the write process to the temporary file but does not commit to the target file.
+     */
+    public void abort() {
+        try {
+<span class="nc" id="L136">            super.close();</span>
+<span class="nc" id="L137">            Files.deleteIfExists(temporaryFile);</span>
+<span class="nc" id="L138">            Files.deleteIfExists(backupFile);</span>
+<span class="nc" id="L139">        } catch (IOException exception) {</span>
+<span class="nc" id="L140">            LOGGER.debug(&quot;Unable to abort writing to file &quot; + temporaryFile, exception);</span>
+<span class="nc" id="L141">        }</span>
+<span class="nc" id="L142">    }</span>
+
+    private void cleanup() {
+        try {
+<span class="fc" id="L146">            Files.deleteIfExists(temporaryFile);</span>
+<span class="nc" id="L147">        } catch (IOException exception) {</span>
+<span class="nc" id="L148">            LOGGER.debug(&quot;Unable to delete file &quot; + temporaryFile, exception);</span>
+<span class="fc" id="L149">        }</span>
+
+        try {
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">            if (temporaryFileLock != null) {</span>
+<span class="nc" id="L153">                temporaryFileLock.release();</span>
+            }
+<span class="nc" id="L155">        } catch (IOException exception) {</span>
+<span class="nc" id="L156">            LOGGER.warn(&quot;Unable to release lock on file &quot; + temporaryFile, exception);</span>
+<span class="fc" id="L157">        }</span>
+<span class="fc" id="L158">    }</span>
+
+    // perform the final operations to move the temporary file to its final destination
+    @Override
+    public void close() throws IOException {
+        try {
+            try {
+                // Make sure we have written everything to the temporary file
+<span class="fc" id="L166">                flush();</span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">                if (out instanceof FileOutputStream) {</span>
+<span class="nc" id="L168">                    ((FileOutputStream) out).getFD().sync();</span>
+                }
+<span class="nc" id="L170">            } catch (IOException exception) {</span>
+                // Try to close nonetheless
+<span class="nc" id="L172">                super.close();</span>
+<span class="nc" id="L173">                throw exception;</span>
+<span class="fc" id="L174">            }</span>
+<span class="fc" id="L175">            super.close();</span>
+
+            // We successfully wrote everything to the temporary file, lets copy it to the correct place
+            // First, make backup of original file and try to save file permissions to restore them later (by default: 664)
+<span class="fc" id="L179">            Set&lt;PosixFilePermission&gt; oldFilePermissions = EnumSet.of(PosixFilePermission.OWNER_READ,</span>
+                    PosixFilePermission.OWNER_WRITE,
+                    PosixFilePermission.GROUP_READ,
+                    PosixFilePermission.GROUP_WRITE,
+                    PosixFilePermission.OTHERS_READ);
+<span class="fc bfc" id="L184" title="All 2 branches covered.">            if (Files.exists(targetFile)) {</span>
+<span class="fc" id="L185">                Files.copy(targetFile, backupFile, StandardCopyOption.REPLACE_EXISTING);</span>
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">                if (FileUtil.IS_POSIX_COMPILANT) {</span>
+                    try {
+<span class="fc" id="L188">                        oldFilePermissions = Files.getPosixFilePermissions(targetFile);</span>
+<span class="nc" id="L189">                    } catch (IOException exception) {</span>
+<span class="nc" id="L190">                        LOGGER.warn(&quot;Error getting file permissions for file {}.&quot;, targetFile, exception);</span>
+<span class="fc" id="L191">                    }</span>
+                }
+            }
+
+            // Move temporary file (replace original if it exists)
+<span class="fc" id="L196">            Files.move(temporaryFile, targetFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);</span>
+
+            // Restore file permissions
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">            if (FileUtil.IS_POSIX_COMPILANT) {</span>
+                try {
+<span class="fc" id="L201">                    Files.setPosixFilePermissions(targetFile, oldFilePermissions);</span>
+<span class="nc" id="L202">                } catch (IOException exception) {</span>
+<span class="nc" id="L203">                    LOGGER.warn(&quot;Error writing file permissions to file {}.&quot;, targetFile, exception);</span>
+<span class="fc" id="L204">                }</span>
+            }
+
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">            if (!keepBackup) {</span>
+                // Remove backup file
+<span class="fc" id="L209">                Files.deleteIfExists(backupFile);</span>
+            }
+        } finally {
+            // Remove temporary file (but not the backup!)
+<span class="fc" id="L213">            cleanup();</span>
+        }
+<span class="fc" id="L215">    }</span>
+
+    @Override
+    public void flush() throws IOException {
+        try {
+<span class="fc" id="L220">            super.flush();</span>
+<span class="nc" id="L221">        } catch (IOException exception) {</span>
+<span class="nc" id="L222">            cleanup();</span>
+<span class="nc" id="L223">            throw exception;</span>
+<span class="fc" id="L224">        }</span>
+<span class="fc" id="L225">    }</span>
+
+    @Override
+    public void write(int b) throws IOException {
+        try {
+<span class="nc" id="L230">            super.write(b);</span>
+<span class="nc" id="L231">        } catch (IOException exception) {</span>
+<span class="nc" id="L232">            cleanup();</span>
+<span class="nc" id="L233">            throw exception;</span>
+<span class="nc" id="L234">        }</span>
+<span class="nc" id="L235">    }</span>
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

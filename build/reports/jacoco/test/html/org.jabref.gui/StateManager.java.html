@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StateManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui</a> &gt; <span class="el_source">StateManager.java</span></div><h1>StateManager.java</h1><pre class="source lang-java linenums">package org.jabref.gui;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyListProperty;
+import javafx.beans.property.ReadOnlyListWrapper;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
+
+import org.jabref.logic.search.SearchQuery;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.groups.GroupTreeNode;
+import org.jabref.model.util.OptionalUtil;
+
+import org.fxmisc.easybind.EasyBind;
+import org.fxmisc.easybind.monadic.MonadicBinding;
+
+/**
+ * This class manages the GUI-state of JabRef, including:
+ * - currently selected database
+ * - currently selected group
+ * Coming soon:
+ * - open databases
+ * - active search
+ */
+public class StateManager {
+
+<span class="fc" id="L36">    private final ObjectProperty&lt;Optional&lt;BibDatabaseContext&gt;&gt; activeDatabase = new SimpleObjectProperty&lt;&gt;(Optional.empty());</span>
+<span class="fc" id="L37">    private final ReadOnlyListWrapper&lt;GroupTreeNode&gt; activeGroups = new ReadOnlyListWrapper&lt;&gt;(FXCollections.observableArrayList());</span>
+<span class="fc" id="L38">    private final ObservableList&lt;BibEntry&gt; selectedEntries = FXCollections.observableArrayList();</span>
+<span class="fc" id="L39">    private final ObservableMap&lt;BibDatabaseContext, ObservableList&lt;GroupTreeNode&gt;&gt; selectedGroups = FXCollections.observableHashMap();</span>
+<span class="fc" id="L40">    private final ObjectProperty&lt;Optional&lt;SearchQuery&gt;&gt; activeSearchQuery = new SimpleObjectProperty&lt;&gt;(Optional.empty());</span>
+
+<span class="fc" id="L42">    public StateManager() {</span>
+<span class="fc" id="L43">        MonadicBinding&lt;BibDatabaseContext&gt; currentDatabase = EasyBind.map(activeDatabase, database -&gt; database.orElse(null));</span>
+<span class="fc" id="L44">        activeGroups.bind(Bindings.valueAt(selectedGroups, currentDatabase));</span>
+<span class="fc" id="L45">    }</span>
+
+    public ObjectProperty&lt;Optional&lt;BibDatabaseContext&gt;&gt; activeDatabaseProperty() {
+<span class="fc" id="L48">        return activeDatabase;</span>
+    }
+
+    public ObjectProperty&lt;Optional&lt;SearchQuery&gt;&gt; activeSearchQueryProperty() {
+<span class="nc" id="L52">        return activeSearchQuery;</span>
+    }
+
+    public ReadOnlyListProperty&lt;GroupTreeNode&gt; activeGroupProperty() {
+<span class="nc" id="L56">        return activeGroups.getReadOnlyProperty();</span>
+    }
+
+    public ObservableList&lt;BibEntry&gt; getSelectedEntries() {
+<span class="fc" id="L60">        return selectedEntries;</span>
+    }
+
+    public void setSelectedEntries(List&lt;BibEntry&gt; newSelectedEntries) {
+<span class="nc" id="L64">        selectedEntries.setAll(newSelectedEntries);</span>
+<span class="nc" id="L65">    }</span>
+
+    public void setSelectedGroups(BibDatabaseContext database, List&lt;GroupTreeNode&gt; newSelectedGroups) {
+<span class="nc" id="L68">        Objects.requireNonNull(newSelectedGroups);</span>
+<span class="nc" id="L69">        selectedGroups.put(database, FXCollections.observableArrayList(newSelectedGroups));</span>
+<span class="nc" id="L70">    }</span>
+
+    public ObservableList&lt;GroupTreeNode&gt; getSelectedGroup(BibDatabaseContext database) {
+<span class="fc" id="L73">        ObservableList&lt;GroupTreeNode&gt; selectedGroupsForDatabase = selectedGroups.get(database);</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        return selectedGroupsForDatabase != null ? selectedGroupsForDatabase : FXCollections.observableArrayList();</span>
+    }
+
+    public void clearSelectedGroups(BibDatabaseContext database) {
+<span class="fc" id="L78">        selectedGroups.remove(database);</span>
+<span class="fc" id="L79">    }</span>
+
+    public Optional&lt;BibDatabaseContext&gt; getActiveDatabase() {
+<span class="nc" id="L82">        return activeDatabase.get();</span>
+    }
+
+    public List&lt;BibEntry&gt; getEntriesInCurrentDatabase() {
+<span class="nc" id="L86">        return OptionalUtil.flatMap(activeDatabase.get(), BibDatabaseContext::getEntries)</span>
+<span class="nc" id="L87">                .collect(Collectors.toList());</span>
+    }
+
+    public void clearSearchQuery() {
+<span class="nc" id="L91">        activeSearchQuery.setValue(Optional.empty());</span>
+<span class="nc" id="L92">    }</span>
+
+    public void setSearchQuery(SearchQuery searchQuery) {
+<span class="nc" id="L95">        activeSearchQuery.setValue(Optional.of(searchQuery));</span>
+<span class="nc" id="L96">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

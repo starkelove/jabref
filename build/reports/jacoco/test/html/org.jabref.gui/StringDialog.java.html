@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui</a> &gt; <span class="el_source">StringDialog.java</span></div><h1>StringDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui;
+
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.DefaultCellEditor;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.JToolBar;
+import javax.swing.LayoutFocusTraversalPolicy;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableColumnModel;
+import javax.swing.undo.CompoundEdit;
+
+import org.jabref.Globals;
+import org.jabref.gui.actions.Actions;
+import org.jabref.gui.help.HelpAction;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.keyboard.KeyBinding;
+import org.jabref.gui.undo.UndoableInsertString;
+import org.jabref.gui.undo.UndoableRemoveString;
+import org.jabref.gui.undo.UndoableStringChange;
+import org.jabref.gui.util.WindowLocation;
+import org.jabref.logic.bibtex.InvalidFieldValueException;
+import org.jabref.logic.bibtex.LatexFieldFormatter;
+import org.jabref.logic.bibtex.comparator.BibtexStringComparator;
+import org.jabref.logic.help.HelpFile;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.database.KeyCollisionException;
+import org.jabref.model.entry.BibtexString;
+import org.jabref.preferences.JabRefPreferences;
+
+class StringDialog extends JabRefDialog {
+
+<span class="nc" id="L54">    private static final String STRINGS_TITLE = Localization.lang(&quot;Strings for library&quot;);</span>
+    // A reference to the entry this object works on.
+    private final BibDatabase base;
+    private final BasePanel panel;
+    private final StringTable table;
+    private final HelpAction helpAction;
+
+<span class="nc" id="L61">    private final SaveDatabaseAction saveAction = new SaveDatabaseAction(this);</span>
+
+    // The action concerned with closing the window.
+<span class="nc" id="L64">    private final CloseAction closeAction = new CloseAction();</span>
+    private List&lt;BibtexString&gt; strings;
+
+
+    public StringDialog(JabRefFrame frame, BasePanel panel, BibDatabase base) {
+<span class="nc" id="L69">        super(StringDialog.class);</span>
+<span class="nc" id="L70">        this.panel = panel;</span>
+<span class="nc" id="L71">        this.base = base;</span>
+
+<span class="nc" id="L73">        sortStrings();</span>
+
+<span class="nc" id="L75">        helpAction = new HelpAction(Localization.lang(&quot;Help&quot;), HelpFile.STRING_EDITOR);</span>
+
+<span class="nc" id="L77">        addWindowListener(new WindowAdapter() {</span>
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+<span class="nc" id="L81">                closeAction.actionPerformed(null);</span>
+<span class="nc" id="L82">            }</span>
+        });
+
+        // We replace the default FocusTraversalPolicy with a subclass
+        // that only allows the StringTable to gain keyboard focus.
+<span class="nc" id="L87">        setFocusTraversalPolicy(new LayoutFocusTraversalPolicy() {</span>
+
+            @Override
+            protected boolean accept(Component c) {
+<span class="nc bnc" id="L91" title="All 4 branches missed.">                return super.accept(c) &amp;&amp; (c instanceof StringTable);</span>
+            }
+        });
+
+<span class="nc" id="L95">        JPanel pan = new JPanel();</span>
+<span class="nc" id="L96">        GridBagLayout gbl = new GridBagLayout();</span>
+<span class="nc" id="L97">        pan.setLayout(gbl);</span>
+<span class="nc" id="L98">        GridBagConstraints con = new GridBagConstraints();</span>
+<span class="nc" id="L99">        con.fill = GridBagConstraints.BOTH;</span>
+<span class="nc" id="L100">        con.weighty = 1;</span>
+<span class="nc" id="L101">        con.weightx = 1;</span>
+
+<span class="nc" id="L103">        StringTableModel stm = new StringTableModel(this, base);</span>
+<span class="nc" id="L104">        table = new StringTable(stm);</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        if (!base.hasNoStrings()) {</span>
+<span class="nc" id="L106">            table.setRowSelectionInterval(0, 0);</span>
+        }
+
+<span class="nc" id="L109">        gbl.setConstraints(table.getPane(), con);</span>
+<span class="nc" id="L110">        pan.add(table.getPane());</span>
+
+<span class="nc" id="L112">        JToolBar tlb = new OSXCompatibleToolbar();</span>
+<span class="nc" id="L113">        InputMap im = tlb.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);</span>
+<span class="nc" id="L114">        ActionMap am = tlb.getActionMap();</span>
+<span class="nc" id="L115">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.STRING_DIALOG_ADD_STRING), &quot;add&quot;);</span>
+<span class="nc" id="L116">        NewStringAction newStringAction = new NewStringAction(this);</span>
+<span class="nc" id="L117">        am.put(&quot;add&quot;, newStringAction);</span>
+<span class="nc" id="L118">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.STRING_DIALOG_REMOVE_STRING), &quot;remove&quot;);</span>
+<span class="nc" id="L119">        RemoveStringAction removeStringAction = new RemoveStringAction(this);</span>
+<span class="nc" id="L120">        am.put(&quot;remove&quot;, removeStringAction);</span>
+<span class="nc" id="L121">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.SAVE_DATABASE), &quot;save&quot;);</span>
+<span class="nc" id="L122">        am.put(&quot;save&quot;, saveAction);</span>
+<span class="nc" id="L123">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.CLOSE), &quot;close&quot;);</span>
+<span class="nc" id="L124">        am.put(&quot;close&quot;, closeAction);</span>
+<span class="nc" id="L125">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.HELP), &quot;help&quot;);</span>
+<span class="nc" id="L126">        am.put(&quot;help&quot;, helpAction);</span>
+<span class="nc" id="L127">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.UNDO), &quot;undo&quot;);</span>
+<span class="nc" id="L128">        UndoAction undoAction = new UndoAction();</span>
+<span class="nc" id="L129">        am.put(&quot;undo&quot;, undoAction);</span>
+<span class="nc" id="L130">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.REDO), &quot;redo&quot;);</span>
+<span class="nc" id="L131">        RedoAction redoAction = new RedoAction();</span>
+<span class="nc" id="L132">        am.put(&quot;redo&quot;, redoAction);</span>
+
+<span class="nc" id="L134">        tlb.add(newStringAction);</span>
+<span class="nc" id="L135">        tlb.add(removeStringAction);</span>
+<span class="nc" id="L136">        tlb.addSeparator();</span>
+<span class="nc" id="L137">        tlb.add(helpAction);</span>
+<span class="nc" id="L138">        Container conPane = getContentPane();</span>
+<span class="nc" id="L139">        conPane.add(tlb, BorderLayout.NORTH);</span>
+<span class="nc" id="L140">        conPane.add(pan, BorderLayout.CENTER);</span>
+
+<span class="nc" id="L142">        setTitle(STRINGS_TITLE + &quot;: &quot;</span>
+<span class="nc" id="L143">                + panel.getBibDatabaseContext().getDatabaseFile().map(File::getName).orElse(GUIGlobals.UNTITLED_TITLE));</span>
+<span class="nc" id="L144">        WindowLocation pw = new WindowLocation(this, JabRefPreferences.STRINGS_POS_X, JabRefPreferences.STRINGS_POS_Y,</span>
+                JabRefPreferences.STRINGS_SIZE_X, JabRefPreferences.STRINGS_SIZE_Y);
+<span class="nc" id="L146">        pw.displayWindowAtStoredLocation();</span>
+<span class="nc" id="L147">    }</span>
+
+    private static boolean isNumber(String name) {
+        // A pure integer number cannot be used as a string label,
+        // since Bibtex will read it as a number.
+        try {
+<span class="nc" id="L153">            Integer.parseInt(name);</span>
+<span class="nc" id="L154">            return true;</span>
+<span class="nc" id="L155">        } catch (NumberFormatException ex) {</span>
+<span class="nc" id="L156">            return false;</span>
+        }
+    }
+
+    private void sortStrings() {
+        // Rebuild our sorted set of strings:
+<span class="nc" id="L162">        strings = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        for (String s : base.getStringKeySet()) {</span>
+<span class="nc" id="L164">            strings.add(base.getString(s));</span>
+<span class="nc" id="L165">        }</span>
+<span class="nc" id="L166">        Collections.sort(strings, new BibtexStringComparator(false));</span>
+<span class="nc" id="L167">    }</span>
+
+    public void refreshTable() {
+<span class="nc" id="L170">        sortStrings();</span>
+<span class="nc" id="L171">        table.revalidate();</span>
+<span class="nc" id="L172">        table.clearSelection();</span>
+<span class="nc" id="L173">        table.repaint();</span>
+<span class="nc" id="L174">    }</span>
+
+    public void saveDatabase() {
+<span class="nc" id="L177">        panel.runCommand(Actions.SAVE);</span>
+<span class="nc" id="L178">    }</span>
+
+    public void assureNotEditing() {
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        if (table.isEditing()) {</span>
+<span class="nc" id="L182">            int col = table.getEditingColumn();</span>
+<span class="nc" id="L183">            int row = table.getEditingRow();</span>
+<span class="nc" id="L184">            table.getCellEditor(row, col).stopCellEditing();</span>
+        }
+<span class="nc" id="L186">    }</span>
+
+    static class SaveDatabaseAction extends AbstractAction {
+
+        private final StringDialog parent;
+
+
+        public SaveDatabaseAction(StringDialog parent) {
+<span class="nc" id="L194">            super(&quot;Save library&quot;, IconTheme.JabRefIcons.SAVE.getIcon());</span>
+<span class="nc" id="L195">            putValue(Action.SHORT_DESCRIPTION, Localization.lang(&quot;Save library&quot;));</span>
+<span class="nc" id="L196">            this.parent = parent;</span>
+<span class="nc" id="L197">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L201">            parent.saveDatabase();</span>
+<span class="nc" id="L202">        }</span>
+    }
+
+    class StringTable extends JTable {
+
+<span class="nc" id="L207">        private final JScrollPane sp = new JScrollPane(this);</span>
+
+
+<span class="nc" id="L210">        public StringTable(StringTableModel stm) {</span>
+<span class="nc" id="L211">            super(stm);</span>
+<span class="nc" id="L212">            setShowVerticalLines(true);</span>
+<span class="nc" id="L213">            setShowHorizontalLines(true);</span>
+<span class="nc" id="L214">            setColumnSelectionAllowed(true);</span>
+<span class="nc" id="L215">            DefaultCellEditor dce = new DefaultCellEditor(new JTextField());</span>
+<span class="nc" id="L216">            dce.setClickCountToStart(2);</span>
+<span class="nc" id="L217">            setDefaultEditor(String.class, dce);</span>
+<span class="nc" id="L218">            TableColumnModel cm = getColumnModel();</span>
+<span class="nc" id="L219">            cm.getColumn(0).setPreferredWidth(800);</span>
+<span class="nc" id="L220">            cm.getColumn(1).setPreferredWidth(2000);</span>
+<span class="nc" id="L221">            getInputMap().put(Globals.getKeyPrefs().getKey(KeyBinding.CLOSE), &quot;close&quot;);</span>
+<span class="nc" id="L222">            getActionMap().put(&quot;close&quot;, closeAction);</span>
+<span class="nc" id="L223">            getInputMap().put(Globals.getKeyPrefs().getKey(KeyBinding.HELP), &quot;help&quot;);</span>
+<span class="nc" id="L224">            getActionMap().put(&quot;help&quot;, helpAction);</span>
+<span class="nc" id="L225">        }</span>
+
+        public JComponent getPane() {
+<span class="nc" id="L228">            return sp;</span>
+        }
+
+    }
+
+    class StringTableModel extends AbstractTableModel {
+
+        private final BibDatabase tbase;
+        private final StringDialog parent;
+
+
+<span class="nc" id="L239">        public StringTableModel(StringDialog parent, BibDatabase base) {</span>
+<span class="nc" id="L240">            this.parent = parent;</span>
+<span class="nc" id="L241">            this.tbase = base;</span>
+<span class="nc" id="L242">        }</span>
+
+        @Override
+        public Object getValueAt(int row, int col) {
+<span class="nc bnc" id="L246" title="All 2 branches missed.">            return col == 0 ? strings.get(row).getName() : strings.get(row).getContent();</span>
+        }
+
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+<span class="nc bnc" id="L251" title="All 2 branches missed.">            if (col == 0) {</span>
+                // Change name of string.
+<span class="nc bnc" id="L253" title="All 2 branches missed.">                if (!value.equals(strings.get(row).getName())) {</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">                    if (tbase.hasStringLabel((String) value)) {</span>
+<span class="nc" id="L255">                        JOptionPane.showMessageDialog(parent, Localization.lang(&quot;A string with that label already exists&quot;),</span>
+<span class="nc" id="L256">                                Localization.lang(&quot;Label&quot;), JOptionPane.ERROR_MESSAGE);</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">                    } else if (((String) value).contains(&quot; &quot;)) {</span>
+<span class="nc" id="L258">                        JOptionPane.showMessageDialog(parent, Localization.lang(&quot;The label of the string cannot contain spaces.&quot;),</span>
+<span class="nc" id="L259">                                Localization.lang(&quot;Label&quot;), JOptionPane.ERROR_MESSAGE);</span>
+<span class="nc bnc" id="L260" title="All 2 branches missed.">                    } else if (((String) value).contains(&quot;#&quot;)) {</span>
+<span class="nc" id="L261">                        JOptionPane.showMessageDialog(parent, Localization.lang(&quot;The label of the string cannot contain the '#' character.&quot;),</span>
+<span class="nc" id="L262">                                Localization.lang(&quot;Label&quot;), JOptionPane.ERROR_MESSAGE);</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">                    } else if (isNumber((String) value)) {</span>
+<span class="nc" id="L264">                        JOptionPane.showMessageDialog(parent, Localization.lang(&quot;The label of the string cannot be a number.&quot;),</span>
+<span class="nc" id="L265">                                Localization.lang(&quot;Label&quot;), JOptionPane.ERROR_MESSAGE);</span>
+                    } else {
+                        // Store undo information.
+<span class="nc" id="L268">                        BibtexString subject = strings.get(row);</span>
+<span class="nc" id="L269">                        panel.getUndoManager().addEdit(</span>
+<span class="nc" id="L270">                                new UndoableStringChange(panel, subject, true, subject.getName(), (String) value));</span>
+<span class="nc" id="L271">                        subject.setName((String) value);</span>
+<span class="nc" id="L272">                        panel.markBaseChanged();</span>
+<span class="nc" id="L273">                        refreshTable();</span>
+<span class="nc" id="L274">                    }</span>
+                }
+            } else {
+                // Change content of string.
+<span class="nc" id="L278">                BibtexString subject = strings.get(row);</span>
+
+<span class="nc bnc" id="L280" title="All 2 branches missed.">                if (!value.equals(subject.getContent())) {</span>
+                    try {
+<span class="nc" id="L282">                        new LatexFieldFormatter(Globals.prefs.getLatexFieldFormatterPreferences())</span>
+<span class="nc" id="L283">                                .format((String) value, &quot;__dummy&quot;);</span>
+<span class="nc" id="L284">                    } catch (InvalidFieldValueException ex) {</span>
+<span class="nc" id="L285">                        return;</span>
+<span class="nc" id="L286">                    }</span>
+                    // Store undo information.
+<span class="nc" id="L288">                    panel.getUndoManager().addEdit(</span>
+<span class="nc" id="L289">                            new UndoableStringChange(panel, subject, false, subject.getContent(), (String) value));</span>
+
+<span class="nc" id="L291">                    subject.setContent((String) value);</span>
+<span class="nc" id="L292">                    panel.markBaseChanged();</span>
+                }
+            }
+<span class="nc" id="L295">        }</span>
+
+        @Override
+        public int getColumnCount() {
+<span class="nc" id="L299">            return 2;</span>
+        }
+
+        @Override
+        public int getRowCount() {
+<span class="nc" id="L304">            return strings.size();</span>
+        }
+
+        @Override
+        public String getColumnName(int col) {
+<span class="nc bnc" id="L309" title="All 2 branches missed.">            return col == 0 ? Localization.lang(&quot;Label&quot;) :</span>
+<span class="nc" id="L310">                Localization.lang(&quot;Content&quot;);</span>
+        }
+
+        @Override
+        public boolean isCellEditable(int row, int col) {
+<span class="nc" id="L315">            return true;</span>
+        }
+    }
+
+    class CloseAction extends AbstractAction {
+
+<span class="nc" id="L321">        public CloseAction() {</span>
+<span class="nc" id="L322">            super(&quot;Close window&quot;);</span>
+<span class="nc" id="L323">            putValue(Action.SHORT_DESCRIPTION, Localization.lang(&quot;Close dialog&quot;));</span>
+<span class="nc" id="L324">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L328">            panel.stringsClosing();</span>
+<span class="nc" id="L329">            dispose();</span>
+<span class="nc" id="L330">        }</span>
+    }
+
+    class NewStringAction extends AbstractAction {
+
+        private final StringDialog parent;
+
+
+<span class="nc" id="L338">        public NewStringAction(StringDialog parent) {</span>
+<span class="nc" id="L339">            super(&quot;New string&quot;, IconTheme.JabRefIcons.ADD.getIcon());</span>
+<span class="nc" id="L340">            putValue(Action.SHORT_DESCRIPTION, Localization.lang(&quot;New string&quot;));</span>
+<span class="nc" id="L341">            this.parent = parent;</span>
+<span class="nc" id="L342">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L346">            String name = JOptionPane.showInputDialog(parent, Localization.lang(&quot;Please enter the string's label&quot;));</span>
+<span class="nc bnc" id="L347" title="All 2 branches missed.">            if (name == null) {</span>
+<span class="nc" id="L348">                return;</span>
+            }
+<span class="nc bnc" id="L350" title="All 2 branches missed.">            if (isNumber(name)) {</span>
+<span class="nc" id="L351">                JOptionPane.showMessageDialog(parent, Localization.lang(&quot;The label of the string cannot be a number.&quot;),</span>
+<span class="nc" id="L352">                        Localization.lang(&quot;Label&quot;), JOptionPane.ERROR_MESSAGE);</span>
+<span class="nc" id="L353">                return;</span>
+            }
+<span class="nc bnc" id="L355" title="All 2 branches missed.">            if (name.contains(&quot;#&quot;)) {</span>
+<span class="nc" id="L356">                JOptionPane.showMessageDialog(parent, Localization.lang(&quot;The label of the string cannot contain the '#' character.&quot;),</span>
+<span class="nc" id="L357">                        Localization.lang(&quot;Label&quot;), JOptionPane.ERROR_MESSAGE);</span>
+<span class="nc" id="L358">                return;</span>
+            }
+<span class="nc bnc" id="L360" title="All 2 branches missed.">            if (name.contains(&quot; &quot;)) {</span>
+<span class="nc" id="L361">                JOptionPane.showMessageDialog(parent, Localization.lang(&quot;The label of the string cannot contain spaces.&quot;),</span>
+<span class="nc" id="L362">                        Localization.lang(&quot;Label&quot;), JOptionPane.ERROR_MESSAGE);</span>
+<span class="nc" id="L363">                return;</span>
+            }
+            try {
+<span class="nc" id="L366">                BibtexString bs = new BibtexString(name, &quot;&quot;);</span>
+
+                // Store undo information:
+<span class="nc" id="L369">                panel.getUndoManager().addEdit(new UndoableInsertString(panel, panel.getDatabase(), bs));</span>
+
+<span class="nc" id="L371">                base.addString(bs);</span>
+<span class="nc" id="L372">                refreshTable();</span>
+<span class="nc" id="L373">                panel.markBaseChanged();</span>
+<span class="nc" id="L374">            } catch (KeyCollisionException ex) {</span>
+<span class="nc" id="L375">                JOptionPane.showMessageDialog(parent,</span>
+<span class="nc" id="L376">                        Localization.lang(&quot;A string with that label already exists&quot;),</span>
+<span class="nc" id="L377">                        Localization.lang(&quot;Label&quot;), JOptionPane.ERROR_MESSAGE);</span>
+<span class="nc" id="L378">            }</span>
+<span class="nc" id="L379">        }</span>
+    }
+
+    class RemoveStringAction extends AbstractAction {
+
+        private final StringDialog parent;
+
+
+<span class="nc" id="L387">        public RemoveStringAction(StringDialog parent) {</span>
+<span class="nc" id="L388">            super(&quot;Remove selected strings&quot;, IconTheme.JabRefIcons.REMOVE.getIcon());</span>
+<span class="nc" id="L389">            putValue(Action.SHORT_DESCRIPTION, Localization.lang(&quot;Remove selected strings&quot;));</span>
+<span class="nc" id="L390">            this.parent = parent;</span>
+<span class="nc" id="L391">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L395">            int[] sel = table.getSelectedRows();</span>
+<span class="nc bnc" id="L396" title="All 2 branches missed.">            if (sel.length &gt; 0) {</span>
+
+                // Make sure no cell is being edited, as caused by the
+                // keystroke. This makes the content hang on the screen.
+<span class="nc" id="L400">                assureNotEditing();</span>
+
+<span class="nc bnc" id="L402" title="All 2 branches missed.">                String msg = (sel.length &gt; 1 ? Localization.lang(&quot;Really delete the %0 selected entries?&quot;,</span>
+<span class="nc" id="L403">                        Integer.toString(sel.length)) : Localization.lang(&quot;Really delete the selected entry?&quot;));</span>
+<span class="nc" id="L404">                int answer = JOptionPane.showConfirmDialog(parent, msg, Localization.lang(&quot;Delete strings&quot;),</span>
+                        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+<span class="nc bnc" id="L406" title="All 2 branches missed.">                if (answer == JOptionPane.YES_OPTION) {</span>
+<span class="nc" id="L407">                    CompoundEdit ce = new CompoundEdit();</span>
+<span class="nc bnc" id="L408" title="All 2 branches missed.">                    for (int i = sel.length - 1; i &gt;= 0; i--) {</span>
+                        // Delete the strings backwards to avoid moving indexes.
+
+<span class="nc" id="L411">                        BibtexString subject = strings.get(sel[i]);</span>
+
+                        // Store undo information:
+<span class="nc" id="L414">                        ce.addEdit(new UndoableRemoveString(panel, base, subject));</span>
+
+<span class="nc" id="L416">                        base.removeString(subject.getId());</span>
+                    }
+<span class="nc" id="L418">                    ce.end();</span>
+<span class="nc" id="L419">                    panel.getUndoManager().addEdit(ce);</span>
+
+<span class="nc" id="L421">                    refreshTable();</span>
+<span class="nc bnc" id="L422" title="All 2 branches missed.">                    if (!base.hasNoStrings()) {</span>
+<span class="nc" id="L423">                        table.setRowSelectionInterval(0, 0);</span>
+                    }
+                }
+            }
+<span class="nc" id="L427">        }</span>
+    }
+
+    class UndoAction extends AbstractAction {
+
+<span class="nc" id="L432">        public UndoAction() {</span>
+<span class="nc" id="L433">            super(&quot;Undo&quot;, IconTheme.JabRefIcons.UNDO.getIcon());</span>
+<span class="nc" id="L434">            putValue(Action.SHORT_DESCRIPTION, Localization.lang(&quot;Undo&quot;));</span>
+<span class="nc" id="L435">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L439">            panel.runCommand(Actions.UNDO);</span>
+<span class="nc" id="L440">        }</span>
+    }
+
+    class RedoAction extends AbstractAction {
+
+<span class="nc" id="L445">        public RedoAction() {</span>
+<span class="nc" id="L446">            super(&quot;Redo&quot;, IconTheme.JabRefIcons.REDO.getIcon());</span>
+<span class="nc" id="L447">            putValue(Action.SHORT_DESCRIPTION, Localization.lang(&quot;Redo&quot;));</span>
+<span class="nc" id="L448">        }</span>
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L452">            panel.runCommand(Actions.REDO);</span>
+<span class="nc" id="L453">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

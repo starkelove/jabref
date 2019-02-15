@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibtexKeyPatternPreferences.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.bibtexkeypattern</a> &gt; <span class="el_source">BibtexKeyPatternPreferences.java</span></div><h1>BibtexKeyPatternPreferences.java</h1><pre class="source lang-java linenums">package org.jabref.logic.bibtexkeypattern;
+
+import org.jabref.model.bibtexkeypattern.GlobalBibtexKeyPattern;
+
+public class BibtexKeyPatternPreferences {
+
+    private final String keyPatternRegex;
+    private final String keyPatternReplacement;
+    private final boolean alwaysAddLetter;
+    private final boolean firstLetterA;
+    private final boolean enforceLegalKey;
+    private final GlobalBibtexKeyPattern keyPattern;
+    private Character keywordDelimiter;
+
+    public BibtexKeyPatternPreferences(String keyPatternRegex, String keyPatternReplacement, boolean alwaysAddLetter,
+                                       boolean firstLetterA, boolean enforceLegalKey, GlobalBibtexKeyPattern keyPattern,
+<span class="fc" id="L17">                                       Character keywordDelimiter) {</span>
+<span class="fc" id="L18">        this.keyPatternRegex = keyPatternRegex;</span>
+<span class="fc" id="L19">        this.keyPatternReplacement = keyPatternReplacement;</span>
+<span class="fc" id="L20">        this.alwaysAddLetter = alwaysAddLetter;</span>
+<span class="fc" id="L21">        this.firstLetterA = firstLetterA;</span>
+<span class="fc" id="L22">        this.enforceLegalKey = enforceLegalKey;</span>
+<span class="fc" id="L23">        this.keyPattern = keyPattern;</span>
+<span class="fc" id="L24">        this.keywordDelimiter = keywordDelimiter;</span>
+<span class="fc" id="L25">    }</span>
+
+    public String getKeyPatternRegex() {
+<span class="fc" id="L28">        return keyPatternRegex;</span>
+    }
+
+    public String getKeyPatternReplacement() {
+<span class="fc" id="L32">        return keyPatternReplacement;</span>
+    }
+
+    public boolean isAlwaysAddLetter() {
+<span class="fc" id="L36">        return alwaysAddLetter;</span>
+    }
+
+    public boolean isFirstLetterA() {
+<span class="fc" id="L40">        return firstLetterA;</span>
+    }
+
+    public boolean isEnforceLegalKey() {
+<span class="fc" id="L44">        return enforceLegalKey;</span>
+    }
+
+    public GlobalBibtexKeyPattern getKeyPattern() {
+<span class="fc" id="L48">        return keyPattern;</span>
+    }
+
+    public Character getKeywordDelimiter() {
+<span class="fc" id="L52">        return keywordDelimiter;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

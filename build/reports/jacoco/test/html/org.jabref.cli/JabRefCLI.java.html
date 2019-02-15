@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JabRefCLI.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.cli</a> &gt; <span class="el_source">JabRefCLI.java</span></div><h1>JabRefCLI.java</h1><pre class="source lang-java linenums">package org.jabref.cli;
+
+import java.util.List;
+
+import org.jabref.Globals;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseMode;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class JabRefCLI {
+
+<span class="fc" id="L20">    private static final Logger LOGGER = LoggerFactory.getLogger(JabRefCLI.class);</span>
+    private final CommandLine cl;
+    private List&lt;String&gt; leftOver;
+
+<span class="fc" id="L24">    public JabRefCLI(String[] args) {</span>
+
+<span class="fc" id="L26">        Options options = getOptions();</span>
+
+        try {
+<span class="fc" id="L29">            this.cl = new DefaultParser().parse(options, args);</span>
+<span class="fc" id="L30">            this.leftOver = cl.getArgList();</span>
+<span class="nc" id="L31">        } catch (ParseException e) {</span>
+<span class="nc" id="L32">            LOGGER.warn(&quot;Problem parsing arguments&quot;, e);</span>
+
+<span class="nc" id="L34">            this.printUsage();</span>
+<span class="nc" id="L35">            throw new RuntimeException();</span>
+<span class="fc" id="L36">        }</span>
+<span class="fc" id="L37">    }</span>
+
+    public static String getExportMatchesSyntax() {
+<span class="fc" id="L40">        return String.format(&quot;[%s]searchTerm,outputFile: %s[,%s]&quot;,</span>
+<span class="fc" id="L41">                Localization.lang(&quot;field&quot;),</span>
+<span class="fc" id="L42">                Localization.lang(&quot;file&quot;),</span>
+<span class="fc" id="L43">                Localization.lang(&quot;exportFormat&quot;));</span>
+    }
+
+    public boolean isHelp() {
+<span class="nc" id="L47">        return cl.hasOption(&quot;help&quot;);</span>
+    }
+
+    public boolean isShowVersion() {
+<span class="nc" id="L51">        return cl.hasOption(&quot;version&quot;);</span>
+    }
+
+    public boolean isBlank() {
+<span class="nc" id="L55">        return cl.hasOption(&quot;blank&quot;);</span>
+    }
+
+    public boolean isLoadSession() {
+<span class="nc" id="L59">        return cl.hasOption(&quot;loads&quot;);</span>
+    }
+
+    public boolean isDisableGui() {
+<span class="fc" id="L63">        return cl.hasOption(&quot;nogui&quot;);</span>
+    }
+
+    public boolean isPreferencesExport() {
+<span class="nc" id="L67">        return cl.hasOption(&quot;prexp&quot;);</span>
+    }
+
+    public String getPreferencesExport() {
+<span class="fc" id="L71">        return cl.getOptionValue(&quot;prexp&quot;, &quot;jabref_prefs.xml&quot;);</span>
+    }
+
+    public boolean isPreferencesImport() {
+<span class="nc" id="L75">        return cl.hasOption(&quot;primp&quot;);</span>
+    }
+
+    public String getPreferencesImport() {
+<span class="nc" id="L79">        return cl.getOptionValue(&quot;primp&quot;, &quot;jabref_prefs.xml&quot;);</span>
+    }
+
+    public boolean isPreferencesReset() {
+<span class="nc" id="L83">        return cl.hasOption(&quot;prdef&quot;);</span>
+    }
+
+    public String getPreferencesReset() {
+<span class="nc" id="L87">        return cl.getOptionValue(&quot;prdef&quot;);</span>
+    }
+
+    public boolean isFileExport() {
+<span class="nc" id="L91">        return cl.hasOption(&quot;output&quot;);</span>
+    }
+
+    public String getFileExport() {
+<span class="fc" id="L95">        return cl.getOptionValue(&quot;output&quot;);</span>
+    }
+
+    public boolean isBibtexImport() {
+<span class="fc" id="L99">        return cl.hasOption(&quot;importBibtex&quot;);</span>
+    }
+
+    public String getBibtexImport() {
+<span class="fc" id="L103">        return cl.getOptionValue(&quot;importBibtex&quot;);</span>
+    }
+
+    public boolean isFileImport() {
+<span class="nc" id="L107">        return cl.hasOption(&quot;import&quot;);</span>
+    }
+
+    public String getFileImport() {
+<span class="fc" id="L111">        return cl.getOptionValue(&quot;import&quot;);</span>
+    }
+
+    public boolean isAuxImport() {
+<span class="nc" id="L115">        return cl.hasOption(&quot;aux&quot;);</span>
+    }
+
+    public String getAuxImport() {
+<span class="nc" id="L119">        return cl.getOptionValue(&quot;aux&quot;);</span>
+    }
+
+    public boolean isImportToOpenBase() {
+<span class="nc" id="L123">        return cl.hasOption(&quot;importToOpen&quot;);</span>
+    }
+
+    public String getImportToOpenBase() {
+<span class="nc" id="L127">        return cl.getOptionValue(&quot;importToOpen&quot;);</span>
+    }
+
+    public boolean isDebugLogging() {
+<span class="nc" id="L131">        return cl.hasOption(&quot;debug&quot;);</span>
+    }
+
+    public boolean isFetcherEngine() {
+<span class="nc" id="L135">        return cl.hasOption(&quot;fetch&quot;);</span>
+    }
+
+    public String getFetcherEngine() {
+<span class="nc" id="L139">        return cl.getOptionValue(&quot;fetch&quot;);</span>
+    }
+
+    public boolean isExportMatches() {
+<span class="nc" id="L143">        return cl.hasOption(&quot;exportMatches&quot;);</span>
+    }
+
+    public String getExportMatches() {
+<span class="nc" id="L147">        return cl.getOptionValue(&quot;exportMatches&quot;);</span>
+    }
+
+<span class="nc" id="L150">    public boolean isGenerateBibtexKeys() { return cl.hasOption(&quot;generateBibtexKeys&quot;); }</span>
+
+<span class="nc" id="L152">    public boolean isAutomaticallySetFileLinks() { return cl.hasOption(&quot;automaticallySetFileLinks&quot;); }</span>
+
+    private Options getOptions() {
+<span class="fc" id="L155">        Options options = new Options();</span>
+
+        // boolean options
+<span class="fc" id="L158">        options.addOption(&quot;v&quot;, &quot;version&quot;, false, Localization.lang(&quot;Display version&quot;));</span>
+<span class="fc" id="L159">        options.addOption(&quot;n&quot;, &quot;nogui&quot;, false, Localization.lang(&quot;No GUI. Only process command line options.&quot;));</span>
+<span class="fc" id="L160">        options.addOption(&quot;h&quot;, &quot;help&quot;, false, Localization.lang(&quot;Display help on command line options&quot;));</span>
+<span class="fc" id="L161">        options.addOption(&quot;b&quot;, &quot;blank&quot;, false, Localization.lang(&quot;Do not open any files at startup&quot;));</span>
+<span class="fc" id="L162">        options.addOption(null, &quot;debug&quot;, false, Localization.lang(&quot;Show debug level messages&quot;));</span>
+
+        // The &quot;-console&quot; option is handled by the install4j launcher
+<span class="fc" id="L165">        options.addOption(null, &quot;console&quot;, false, Localization.lang(&quot;Show console output (only necessary when the launcher is used)&quot;));</span>
+
+<span class="fc" id="L167">        options.addOption(Option.builder(&quot;i&quot;).</span>
+<span class="fc" id="L168">                longOpt(&quot;import&quot;).</span>
+<span class="fc" id="L169">                desc(String.format(&quot;%s: %s[,import format]&quot;, Localization.lang(&quot;Import file&quot;),</span>
+<span class="fc" id="L170">                        Localization.lang(&quot;filename&quot;))).</span>
+<span class="fc" id="L171">                hasArg().</span>
+<span class="fc" id="L172">                argName(&quot;FILE&quot;).build());</span>
+
+<span class="fc" id="L174">        options.addOption(</span>
+<span class="fc" id="L175">                Option.builder(&quot;ib&quot;)</span>
+<span class="fc" id="L176">                      .longOpt(&quot;importBibtex&quot;)</span>
+<span class="fc" id="L177">                        .desc(String.format(&quot;%s: %s[,importBibtex bibtexString]&quot;, Localization.lang(&quot;Import&quot;) + &quot; &quot; + BibDatabaseMode.BIBTEX.getFormattedName(), Localization.lang(&quot;filename&quot;)))</span>
+<span class="fc" id="L178">                      .hasArg()</span>
+<span class="fc" id="L179">                      .argName(&quot;FILE&quot;)</span>
+<span class="fc" id="L180">                      .build());</span>
+
+<span class="fc" id="L182">        options.addOption(Option.builder(&quot;o&quot;).</span>
+<span class="fc" id="L183">                longOpt(&quot;output&quot;).</span>
+<span class="fc" id="L184">                desc(String.format(&quot;%s: %s[,export format]&quot;, Localization.lang(&quot;Output or export file&quot;),</span>
+<span class="fc" id="L185">                        Localization.lang(&quot;filename&quot;))).</span>
+<span class="fc" id="L186">                hasArg().</span>
+<span class="fc" id="L187">                argName(&quot;FILE&quot;).</span>
+<span class="fc" id="L188">                build());</span>
+
+<span class="fc" id="L190">        options.addOption(Option.builder(&quot;x&quot;).</span>
+<span class="fc" id="L191">                longOpt(&quot;prexp&quot;).</span>
+<span class="fc" id="L192">                desc(Localization.lang(&quot;Export preferences to file&quot;)).</span>
+<span class="fc" id="L193">                hasArg().</span>
+<span class="fc" id="L194">                argName(&quot;FILE&quot;).</span>
+<span class="fc" id="L195">                build());</span>
+
+<span class="fc" id="L197">        options.addOption(Option.builder(&quot;p&quot;).</span>
+<span class="fc" id="L198">                longOpt(&quot;primp&quot;).</span>
+<span class="fc" id="L199">                desc(Localization.lang(&quot;Import preferences from file&quot;)).</span>
+<span class="fc" id="L200">                hasArg().</span>
+<span class="fc" id="L201">                argName(&quot;FILE&quot;).</span>
+<span class="fc" id="L202">                build());</span>
+<span class="fc" id="L203">        options.addOption(Option.builder(&quot;d&quot;).</span>
+<span class="fc" id="L204">                longOpt(&quot;prdef&quot;).</span>
+<span class="fc" id="L205">                desc(Localization.lang(&quot;Reset preferences (key1,key2,... or 'all')&quot;)).</span>
+<span class="fc" id="L206">                hasArg().</span>
+<span class="fc" id="L207">                argName(&quot;FILE&quot;).</span>
+<span class="fc" id="L208">                build());</span>
+
+<span class="fc" id="L210">        options.addOption(Option.builder(&quot;a&quot;).</span>
+<span class="fc" id="L211">                longOpt(&quot;aux&quot;).</span>
+<span class="fc" id="L212">                desc(String.format(&quot;%s: %s[.aux],%s[.bib]&quot;, Localization.lang(&quot;Sublibrary from AUX&quot;),</span>
+<span class="fc" id="L213">                        Localization.lang(&quot;file&quot;),</span>
+<span class="fc" id="L214">                        Localization.lang(&quot;new&quot;))).</span>
+<span class="fc" id="L215">                hasArg().</span>
+<span class="fc" id="L216">                argName(&quot;FILE&quot;).</span>
+<span class="fc" id="L217">                build());</span>
+
+<span class="fc" id="L219">        options.addOption(Option.builder().</span>
+<span class="fc" id="L220">                longOpt(&quot;importToOpen&quot;).</span>
+<span class="fc" id="L221">                desc(Localization.lang(&quot;Import to open tab&quot;)).</span>
+<span class="fc" id="L222">                hasArg().</span>
+<span class="fc" id="L223">                argName(&quot;FILE&quot;).</span>
+<span class="fc" id="L224">                build());</span>
+
+<span class="fc" id="L226">        options.addOption(Option.builder(&quot;f&quot;).</span>
+<span class="fc" id="L227">                longOpt(&quot;fetch&quot;).</span>
+<span class="fc" id="L228">                desc(Localization.lang(&quot;Run fetcher, e.g. \&quot;--fetch=Medline:cancer\&quot;&quot;)).</span>
+<span class="fc" id="L229">                hasArg().</span>
+<span class="fc" id="L230">                argName(&quot;FILE&quot;).</span>
+<span class="fc" id="L231">                build());</span>
+
+<span class="fc" id="L233">        options.addOption(Option.builder(&quot;m&quot;).</span>
+<span class="fc" id="L234">                longOpt(&quot;exportMatches&quot;).</span>
+<span class="fc" id="L235">                desc(JabRefCLI.getExportMatchesSyntax()).</span>
+<span class="fc" id="L236">                hasArg().</span>
+<span class="fc" id="L237">                argName(&quot;FILE&quot;).</span>
+<span class="fc" id="L238">                build());</span>
+
+<span class="fc" id="L240">        options.addOption(Option.builder(&quot;g&quot;).</span>
+<span class="fc" id="L241">                longOpt(&quot;generateBibtexKeys&quot;).</span>
+<span class="fc" id="L242">                desc(Localization.lang(&quot;Regenerate all keys for the entries in a BibTeX file&quot;))</span>
+<span class="fc" id="L243">                .build());</span>
+
+<span class="fc" id="L245">        options.addOption(Option.builder(&quot;asfl&quot;).</span>
+<span class="fc" id="L246">                longOpt(&quot;automaticallySetFileLinks&quot;).</span>
+<span class="fc" id="L247">                desc(Localization.lang(&quot;Automatically set file links&quot;)).</span>
+<span class="fc" id="L248">                build());</span>
+
+<span class="fc" id="L250">        return options;</span>
+    }
+
+    public void displayVersion() {
+<span class="nc" id="L254">        System.out.println(getVersionInfo());</span>
+<span class="nc" id="L255">    }</span>
+
+    public void printUsage() {
+<span class="nc" id="L258">        String header = &quot;&quot;;</span>
+
+<span class="nc" id="L260">        String importFormats = Globals.IMPORT_FORMAT_READER.getImportFormatList();</span>
+<span class="nc" id="L261">        String importFormatsList = String.format(&quot;%s:%n%s%n&quot;, Localization.lang(&quot;Available import formats&quot;), importFormats);</span>
+
+<span class="nc" id="L263">        String outFormats = Globals.exportFactory.getExportersAsString(70, 20, &quot;&quot;);</span>
+<span class="nc" id="L264">        String outFormatsList = String.format(&quot;%s: %s%n&quot;, Localization.lang(&quot;Available export formats&quot;), outFormats);</span>
+
+<span class="nc" id="L266">        String footer = '\n' + importFormatsList + outFormatsList + &quot;\nPlease report issues at https://github.com/JabRef/jabref/issues.&quot;;</span>
+
+<span class="nc" id="L268">        HelpFormatter formatter = new HelpFormatter();</span>
+<span class="nc" id="L269">        formatter.printHelp(&quot;jabref [OPTIONS] [BIBTEX_FILE]\n\nOptions:&quot;, header, getOptions(), footer, true);</span>
+<span class="nc" id="L270">    }</span>
+
+    private String getVersionInfo() {
+<span class="nc" id="L273">        return String.format(&quot;JabRef %s&quot;, Globals.BUILD_INFO.getVersion());</span>
+    }
+
+    public List&lt;String&gt; getLeftOver() {
+<span class="fc" id="L277">        return leftOver;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

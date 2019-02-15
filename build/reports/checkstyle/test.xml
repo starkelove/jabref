@@ -1,0 +1,755 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="8.17">
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/CatchExceptionsFromThread.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/JabRefPreferencesTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/TestIconsProperties.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/architecture/MainArchitectureTests.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/architecture/MainArchitectureTestsWithArchUnit.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/architecture/TestArchitectureTests.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/cleanup/CleanupActionsListModelTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/cli/AuxCommandLineTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/cli/JabRefCLITest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/AWTExceptionHandler.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/AbstractUITest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/BasePanelTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/DialogTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/DialogTest2.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/EntryTableTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/IdFetcherDialogTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/ParameterizedDialogNewEntryTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/ParameterizedDialogTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/ParameterizedMenuNewEntryTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/UpdateTimestampListenerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/autocompleter/AutoCompleterUtil.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/autocompleter/BibEntrySuggestionProviderTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/autocompleter/DefaultAutoCompleterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/autocompleter/FieldValueSuggestionProviderTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/autocompleter/PersonNameSuggestionProviderTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/entryeditor/SourceTabTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/entryeditor/fileannotationtab/FileAnnotationViewModelTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/exporter/SaveAllActionTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/exporter/SaveDatabaseActionTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/externalfiles/AutoSetFileLinksUtilTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/fieldeditors/IdentifierEditorViewModelTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/fieldeditors/LinkedFileViewModelTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/groups/GroupNodeViewModelTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/groups/GroupTreeViewModelTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/journals/ManageJournalAbbreviationsViewModelTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/keyboard/KeyBindingsDialogViewModelTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/mergeentries/DiffHighlightingTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/search/ContainsAndRegexBasedSearchRuleDescriberTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/search/GrammarBasedSearchRuleDescriberTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/search/SearchResultsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/search/TextFlowEqualityHelper.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/util/FileDialogConfigurationTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/util/RecursiveTreeItemTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/util/TooltipTextUtilTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/gui/worker/CitationStyleToClipboardWorkerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/TypedBibEntryTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/autosaveandbackup/BackupManagerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/auxparser/AuxParserTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtex/BibEntryAssert.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtex/BibEntryWriterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtex/DuplicateCheckTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtex/FieldContentParserTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtex/LatexFieldFormatterTests.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtex/comparator/BibDatabaseDiffTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtex/comparator/BibtexStringComparatorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtex/comparator/CrossRefEntryComparatorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtex/comparator/EntryComparatorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtex/comparator/FieldComparatorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtex/comparator/MetaDataDiffTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtexkeypattern/BibtexKeyGeneratorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtexkeypattern/MakeLabelWithDatabaseTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bibtexkeypattern/MakeLabelWithoutDatabaseTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bst/BibtexCaseChangersTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bst/BibtexNameFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bst/BibtexPurifyTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bst/BibtexWidthTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bst/TestVM.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/bst/TextPrefixFunctionTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/citationstyle/CitationStyleGeneratorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/citationstyle/CitationStyleTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/cleanup/BibtexBiblatexRoundtripTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/cleanup/CleanupWorkerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/cleanup/ConvertToBiblatexCleanupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/cleanup/ConvertToBibtexCleanupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/cleanup/EprintCleanupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/cleanup/FieldFormatterCleanupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/cleanup/ISSNCleanupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/cleanup/MoveFilesCleanupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/cleanup/RenamePdfCleanupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/BibTeXMLExporterTestFiles.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/BibtexDatabaseWriterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/CsvExportFormatTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/DocBook5ExporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/ExporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/FieldFormatterCleanupsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/GroupSerializerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/HtmlExportFormatTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/MSBibExportFormatTestFiles.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/MetaDataSerializerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/ModsExportFormatTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/ModsExportFormatTestFiles.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/MsBibExportFormatTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/exporter/XmpExporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/FormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/IdentityFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/AddBracesFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/CleanupUrlFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/ClearFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/EscapeUnderscoresFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/HtmlToLatexFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/HtmlToUnicodeFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/LatexCleanupFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/NormalizeDateFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/NormalizeEnDashesFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/NormalizeMonthFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/NormalizeNamesFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/NormalizePagesFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/OrdinalsToSuperscriptFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/RegexFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/RemoveBracesFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/RemoveHyphenatedNewlinesFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/RemoveNewlinesFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/TrimWhitespaceFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/UnicodeConverterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/UnicodeToLatexFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/bibtexfields/UnitsToLatexFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/casechanger/CapitalizeFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/casechanger/LowerCaseFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/casechanger/ProtectTermsFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/casechanger/SentenceCaseFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/casechanger/TitleCaseFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/casechanger/UpperCaseFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/formatter/minifier/MinifyNameListFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/help/HelpFileTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/BibDatabaseTestsWithFiles.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/DatabaseFileLookupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/FulltextFetchersTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/ImportDataTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/ImportFormatReaderIntegrationTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/ImportFormatReaderTestParameterless.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/ImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/OpenDatabaseTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/WebFetchersTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/ACMPortalFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/ACSTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/AbstractIsbnFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/ArXivTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/AstrophysicsDataSystemTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/CiteSeerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/CrossRefTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/DBLPFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/DOAJFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/DiVATest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/DoiFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/DoiResolutionTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/FulltextFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/GoogleScholarTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/GvkFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/GvkParserTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/IEEETest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/INSPIREFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/IacrEprintFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/IsbnFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/IsbnViaChimboriFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/IsbnViaEbookDeFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/LibraryOfCongressTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/MathSciNetTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/MedlineFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/MrDLibFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/OpenAccessDoiTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/RfcFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/ScienceDirectTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/SpringerFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/SpringerLinkTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/TitleFetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fetcher/ZbMATHTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/BibTeXMLImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/BibTeXMLImporterTestFiles.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/BibTeXMLImporterTestTypes.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/BiblioscapeImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/BiblioscapeImporterTestFiles.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/BiblioscapeImporterTestTypes.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/BibtexImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/BibtexParserTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/CopacImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/CopacImporterTestFiles.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/CustomImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/EndnoteImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/EndnoteXmlImporterTestFiles.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/FreeCiteImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/ImporterTestEngine.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/InspecImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/IsiImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/MedlineImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/MedlineImporterTestFiles.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/MedlinePlainImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/ModsImporterTestFiles.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/MrDLibImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/MsBibImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/MsBibImporterTestFiles.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/OvidImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/PdfContentImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/PdfContentImporterTestFiles.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/PdfXmpImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/RISImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/RISImporterTestFiles.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/RepecNepImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/fileformat/SilverPlatterImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/importer/util/GroupsParserTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/integrity/AbbreviationCheckerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/integrity/BracesCorrectorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/integrity/DateCheckerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/integrity/EntryLinkCheckerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/integrity/IntegrityCheckTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/integrity/NoBibTexFieldCheckerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/integrity/PagesCheckerBibLatexTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/integrity/PersonNamesCheckerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/journals/AbbreviationParserTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/journals/AbbreviationTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/journals/AbbreviationsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/journals/JournalAbbreviationRepositoryTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/journals/ShippedJournalAbbreviationDuplicateTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/l10n/EncodingsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/l10n/LanguageTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/l10n/LocalizationBundleForTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/l10n/LocalizationConsistencyTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/l10n/LocalizationEntry.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/l10n/LocalizationKeyParamsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/l10n/LocalizationKeyTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/l10n/LocalizationParser.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/l10n/LocalizationParserTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/l10n/LocalizationTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/LayoutEntryTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/LayoutTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorAbbreviatorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorAndToSemicolonReplacerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorAndsCommaReplacerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorAndsReplacerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorFirstAbbrLastCommasTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorFirstAbbrLastOxfordCommasTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorFirstFirstCommasTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorFirstFirstTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorFirstLastCommasTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorFirstLastOxfordCommasTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorLF_FFAbbrTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorLF_FFTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorLastFirstAbbrCommasTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorLastFirstAbbrOxfordCommasTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorLastFirstAbbreviatorTester.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorLastFirstCommasTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorLastFirstOxfordCommasTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorLastFirstTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorNatBibTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorOrgSciTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/AuthorsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/CompositeFormatTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/DOICheckTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/DOIStripTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/DateFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/DefaultTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/EntryTypeFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/FileLinkTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/FirstPageTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/HTMLCharsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/HTMLParagraphsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/IfPluralTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/LastPageTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/LatexToUnicodeFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/NameFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/NoSpaceBetweenAbbreviationsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/OrdinalTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/RTFCharsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/RemoveBracketsAddCommaTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/RemoveBracketsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/RemoveTildeTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/RemoveWhitespaceTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/ReplaceTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/ReplaceUnicodeLigaturesFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/RisKeywordsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/RisMonthTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/ToLowerCaseTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/ToUpperCaseTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/WrapContentTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/layout/format/WrapFileLinksTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/msbib/MsBibAuthorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/net/MimeTypeDetectorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/net/URLDownloadTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/net/URLUtilTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/openoffice/CitationEntryTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/openoffice/OOBibStyleTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/openoffice/OOPreFormatterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/openoffice/StyleLoaderTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/pdf/EntryAnnotationImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/pdf/PdfAnnotationImporterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/protectedterms/ProtectedTermsListTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/protectedterms/ProtectedTermsLoaderTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/remote/RemoteCommunicationTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/remote/RemotePreferencesTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/remote/RemoteSetupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/remote/RemoteUtilTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/search/DatabaseSearcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/search/SearchQueryHighlightObservableTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/search/SearchQueryTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/shared/DBMSConnectionTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/shared/DBMSProcessorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/shared/DBMSSynchronizerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/shared/DBMSTypeTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/shared/SynchronizationTestEventListener.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/shared/SynchronizationTestSimulator.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/shared/TestConnector.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/shared/TestManager.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/specialfields/SpecialFieldsUtilsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/util/BracketedPatternTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/util/BuildInfoTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/util/DevelopmentStageTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/util/JavaVersionTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/util/UpdateFieldTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/util/VersionTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/util/io/CiteKeyBasedFileFinderTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/util/io/FileHistoryTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/util/io/FileNameCleanerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/util/io/FileUtilTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/util/io/RegExpBasedFileFinderTests.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/util/strings/StringLengthComparatorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/xmp/XmpUtilReaderTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/logic/xmp/XmpUtilWriterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/migrations/ConvertLegacyExplicitGroupsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/migrations/ConvertMarkingToGroupsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/migrations/MergeReviewIntoCommentActionMigrationTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/migrations/PreferencesMigrationsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/BibDatabaseContextTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/EntryTypesTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/TreeNodeTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/TreeNodeTestData.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/database/BibDatabaseContextTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/database/BibDatabaseModeDetectionTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/database/BibDatabaseTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/database/DuplicationCheckerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/database/KeyChangeListenerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/database/event/AutosaveEventTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/AuthorListParameterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/AuthorListTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/AuthorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/BibEntryEqualityTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/BibEntryTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/BibEntryTests.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/BibtexStringTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/CanonicalBibEntryTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/DateTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/EntryLinkListTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/FieldNameTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/FileFieldWriterTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/IEEETranEntryTypesTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/IdGeneratorTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/KeywordListTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/KeywordTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/MonthTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/identifier/ArXivIdentifierTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/identifier/DOITest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/identifier/EprintTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/identifier/ISBNTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/identifier/ISSNTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/identifier/MathSciNetIdTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/entry/specialfields/SpecialFieldTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/event/TestEventListener.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/groups/AutomaticKeywordGroupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/groups/ExplicitGroupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/groups/GroupTreeNodeTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/groups/SearchGroupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/groups/TexGroupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/groups/WordKeywordGroupTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/metadata/MetaDataTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/pdf/FileAnnotationTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/search/matchers/MatcherSetsTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/search/rules/ContainBasedSearchRuleTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/search/rules/MockSearchMatcher.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/search/rules/SentenceAnalyzerTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/strings/StringUtilTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/model/util/FileHelperTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/performance/BibtexEntryGenerator.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/support/CIServerCondition.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/support/DisabledOnCIServer.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/testutils/TestUtils.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/testutils/category/DatabaseTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/testutils/category/FetcherTest.java">
+</file>
+<file name="/Users/Hedkrans/Desktop/CDATE4/SoftwareEngineering/Lab3/true/jabref/src/test/java/org/jabref/testutils/category/GUITest.java">
+</file>
+</checkstyle>

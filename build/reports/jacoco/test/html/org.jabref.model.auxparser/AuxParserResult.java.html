@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuxParserResult.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.auxparser</a> &gt; <span class="el_source">AuxParserResult.java</span></div><h1>AuxParserResult.java</h1><pre class="source lang-java linenums">package org.jabref.model.auxparser;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibtexString;
+
+public class AuxParserResult {
+
+    private final BibDatabase masterDatabase;
+<span class="fc" id="L15">    private final Set&lt;String&gt; uniqueKeys = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L16">    private final List&lt;String&gt; unresolvedKeys = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L18">    private final BibDatabase auxDatabase = new BibDatabase();</span>
+    private int nestedAuxCount;
+    private int crossRefEntriesCount;
+    private int insertedStrings;
+
+<span class="fc" id="L23">    public AuxParserResult(BibDatabase masterDatabase) {</span>
+<span class="fc" id="L24">        this.masterDatabase = masterDatabase;</span>
+<span class="fc" id="L25">    }</span>
+
+    public BibDatabase getGeneratedBibDatabase() {
+<span class="fc" id="L28">        return auxDatabase;</span>
+    }
+
+    public List&lt;String&gt; getUnresolvedKeys() {
+<span class="fc" id="L32">        return unresolvedKeys;</span>
+    }
+
+    public int getFoundKeysInAux() {
+<span class="fc" id="L36">        return uniqueKeys.size();</span>
+    }
+
+    public int getResolvedKeysCount() {
+<span class="fc" id="L40">        return auxDatabase.getEntryCount() - crossRefEntriesCount;</span>
+    }
+
+    public int getUnresolvedKeysCount() {
+<span class="fc" id="L44">        return unresolvedKeys.size();</span>
+    }
+
+    /**
+     * Query the number of extra entries pulled in due to crossrefs from other entries.
+     *
+     * @return The number of additional entries pulled in due to crossref
+     */
+    public int getCrossRefEntriesCount() {
+<span class="fc" id="L53">        return crossRefEntriesCount;</span>
+    }
+
+    public void increaseCrossRefEntriesCounter() {
+<span class="fc" id="L57">        crossRefEntriesCount++;</span>
+<span class="fc" id="L58">    }</span>
+
+    public void increaseNestedAuxFilesCounter() {
+<span class="fc" id="L61">        nestedAuxCount++;</span>
+<span class="fc" id="L62">    }</span>
+
+    public void insertStrings(Collection&lt;BibtexString&gt; usedStrings) {
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        for (BibtexString string : usedStrings) {</span>
+<span class="fc" id="L66">            auxDatabase.addString(string);</span>
+<span class="fc" id="L67">            insertedStrings++;</span>
+<span class="fc" id="L68">        }</span>
+<span class="fc" id="L69">    }</span>
+
+    public BibDatabase getMasterDatabase() {
+<span class="fc" id="L72">        return masterDatabase;</span>
+    }
+
+    public int getNestedAuxCount() {
+<span class="fc" id="L76">        return nestedAuxCount;</span>
+    }
+
+    public int getInsertedStrings() {
+<span class="fc" id="L80">        return insertedStrings;</span>
+    }
+
+    public Set&lt;String&gt; getUniqueKeys() {
+<span class="fc" id="L84">        return uniqueKeys;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

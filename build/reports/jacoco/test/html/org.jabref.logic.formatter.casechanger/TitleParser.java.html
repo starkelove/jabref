@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TitleParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.formatter.casechanger</a> &gt; <span class="el_source">TitleParser.java</span></div><h1>TitleParser.java</h1><pre class="source lang-java linenums">package org.jabref.logic.formatter.casechanger;
+
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Parses a title to a list of words.
+ */
+<span class="fc" id="L10">public final class TitleParser {</span>
+
+    private StringBuilder buffer;
+    private int wordStart;
+
+    public List&lt;Word&gt; parse(String title) {
+<span class="fc" id="L16">        List&lt;Word&gt; words = new LinkedList&lt;&gt;();</span>
+
+<span class="fc" id="L18">        boolean[] isProtected = determineProtectedChars(title);</span>
+
+<span class="fc" id="L20">        reset();</span>
+
+<span class="fc" id="L22">        int index = 0;</span>
+<span class="fc bfc" id="L23" title="All 2 branches covered.">        for (char c : title.toCharArray()) {</span>
+<span class="fc bfc" id="L24" title="All 2 branches covered.">            if (Character.isWhitespace(c)) {</span>
+<span class="fc" id="L25">                createWord(isProtected).ifPresent(words::add);</span>
+            } else {
+<span class="fc bfc" id="L27" title="All 2 branches covered.">                if (wordStart == -1) {</span>
+<span class="fc" id="L28">                    wordStart = index;</span>
+                }
+
+<span class="fc" id="L31">                buffer.append(c);</span>
+            }
+
+<span class="fc" id="L34">            index++;</span>
+        }
+<span class="fc" id="L36">        createWord(isProtected).ifPresent(words::add);</span>
+
+<span class="fc" id="L38">        return words;</span>
+    }
+
+    private Optional&lt;Word&gt; createWord(boolean[] isProtected) {
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (buffer.length() &lt;= 0) {</span>
+<span class="fc" id="L43">            return Optional.empty();</span>
+        }
+
+<span class="fc" id="L46">        char[] chars = buffer.toString().toCharArray();</span>
+<span class="fc" id="L47">        boolean[] protectedChars = new boolean[chars.length];</span>
+
+<span class="fc" id="L49">        System.arraycopy(isProtected, wordStart, protectedChars, 0, chars.length);</span>
+
+<span class="fc" id="L51">        reset();</span>
+
+<span class="fc" id="L53">        return Optional.of(new Word(chars, protectedChars));</span>
+    }
+
+    private void reset() {
+<span class="fc" id="L57">        wordStart = -1;</span>
+<span class="fc" id="L58">        buffer = new StringBuilder();</span>
+<span class="fc" id="L59">    }</span>
+
+    private static boolean[] determineProtectedChars(String title) {
+<span class="fc" id="L62">        boolean[] isProtected = new boolean[title.length()];</span>
+<span class="fc" id="L63">        char[] chars = title.toCharArray();</span>
+
+<span class="fc" id="L65">        int brackets = 0;</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        for (int i = 0; i &lt; title.length(); i++) {</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">            if (chars[i] == '{') {</span>
+<span class="fc" id="L68">                brackets++;</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">            } else if (chars[i] == '}') {</span>
+<span class="fc" id="L70">                brackets--;</span>
+            } else {
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                isProtected[i] = brackets &gt; 0;</span>
+            }
+        }
+
+<span class="fc" id="L76">        return isProtected;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

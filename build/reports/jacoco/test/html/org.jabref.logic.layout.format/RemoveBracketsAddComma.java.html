@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RemoveBracketsAddComma.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.layout.format</a> &gt; <span class="el_source">RemoveBracketsAddComma.java</span></div><h1>RemoveBracketsAddComma.java</h1><pre class="source lang-java linenums">package org.jabref.logic.layout.format;
+
+import org.jabref.logic.layout.LayoutFormatter;
+
+/**
+ * Remove brackets formatter.
+ */
+<span class="fc" id="L8">public class RemoveBracketsAddComma implements LayoutFormatter {</span>
+    @Override
+    public String format(String fieldText) {
+<span class="fc" id="L11">        StringBuilder builder = new StringBuilder(fieldText.length());</span>
+
+<span class="fc bfc" id="L13" title="All 2 branches covered.">        for (char c: fieldText.toCharArray()) {</span>
+<span class="fc bfc" id="L14" title="All 2 branches covered.">            if (c == '}') {</span>
+<span class="fc" id="L15">                builder.append(',');</span>
+<span class="fc bfc" id="L16" title="All 2 branches covered.">            } else if (c != '{') {</span>
+<span class="fc" id="L17">                builder.append(c);</span>
+            }
+        }
+<span class="fc" id="L20">        return builder.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

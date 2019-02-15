@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReplaceStringViewModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.edit</a> &gt; <span class="el_source">ReplaceStringViewModel.java</span></div><h1>ReplaceStringViewModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.edit;
+
+import java.util.Objects;
+
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
+import org.jabref.gui.AbstractViewModel;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableFieldChange;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+
+public class ReplaceStringViewModel extends AbstractViewModel {
+    private boolean allFieldReplace;
+    private String findString;
+    private String replaceString;
+    private String[] fieldStrings;
+    private BasePanel panel;
+
+<span class="nc" id="L24">    private StringProperty findStringProperty = new SimpleStringProperty();</span>
+<span class="nc" id="L25">    private StringProperty replaceStringProperty = new SimpleStringProperty();</span>
+<span class="nc" id="L26">    private StringProperty fieldStringProperty = new SimpleStringProperty();</span>
+<span class="nc" id="L27">    private BooleanProperty allFieldReplaceProperty = new SimpleBooleanProperty();</span>
+<span class="nc" id="L28">    private BooleanProperty selectOnlyProperty = new SimpleBooleanProperty();</span>
+
+
+<span class="nc" id="L31">    public ReplaceStringViewModel(BasePanel basePanel) {</span>
+<span class="nc" id="L32">        Objects.requireNonNull(basePanel);</span>
+<span class="nc" id="L33">        this.panel = basePanel;</span>
+<span class="nc" id="L34">    }</span>
+
+    public int replace() {
+<span class="nc" id="L37">        findString = findStringProperty.getValue();</span>
+<span class="nc" id="L38">        replaceString = replaceStringProperty.getValue();</span>
+<span class="nc" id="L39">        fieldStrings = fieldStringProperty.getValue().split(&quot;;&quot;);</span>
+<span class="nc" id="L40">        boolean selOnly = selectOnlyProperty.getValue();</span>
+<span class="nc" id="L41">        allFieldReplace = allFieldReplaceProperty.getValue();</span>
+
+<span class="nc" id="L43">        final NamedCompound compound = new NamedCompound(Localization.lang(&quot;Replace string&quot;));</span>
+<span class="nc" id="L44">        int counter = 0;</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        if (selOnly) {</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            for (BibEntry bibEntry : this.panel.getSelectedEntries()) {</span>
+<span class="nc" id="L47">                counter += replaceItem(bibEntry, compound);</span>
+<span class="nc" id="L48">            }</span>
+        } else {
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            for (BibEntry bibEntry : this.panel.getDatabase().getEntries()) {</span>
+<span class="nc" id="L51">                counter += replaceItem(bibEntry, compound);</span>
+<span class="nc" id="L52">            }</span>
+        }
+<span class="nc" id="L54">        return counter;</span>
+    }
+
+    /**
+     * Does the actual operation on a Bibtex entry based on the settings specified in this same dialog. Returns the
+     * number of occurrences replaced.
+     */
+    private int replaceItem(BibEntry entry, NamedCompound compound) {
+<span class="nc" id="L62">        int counter = 0;</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (this.allFieldReplace) {</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            for (String fieldName : entry.getFieldNames()) {</span>
+<span class="nc" id="L65">                counter += replaceField(entry, fieldName, compound);</span>
+<span class="nc" id="L66">            }</span>
+        } else {
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            for (String espFieldName : fieldStrings) {</span>
+<span class="nc" id="L69">                counter += replaceField(entry, espFieldName, compound);</span>
+            }
+        }
+<span class="nc" id="L72">        return counter;</span>
+    }
+
+    private int replaceField(BibEntry entry, String fieldName, NamedCompound compound) {
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (!entry.hasField(fieldName)) {</span>
+<span class="nc" id="L77">            return 0;</span>
+        }
+<span class="nc" id="L79">        String txt = entry.getField(fieldName).get();</span>
+<span class="nc" id="L80">        StringBuilder stringBuilder = new StringBuilder();</span>
+        int ind;
+<span class="nc" id="L82">        int piv = 0;</span>
+<span class="nc" id="L83">        int counter = 0;</span>
+<span class="nc" id="L84">        int len1 = this.findString.length();</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        while ((ind = txt.indexOf(this.findString, piv)) &gt;= 0) {</span>
+<span class="nc" id="L86">            counter++;</span>
+<span class="nc" id="L87">            stringBuilder.append(txt, piv, ind); // Text leading up to s1</span>
+<span class="nc" id="L88">            stringBuilder.append(this.replaceString); // Insert s2</span>
+<span class="nc" id="L89">            piv = ind + len1;</span>
+        }
+<span class="nc" id="L91">        stringBuilder.append(txt.substring(piv));</span>
+<span class="nc" id="L92">        String newStr = stringBuilder.toString();</span>
+<span class="nc" id="L93">        entry.setField(fieldName, newStr);</span>
+<span class="nc" id="L94">        compound.addEdit(new UndoableFieldChange(entry, fieldName, txt, newStr));</span>
+<span class="nc" id="L95">        return counter;</span>
+    }
+
+    public BooleanProperty allFieldReplaceProperty() {
+<span class="nc" id="L99">        return allFieldReplaceProperty;</span>
+    }
+
+    public BooleanProperty selectOnlyProperty() {
+<span class="nc" id="L103">        return selectOnlyProperty;</span>
+    }
+
+    public StringProperty fieldStringProperty() {
+<span class="nc" id="L107">        return fieldStringProperty;</span>
+    }
+
+    public StringProperty findStringProperty() {
+<span class="nc" id="L111">        return findStringProperty;</span>
+    }
+
+    public StringProperty replaceStringProperty() {
+<span class="nc" id="L115">        return replaceStringProperty;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

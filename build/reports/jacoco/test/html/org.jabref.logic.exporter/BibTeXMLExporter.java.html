@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BibTeXMLExporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.exporter</a> &gt; <span class="el_source">BibTeXMLExporter.java</span></div><h1>BibTeXMLExporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.exporter;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
+
+import org.jabref.logic.importer.fileformat.bibtexml.Article;
+import org.jabref.logic.importer.fileformat.bibtexml.Book;
+import org.jabref.logic.importer.fileformat.bibtexml.Booklet;
+import org.jabref.logic.importer.fileformat.bibtexml.Conference;
+import org.jabref.logic.importer.fileformat.bibtexml.Entry;
+import org.jabref.logic.importer.fileformat.bibtexml.File;
+import org.jabref.logic.importer.fileformat.bibtexml.Inbook;
+import org.jabref.logic.importer.fileformat.bibtexml.Incollection;
+import org.jabref.logic.importer.fileformat.bibtexml.Inproceedings;
+import org.jabref.logic.importer.fileformat.bibtexml.Manual;
+import org.jabref.logic.importer.fileformat.bibtexml.Mastersthesis;
+import org.jabref.logic.importer.fileformat.bibtexml.Misc;
+import org.jabref.logic.importer.fileformat.bibtexml.Phdthesis;
+import org.jabref.logic.importer.fileformat.bibtexml.Proceedings;
+import org.jabref.logic.importer.fileformat.bibtexml.Techreport;
+import org.jabref.logic.importer.fileformat.bibtexml.Unpublished;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Export format for the BibTeXML format.
+ */
+public class BibTeXMLExporter extends Exporter {
+
+    private static final String BIBTEXML_NAMESPACE_URI = &quot;http://bibtexml.sf.net/&quot;;
+<span class="fc" id="L53">    private static final Locale ENGLISH = Locale.ENGLISH;</span>
+<span class="fc" id="L54">    private static final Logger LOGGER = LoggerFactory.getLogger(BibTeXMLExporter.class);</span>
+    private JAXBContext context;
+
+    public BibTeXMLExporter() {
+<span class="fc" id="L58">        super(&quot;bibtexml&quot;, &quot;BibTexXML&quot;, StandardFileType.XML);</span>
+<span class="fc" id="L59">    }</span>
+
+    @Override
+    public void export(final BibDatabaseContext databaseContext, final Path resultFile, final Charset encoding,
+                       List&lt;BibEntry&gt; entries) throws SaveException {
+<span class="fc" id="L64">        Objects.requireNonNull(databaseContext);</span>
+<span class="fc" id="L65">        Objects.requireNonNull(entries);</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (entries.isEmpty()) { // Only export if entries exist</span>
+<span class="fc" id="L67">            return;</span>
+        }
+
+<span class="fc" id="L70">        File file = new File();</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        for (BibEntry bibEntry : entries) {</span>
+<span class="fc" id="L72">            Entry entry = new Entry();</span>
+
+<span class="fc" id="L74">            bibEntry.getCiteKeyOptional().ifPresent(entry::setId);</span>
+
+<span class="fc" id="L76">            String type = bibEntry.getType().toLowerCase(ENGLISH);</span>
+<span class="pc bpc" id="L77" title="1 of 15 branches missed.">            switch (type) {</span>
+                case &quot;article&quot;:
+<span class="fc" id="L79">                    parse(new Article(), bibEntry, entry);</span>
+<span class="fc" id="L80">                    break;</span>
+                case &quot;book&quot;:
+<span class="fc" id="L82">                    parse(new Book(), bibEntry, entry);</span>
+<span class="fc" id="L83">                    break;</span>
+                case &quot;booklet&quot;:
+<span class="fc" id="L85">                    parse(new Booklet(), bibEntry, entry);</span>
+<span class="fc" id="L86">                    break;</span>
+                case &quot;conference&quot;:
+<span class="fc" id="L88">                    parse(new Conference(), bibEntry, entry);</span>
+<span class="fc" id="L89">                    break;</span>
+                case &quot;inbook&quot;:
+<span class="fc" id="L91">                    parseInbook(new Inbook(), bibEntry, entry);</span>
+<span class="fc" id="L92">                    break;</span>
+                case &quot;incollection&quot;:
+<span class="fc" id="L94">                    parse(new Incollection(), bibEntry, entry);</span>
+<span class="fc" id="L95">                    break;</span>
+                case &quot;inproceedings&quot;:
+<span class="fc" id="L97">                    parse(new Inproceedings(), bibEntry, entry);</span>
+<span class="fc" id="L98">                    break;</span>
+                case &quot;mastersthesis&quot;:
+<span class="fc" id="L100">                    parse(new Mastersthesis(), bibEntry, entry);</span>
+<span class="fc" id="L101">                    break;</span>
+                case &quot;manual&quot;:
+<span class="fc" id="L103">                    parse(new Manual(), bibEntry, entry);</span>
+<span class="fc" id="L104">                    break;</span>
+                case &quot;misc&quot;:
+<span class="fc" id="L106">                    parse(new Misc(), bibEntry, entry);</span>
+<span class="fc" id="L107">                    break;</span>
+                case &quot;phdthesis&quot;:
+<span class="fc" id="L109">                    parse(new Phdthesis(), bibEntry, entry);</span>
+<span class="fc" id="L110">                    break;</span>
+                case &quot;proceedings&quot;:
+<span class="fc" id="L112">                    parse(new Proceedings(), bibEntry, entry);</span>
+<span class="fc" id="L113">                    break;</span>
+                case &quot;techreport&quot;:
+<span class="fc" id="L115">                    parse(new Techreport(), bibEntry, entry);</span>
+<span class="fc" id="L116">                    break;</span>
+                case &quot;unpublished&quot;:
+<span class="fc" id="L118">                    parse(new Unpublished(), bibEntry, entry);</span>
+<span class="fc" id="L119">                    break;</span>
+                default:
+<span class="nc" id="L121">                    LOGGER.warn(&quot;unexpected type appeared&quot;);</span>
+                    break;
+            }
+<span class="fc" id="L124">            file.getEntry().add(entry);</span>
+<span class="fc" id="L125">        }</span>
+<span class="fc" id="L126">        createMarshallerAndWriteToFile(file, resultFile);</span>
+<span class="fc" id="L127">    }</span>
+
+    private void createMarshallerAndWriteToFile(File file, Path resultFile) throws SaveException {
+        try {
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">            if (context == null) {</span>
+<span class="fc" id="L132">                context = JAXBContext.newInstance(File.class);</span>
+            }
+<span class="fc" id="L134">            Marshaller marshaller = context.createMarshaller();</span>
+<span class="fc" id="L135">            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);</span>
+
+<span class="fc" id="L137">            marshaller.marshal(file, resultFile.toFile());</span>
+<span class="nc" id="L138">        } catch (JAXBException e) {</span>
+<span class="nc" id="L139">            throw new SaveException(e);</span>
+<span class="fc" id="L140">        }</span>
+<span class="fc" id="L141">    }</span>
+
+    /**
+     * Contains same logic as the {@link parse()} method, but inbook needs a special treatment, because
+     * the contents of inbook are stored in a List of JAXBElements. So we first need to create
+     * a JAXBElement for every field and then add it to the content list.
+     */
+    private void parseInbook(Inbook inbook, BibEntry bibEntry, Entry entry) {
+<span class="fc" id="L149">        Map&lt;String, String&gt; fieldMap = bibEntry.getFieldMap();</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        for (Map.Entry&lt;String, String&gt; entryField : fieldMap.entrySet()) {</span>
+<span class="fc" id="L151">            String value = entryField.getValue();</span>
+<span class="fc" id="L152">            String key = entryField.getKey();</span>
+<span class="fc bfc" id="L153" title="All 2 branches covered.">            if (&quot;year&quot;.equals(key)) {</span>
+                XMLGregorianCalendar calendar;
+                try {
+<span class="fc" id="L156">                    calendar = DatatypeFactory.newInstance().newXMLGregorianCalendar(value);</span>
+
+<span class="fc" id="L158">                    JAXBElement&lt;XMLGregorianCalendar&gt; year = new JAXBElement&lt;&gt;(</span>
+                            new QName(BIBTEXML_NAMESPACE_URI, &quot;year&quot;), XMLGregorianCalendar.class, calendar);
+<span class="fc" id="L160">                    inbook.getContent().add(year);</span>
+<span class="nc" id="L161">                } catch (DatatypeConfigurationException e) {</span>
+<span class="nc" id="L162">                    LOGGER.error(&quot;A configuration error occured&quot;);</span>
+<span class="fc" id="L163">                }</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">            } else if (&quot;number&quot;.equals(key)) {</span>
+<span class="fc" id="L165">                JAXBElement&lt;BigInteger&gt; number = new JAXBElement&lt;&gt;(new QName(BIBTEXML_NAMESPACE_URI, &quot;number&quot;),</span>
+                        BigInteger.class, new BigInteger(value));
+<span class="fc" id="L167">                inbook.getContent().add(number);</span>
+<span class="fc" id="L168">            } else {</span>
+<span class="fc" id="L169">                JAXBElement&lt;String&gt; element = new JAXBElement&lt;&gt;(new QName(BIBTEXML_NAMESPACE_URI, key), String.class,</span>
+                        value);
+<span class="fc" id="L171">                inbook.getContent().add(element);</span>
+            }
+<span class="fc" id="L173">        }</span>
+
+        //set the entryType to the entry
+<span class="fc" id="L176">        entry.setInbook(inbook);</span>
+<span class="fc" id="L177">    }</span>
+
+    /**
+     * Generic method that gets an instance of an entry type (article, book, booklet ...). It also
+     * gets one bibEntry. Then the method checks all fields of the entry and then for all fields the method
+     * uses the set method of the entry type with the fieldname. So for example if a bib entry has the field
+     * author and the value for it is &quot;Max Mustermann&quot; and the given type is an article, then this method
+     * will invoke &lt;Code&gt;article.setAuthor(&quot;Max Mustermann&quot;)&lt;/Code&gt;. &lt;br&gt;
+     * &lt;br&gt;
+     * The second part of this method is that the entry type will be set to the entry. So e.g., if the type is
+     * article then &lt;Code&gt;entry.setArticle(article)&lt;/Code&gt; will be invoked.
+     *
+     * @param entryType The type parameterized type of the entry.
+     * @param bibEntry  The bib entry, which fields will be set to the entryType.
+     * @param entry     The bibtexml entry. The entryType will be set to this entry.
+     */
+    private &lt;T&gt; void parse(T entryType, BibEntry bibEntry, Entry entry) {
+<span class="fc" id="L194">        List&lt;Method&gt; declaredSetMethods = getListOfSetMethods(entryType);</span>
+<span class="fc" id="L195">        Map&lt;String, String&gt; fieldMap = bibEntry.getFieldMap();</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">        for (Map.Entry&lt;String, String&gt; entryField : fieldMap.entrySet()) {</span>
+<span class="fc" id="L197">            String value = entryField.getValue();</span>
+<span class="fc" id="L198">            String key = entryField.getKey();</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">            for (Method method : declaredSetMethods) {</span>
+<span class="fc" id="L200">                String methodNameWithoutSet = method.getName().replace(&quot;set&quot;, &quot;&quot;).toLowerCase(ENGLISH);</span>
+                try {
+
+<span class="fc bfc" id="L203" title="All 4 branches covered.">                    if (&quot;year&quot;.equals(key) &amp;&amp; key.equals(methodNameWithoutSet)) {</span>
+                        try {
+
+<span class="fc" id="L206">                            XMLGregorianCalendar calendar = DatatypeFactory.newInstance()</span>
+<span class="fc" id="L207">                                    .newXMLGregorianCalendar(value);</span>
+<span class="fc" id="L208">                            method.invoke(entryType, calendar);</span>
+<span class="nc" id="L209">                        } catch (DatatypeConfigurationException e) {</span>
+<span class="nc" id="L210">                            LOGGER.error(&quot;A configuration error occured&quot;);</span>
+<span class="fc" id="L211">                        }</span>
+<span class="fc" id="L212">                        break;</span>
+<span class="fc bfc" id="L213" title="All 4 branches covered.">                    } else if (&quot;number&quot;.equals(key) &amp;&amp; key.equals(methodNameWithoutSet)) {</span>
+<span class="fc" id="L214">                        method.invoke(entryType, new BigInteger(value));</span>
+<span class="fc" id="L215">                        break;</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">                    } else if (key.equals(methodNameWithoutSet)) {</span>
+<span class="fc" id="L217">                        method.invoke(entryType, value);</span>
+<span class="fc" id="L218">                        break;</span>
+                    }
+<span class="fc" id="L220">                } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
+<span class="fc" id="L221">                    LOGGER.error(&quot;Could not invoke method&quot;, e);</span>
+<span class="fc" id="L222">                }</span>
+<span class="fc" id="L223">            }</span>
+
+            //set the entryType to the entry
+<span class="fc" id="L226">            List&lt;Method&gt; entryMethods = getListOfSetMethods(entry);</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">            for (Method method : entryMethods) {</span>
+<span class="fc" id="L228">                String methodWithoutSet = method.getName().replace(&quot;set&quot;, &quot;&quot;);</span>
+<span class="fc" id="L229">                String simpleClassName = entryType.getClass().getSimpleName();</span>
+
+<span class="fc bfc" id="L231" title="All 2 branches covered.">                if (methodWithoutSet.equals(simpleClassName)) {</span>
+                    try {
+<span class="fc" id="L233">                        method.invoke(entry, entryType);</span>
+<span class="nc" id="L234">                    } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {</span>
+<span class="nc" id="L235">                        LOGGER.warn(&quot;Could not set the type to the entry&quot;);</span>
+<span class="fc" id="L236">                    }</span>
+                }
+<span class="fc" id="L238">            }</span>
+<span class="fc" id="L239">        }</span>
+<span class="fc" id="L240">    }</span>
+
+    private &lt;T&gt; List&lt;Method&gt; getListOfSetMethods(T entryType) {
+<span class="fc" id="L243">        return Arrays.stream(entryType.getClass().getDeclaredMethods())</span>
+<span class="fc" id="L244">                .filter(method -&gt; method.getName().startsWith(&quot;set&quot;)).collect(Collectors.toList());</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

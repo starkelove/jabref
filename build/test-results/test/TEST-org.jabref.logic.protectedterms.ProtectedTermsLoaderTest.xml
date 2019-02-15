@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:25" hostname="n184-p67.eduroam.kth.se" time="0.081">
+  <properties/>
+  <testcase name="testGetProtectedTerms()" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.012"/>
+  <testcase name="testInitalizedAllInternalDisabled()" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.002"/>
+  <testcase name="testNewListsAreEnabled()" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.003"/>
+  <testcase name="testUnknownExternalFileWillNotLoad()" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.003"/>
+  <testcase name="testAddNewTermListAddsList(Path)" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.006"/>
+  <testcase name="testAllDisabledNoWords()" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.002"/>
+  <testcase name="testReadProtectedTermsListFromFileEnabledWorks()" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.002"/>
+  <testcase name="testNewListsAreIncluded()" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.008"/>
+  <testcase name="testDoNotLoadTheSameInternalListTwice()" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.005"/>
+  <testcase name="testRemoveTermList(Path)" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.004"/>
+  <testcase name="testReadProtectedTermsListFromFileReadsDescription()" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.001"/>
+  <testcase name="testAddNewTermListSetsCorrectDescription(Path)" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.004"/>
+  <testcase name="testReadProtectedTermsListFromFileIsNotInternalList()" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.002"/>
+  <testcase name="testAddNewTermListNewListInList(Path)" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.005"/>
+  <testcase name="testRemoveTermListReduceTheCount(Path)" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.006"/>
+  <testcase name="testAddProtectedTermsListFromFile()" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.002"/>
+  <testcase name="testReadProtectedTermsListFromFileDisabledWorks()" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.002"/>
+  <testcase name="testReadProtectedTermsListFromFileNoDescriptionGivesDefaultDescription()" classname="org.jabref.logic.protectedterms.ProtectedTermsLoaderTest" time="0.005"/>
+  <system-out><![CDATA[15:24:25.686 [Test worker] WARN  org.jabref.logic.protectedterms.ProtectedTermsLoader - New protected terms resource '/protectedterms/months_weekdays.terms' is available and enabled by default. -  
+15:24:25.687 [Test worker] WARN  org.jabref.logic.protectedterms.ProtectedTermsLoader - New protected terms resource '/protectedterms/countries_territories.terms' is available and enabled by default. -  
+15:24:25.687 [Test worker] WARN  org.jabref.logic.protectedterms.ProtectedTermsLoader - New protected terms resource '/protectedterms/electrical_engineering.terms' is available and enabled by default. -  
+15:24:25.690 [Test worker] WARN  org.jabref.logic.protectedterms.ProtectedTermsLoader - Cannot find protected terms file someUnlikelyNameThatNeverWillExist - java.io.FileNotFoundException: someUnlikelyNameThatNeverWillExist (No such file or directory)
+	at java.io.FileInputStream.open0(Native Method)
+	at java.io.FileInputStream.open(FileInputStream.java:195)
+	at java.io.FileInputStream.<init>(FileInputStream.java:138)
+	at java.io.FileReader.<init>(FileReader.java:72) 
+15:24:25.696 [Test worker] WARN  org.jabref.logic.protectedterms.ProtectedTermsList - Problem adding protected term to list - java.nio.file.FileSystemException: /var/folders/yg/7zl1qt6j6c5d6bbqvfg24g7w0000gn/T/junit4002848218256176458: Is a directory
+	at sun.nio.fs.UnixException.translateToIOException(UnixException.java:91)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:102)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:107)
+	at sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:214) 
+15:24:25.707 [Test worker] WARN  org.jabref.logic.protectedterms.ProtectedTermsLoader - New protected terms resource '/protectedterms/months_weekdays.terms' is available and enabled by default. -  
+15:24:25.708 [Test worker] WARN  org.jabref.logic.protectedterms.ProtectedTermsLoader - New protected terms resource '/protectedterms/countries_territories.terms' is available and enabled by default. -  
+15:24:25.708 [Test worker] WARN  org.jabref.logic.protectedterms.ProtectedTermsLoader - New protected terms resource '/protectedterms/electrical_engineering.terms' is available and enabled by default. -  
+15:24:25.718 [Test worker] WARN  org.jabref.logic.protectedterms.ProtectedTermsList - Problem adding protected term to list - java.nio.file.FileSystemException: /var/folders/yg/7zl1qt6j6c5d6bbqvfg24g7w0000gn/T/junit3950900494770249585: Is a directory
+	at sun.nio.fs.UnixException.translateToIOException(UnixException.java:91)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:102)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:107)
+	at sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:214) 
+15:24:25.725 [Test worker] WARN  org.jabref.logic.protectedterms.ProtectedTermsList - Problem adding protected term to list - java.nio.file.FileSystemException: /var/folders/yg/7zl1qt6j6c5d6bbqvfg24g7w0000gn/T/junit2989956144501831816: Is a directory
+	at sun.nio.fs.UnixException.translateToIOException(UnixException.java:91)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:102)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:107)
+	at sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:214) 
+15:24:25.733 [Test worker] WARN  org.jabref.logic.protectedterms.ProtectedTermsList - Problem adding protected term to list - java.nio.file.FileSystemException: /var/folders/yg/7zl1qt6j6c5d6bbqvfg24g7w0000gn/T/junit8248045335684040521: Is a directory
+	at sun.nio.fs.UnixException.translateToIOException(UnixException.java:91)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:102)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:107)
+	at sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:214) 
+15:24:25.739 [Test worker] WARN  org.jabref.logic.protectedterms.ProtectedTermsList - Problem adding protected term to list - java.nio.file.FileSystemException: /var/folders/yg/7zl1qt6j6c5d6bbqvfg24g7w0000gn/T/junit7421925422769576855: Is a directory
+	at sun.nio.fs.UnixException.translateToIOException(UnixException.java:91)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:102)
+	at sun.nio.fs.UnixException.rethrowAsIOException(UnixException.java:107)
+	at sun.nio.fs.UnixFileSystemProvider.newByteChannel(UnixFileSystemProvider.java:214) 
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

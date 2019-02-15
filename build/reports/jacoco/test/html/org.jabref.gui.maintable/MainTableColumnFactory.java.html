@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MainTableColumnFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.maintable</a> &gt; <span class="el_source">MainTableColumnFactory.java</span></div><h1>MainTableColumnFactory.java</h1><pre class="source lang-java linenums">package org.jabref.gui.maintable;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.swing.undo.UndoManager;
+
+import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.Tooltip;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+
+import org.jabref.Globals;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.GUIGlobals;
+import org.jabref.gui.desktop.JabRefDesktop;
+import org.jabref.gui.externalfiletype.ExternalFileType;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.gui.fieldeditors.LinkedFileViewModel;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.icon.JabRefIcon;
+import org.jabref.gui.specialfields.SpecialFieldValueViewModel;
+import org.jabref.gui.specialfields.SpecialFieldViewModel;
+import org.jabref.gui.util.OptionalValueTableCellFactory;
+import org.jabref.gui.util.ValueTableCellFactory;
+import org.jabref.gui.util.comparator.RankingFieldComparator;
+import org.jabref.gui.util.comparator.ReadStatusFieldComparator;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.LinkedFile;
+import org.jabref.model.entry.specialfields.SpecialField;
+import org.jabref.model.entry.specialfields.SpecialFieldValue;
+import org.jabref.model.groups.AbstractGroup;
+import org.jabref.model.strings.StringUtil;
+import org.jabref.model.util.OptionalUtil;
+
+import org.controlsfx.control.Rating;
+import org.fxmisc.easybind.EasyBind;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+class MainTableColumnFactory {
+
+    private static final String ICON_COLUMN = &quot;column-icon&quot;;
+    private static final String GROUP_COLUMN = &quot;column-groups&quot;;
+
+<span class="nc" id="L60">    private static final Logger LOGGER = LoggerFactory.getLogger(MainTableColumnFactory.class);</span>
+
+    private final ColumnPreferences preferences;
+    private final ExternalFileTypes externalFileTypes;
+    private final BibDatabaseContext database;
+    private final CellFactory cellFactory;
+    private final UndoManager undoManager;
+    private final DialogService dialogService;
+
+<span class="nc" id="L69">    public MainTableColumnFactory(BibDatabaseContext database, ColumnPreferences preferences, ExternalFileTypes externalFileTypes, UndoManager undoManager, DialogService dialogService) {</span>
+<span class="nc" id="L70">        this.database = Objects.requireNonNull(database);</span>
+<span class="nc" id="L71">        this.preferences = Objects.requireNonNull(preferences);</span>
+<span class="nc" id="L72">        this.externalFileTypes = Objects.requireNonNull(externalFileTypes);</span>
+<span class="nc" id="L73">        this.dialogService = dialogService;</span>
+<span class="nc" id="L74">        this.cellFactory = new CellFactory(externalFileTypes, undoManager);</span>
+<span class="nc" id="L75">        this.undoManager = undoManager;</span>
+<span class="nc" id="L76">    }</span>
+
+    public List&lt;TableColumn&lt;BibEntryTableViewModel, ?&gt;&gt; createColumns() {
+<span class="nc" id="L79">        List&lt;TableColumn&lt;BibEntryTableViewModel, ?&gt;&gt; columns = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L81">        columns.add(createGroupColumn());</span>
+
+        // Add column for linked files
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (preferences.showFileColumn()) {</span>
+<span class="nc" id="L85">            columns.add(createFileColumn());</span>
+        }
+
+        // Add column for DOI/URL
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        if (preferences.showUrlColumn()) {</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            if (preferences.preferDoiOverUrl()) {</span>
+<span class="nc" id="L91">                columns.add(createUrlOrDoiColumn(IconTheme.JabRefIcons.DOI, FieldName.DOI, FieldName.URL));</span>
+            } else {
+<span class="nc" id="L93">                columns.add(createUrlOrDoiColumn(IconTheme.JabRefIcons.WWW, FieldName.URL, FieldName.DOI));</span>
+            }
+        }
+
+        // Add column for eprints
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (preferences.showEprintColumn()) {</span>
+<span class="nc" id="L99">            columns.add(createEprintColumn(IconTheme.JabRefIcons.WWW, FieldName.EPRINT));</span>
+        }
+
+        // Add columns for other file types
+<span class="nc" id="L103">        columns.addAll(preferences.getExtraFileColumns().stream().map(this::createExtraFileColumn).collect(Collectors.toList()));</span>
+
+        // Add 'normal' bibtex fields as configured in the preferences
+<span class="nc" id="L106">        columns.addAll(createNormalColumns());</span>
+
+        // Add the &quot;special&quot; icon columns (e.g., ranking, file, ...) that are enabled in preferences
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        for (SpecialField field : preferences.getSpecialFieldColumns()) {</span>
+<span class="nc" id="L110">            columns.add(createSpecialFieldColumn((field)));</span>
+<span class="nc" id="L111">        }</span>
+
+<span class="nc" id="L113">        return columns;</span>
+    }
+
+    private TableColumn&lt;BibEntryTableViewModel, ?&gt; createGroupColumn() {
+<span class="nc" id="L117">        TableColumn&lt;BibEntryTableViewModel, List&lt;AbstractGroup&gt;&gt; column = new TableColumn&lt;&gt;();</span>
+<span class="nc" id="L118">        column.getStyleClass().add(GROUP_COLUMN);</span>
+<span class="nc" id="L119">        setExactWidth(column, 20);</span>
+<span class="nc" id="L120">        column.setCellValueFactory(cellData -&gt; cellData.getValue().getMatchedGroups(database));</span>
+<span class="nc" id="L121">        new ValueTableCellFactory&lt;BibEntryTableViewModel, List&lt;AbstractGroup&gt;&gt;()</span>
+<span class="nc" id="L122">                .withGraphic(this::createGroupColorRegion)</span>
+<span class="nc" id="L123">                .install(column);</span>
+<span class="nc" id="L124">        column.setSortable(true);</span>
+<span class="nc" id="L125">        return column;</span>
+    }
+
+    private Node createGroupColorRegion(BibEntryTableViewModel entry, List&lt;AbstractGroup&gt; matchedGroups) {
+<span class="nc" id="L129">        Rectangle rectangle = new Rectangle();</span>
+<span class="nc" id="L130">        rectangle.setWidth(3);</span>
+<span class="nc" id="L131">        rectangle.setHeight(20);</span>
+<span class="nc" id="L132">        Color color = matchedGroups.stream()</span>
+<span class="nc" id="L133">                                   .flatMap(group -&gt; OptionalUtil.toStream(group.getColor()))</span>
+<span class="nc" id="L134">                                   .findFirst()</span>
+<span class="nc" id="L135">                                   .orElse(Color.TRANSPARENT);</span>
+<span class="nc" id="L136">        rectangle.setFill(color);</span>
+
+<span class="nc" id="L138">        String matchedGroupsString = matchedGroups.stream()</span>
+<span class="nc" id="L139">                                                  .map(AbstractGroup::getName)</span>
+<span class="nc" id="L140">                                                  .collect(Collectors.joining(&quot;, &quot;));</span>
+<span class="nc" id="L141">        Tooltip tooltip = new Tooltip(Localization.lang(&quot;Entry is contained in the following groups:&quot;) + &quot;\n&quot; + matchedGroupsString);</span>
+<span class="nc" id="L142">        Tooltip.install(rectangle, tooltip);</span>
+
+<span class="nc" id="L144">        BorderPane container = new BorderPane();</span>
+<span class="nc" id="L145">        container.setLeft(rectangle);</span>
+<span class="nc" id="L146">        return container;</span>
+    }
+
+    private List&lt;TableColumn&lt;BibEntryTableViewModel, ?&gt;&gt; createNormalColumns() {
+<span class="nc" id="L150">        List&lt;TableColumn&lt;BibEntryTableViewModel, ?&gt;&gt; columns = new ArrayList&lt;&gt;();</span>
+
+        // Read table columns from preferences
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        for (String columnName : preferences.getNormalColumns()) {</span>
+            // Stored column name will be used as header
+            // There might be more than one field to display, e.g., &quot;author/editor&quot; or &quot;date/year&quot; - so split
+<span class="nc" id="L156">            String[] fields = columnName.split(FieldName.FIELD_SEPARATOR);</span>
+<span class="nc" id="L157">            NormalTableColumn column = new NormalTableColumn(columnName, Arrays.asList(fields), database.getDatabase());</span>
+<span class="nc" id="L158">            new ValueTableCellFactory&lt;BibEntryTableViewModel, String&gt;()</span>
+<span class="nc" id="L159">                    .withText(text -&gt; text)</span>
+<span class="nc" id="L160">                    .install(column);</span>
+<span class="nc" id="L161">            column.setSortable(true);</span>
+<span class="nc" id="L162">            column.setPrefWidth(preferences.getPrefColumnWidth(columnName));</span>
+<span class="nc" id="L163">            columns.add(column);</span>
+<span class="nc" id="L164">        }</span>
+<span class="nc" id="L165">        return columns;</span>
+    }
+
+    private TableColumn&lt;BibEntryTableViewModel, Optional&lt;SpecialFieldValueViewModel&gt;&gt; createSpecialFieldColumn(SpecialField specialField) {
+<span class="nc" id="L169">        TableColumn&lt;BibEntryTableViewModel, Optional&lt;SpecialFieldValueViewModel&gt;&gt; column = new TableColumn&lt;&gt;();</span>
+<span class="nc" id="L170">        SpecialFieldViewModel specialFieldViewModel = new SpecialFieldViewModel(specialField, undoManager);</span>
+<span class="nc" id="L171">        Node headerGraphic = specialFieldViewModel.getIcon().getGraphicNode();</span>
+<span class="nc" id="L172">        Tooltip.install(headerGraphic, new Tooltip(specialFieldViewModel.getLocalization()));</span>
+<span class="nc" id="L173">        column.setGraphic(headerGraphic);</span>
+<span class="nc" id="L174">        column.getStyleClass().add(ICON_COLUMN);</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        if (specialField == SpecialField.RANKING) {</span>
+<span class="nc" id="L176">            setExactWidth(column, GUIGlobals.WIDTH_ICON_COL_RANKING);</span>
+<span class="nc" id="L177">            new OptionalValueTableCellFactory&lt;BibEntryTableViewModel, SpecialFieldValueViewModel&gt;()</span>
+<span class="nc" id="L178">                    .withGraphicIfPresent(this::createRating)</span>
+<span class="nc" id="L179">                    .install(column);</span>
+        } else {
+<span class="nc" id="L181">            setExactWidth(column, GUIGlobals.WIDTH_ICON_COL);</span>
+
+<span class="nc bnc" id="L183" title="All 2 branches missed.">            if (specialField.isSingleValueField()) {</span>
+<span class="nc" id="L184">                new OptionalValueTableCellFactory&lt;BibEntryTableViewModel, SpecialFieldValueViewModel&gt;()</span>
+<span class="nc" id="L185">                        .withGraphic((entry, value) -&gt; createSpecialFieldIcon(value, specialFieldViewModel))</span>
+<span class="nc" id="L186">                        .withOnMouseClickedEvent((entry, value) -&gt; event -&gt; {</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">                            if (event.getButton() == MouseButton.PRIMARY) {</span>
+<span class="nc" id="L188">                                specialFieldViewModel.toggle(entry.getEntry());</span>
+                            }
+<span class="nc" id="L190">                        })</span>
+<span class="nc" id="L191">                        .install(column);</span>
+            } else {
+<span class="nc" id="L193">                new OptionalValueTableCellFactory&lt;BibEntryTableViewModel, SpecialFieldValueViewModel&gt;()</span>
+<span class="nc" id="L194">                        .withGraphic((entry, value) -&gt; createSpecialFieldIcon(value, specialFieldViewModel))</span>
+<span class="nc" id="L195">                        .withMenu((entry, value) -&gt; createSpecialFieldMenu(entry.getEntry(), specialFieldViewModel))</span>
+<span class="nc" id="L196">                        .install(column);</span>
+            }
+        }
+<span class="nc" id="L199">        column.setCellValueFactory(cellData -&gt; cellData.getValue().getSpecialField(specialField));</span>
+
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        if (specialField == SpecialField.RANKING) {</span>
+<span class="nc" id="L202">            column.setComparator(new RankingFieldComparator());</span>
+        }
+
+        // Added comparator for Read Status
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (specialField == SpecialField.READ_STATUS) {</span>
+<span class="nc" id="L207">            column.setComparator(new ReadStatusFieldComparator());</span>
+        }
+
+<span class="nc" id="L210">        column.setSortable(true);</span>
+<span class="nc" id="L211">        return column;</span>
+    }
+
+    private Rating createRating(BibEntryTableViewModel entry, SpecialFieldValueViewModel value) {
+<span class="nc" id="L215">        Rating ranking = new Rating();</span>
+<span class="nc" id="L216">        ranking.setRating(value.getValue().toRating());</span>
+<span class="nc" id="L217">        EasyBind.subscribe(ranking.ratingProperty(), rating -&gt;</span>
+<span class="nc" id="L218">                new SpecialFieldViewModel(SpecialField.RANKING, undoManager).setSpecialFieldValue(entry.getEntry(), SpecialFieldValue.getRating(rating.intValue()))</span>
+        );
+<span class="nc" id="L220">        return ranking;</span>
+    }
+
+    private ContextMenu createSpecialFieldMenu(BibEntry entry, SpecialFieldViewModel specialField) {
+<span class="nc" id="L224">        ContextMenu contextMenu = new ContextMenu();</span>
+
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        for (SpecialFieldValueViewModel value : specialField.getValues()) {</span>
+<span class="nc" id="L227">            MenuItem menuItem = new MenuItem(value.getMenuString(), value.getIcon().map(JabRefIcon::getGraphicNode).orElse(null));</span>
+<span class="nc" id="L228">            menuItem.setOnAction(event -&gt; specialField.setSpecialFieldValue(entry, value.getValue()));</span>
+<span class="nc" id="L229">            contextMenu.getItems().add(menuItem);</span>
+<span class="nc" id="L230">        }</span>
+
+<span class="nc" id="L232">        return contextMenu;</span>
+    }
+
+    private Node createSpecialFieldIcon(Optional&lt;SpecialFieldValueViewModel&gt; fieldValue, SpecialFieldViewModel specialField) {
+<span class="nc" id="L236">        return fieldValue</span>
+<span class="nc" id="L237">                .flatMap(SpecialFieldValueViewModel::getIcon)</span>
+<span class="nc" id="L238">                .map(JabRefIcon::getGraphicNode)</span>
+<span class="nc" id="L239">                .orElseGet(() -&gt; {</span>
+<span class="nc" id="L240">                    Node node = specialField.getEmptyIcon().getGraphicNode();</span>
+<span class="nc" id="L241">                    node.getStyleClass().add(&quot;empty-special-field&quot;);</span>
+<span class="nc" id="L242">                    return node;</span>
+                });
+    }
+
+    private void setExactWidth(TableColumn&lt;?, ?&gt; column, int width) {
+<span class="nc" id="L247">        column.setMinWidth(width);</span>
+<span class="nc" id="L248">        column.setPrefWidth(width);</span>
+<span class="nc" id="L249">        column.setMaxWidth(width);</span>
+<span class="nc" id="L250">    }</span>
+
+    private TableColumn&lt;BibEntryTableViewModel, List&lt;LinkedFile&gt;&gt; createFileColumn() {
+<span class="nc" id="L253">        TableColumn&lt;BibEntryTableViewModel, List&lt;LinkedFile&gt;&gt; column = new TableColumn&lt;&gt;();</span>
+<span class="nc" id="L254">        Node headerGraphic = IconTheme.JabRefIcons.FILE.getGraphicNode();</span>
+<span class="nc" id="L255">        Tooltip.install(headerGraphic, new Tooltip(Localization.lang(&quot;Linked files&quot;)));</span>
+<span class="nc" id="L256">        column.setGraphic(headerGraphic);</span>
+<span class="nc" id="L257">        column.getStyleClass().add(ICON_COLUMN);</span>
+<span class="nc" id="L258">        setExactWidth(column, GUIGlobals.WIDTH_ICON_COL);</span>
+<span class="nc" id="L259">        column.setCellValueFactory(cellData -&gt; cellData.getValue().getLinkedFiles());</span>
+<span class="nc" id="L260">                new ValueTableCellFactory&lt;BibEntryTableViewModel, List&lt;LinkedFile&gt;&gt;()</span>
+<span class="nc" id="L261">                        .withGraphic(this::createFileIcon)</span>
+<span class="nc" id="L262">                        .withTooltip(this::createFileTooltip)</span>
+<span class="nc" id="L263">                        .withMenu(this::createFileMenu)</span>
+<span class="nc" id="L264">                        .withOnMouseClickedEvent((entry, linkedFiles) -&gt; event -&gt; {</span>
+<span class="nc bnc" id="L265" title="All 4 branches missed.">                            if ((event.getButton() == MouseButton.PRIMARY) &amp;&amp; (linkedFiles.size() == 1)) {</span>
+                                // Only one linked file -&gt; open directly
+<span class="nc" id="L267">                                                                                     LinkedFileViewModel linkedFileViewModel = new LinkedFileViewModel(linkedFiles.get(0), entry.getEntry(), database, Globals.TASK_EXECUTOR, dialogService, Globals.prefs);</span>
+<span class="nc" id="L268">                                linkedFileViewModel.open();</span>
+                            }
+<span class="nc" id="L270">                        })</span>
+<span class="nc" id="L271">                        .install(column);</span>
+<span class="nc" id="L272">        return column;</span>
+    }
+
+    private String createFileTooltip(List&lt;LinkedFile&gt; linkedFiles) {
+<span class="nc bnc" id="L276" title="All 2 branches missed.">        if (linkedFiles.size() &gt; 0) {</span>
+<span class="nc" id="L277">            return Localization.lang(&quot;Open file %0&quot;, linkedFiles.get(0).getLink());</span>
+        }
+<span class="nc" id="L279">        return null;</span>
+    }
+
+    private ContextMenu createFileMenu(BibEntryTableViewModel entry, List&lt;LinkedFile&gt; linkedFiles) {
+<span class="nc bnc" id="L283" title="All 2 branches missed.">        if (linkedFiles.size() &lt;= 1) {</span>
+<span class="nc" id="L284">            return null;</span>
+        }
+
+<span class="nc" id="L287">        ContextMenu contextMenu = new ContextMenu();</span>
+
+<span class="nc bnc" id="L289" title="All 2 branches missed.">        for (LinkedFile linkedFile : linkedFiles) {</span>
+<span class="nc" id="L290">            LinkedFileViewModel linkedFileViewModel = new LinkedFileViewModel(linkedFile, entry.getEntry(), database, Globals.TASK_EXECUTOR, dialogService, Globals.prefs);</span>
+
+<span class="nc" id="L292">            MenuItem menuItem = new MenuItem(linkedFileViewModel.getDescriptionAndLink(), linkedFileViewModel.getTypeIcon().getGraphicNode());</span>
+<span class="nc" id="L293">            menuItem.setOnAction(event -&gt; linkedFileViewModel.open());</span>
+<span class="nc" id="L294">            contextMenu.getItems().add(menuItem);</span>
+<span class="nc" id="L295">        }</span>
+
+<span class="nc" id="L297">        return contextMenu;</span>
+    }
+
+    /**
+     * Creates a column for DOIs or URLs.
+     * The {@code firstField} is preferred to be shown over {@code secondField}.
+     */
+    private TableColumn&lt;BibEntryTableViewModel, String&gt; createUrlOrDoiColumn(JabRefIcon icon, String firstField, String secondField) {
+<span class="nc" id="L305">        TableColumn&lt;BibEntryTableViewModel, String&gt; column = new TableColumn&lt;&gt;();</span>
+<span class="nc" id="L306">        Node headerGraphic = icon.getGraphicNode();</span>
+<span class="nc" id="L307">        Tooltip.install(headerGraphic, new Tooltip(StringUtil.capitalizeFirst(firstField) + &quot; / &quot; + StringUtil.capitalizeFirst(secondField)));</span>
+<span class="nc" id="L308">        column.setGraphic(headerGraphic);</span>
+<span class="nc" id="L309">        column.getStyleClass().add(ICON_COLUMN);</span>
+<span class="nc" id="L310">        setExactWidth(column, GUIGlobals.WIDTH_ICON_COL);</span>
+        // icon is chosen based on field name in cell, so map fields to its names
+<span class="nc" id="L312">        column.setCellValueFactory(cellData -&gt; EasyBind.monadic(cellData.getValue().getField(firstField)).map(x -&gt; firstField).orElse(EasyBind.monadic(cellData.getValue().getField(secondField)).map(x -&gt; secondField)));</span>
+<span class="nc" id="L313">                new ValueTableCellFactory&lt;BibEntryTableViewModel, String&gt;()</span>
+<span class="nc" id="L314">                        .withGraphic(cellFactory::getTableIcon)</span>
+<span class="nc" id="L315">                        .withTooltip(this::createIdentifierTooltip)</span>
+<span class="nc" id="L316">                        .withOnMouseClickedEvent((BibEntryTableViewModel entry, String content) -&gt; (MouseEvent event) -&gt; openUrlOrDoi(event, entry, content))</span>
+<span class="nc" id="L317">                        .install(column);</span>
+<span class="nc" id="L318">        return column;</span>
+    }
+
+    private void openUrlOrDoi(MouseEvent event, BibEntryTableViewModel entry, String field) {
+<span class="nc bnc" id="L322" title="All 2 branches missed.">        if (event.getButton() != MouseButton.PRIMARY) {</span>
+<span class="nc" id="L323">            return;</span>
+        }
+
+<span class="nc bnc" id="L326" title="All 2 branches missed.">        if (!entry.getEntry().hasField(field)) {</span>
+<span class="nc" id="L327">            LOGGER.error(&quot;Requested opening viewer for {} of entry '{}', but field is not present.&quot;, field, entry.getEntry().getId());</span>
+<span class="nc" id="L328">            return;</span>
+        }
+
+<span class="nc" id="L331">        entry.getEntry().getField(field).ifPresent(identifier -&gt; {</span>
+            try {
+<span class="nc" id="L333">                JabRefDesktop.openExternalViewer(database, identifier, field);</span>
+<span class="nc" id="L334">            } catch (IOException e) {</span>
+<span class="nc" id="L335">                dialogService.showErrorDialogAndWait(Localization.lang(&quot;Unable to open link.&quot;), e);</span>
+<span class="nc" id="L336">            }</span>
+<span class="nc" id="L337">        });</span>
+<span class="nc" id="L338">        event.consume();</span>
+<span class="nc" id="L339">    }</span>
+
+    private String createIdentifierTooltip(BibEntryTableViewModel entry, String content) {
+<span class="nc" id="L342">        Optional&lt;String&gt; field = entry.getEntry().getField(content);</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">        if (field.isPresent()) {</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">            if (FieldName.DOI.equals(content)) {</span>
+<span class="nc" id="L345">                return Localization.lang(&quot;Open %0 URL (%1)&quot;, &quot;DOI&quot;, field.get());</span>
+<span class="nc bnc" id="L346" title="All 2 branches missed.">            } else if (FieldName.URL.equals(content)) {</span>
+<span class="nc" id="L347">                return Localization.lang(&quot;Open URL (%0)&quot;, field.get());</span>
+<span class="nc bnc" id="L348" title="All 2 branches missed.">            } else if (FieldName.EPRINT.equals(content)) {</span>
+<span class="nc" id="L349">                return Localization.lang(&quot;Open %0 URL (%1)&quot;, &quot;ArXiv&quot;, field.get());</span>
+            }
+        }
+<span class="nc" id="L352">        return null;</span>
+    }
+
+    private TableColumn&lt;BibEntryTableViewModel, String&gt; createEprintColumn(JabRefIcon icon, String field) {
+<span class="nc" id="L356">        TableColumn&lt;BibEntryTableViewModel, String&gt; column = new TableColumn&lt;&gt;();</span>
+<span class="nc" id="L357">        column.setGraphic(icon.getGraphicNode());</span>
+<span class="nc" id="L358">        column.getStyleClass().add(ICON_COLUMN);</span>
+<span class="nc" id="L359">        setExactWidth(column, GUIGlobals.WIDTH_ICON_COL);</span>
+<span class="nc" id="L360">        column.setCellValueFactory(cellData -&gt; EasyBind.monadic(cellData.getValue().getField(field)).map(x -&gt; field));</span>
+<span class="nc" id="L361">                new ValueTableCellFactory&lt;BibEntryTableViewModel, String&gt;()</span>
+<span class="nc" id="L362">                        .withGraphic(cellFactory::getTableIcon)</span>
+<span class="nc" id="L363">                        .withTooltip(this::createIdentifierTooltip)</span>
+<span class="nc" id="L364">                        .withOnMouseClickedEvent((BibEntryTableViewModel entry, String content) -&gt; (MouseEvent event) -&gt; openUrlOrDoi(event, entry, field))</span>
+<span class="nc" id="L365">                        .install(column);</span>
+<span class="nc" id="L366">        return column;</span>
+    }
+
+    /**
+     * Creates a column for specific file types. Shows the icon for the given type (or the FILE_MULTIPLE icon)
+     *
+     * @param externalFileTypeName the name of the externalFileType
+     */
+    private TableColumn&lt;BibEntryTableViewModel, List&lt;LinkedFile&gt;&gt; createExtraFileColumn(String externalFileTypeName) {
+<span class="nc" id="L375">        TableColumn&lt;BibEntryTableViewModel, List&lt;LinkedFile&gt;&gt; column = new TableColumn&lt;&gt;();</span>
+<span class="nc" id="L376">        column.setGraphic(</span>
+<span class="nc" id="L377">                externalFileTypes.getExternalFileTypeByName(externalFileTypeName)</span>
+<span class="nc" id="L378">                        .map(ExternalFileType::getIcon).orElse(IconTheme.JabRefIcons.FILE)</span>
+<span class="nc" id="L379">                        .getGraphicNode());</span>
+<span class="nc" id="L380">        column.getStyleClass().add(ICON_COLUMN);</span>
+<span class="nc" id="L381">        setExactWidth(column, GUIGlobals.WIDTH_ICON_COL);</span>
+<span class="nc" id="L382">        column.setCellValueFactory(cellData -&gt; cellData.getValue().getLinkedFiles());</span>
+<span class="nc" id="L383">                new ValueTableCellFactory&lt;BibEntryTableViewModel, List&lt;LinkedFile&gt;&gt;()</span>
+<span class="nc" id="L384">                        .withGraphic(linkedFiles -&gt; createFileIcon(linkedFiles.stream().filter(linkedFile -&gt; linkedFile.getFileType().equalsIgnoreCase(externalFileTypeName)).collect(Collectors.toList())))</span>
+<span class="nc" id="L385">                        .install(column);</span>
+<span class="nc" id="L386">        return column;</span>
+    }
+
+    private Node createFileIcon(List&lt;LinkedFile&gt; linkedFiles) {
+<span class="nc bnc" id="L390" title="All 2 branches missed.">        if (linkedFiles.size() &gt; 1) {</span>
+<span class="nc" id="L391">            return IconTheme.JabRefIcons.FILE_MULTIPLE.getGraphicNode();</span>
+<span class="nc bnc" id="L392" title="All 2 branches missed.">        } else if (linkedFiles.size() == 1) {</span>
+<span class="nc" id="L393">            return externalFileTypes.fromLinkedFile(linkedFiles.get(0), false)</span>
+<span class="nc" id="L394">                    .map(ExternalFileType::getIcon)</span>
+<span class="nc" id="L395">                    .orElse(IconTheme.JabRefIcons.FILE)</span>
+<span class="nc" id="L396">                    .getGraphicNode();</span>
+        } else {
+<span class="nc" id="L398">            return null;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

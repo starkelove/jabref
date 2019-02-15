@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QuotedStringTokenizer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util.strings</a> &gt; <span class="el_source">QuotedStringTokenizer.java</span></div><h1>QuotedStringTokenizer.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util.strings;
+
+/**
+ * A String tokenizer that works just like StringTokenizer, but considers quoted
+ * characters (which do not act as delimiters).
+ */
+public class QuotedStringTokenizer {
+
+    private final String content;
+    private final int contentLength;
+    private final String delimiters;
+    private final char quoteChar;
+    private int index;
+
+
+    /**
+     * @param content
+     *            The String to be tokenized.
+     * @param delimiters
+     *            The delimiter characters.
+     * @param quoteCharacter
+     *            The quoting character. Every character (including, but not
+     *            limited to, delimiters) that is preceded by this character is
+     *            not treated as a delimiter, but as a token component.
+     */
+<span class="fc" id="L26">    public QuotedStringTokenizer(String content, String delimiters, char quoteCharacter) {</span>
+<span class="fc" id="L27">        this.content = content;</span>
+<span class="fc" id="L28">        this.delimiters = delimiters;</span>
+<span class="fc" id="L29">        quoteChar = quoteCharacter;</span>
+<span class="fc" id="L30">        contentLength = this.content.length();</span>
+        // skip leading delimiters
+<span class="pc bpc" id="L32" title="3 of 4 branches missed.">        while (isDelimiter(this.content.charAt(index)) &amp;&amp; index &lt; contentLength) {</span>
+<span class="nc" id="L33">            ++index;</span>
+        }
+<span class="fc" id="L35">    }</span>
+
+    public String nextToken() {
+        char c;
+<span class="fc" id="L39">        StringBuilder stringBuilder = new StringBuilder();</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        while (index &lt; contentLength) {</span>
+<span class="fc" id="L41">            c = content.charAt(index);</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">            if (c == quoteChar) { // next is quoted</span>
+<span class="fc" id="L43">                ++index;</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">                if (index &lt; contentLength) {</span>
+<span class="fc" id="L45">                    stringBuilder.append(content.charAt(index));</span>
+                    // ignore for delimiter search!
+                }
+<span class="fc bfc" id="L48" title="All 2 branches covered.">            } else if (isDelimiter(c)) { // unit finished</span>
+                // advance index until next token or end
+<span class="fc" id="L50">                ++index;</span>
+<span class="fc" id="L51">                return stringBuilder.toString();</span>
+            } else {
+<span class="fc" id="L53">                stringBuilder.append(c);</span>
+            }
+<span class="fc" id="L55">            ++index;</span>
+        }
+<span class="nc" id="L57">        return stringBuilder.toString();</span>
+    }
+
+    private boolean isDelimiter(char c) {
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        return delimiters.indexOf(c) &gt;= 0;</span>
+    }
+
+    public boolean hasMoreTokens() {
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        return index &lt; contentLength;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

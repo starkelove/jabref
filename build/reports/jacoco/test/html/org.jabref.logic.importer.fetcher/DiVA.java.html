@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DiVA.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fetcher</a> &gt; <span class="el_source">DiVA.java</span></div><h1>DiVA.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fetcher;
+
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Optional;
+
+import org.jabref.logic.help.HelpFile;
+import org.jabref.logic.importer.FetcherException;
+import org.jabref.logic.importer.IdBasedParserFetcher;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.importer.Parser;
+import org.jabref.logic.importer.fileformat.BibtexParser;
+import org.jabref.model.util.DummyFileUpdateMonitor;
+
+import org.apache.http.client.utils.URIBuilder;
+
+/*
+ * http://www.diva-portal.org/smash/aboutdiva.jsf?dswid=-3222
+ * DiVA portal contains research publications and student theses from 40 Swedish universities and research institutions.
+ */
+public class DiVA implements IdBasedParserFetcher {
+
+    private final ImportFormatPreferences importFormatPreferences;
+
+<span class="fc" id="L26">    public DiVA(ImportFormatPreferences importFormatPreferences) {</span>
+<span class="fc" id="L27">        this.importFormatPreferences = importFormatPreferences;</span>
+<span class="fc" id="L28">    }</span>
+
+    @Override
+    public String getName() {
+<span class="fc" id="L32">        return &quot;DiVA&quot;;</span>
+    }
+
+    @Override
+    public Optional&lt;HelpFile&gt; getHelpPage() {
+<span class="nc" id="L37">        return Optional.of(HelpFile.FETCHER_DIVA);</span>
+    }
+
+    @Override
+    public URL getURLForID(String identifier) throws URISyntaxException, MalformedURLException, FetcherException {
+<span class="nc" id="L42">        URIBuilder uriBuilder = new URIBuilder(&quot;http://www.diva-portal.org/smash/getreferences&quot;);</span>
+
+<span class="nc" id="L44">        uriBuilder.addParameter(&quot;referenceFormat&quot;, &quot;BibTex&quot;);</span>
+<span class="nc" id="L45">        uriBuilder.addParameter(&quot;pids&quot;, identifier);</span>
+
+<span class="nc" id="L47">        return uriBuilder.build().toURL();</span>
+    }
+
+    @Override
+    public Parser getParser() {
+<span class="nc" id="L52">        return new BibtexParser(importFormatPreferences, new DummyFileUpdateMonitor());</span>
+    }
+
+    public boolean isValidId(String identifier) {
+<span class="nc" id="L56">        return identifier.startsWith(&quot;diva2:&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.gui.util.TooltipTextUtilTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:16" hostname="n184-p67.eduroam.kth.se" time="0.015">
+  <properties/>
+  <testcase name="testFormatToTextsNoReplacements()" classname="org.jabref.gui.util.TooltipTextUtilTest" time="0.002"/>
+  <testcase name="testCreateTextItalic()" classname="org.jabref.gui.util.TooltipTextUtilTest" time="0.0"/>
+  <testcase name="testCreateTextBold()" classname="org.jabref.gui.util.TooltipTextUtilTest" time="0.0"/>
+  <testcase name="testTextToHTMLStringWithLinebreaks()" classname="org.jabref.gui.util.TooltipTextUtilTest" time="0.0"/>
+  <testcase name="testTextToHTMLStringBold()" classname="org.jabref.gui.util.TooltipTextUtilTest" time="0.002"/>
+  <testcase name="testTextToHTMLStringItalic()" classname="org.jabref.gui.util.TooltipTextUtilTest" time="0.001"/>
+  <testcase name="testFormatToTextsMiddle()" classname="org.jabref.gui.util.TooltipTextUtilTest" time="0.002"/>
+  <testcase name="testCreateTextMonospaced()" classname="org.jabref.gui.util.TooltipTextUtilTest" time="0.0"/>
+  <testcase name="testTextToHTMLStringMonospacedBold()" classname="org.jabref.gui.util.TooltipTextUtilTest" time="0.001"/>
+  <testcase name="testCreateText()" classname="org.jabref.gui.util.TooltipTextUtilTest" time="0.0"/>
+  <testcase name="testTextToHTMLStringMonospaced()" classname="org.jabref.gui.util.TooltipTextUtilTest" time="0.001"/>
+  <testcase name="testFormatToTextsEnd()" classname="org.jabref.gui.util.TooltipTextUtilTest" time="0.001"/>
+  <testcase name="testFormatToTextsBegin()" classname="org.jabref.gui.util.TooltipTextUtilTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

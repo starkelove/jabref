@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TypedBibEntry.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic</a> &gt; <span class="el_source">TypedBibEntry.java</span></div><h1>TypedBibEntry.java</h1><pre class="source lang-java linenums">package org.jabref.logic;
+
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.model.EntryTypes;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.EntryType;
+import org.jabref.model.strings.StringUtil;
+
+/**
+ * Wrapper around a {@link BibEntry} offering methods for {@link BibDatabaseMode} dependend results
+ */
+public class TypedBibEntry {
+
+    private final BibEntry entry;
+    private final Optional&lt;BibDatabase&gt; database;
+    private final BibDatabaseMode mode;
+
+    public TypedBibEntry(BibEntry entry, BibDatabaseMode mode) {
+<span class="fc" id="L24">        this(entry, Optional.empty(), mode);</span>
+<span class="fc" id="L25">    }</span>
+
+<span class="fc" id="L27">    private TypedBibEntry(BibEntry entry, Optional&lt;BibDatabase&gt; database, BibDatabaseMode mode) {</span>
+<span class="fc" id="L28">        this.entry = Objects.requireNonNull(entry);</span>
+<span class="fc" id="L29">        this.database = Objects.requireNonNull(database);</span>
+<span class="fc" id="L30">        this.mode = mode;</span>
+<span class="fc" id="L31">    }</span>
+
+    public TypedBibEntry(BibEntry entry, BibDatabaseContext databaseContext) {
+<span class="nc" id="L34">        this(entry, Optional.of(databaseContext.getDatabase()), databaseContext.getMode());</span>
+<span class="nc" id="L35">    }</span>
+
+    /**
+     * Returns true if this entry contains the fields it needs to be
+     * complete.
+     */
+    public boolean hasAllRequiredFields() {
+<span class="fc" id="L42">        Optional&lt;EntryType&gt; type = EntryTypes.getType(entry.getType(), this.mode);</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if (type.isPresent()) {</span>
+<span class="fc" id="L44">            return entry.allFieldsPresent(type.get().getRequiredFields(), database.orElse(null));</span>
+        } else {
+<span class="fc" id="L46">            return true;</span>
+        }
+    }
+
+    /**
+     * Gets the display name for the type of the entry.
+     */
+    public String getTypeForDisplay() {
+<span class="fc" id="L54">        Optional&lt;EntryType&gt; entryType = EntryTypes.getType(entry.getType(), mode);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (entryType.isPresent()) {</span>
+<span class="fc" id="L56">            return entryType.get().getName();</span>
+        } else {
+<span class="fc" id="L58">            return StringUtil.capitalizeFirst(entry.getType());</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ASCIICharacterChecker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.integrity</a> &gt; <span class="el_source">ASCIICharacterChecker.java</span></div><h1>ASCIICharacterChecker.java</h1><pre class="source lang-java linenums">package org.jabref.logic.integrity;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.jabref.logic.integrity.IntegrityCheck.Checker;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+
+import com.google.common.base.CharMatcher;
+
+<span class="fc" id="L13">public class ASCIICharacterChecker implements Checker {</span>
+
+    /**
+     * Detect any non ASCII encoded characters, e.g., umlauts or unicode in the fields
+     */
+    @Override
+    public List&lt;IntegrityMessage&gt; check(BibEntry entry) {
+<span class="fc" id="L20">        List&lt;IntegrityMessage&gt; results = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        for (Map.Entry&lt;String, String&gt; field : entry.getFieldMap().entrySet()) {</span>
+<span class="fc" id="L22">            boolean asciiOnly = CharMatcher.ascii().matchesAllOf(field.getValue());</span>
+<span class="fc bfc" id="L23" title="All 2 branches covered.">            if (!asciiOnly) {</span>
+<span class="fc" id="L24">                results.add(new IntegrityMessage(Localization.lang(&quot;Non-ASCII encoded character found&quot;), entry,</span>
+<span class="fc" id="L25">                        field.getKey()));</span>
+            }
+<span class="fc" id="L27">        }</span>
+<span class="fc" id="L28">        return results;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

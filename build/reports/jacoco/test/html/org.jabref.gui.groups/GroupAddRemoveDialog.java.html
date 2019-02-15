@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GroupAddRemoveDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.groups</a> &gt; <span class="el_source">GroupAddRemoveDialog.java</span></div><h1>GroupAddRemoveDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.groups;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.BorderFactory;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTree;
+import javax.swing.SwingUtilities;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.actions.BaseAction;
+import org.jabref.gui.keyboard.KeyBinding;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.groups.GroupTreeNode;
+
+import com.jgoodies.forms.builder.ButtonBarBuilder;
+
+public class GroupAddRemoveDialog implements BaseAction {
+
+    private final BasePanel panel;
+    private final boolean add;
+    private final boolean move;
+    private List&lt;BibEntry&gt; selection;
+    private JTree tree;
+
+<span class="nc" id="L45">    public GroupAddRemoveDialog(BasePanel panel, boolean add, boolean move) {</span>
+<span class="nc" id="L46">        this.panel = panel;</span>
+<span class="nc" id="L47">        this.add = add;</span>
+<span class="nc" id="L48">        this.move = move;</span>
+<span class="nc" id="L49">    }</span>
+
+    @Override
+    public void action() throws Exception {
+<span class="nc" id="L53">        Optional&lt;GroupTreeNode&gt; groups = panel.getBibDatabaseContext().getMetaData().getGroups();</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (!groups.isPresent()) {</span>
+<span class="nc" id="L55">            return;</span>
+        }
+
+<span class="nc" id="L58">        selection = panel.getSelectedEntries();</span>
+
+<span class="nc bnc" id="L60" title="All 4 branches missed.">        final JDialog diag = new JDialog((JFrame) null,</span>
+<span class="nc" id="L61">                                         (add ? (move ? Localization.lang(&quot;Move to group&quot;) : Localization.lang(&quot;Add to group&quot;)) : Localization</span>
+<span class="nc" id="L62">                                                                                                                                              .lang(&quot;Remove from group&quot;)),</span>
+                                         true);
+<span class="nc" id="L64">        JButton ok = new JButton(Localization.lang(&quot;OK&quot;));</span>
+<span class="nc" id="L65">        JButton cancel = new JButton(Localization.lang(&quot;Cancel&quot;));</span>
+<span class="nc" id="L66">        tree = new JTree(new GroupTreeNodeViewModel(groups.get()));</span>
+<span class="nc" id="L67">        tree.setCellRenderer(new AddRemoveGroupTreeCellRenderer());</span>
+<span class="nc" id="L68">        tree.setVisibleRowCount(22);</span>
+
+        //        tree.setPreferredSize(new Dimension(200, tree.getPreferredSize().height));
+        //      The scrollbar appears when the preferred size of a component is greater than the size of the viewport. If one hard coded the preferred size, it will never change according to the expansion/collapse. Thus the scrollbar cannot appear accordingly.
+        //tree.setSelectionModel(new VetoableTreeSelectionModel());
+<span class="nc" id="L73">        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);</span>
+<span class="nc" id="L74">        tree.addTreeSelectionListener(e -&gt; {</span>
+<span class="nc" id="L75">            GroupTreeNodeViewModel node = (GroupTreeNodeViewModel) e.getNewLeadSelectionPath().getLastPathComponent();</span>
+<span class="nc" id="L76">            ok.setEnabled(checkGroupEnable(node));</span>
+<span class="nc" id="L77">        });</span>
+
+        //STA add expand and collapse all buttons
+<span class="nc" id="L80">        JButton jbExpandAll = new JButton(&quot;Expand All&quot;);</span>
+
+<span class="nc" id="L82">        jbExpandAll.addActionListener(e -&gt; expandAll(tree, true));</span>
+
+<span class="nc" id="L84">        JButton jbCollapseAll = new JButton(&quot;Collapse All&quot;);</span>
+<span class="nc" id="L85">        jbCollapseAll.addActionListener(e -&gt; expandAll(tree, false));</span>
+        //END add expand and collapse all buttons
+
+<span class="nc" id="L88">        ButtonBarBuilder bb = new ButtonBarBuilder();</span>
+<span class="nc" id="L89">        bb.addGlue();</span>
+<span class="nc" id="L90">        bb.addButton(ok);</span>
+<span class="nc" id="L91">        bb.addButton(cancel);</span>
+
+<span class="nc" id="L93">        bb.addButton(jbExpandAll);</span>
+<span class="nc" id="L94">        bb.addButton(jbCollapseAll);</span>
+
+<span class="nc" id="L96">        bb.addGlue();</span>
+<span class="nc" id="L97">        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));</span>
+
+<span class="nc" id="L99">        ok.addActionListener(actionEvent -&gt; {</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            if (doAddOrRemove()) {</span>
+<span class="nc" id="L101">                diag.dispose();</span>
+<span class="nc" id="L102">                tree.repaint();</span>
+            }
+<span class="nc" id="L104">        });</span>
+<span class="nc" id="L105">        cancel.addActionListener(actionEvent -&gt; diag.dispose());</span>
+<span class="nc" id="L106">        ok.setEnabled(false);</span>
+
+<span class="nc" id="L108">        JScrollPane sp = new JScrollPane(tree);</span>
+
+        // Key bindings:
+<span class="nc" id="L111">        ActionMap am = sp.getActionMap();</span>
+<span class="nc" id="L112">        InputMap im = sp.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);</span>
+<span class="nc" id="L113">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.CLOSE), &quot;close&quot;);</span>
+<span class="nc" id="L114">        am.put(&quot;close&quot;, new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L118">                diag.dispose();</span>
+<span class="nc" id="L119">            }</span>
+        });
+
+<span class="nc" id="L122">        diag.getContentPane().add(sp, BorderLayout.CENTER);</span>
+
+<span class="nc" id="L124">        diag.getContentPane().add(bb.getPanel(), BorderLayout.SOUTH);</span>
+<span class="nc" id="L125">        diag.pack();</span>
+<span class="nc" id="L126">        diag.setVisible(true);</span>
+
+<span class="nc" id="L128">    }</span>
+
+    // If &quot;expand&quot; is true, all nodes in the tree area expanded
+    // otherwise all nodes in the tree are collapsed:
+    private void expandAll(final JTree subtree, final boolean expand) {
+<span class="nc" id="L133">        SwingUtilities.invokeLater(() -&gt; {</span>
+<span class="nc" id="L134">            TreeNode root = ((TreeNode) subtree.getModel().getRoot());</span>
+            // walk through the tree, beginning at the root:
+<span class="nc" id="L136">            expandAll(subtree, new TreePath(((DefaultTreeModel) subtree.getModel()).getPathToRoot(root)), expand);</span>
+<span class="nc" id="L137">            tree.requestFocusInWindow();</span>
+<span class="nc" id="L138">        });</span>
+<span class="nc" id="L139">    }</span>
+
+    private void expandAll(final JTree subtree, final TreePath parent, final boolean expand) {
+        // walk through the children:
+<span class="nc" id="L143">        TreeNode node = (TreeNode) parent.getLastPathComponent();</span>
+<span class="nc" id="L144">        int numChildren = node.getChildCount();</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        if (numChildren &gt; 0) {</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            for (int i = 0; i &lt; numChildren; i++) {</span>
+<span class="nc" id="L147">                TreeNode child = node.getChildAt(i);</span>
+<span class="nc" id="L148">                TreePath path = parent.pathByAddingChild(child);</span>
+<span class="nc" id="L149">                expandAll(subtree, path, expand);</span>
+            }
+        }
+        // &quot;expand&quot; / &quot;collapse&quot; occurs from bottom to top:
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        if (expand) {</span>
+<span class="nc" id="L154">            tree.expandPath(parent);</span>
+        } else {
+<span class="nc bnc" id="L156" title="All 2 branches missed.">            if (node.getParent() != null) {</span>
+<span class="nc" id="L157">                tree.collapsePath(parent);</span>
+            }
+        }
+<span class="nc" id="L160">    }</span>
+
+    private boolean doAddOrRemove() {
+<span class="nc" id="L163">        TreePath path = tree.getSelectionPath();</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (path == null) {</span>
+<span class="nc" id="L165">            return false;</span>
+        } else {
+<span class="nc" id="L167">            GroupTreeNodeViewModel node = (GroupTreeNodeViewModel) path.getLastPathComponent();</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">            if (checkGroupEnable(node)) {</span>
+
+                //we need to copy the contents of the observable list here, because when removeFromEntries is called,
+                //probably the focus changes to the first entry in the all entries group and thus getSelectedEntries() no longer contains our entry we want to move
+<span class="nc" id="L172">                List&lt;BibEntry&gt; entries = new ArrayList&lt;&gt;(Globals.stateManager.getSelectedEntries());</span>
+
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                if (move) {</span>
+<span class="nc" id="L175">                    recuriveRemoveFromNode((GroupTreeNodeViewModel) tree.getModel().getRoot(), entries);</span>
+                }
+
+<span class="nc bnc" id="L178" title="All 2 branches missed.">                if (add) {</span>
+<span class="nc" id="L179">                    node.addEntriesToGroup(entries);</span>
+                } else {
+<span class="nc" id="L181">                    node.removeEntriesFromGroup(entries);</span>
+                }
+
+<span class="nc" id="L184">                return true;</span>
+            } else {
+<span class="nc" id="L186">                return false;</span>
+            }
+        }
+    }
+
+    private void recuriveRemoveFromNode(GroupTreeNodeViewModel node, List&lt;BibEntry&gt; entries) {
+<span class="nc" id="L192">        node.removeEntriesFromGroup(entries);</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">        for (GroupTreeNodeViewModel child : node.getChildren()) {</span>
+<span class="nc" id="L194">            recuriveRemoveFromNode(child, entries);</span>
+<span class="nc" id="L195">        }</span>
+<span class="nc" id="L196">    }</span>
+
+    /**
+     * Check if we can perform the action for this group. Determines whether
+     * the group should be shown in an enabled state, and if selecting it should
+     * leave the Ok button enabled.
+     * @param node The group to check
+     * @return true if this dialog's action can be performed on the group
+     */
+    private boolean checkGroupEnable(GroupTreeNodeViewModel node) {
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        return (add ? node.canAddEntries(selection) : node.canRemoveEntries(selection));</span>
+    }
+
+<span class="nc" id="L209">    class AddRemoveGroupTreeCellRenderer extends GroupTreeCellRenderer {</span>
+
+        @Override
+        public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded,
+                                                      boolean leaf, int row, boolean hasFocus) {
+<span class="nc" id="L214">            Component c = super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);</span>
+
+<span class="nc" id="L216">            GroupTreeNodeViewModel node = (GroupTreeNodeViewModel) value;</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">            if (checkGroupEnable(node)) {</span>
+<span class="nc" id="L218">                c.setForeground(Color.black);</span>
+            } else {
+<span class="nc" id="L220">                c.setForeground(Color.gray);</span>
+            }
+
+<span class="nc" id="L223">            return c;</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

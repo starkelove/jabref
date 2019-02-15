@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PushToLyx.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.push</a> &gt; <span class="el_source">PushToLyx.java</span></div><h1>PushToLyx.java</h1><pre class="source lang-java linenums">package org.jabref.gui.push;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
+
+import org.jabref.Globals;
+import org.jabref.JabRefExecutorService;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.gui.icon.JabRefIcon;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.metadata.MetaData;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class PushToLyx extends AbstractPushToApplication implements PushToApplication {
+
+<span class="nc" id="L26">    private static final Logger LOGGER = LoggerFactory.getLogger(PushToLyx.class);</span>
+
+    public PushToLyx(DialogService dialogService) {
+<span class="nc" id="L29">        super(dialogService);</span>
+<span class="nc" id="L30">    }</span>
+
+    @Override
+    public String getApplicationName() {
+<span class="nc" id="L34">        return &quot;LyX/Kile&quot;;</span>
+    }
+
+    @Override
+    public JabRefIcon getIcon() {
+<span class="nc" id="L39">        return IconTheme.JabRefIcons.APPLICATION_LYX;</span>
+    }
+
+    @Override
+    protected void initParameters() {
+<span class="nc" id="L44">        commandPathPreferenceKey = JabRefPreferences.LYXPIPE;</span>
+<span class="nc" id="L45">    }</span>
+
+    @Override
+    public void operationCompleted(BasePanel panel) {
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        if (couldNotConnect) {</span>
+<span class="nc" id="L50">            panel.output(Localization.lang(&quot;Error&quot;) + &quot;: &quot; +</span>
+<span class="nc" id="L51">                         Localization.lang(&quot;verify that LyX is running and that the lyxpipe is valid&quot;)</span>
+                         + &quot;. [&quot; + commandPath + &quot;]&quot;);
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        } else if (couldNotCall) {</span>
+<span class="nc" id="L54">            panel.output(Localization.lang(&quot;Error&quot;) + &quot;: &quot; +</span>
+<span class="nc" id="L55">                         Localization.lang(&quot;unable to write to&quot;) + &quot; &quot; + commandPath +</span>
+                         &quot;.in&quot;);
+        } else {
+<span class="nc" id="L58">            super.operationCompleted(panel);</span>
+        }
+<span class="nc" id="L60">    }</span>
+
+    @Override
+    public void pushEntries(BibDatabase database, final List&lt;BibEntry&gt; entries, final String keyString, MetaData metaData) {
+
+<span class="nc" id="L65">        couldNotConnect = false;</span>
+<span class="nc" id="L66">        couldNotCall = false;</span>
+<span class="nc" id="L67">        notDefined = false;</span>
+
+<span class="nc" id="L69">        initParameters();</span>
+<span class="nc" id="L70">        commandPath = Globals.prefs.get(commandPathPreferenceKey);</span>
+
+<span class="nc bnc" id="L72" title="All 4 branches missed.">        if ((commandPath == null) || commandPath.trim().isEmpty()) {</span>
+<span class="nc" id="L73">            notDefined = true;</span>
+<span class="nc" id="L74">            return;</span>
+        }
+
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (!commandPath.endsWith(&quot;.in&quot;)) {</span>
+<span class="nc" id="L78">            commandPath = commandPath + &quot;.in&quot;;</span>
+        }
+<span class="nc" id="L80">        File lp = new File(commandPath); // this needs to fixed because it gives &quot;asdf&quot; when going prefs.get(&quot;lyxpipe&quot;)</span>
+<span class="nc bnc" id="L81" title="All 4 branches missed.">        if (!lp.exists() || !lp.canWrite()) {</span>
+            // See if it helps to append &quot;.in&quot;:
+<span class="nc" id="L83">            lp = new File(commandPath + &quot;.in&quot;);</span>
+<span class="nc bnc" id="L84" title="All 4 branches missed.">            if (!lp.exists() || !lp.canWrite()) {</span>
+<span class="nc" id="L85">                couldNotConnect = true;</span>
+<span class="nc" id="L86">                return;</span>
+            }
+        }
+
+<span class="nc" id="L90">        final File lyxpipe = lp;</span>
+
+<span class="nc" id="L92">        JabRefExecutorService.INSTANCE.executeAndWait(() -&gt; {</span>
+<span class="nc" id="L93">            try (FileWriter fw = new FileWriter(lyxpipe); BufferedWriter lyxOut = new BufferedWriter(fw)) {</span>
+                String citeStr;
+
+<span class="nc" id="L96">                citeStr = &quot;LYXCMD:sampleclient:citation-insert:&quot; + keyString;</span>
+<span class="nc" id="L97">                lyxOut.write(citeStr + &quot;\n&quot;);</span>
+
+<span class="nc" id="L99">                lyxOut.close();</span>
+<span class="nc" id="L100">                fw.close();</span>
+<span class="nc" id="L101">            } catch (IOException excep) {</span>
+<span class="nc" id="L102">                couldNotCall = true;</span>
+<span class="nc" id="L103">                LOGGER.warn(&quot;Problem pushing to LyX/Kile.&quot;, excep);</span>
+<span class="nc" id="L104">            }</span>
+<span class="nc" id="L105">        });</span>
+<span class="nc" id="L106">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

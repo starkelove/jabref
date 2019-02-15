@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.citationstyle.CitationStyleGeneratorTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:01" hostname="n184-p67.eduroam.kth.se" time="3.653">
+  <properties/>
+  <testcase name="testMissingCitationStyle()" classname="org.jabref.logic.citationstyle.CitationStyleGeneratorTest" time="3.653"/>
+  <system-out><![CDATA[15:25:05.206 [Test worker] ERROR org.jabref.logic.citationstyle.CitationStyleGenerator - Could not generate BibEntry citation - java.io.FileNotFoundException: Could not find style in classpath: /faulty citation style.csl
+	at de.undercouch.citeproc.CSL.loadStyle(CSL.java:446)
+	at de.undercouch.citeproc.CSL.<init>(CSL.java:268)
+	at de.undercouch.citeproc.CSL.<init>(CSL.java:242)
+	at de.undercouch.citeproc.CSL.<init>(CSL.java:221) 
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

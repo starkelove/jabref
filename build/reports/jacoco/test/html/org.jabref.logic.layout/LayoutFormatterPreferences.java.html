@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LayoutFormatterPreferences.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.layout</a> &gt; <span class="el_source">LayoutFormatterPreferences.java</span></div><h1>LayoutFormatterPreferences.java</h1><pre class="source lang-java linenums">package org.jabref.logic.layout;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import org.jabref.logic.journals.JournalAbbreviationLoader;
+import org.jabref.logic.journals.JournalAbbreviationPreferences;
+import org.jabref.logic.layout.format.FileLinkPreferences;
+import org.jabref.logic.layout.format.NameFormatterPreferences;
+
+public class LayoutFormatterPreferences {
+
+    private final NameFormatterPreferences nameFormatterPreferences;
+    private final JournalAbbreviationPreferences journalAbbreviationPreferences;
+    private final FileLinkPreferences fileLinkPreferences;
+<span class="nc" id="L17">    private final Map&lt;String, String&gt; customExportNameFormatters = new HashMap&lt;&gt;();</span>
+    private final JournalAbbreviationLoader journalAbbreviationLoader;
+
+    public LayoutFormatterPreferences(NameFormatterPreferences nameFormatterPreferences,
+            JournalAbbreviationPreferences journalAbbreviationPreferences, FileLinkPreferences fileLinkPreferences,
+<span class="nc" id="L22">            JournalAbbreviationLoader journalAbbreviationLoader) {</span>
+<span class="nc" id="L23">        this.nameFormatterPreferences = nameFormatterPreferences;</span>
+<span class="nc" id="L24">        this.journalAbbreviationPreferences = journalAbbreviationPreferences;</span>
+<span class="nc" id="L25">        this.fileLinkPreferences = fileLinkPreferences;</span>
+<span class="nc" id="L26">        this.journalAbbreviationLoader = journalAbbreviationLoader;</span>
+<span class="nc" id="L27">    }</span>
+
+    public NameFormatterPreferences getNameFormatterPreferences() {
+<span class="nc" id="L30">        return nameFormatterPreferences;</span>
+    }
+
+    public JournalAbbreviationPreferences getJournalAbbreviationPreferences() {
+<span class="nc" id="L34">        return journalAbbreviationPreferences;</span>
+    }
+
+    public FileLinkPreferences getFileLinkPreferences() {
+<span class="nc" id="L38">        return fileLinkPreferences;</span>
+    }
+
+    public JournalAbbreviationLoader getJournalAbbreviationLoader() {
+<span class="nc" id="L42">        return journalAbbreviationLoader;</span>
+    }
+
+    public void clearCustomExportNameFormatters() {
+<span class="nc" id="L46">        customExportNameFormatters.clear();</span>
+<span class="nc" id="L47">    }</span>
+
+    public void putCustomExportNameFormatter(String formatterName, String contents) {
+<span class="nc" id="L50">        customExportNameFormatters.put(formatterName, contents);</span>
+<span class="nc" id="L51">    }</span>
+
+    public Optional&lt;String&gt; getCustomExportNameFormatter(String formatterName) {
+<span class="nc" id="L54">        return Optional.ofNullable(customExportNameFormatters.get(formatterName));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

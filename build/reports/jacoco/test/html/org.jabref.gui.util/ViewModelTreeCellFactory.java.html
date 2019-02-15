@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ViewModelTreeCellFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">ViewModelTreeCellFactory.java</span></div><h1>ViewModelTreeCellFactory.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
+import javafx.scene.Node;
+import javafx.scene.control.CheckBoxTreeItem;
+import javafx.scene.control.TreeCell;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeTableCell;
+import javafx.scene.control.TreeView;
+import javafx.scene.control.cell.CheckBoxTreeCell;
+import javafx.scene.input.MouseEvent;
+import javafx.util.Callback;
+import javafx.util.StringConverter;
+
+import org.jabref.gui.icon.JabRefIcon;
+
+/**
+ * Constructs a {@link TreeTableCell} based on the view model of the row and a bunch of specified converter methods.
+ *
+ * @param &lt;S&gt; view model
+ * @param &lt;T&gt; cell value
+ */
+<span class="nc" id="L24">public class ViewModelTreeCellFactory&lt;T&gt; implements Callback&lt;TreeView&lt;T&gt;, TreeCell&lt;T&gt;&gt; {</span>
+
+    private Callback&lt;T, String&gt; toText;
+    private Callback&lt;T, Node&gt; toGraphic;
+    private Callback&lt;T, EventHandler&lt;? super MouseEvent&gt;&gt; toOnMouseClickedEvent;
+    private Callback&lt;T, String&gt; toTooltip;
+
+    public ViewModelTreeCellFactory&lt;T&gt; withText(Callback&lt;T, String&gt; toText) {
+<span class="nc" id="L32">        this.toText = toText;</span>
+<span class="nc" id="L33">        return this;</span>
+    }
+
+    public ViewModelTreeCellFactory&lt;T&gt; withGraphic(Callback&lt;T, Node&gt; toGraphic) {
+<span class="nc" id="L37">        this.toGraphic = toGraphic;</span>
+<span class="nc" id="L38">        return this;</span>
+    }
+
+    public ViewModelTreeCellFactory&lt;T&gt; withIcon(Callback&lt;T, JabRefIcon&gt; toIcon) {
+<span class="nc" id="L42">        this.toGraphic = viewModel -&gt; toIcon.call(viewModel).getGraphicNode();</span>
+<span class="nc" id="L43">        return this;</span>
+    }
+
+    public ViewModelTreeCellFactory&lt;T&gt; withTooltip(Callback&lt;T, String&gt; toTooltip) {
+<span class="nc" id="L47">        this.toTooltip = toTooltip;</span>
+<span class="nc" id="L48">        return this;</span>
+    }
+
+    public ViewModelTreeCellFactory&lt;T&gt; withOnMouseClickedEvent(Callback&lt;T, EventHandler&lt;? super MouseEvent&gt;&gt; toOnMouseClickedEvent) {
+<span class="nc" id="L52">        this.toOnMouseClickedEvent = toOnMouseClickedEvent;</span>
+<span class="nc" id="L53">        return this;</span>
+    }
+
+    public void install(TreeView&lt;T&gt; treeView) {
+<span class="nc" id="L57">        treeView.setCellFactory(this);</span>
+<span class="nc" id="L58">    }</span>
+
+    @Override
+    public TreeCell&lt;T&gt; call(TreeView&lt;T&gt; tree) {
+<span class="nc" id="L62">        Callback&lt;TreeItem&lt;T&gt;, ObservableValue&lt;Boolean&gt;&gt; getSelectedProperty =</span>
+                item -&gt; {
+<span class="nc bnc" id="L64" title="All 2 branches missed.">                    if (item instanceof CheckBoxTreeItem&lt;?&gt;) {</span>
+<span class="nc" id="L65">                        return ((CheckBoxTreeItem&lt;?&gt;) item).selectedProperty();</span>
+                    }
+<span class="nc" id="L67">                    return null;</span>
+                };
+
+<span class="nc" id="L70">        StringConverter&lt;TreeItem&lt;T&gt;&gt; converter = new StringConverter&lt;TreeItem&lt;T&gt;&gt;() {</span>
+            @Override
+            public String toString(TreeItem&lt;T&gt; treeItem) {
+<span class="nc bnc" id="L73" title="All 6 branches missed.">                return (treeItem == null || treeItem.getValue() == null || toText == null) ?</span>
+<span class="nc" id="L74">                        &quot;&quot; : toText.call(treeItem.getValue());</span>
+            }
+
+            @Override
+            public TreeItem&lt;T&gt; fromString(String string) {
+<span class="nc" id="L79">                throw new UnsupportedOperationException(&quot;Not supported.&quot;);</span>
+            }
+        };
+<span class="nc" id="L82">        return new CheckBoxTreeCell&lt;&gt;(getSelectedProperty, converter);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

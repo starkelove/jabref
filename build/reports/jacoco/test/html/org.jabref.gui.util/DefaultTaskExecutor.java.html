@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultTaskExecutor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.util</a> &gt; <span class="el_source">DefaultTaskExecutor.java</span></div><h1>DefaultTaskExecutor.java</h1><pre class="source lang-java linenums">package org.jabref.gui.util;
+
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.function.Consumer;
+
+import javafx.application.Platform;
+import javafx.concurrent.Task;
+
+import org.fxmisc.easybind.EasyBind;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * A very simple implementation of the {@link TaskExecutor} interface.
+ * Every submitted task is invoked in a separate thread.
+ */
+<span class="nc" id="L24">public class DefaultTaskExecutor implements TaskExecutor {</span>
+
+<span class="fc" id="L26">    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTaskExecutor.class);</span>
+
+<span class="fc" id="L28">    private static final ExecutorService EXECUTOR = Executors.newFixedThreadPool(5);</span>
+
+    /**
+     *
+     */
+    public static &lt;V&gt; V runInJavaFXThread(Callable&lt;V&gt; callable) {
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (Platform.isFxApplicationThread()) {</span>
+            try {
+<span class="nc" id="L36">                return callable.call();</span>
+<span class="nc" id="L37">            } catch (Exception e) {</span>
+<span class="nc" id="L38">                LOGGER.error(&quot;Problem executing call&quot;, e);</span>
+<span class="nc" id="L39">                return null;</span>
+            }
+        }
+
+<span class="nc" id="L43">        FutureTask&lt;V&gt; task = new FutureTask&lt;&gt;(callable);</span>
+
+<span class="nc" id="L45">        Platform.runLater(task);</span>
+
+        try {
+<span class="nc" id="L48">            return task.get();</span>
+<span class="nc" id="L49">        } catch (InterruptedException | ExecutionException e) {</span>
+<span class="nc" id="L50">            LOGGER.error(&quot;Problem running in fx thread&quot;, e);</span>
+<span class="nc" id="L51">            return null;</span>
+        }
+    }
+
+    /**
+     * Runs the specified {@link Runnable} on the JavaFX application thread and waits for completion.
+     *
+     * @param action the {@link Runnable} to run
+     * @throws NullPointerException if {@code action} is {@code null}
+     */
+    public static void runAndWaitInJavaFXThread(Runnable action) {
+<span class="fc" id="L62">        Objects.requireNonNull(action);</span>
+
+        // Run synchronously on JavaFX thread
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        if (Platform.isFxApplicationThread()) {</span>
+<span class="fc" id="L66">            action.run();</span>
+<span class="fc" id="L67">            return;</span>
+        }
+
+        // Queue on JavaFX thread and wait for completion
+<span class="nc" id="L71">        final CountDownLatch doneLatch = new CountDownLatch(1);</span>
+<span class="nc" id="L72">        Platform.runLater(() -&gt; {</span>
+            try {
+<span class="nc" id="L74">                action.run();</span>
+            } finally {
+<span class="nc" id="L76">                doneLatch.countDown();</span>
+            }
+<span class="nc" id="L78">        });</span>
+
+        try {
+<span class="nc" id="L81">            doneLatch.await();</span>
+<span class="nc" id="L82">        } catch (InterruptedException e) {</span>
+<span class="nc" id="L83">            LOGGER.error(&quot;Problem running action on JavaFX thread&quot;, e);</span>
+<span class="nc" id="L84">        }</span>
+<span class="nc" id="L85">    }</span>
+
+    public static void runInJavaFXThread(Runnable runnable) {
+<span class="nc" id="L88">        Platform.runLater(runnable);</span>
+<span class="nc" id="L89">    }</span>
+
+    @Override
+    public &lt;V&gt; Future&lt;V&gt; execute(BackgroundTask&lt;V&gt; task) {
+<span class="nc" id="L93">        return execute(getJavaFXTask(task));</span>
+    }
+
+    @Override
+    public &lt;V&gt; Future&lt;V&gt; execute(Task&lt;V&gt; task) {
+<span class="nc" id="L98">        EXECUTOR.submit(task);</span>
+<span class="nc" id="L99">        return task;</span>
+    }
+
+    @Override
+    public void shutdown() {
+<span class="nc" id="L104">        EXECUTOR.shutdownNow();</span>
+<span class="nc" id="L105">    }</span>
+
+    private &lt;V&gt; Task&lt;V&gt; getJavaFXTask(BackgroundTask&lt;V&gt; task) {
+<span class="nc" id="L108">        Task&lt;V&gt; javaTask = new Task&lt;V&gt;() {</span>
+
+            {
+<span class="nc" id="L111">                EasyBind.subscribe(task.progressProperty(), progress -&gt; updateProgress(progress.getWorkDone(), progress.getMax()));</span>
+<span class="nc" id="L112">                EasyBind.subscribe(task.messageProperty(), this::updateMessage);</span>
+<span class="nc" id="L113">                EasyBind.subscribe(task.isCanceledProperty(), cancelled -&gt; {</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">                    if (cancelled) {</span>
+<span class="nc" id="L115">                        cancel();</span>
+                    }
+<span class="nc" id="L117">                });</span>
+<span class="nc" id="L118">            }</span>
+
+            @Override
+            public V call() throws Exception {
+<span class="nc" id="L122">                return task.call();</span>
+            }
+        };
+<span class="nc" id="L125">        Runnable onRunning = task.getOnRunning();</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if (onRunning != null) {</span>
+<span class="nc" id="L127">            javaTask.setOnRunning(event -&gt; onRunning.run());</span>
+        }
+<span class="nc" id="L129">        Consumer&lt;V&gt; onSuccess = task.getOnSuccess();</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (onSuccess != null) {</span>
+<span class="nc" id="L131">            javaTask.setOnSucceeded(event -&gt; onSuccess.accept(javaTask.getValue()));</span>
+        }
+<span class="nc" id="L133">        Consumer&lt;Exception&gt; onException = task.getOnException();</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (onException != null) {</span>
+<span class="nc" id="L135">            javaTask.setOnFailed(event -&gt; onException.accept(convertToException(javaTask.getException())));</span>
+        }
+<span class="nc" id="L137">        return javaTask;</span>
+    }
+
+    private Exception convertToException(Throwable throwable) {
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        if (throwable instanceof Exception) {</span>
+<span class="nc" id="L142">            return (Exception) throwable;</span>
+        } else {
+<span class="nc" id="L144">            return new Exception(throwable);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContainsAndRegexBasedSearchRuleDescriber.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.search.rules.describer</a> &gt; <span class="el_source">ContainsAndRegexBasedSearchRuleDescriber.java</span></div><h1>ContainsAndRegexBasedSearchRuleDescriber.java</h1><pre class="source lang-java linenums">package org.jabref.gui.search.rules.describer;
+
+import java.util.List;
+
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
+
+import org.jabref.gui.util.TooltipTextUtil;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.search.rules.SentenceAnalyzer;
+
+public class ContainsAndRegexBasedSearchRuleDescriber implements SearchDescriber {
+
+    private final boolean regExp;
+    private final boolean caseSensitive;
+    private final String query;
+
+<span class="fc" id="L18">    public ContainsAndRegexBasedSearchRuleDescriber(boolean caseSensitive, boolean regExp, String query) {</span>
+<span class="fc" id="L19">        this.caseSensitive = caseSensitive;</span>
+<span class="fc" id="L20">        this.regExp = regExp;</span>
+<span class="fc" id="L21">        this.query = query;</span>
+<span class="fc" id="L22">    }</span>
+
+    @Override
+    public TextFlow getDescription() {
+<span class="fc" id="L26">        List&lt;String&gt; words = new SentenceAnalyzer(query).getWords();</span>
+<span class="pc bpc" id="L27" title="1 of 2 branches missed.">        String firstWord = words.isEmpty() ? &quot;&quot; : words.get(0);</span>
+
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        String temp = regExp ? Localization.lang(</span>
+                &quot;This search contains entries in which any field contains the regular expression &lt;b&gt;%0&lt;/b&gt;&quot;)
+<span class="fc" id="L31">                : Localization.lang(&quot;This search contains entries in which any field contains the term &lt;b&gt;%0&lt;/b&gt;&quot;);</span>
+<span class="fc" id="L32">        List&lt;Text&gt; textList = TooltipTextUtil.formatToTexts(temp, new TooltipTextUtil.TextReplacement(&quot;&lt;b&gt;%0&lt;/b&gt;&quot;, firstWord, TooltipTextUtil.TextType.BOLD));</span>
+
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (words.size() &gt; 1) {</span>
+<span class="fc" id="L35">            List&lt;String&gt; unprocessedWords = words.subList(1, words.size());</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">            for (String word : unprocessedWords) {</span>
+<span class="fc" id="L37">                textList.add(TooltipTextUtil.createText(String.format(&quot; %s &quot;, Localization.lang(&quot;and&quot;)), TooltipTextUtil.TextType.NORMAL));</span>
+<span class="fc" id="L38">                textList.add(TooltipTextUtil.createText(word, TooltipTextUtil.TextType.BOLD));</span>
+<span class="fc" id="L39">            }</span>
+        }
+
+<span class="fc" id="L42">        String genericDescription = &quot;\n\n&quot; + Localization.lang(&quot;Hint: To search specific fields only, enter for example:&lt;p&gt;&lt;tt&gt;author=smith and title=electrical&lt;/tt&gt;&quot;);</span>
+<span class="fc" id="L43">        genericDescription = genericDescription.replace(&quot;&lt;p&gt;&quot;, &quot;\n&quot;);</span>
+<span class="fc" id="L44">        List&lt;Text&gt; genericDescriptionTexts = TooltipTextUtil.formatToTexts(genericDescription, new TooltipTextUtil.TextReplacement(&quot;&lt;tt&gt;author=smith and title=electrical&lt;/tt&gt;&quot;, &quot;author=smith and title=electrical&quot;, TooltipTextUtil.TextType.MONOSPACED));</span>
+<span class="fc" id="L45">        textList.add(getCaseSensitiveDescription());</span>
+<span class="fc" id="L46">        textList.addAll(genericDescriptionTexts);</span>
+
+<span class="fc" id="L48">        TextFlow searchDescription = new TextFlow();</span>
+<span class="fc" id="L49">        searchDescription.getChildren().setAll(textList);</span>
+<span class="fc" id="L50">        return searchDescription;</span>
+    }
+
+    private Text getCaseSensitiveDescription() {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (caseSensitive) {</span>
+<span class="fc" id="L55">            return TooltipTextUtil.createText(String.format(&quot; (%s). &quot;, Localization.lang(&quot;case sensitive&quot;)), TooltipTextUtil.TextType.NORMAL);</span>
+        } else {
+<span class="fc" id="L57">            return TooltipTextUtil.createText(String.format(&quot; (%s). &quot;, Localization.lang(&quot;case insensitive&quot;)), TooltipTextUtil.TextType.NORMAL);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

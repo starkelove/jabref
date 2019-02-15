@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.model.database.BibDatabaseTest" tests="29" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:25" hostname="n184-p67.eduroam.kth.se" time="0.029">
+  <properties/>
+  <testcase name="hasStringLabelFindsString()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="removeEntryPostsRemovedEntryEvent()" classname="org.jabref.model.database.BibDatabaseTest" time="0.002"/>
+  <testcase name="getUsedStrings()" classname="org.jabref.model.database.BibDatabaseTest" time="0.001"/>
+  <testcase name="removeNullEntryThrowsException()" classname="org.jabref.model.database.BibDatabaseTest" time="0.001"/>
+  <testcase name="changingEntryPostsChangeEntryEvent()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="insertEntryWithSameIdThrowsException()" classname="org.jabref.model.database.BibDatabaseTest" time="0.001"/>
+  <testcase name="preambleIsEmptyIfNotSet()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="insertEntryAddsEntryToEntriesList()" classname="org.jabref.model.database.BibDatabaseTest" time="0.001"/>
+  <testcase name="getUsedStringsSingleString()" classname="org.jabref.model.database.BibDatabaseTest" time="0.001"/>
+  <testcase name="correctKeyCountAfterRemoving()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="removeEntryRemovesEntryFromEntriesList()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="addSameStringIdTwiceThrowsKeyCollisionException()" classname="org.jabref.model.database.BibDatabaseTest" time="0.002"/>
+  <testcase name="resolveForStringsOddHashMarkAtTheEnd()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="circularStringResolving()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="resolveForStringsMonth()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="circularStringResolvingLongerCycle()" classname="org.jabref.model.database.BibDatabaseTest" time="0.001"/>
+  <testcase name="insertNullEntryThrowsException()" classname="org.jabref.model.database.BibDatabaseTest" time="0.003"/>
+  <testcase name="insertStringUpdatesStringList()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="correctKeyCountOne()" classname="org.jabref.model.database.BibDatabaseTest" time="0.001"/>
+  <testcase name="correctKeyCountTwo()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="setPreambleWorks()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="removeStringUpdatesStringList()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="insertEntryPostsAddedEntryEvent()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="emptyDatabaseHasNoStrings()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="getEntriesSortedWithTwoEntries()" classname="org.jabref.model.database.BibDatabaseTest" time="0.001"/>
+  <testcase name="addSameStringLabelTwiceThrowsKeyCollisionException()" classname="org.jabref.model.database.BibDatabaseTest" time="0.001"/>
+  <testcase name="containsEntryIdFindsEntry()" classname="org.jabref.model.database.BibDatabaseTest" time="0.001"/>
+  <testcase name="getUsedStringsNoString()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <testcase name="resolveForStringsSurroundingContent()" classname="org.jabref.model.database.BibDatabaseTest" time="0.0"/>
+  <system-out><![CDATA[15:25:25.416 [Test worker] INFO  org.jabref.model.database.BibDatabase - Stopped due to circular reference in strings: AAA -  
+15:25:25.416 [Test worker] INFO  org.jabref.model.database.BibDatabase - Stopped due to circular reference in strings: BBB -  
+15:25:25.418 [Test worker] INFO  org.jabref.model.database.BibDatabase - Stopped due to circular reference in strings: AAA -  
+15:25:25.418 [Test worker] INFO  org.jabref.model.database.BibDatabase - Stopped due to circular reference in strings: BBB -  
+15:25:25.419 [Test worker] INFO  org.jabref.model.database.BibDatabase - Stopped due to circular reference in strings: CCC -  
+15:25:25.419 [Test worker] INFO  org.jabref.model.database.BibDatabase - Stopped due to circular reference in strings: DDD -  
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

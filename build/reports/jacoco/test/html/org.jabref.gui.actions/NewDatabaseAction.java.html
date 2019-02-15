@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NewDatabaseAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.actions</a> &gt; <span class="el_source">NewDatabaseAction.java</span></div><h1>NewDatabaseAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.actions;
+
+import org.jabref.gui.JabRefFrame;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.Defaults;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.database.BibDatabaseMode;
+
+/**
+ * Create a new, empty, database.
+ */
+public class NewDatabaseAction extends SimpleCommand {
+
+    private final JabRefFrame jabRefFrame;
+    private final BibDatabaseMode mode;
+
+<span class="nc" id="L17">    public NewDatabaseAction(JabRefFrame jabRefFrame, BibDatabaseMode mode) {</span>
+<span class="nc" id="L18">        this.jabRefFrame = jabRefFrame;</span>
+<span class="nc" id="L19">        this.mode = mode;</span>
+<span class="nc" id="L20">    }</span>
+
+    @Override
+    public void execute() {
+<span class="nc" id="L24">        BibDatabaseContext bibDatabaseContext = new BibDatabaseContext(new Defaults(BibDatabaseMode.BIBTEX));</span>
+<span class="nc" id="L25">        bibDatabaseContext.setMode(mode);</span>
+<span class="nc" id="L26">        jabRefFrame.addTab(bibDatabaseContext, true);</span>
+<span class="nc" id="L27">        jabRefFrame.output(Localization.lang(&quot;New %0 library created.&quot;, mode.getFormattedName()));</span>
+<span class="nc" id="L28">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

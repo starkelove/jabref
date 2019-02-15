@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ImportHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.externalfiles</a> &gt; <span class="el_source">ImportHandler.java</span></div><h1>ImportHandler.java</h1><pre class="source lang-java linenums">package org.jabref.gui.externalfiles;
+
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
+
+import javax.swing.undo.CompoundEdit;
+import javax.swing.undo.UndoManager;
+
+import org.jabref.Globals;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.externalfiletype.ExternalFileTypes;
+import org.jabref.gui.undo.UndoableInsertEntry;
+import org.jabref.logic.externalfiles.ExternalFilesContentImporter;
+import org.jabref.logic.importer.ImportFormatPreferences;
+import org.jabref.logic.util.UpdateField;
+import org.jabref.logic.util.UpdateFieldPreferences;
+import org.jabref.logic.util.io.FileUtil;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.metadata.FilePreferences;
+import org.jabref.model.util.FileUpdateMonitor;
+import org.jabref.preferences.JabRefPreferences;
+
+public class ImportHandler {
+
+    private final BibDatabaseContext database;
+    private final UpdateFieldPreferences updateFieldPreferences;
+    private final DialogService dialogService;
+    private final FileUpdateMonitor fileUpdateMonitor;
+    private final ExternalFilesEntryLinker linker;
+    private final ExternalFilesContentImporter contentImporter;
+    private final UndoManager undoManager;
+
+    public ImportHandler(DialogService dialogService,
+                         BibDatabaseContext database,
+                         ExternalFileTypes externalFileTypes,
+                         FilePreferences filePreferences,
+                         ImportFormatPreferences importFormatPreferences,
+                         UpdateFieldPreferences updateFieldPreferences,
+                         FileUpdateMonitor fileupdateMonitor,
+<span class="nc" id="L43">                         UndoManager undoManager) {</span>
+
+<span class="nc" id="L45">        this.dialogService = dialogService;</span>
+<span class="nc" id="L46">        this.database = database;</span>
+<span class="nc" id="L47">        this.updateFieldPreferences = updateFieldPreferences;</span>
+<span class="nc" id="L48">        this.fileUpdateMonitor = fileupdateMonitor;</span>
+
+<span class="nc" id="L50">        this.linker = new ExternalFilesEntryLinker(externalFileTypes, filePreferences, database);</span>
+<span class="nc" id="L51">        this.contentImporter = new ExternalFilesContentImporter(importFormatPreferences);</span>
+<span class="nc" id="L52">        this.undoManager = undoManager;</span>
+<span class="nc" id="L53">    }</span>
+
+    public ExternalFilesEntryLinker getLinker() {
+<span class="nc" id="L56">        return linker;</span>
+    }
+
+    public void importAsNewEntries(List&lt;Path&gt; files) {
+<span class="nc" id="L60">        CompoundEdit ce = new CompoundEdit();</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        for (Path file : files) {</span>
+            List&lt;BibEntry&gt; entriesToAdd;
+<span class="nc bnc" id="L63" title="All 2 branches missed.">            if (FileUtil.getFileExtension(file).filter(&quot;pdf&quot;::equals).isPresent()) {</span>
+<span class="nc" id="L64">                List&lt;BibEntry&gt; pdfResult = contentImporter.importPDFContent(file);</span>
+<span class="nc" id="L65">                List&lt;BibEntry&gt; xmpEntriesInFile = contentImporter.importXMPContent(file);</span>
+
+                // First try xmp import, if empty try pdf import, otherwise create empty entry
+<span class="nc bnc" id="L68" title="All 2 branches missed.">                if (!xmpEntriesInFile.isEmpty()) {</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">                    if (!pdfResult.isEmpty()) {</span>
+                        //FIXME: Show merge dialog?
+<span class="nc" id="L71">                        entriesToAdd = xmpEntriesInFile;</span>
+                    } else {
+<span class="nc" id="L73">                        entriesToAdd = xmpEntriesInFile;</span>
+                    }
+                } else {
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                    if (!pdfResult.isEmpty()) {</span>
+<span class="nc" id="L77">                        entriesToAdd = pdfResult;</span>
+                    } else {
+<span class="nc" id="L79">                        entriesToAdd = Collections.singletonList(createEmptyEntryWithLink(file));</span>
+                    }
+                }
+<span class="nc" id="L82">            } else {</span>
+<span class="nc" id="L83">                entriesToAdd = Collections.singletonList(createEmptyEntryWithLink(file));</span>
+            }
+
+<span class="nc" id="L86">            insertEntries(entriesToAdd);</span>
+<span class="nc" id="L87">            entriesToAdd.forEach(entry -&gt; ce.addEdit(new UndoableInsertEntry(database.getDatabase(), entry)));</span>
+<span class="nc" id="L88">        }</span>
+<span class="nc" id="L89">        ce.end();</span>
+<span class="nc" id="L90">        undoManager.addEdit(ce);</span>
+<span class="nc" id="L91">    }</span>
+
+    private BibEntry createEmptyEntryWithLink(Path file) {
+<span class="nc" id="L94">        BibEntry entry = new BibEntry();</span>
+<span class="nc" id="L95">        entry.setField(FieldName.TITLE, file.getFileName().toString());</span>
+<span class="nc" id="L96">        linker.addFilesToEntry(entry, Collections.singletonList(file));</span>
+<span class="nc" id="L97">        return entry;</span>
+    }
+
+    public void importEntriesFromBibFiles(Path bibFile) {
+<span class="nc" id="L101">        List&lt;BibEntry&gt; entriesToImport = contentImporter.importFromBibFile(bibFile, fileUpdateMonitor);</span>
+<span class="nc" id="L102">        insertEntries(entriesToImport);</span>
+<span class="nc" id="L103">    }</span>
+
+    private void insertEntries(List&lt;BibEntry&gt; entries) {
+<span class="nc" id="L106">        database.getDatabase().insertEntries(entries);</span>
+
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        if (Globals.prefs.getBoolean(JabRefPreferences.USE_OWNER)) {</span>
+            // Set owner field to default value
+<span class="nc" id="L110">            UpdateField.setAutomaticFields(entries, true, true, updateFieldPreferences);</span>
+        }
+<span class="nc" id="L112">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

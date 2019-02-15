@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MathSciNetId.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry.identifier</a> &gt; <span class="el_source">MathSciNetId.java</span></div><h1>MathSciNetId.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry.identifier;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.strings.StringUtil;
+
+/**
+ * Article identifier for MathSciNet (also sometimes called &quot;MRNumber&quot;)
+ */
+public class MathSciNetId implements Identifier {
+
+    private String identifier;
+
+<span class="fc" id="L18">    public MathSciNetId(String identifier) {</span>
+<span class="fc" id="L19">        this.identifier = Objects.requireNonNull(identifier);</span>
+<span class="fc" id="L20">    }</span>
+
+    public static Optional&lt;MathSciNetId&gt; parse(String mrNumberRaw) {
+        // Take everything before whitespace or open bracket, so something like `619693 (82j:58046)` gets parsed correctly
+<span class="fc" id="L24">        String identifier = StringUtil.tokenizeToList(mrNumberRaw, &quot; (&quot;).get(0).trim();</span>
+<span class="fc" id="L25">        return Optional.of(new MathSciNetId(identifier));</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L31">            return true;</span>
+        }
+<span class="pc bpc" id="L33" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L34">            return false;</span>
+        }
+<span class="fc" id="L36">        MathSciNetId that = (MathSciNetId) o;</span>
+<span class="fc" id="L37">        return Objects.equals(identifier, that.identifier);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L42">        return Objects.hash(identifier);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L47">        return identifier;</span>
+    }
+
+    /**
+     * Get URL in online database.
+     */
+    @Override
+    public Optional&lt;URI&gt; getExternalURI() {
+        try {
+<span class="nc" id="L56">            return Optional.of(new URI(&quot;https://www.ams.org/mathscinet-getitem?mr=&quot; + identifier));</span>
+<span class="nc" id="L57">        } catch (URISyntaxException e) {</span>
+<span class="nc" id="L58">            return Optional.empty();</span>
+        }
+    }
+
+    @Override
+    public String getDefaultField() {
+<span class="nc" id="L64">        return FieldName.MR_NUMBER;</span>
+    }
+
+    @Override
+    public String getNormalized() {
+<span class="nc" id="L69">        return identifier;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,685 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LayoutEntry.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.layout</a> &gt; <span class="el_source">LayoutEntry.java</span></div><h1>LayoutEntry.java</h1><pre class="source lang-java linenums">package org.jabref.logic.layout;
+
+import java.io.File;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.jabref.logic.formatter.bibtexfields.HtmlToLatexFormatter;
+import org.jabref.logic.formatter.bibtexfields.UnicodeToLatexFormatter;
+import org.jabref.logic.layout.format.AuthorAbbreviator;
+import org.jabref.logic.layout.format.AuthorAndToSemicolonReplacer;
+import org.jabref.logic.layout.format.AuthorAndsCommaReplacer;
+import org.jabref.logic.layout.format.AuthorAndsReplacer;
+import org.jabref.logic.layout.format.AuthorFirstAbbrLastCommas;
+import org.jabref.logic.layout.format.AuthorFirstAbbrLastOxfordCommas;
+import org.jabref.logic.layout.format.AuthorFirstFirst;
+import org.jabref.logic.layout.format.AuthorFirstFirstCommas;
+import org.jabref.logic.layout.format.AuthorFirstLastCommas;
+import org.jabref.logic.layout.format.AuthorFirstLastOxfordCommas;
+import org.jabref.logic.layout.format.AuthorLF_FF;
+import org.jabref.logic.layout.format.AuthorLF_FFAbbr;
+import org.jabref.logic.layout.format.AuthorLastFirst;
+import org.jabref.logic.layout.format.AuthorLastFirstAbbrCommas;
+import org.jabref.logic.layout.format.AuthorLastFirstAbbrOxfordCommas;
+import org.jabref.logic.layout.format.AuthorLastFirstAbbreviator;
+import org.jabref.logic.layout.format.AuthorLastFirstCommas;
+import org.jabref.logic.layout.format.AuthorLastFirstOxfordCommas;
+import org.jabref.logic.layout.format.AuthorNatBib;
+import org.jabref.logic.layout.format.AuthorOrgSci;
+import org.jabref.logic.layout.format.Authors;
+import org.jabref.logic.layout.format.CompositeFormat;
+import org.jabref.logic.layout.format.CreateBibORDFAuthors;
+import org.jabref.logic.layout.format.CreateDocBook4Authors;
+import org.jabref.logic.layout.format.CreateDocBook4Editors;
+import org.jabref.logic.layout.format.CreateDocBook5Authors;
+import org.jabref.logic.layout.format.CreateDocBook5Editors;
+import org.jabref.logic.layout.format.CurrentDate;
+import org.jabref.logic.layout.format.DOICheck;
+import org.jabref.logic.layout.format.DOIStrip;
+import org.jabref.logic.layout.format.DateFormatter;
+import org.jabref.logic.layout.format.Default;
+import org.jabref.logic.layout.format.EntryTypeFormatter;
+import org.jabref.logic.layout.format.FileLink;
+import org.jabref.logic.layout.format.FirstPage;
+import org.jabref.logic.layout.format.FormatPagesForHTML;
+import org.jabref.logic.layout.format.FormatPagesForXML;
+import org.jabref.logic.layout.format.GetOpenOfficeType;
+import org.jabref.logic.layout.format.HTMLChars;
+import org.jabref.logic.layout.format.HTMLParagraphs;
+import org.jabref.logic.layout.format.IfPlural;
+import org.jabref.logic.layout.format.Iso690FormatDate;
+import org.jabref.logic.layout.format.Iso690NamesAuthors;
+import org.jabref.logic.layout.format.JournalAbbreviator;
+import org.jabref.logic.layout.format.LastPage;
+import org.jabref.logic.layout.format.LatexToUnicodeFormatter;
+import org.jabref.logic.layout.format.NameFormatter;
+import org.jabref.logic.layout.format.NoSpaceBetweenAbbreviations;
+import org.jabref.logic.layout.format.NotFoundFormatter;
+import org.jabref.logic.layout.format.Number;
+import org.jabref.logic.layout.format.Ordinal;
+import org.jabref.logic.layout.format.RTFChars;
+import org.jabref.logic.layout.format.RemoveBrackets;
+import org.jabref.logic.layout.format.RemoveBracketsAddComma;
+import org.jabref.logic.layout.format.RemoveLatexCommandsFormatter;
+import org.jabref.logic.layout.format.RemoveTilde;
+import org.jabref.logic.layout.format.RemoveWhitespace;
+import org.jabref.logic.layout.format.Replace;
+import org.jabref.logic.layout.format.RisAuthors;
+import org.jabref.logic.layout.format.RisKeywords;
+import org.jabref.logic.layout.format.RisMonth;
+import org.jabref.logic.layout.format.ToLowerCase;
+import org.jabref.logic.layout.format.ToUpperCase;
+import org.jabref.logic.layout.format.WrapContent;
+import org.jabref.logic.layout.format.WrapFileLinks;
+import org.jabref.logic.layout.format.XMLChars;
+import org.jabref.logic.openoffice.OOPreFormatter;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.strings.StringUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+class LayoutEntry {
+<span class="fc" id="L90">    private static final Logger LOGGER = LoggerFactory.getLogger(LayoutEntry.class);</span>
+
+    private List&lt;LayoutFormatter&gt; option;
+
+    // Formatter to be run after other formatters:
+    private LayoutFormatter postFormatter;
+
+    private String text;
+
+    private List&lt;LayoutEntry&gt; layoutEntries;
+
+    private final int type;
+
+<span class="fc" id="L103">    private final List&lt;String&gt; invalidFormatter = new ArrayList&lt;&gt;();</span>
+
+    private final LayoutFormatterPreferences prefs;
+
+<span class="fc" id="L107">    public LayoutEntry(StringInt si, LayoutFormatterPreferences prefs) {</span>
+<span class="fc" id="L108">        this.prefs = prefs;</span>
+<span class="fc" id="L109">        type = si.i;</span>
+<span class="fc bfc" id="L110" title="All 4 branches covered.">        switch (type) {</span>
+            case LayoutHelper.IS_LAYOUT_TEXT:
+<span class="fc" id="L112">                text = si.s;</span>
+<span class="fc" id="L113">                break;</span>
+            case LayoutHelper.IS_SIMPLE_COMMAND:
+<span class="fc" id="L115">                text = si.s.trim();</span>
+<span class="fc" id="L116">                break;</span>
+            case LayoutHelper.IS_OPTION_FIELD:
+<span class="fc" id="L118">                doOptionField(si.s);</span>
+<span class="fc" id="L119">                break;</span>
+            case LayoutHelper.IS_FIELD_START:
+            case LayoutHelper.IS_FIELD_END:
+            default:
+                break;
+        }
+<span class="fc" id="L125">    }</span>
+
+<span class="fc" id="L127">    public LayoutEntry(List&lt;StringInt&gt; parsedEntries, int layoutType, LayoutFormatterPreferences prefs) {</span>
+<span class="fc" id="L128">        this.prefs = prefs;</span>
+<span class="fc" id="L129">        List&lt;LayoutEntry&gt; tmpEntries = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L130">        String blockStart = parsedEntries.get(0).s;</span>
+<span class="fc" id="L131">        String blockEnd = parsedEntries.get(parsedEntries.size() - 1).s;</span>
+
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        if (!blockStart.equals(blockEnd)) {</span>
+<span class="nc" id="L134">            LOGGER.warn(&quot;Field start and end entry must be equal.&quot;);</span>
+        }
+
+<span class="fc" id="L137">        type = layoutType;</span>
+<span class="fc" id="L138">        text = blockEnd;</span>
+<span class="fc" id="L139">        List&lt;StringInt&gt; blockEntries = null;</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">        for (StringInt parsedEntry : parsedEntries.subList(1, parsedEntries.size() - 1)) {</span>
+<span class="pc bpc" id="L141" title="2 of 3 branches missed.">            switch (parsedEntry.i) {</span>
+                case LayoutHelper.IS_FIELD_START:
+                case LayoutHelper.IS_GROUP_START:
+<span class="nc" id="L144">                    blockEntries = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L145">                    blockStart = parsedEntry.s;</span>
+<span class="nc" id="L146">                    break;</span>
+                case LayoutHelper.IS_FIELD_END:
+                case LayoutHelper.IS_GROUP_END:
+<span class="nc bnc" id="L149" title="All 2 branches missed.">                    if (blockStart.equals(parsedEntry.s)) {</span>
+<span class="nc" id="L150">                        blockEntries.add(parsedEntry);</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">                        int groupType = parsedEntry.i == LayoutHelper.IS_GROUP_END ? LayoutHelper.IS_GROUP_START :</span>
+                                LayoutHelper.IS_FIELD_START;
+<span class="nc" id="L153">                        LayoutEntry le = new LayoutEntry(blockEntries, groupType, prefs);</span>
+<span class="nc" id="L154">                        tmpEntries.add(le);</span>
+<span class="nc" id="L155">                        blockEntries = null;</span>
+<span class="nc" id="L156">                    } else {</span>
+<span class="nc" id="L157">                        LOGGER.warn(&quot;Nested field entries are not implemented!&quot;);</span>
+                    }
+<span class="nc" id="L159">                    break;</span>
+                case LayoutHelper.IS_LAYOUT_TEXT:
+                case LayoutHelper.IS_SIMPLE_COMMAND:
+                case LayoutHelper.IS_OPTION_FIELD:
+                default:
+                    // Do nothing
+                    break;
+            }
+
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">            if (blockEntries == null) {</span>
+<span class="fc" id="L169">                tmpEntries.add(new LayoutEntry(parsedEntry, prefs));</span>
+            } else {
+<span class="nc" id="L171">                blockEntries.add(parsedEntry);</span>
+            }
+<span class="fc" id="L173">        }</span>
+
+<span class="fc" id="L175">        layoutEntries = new ArrayList&lt;&gt;(tmpEntries);</span>
+
+<span class="fc bfc" id="L177" title="All 2 branches covered.">        for (LayoutEntry layoutEntry : layoutEntries) {</span>
+<span class="fc" id="L178">            invalidFormatter.addAll(layoutEntry.getInvalidFormatters());</span>
+<span class="fc" id="L179">        }</span>
+<span class="fc" id="L180">    }</span>
+
+    public void setPostFormatter(LayoutFormatter formatter) {
+<span class="fc" id="L183">        this.postFormatter = formatter;</span>
+<span class="fc" id="L184">    }</span>
+
+    public String doLayout(BibEntry bibtex, BibDatabase database) {
+<span class="pc bpc" id="L187" title="2 of 7 branches missed.">        switch (type) {</span>
+            case LayoutHelper.IS_LAYOUT_TEXT:
+<span class="fc" id="L189">                return text;</span>
+            case LayoutHelper.IS_SIMPLE_COMMAND:
+<span class="fc" id="L191">                String value = bibtex.getResolvedFieldOrAlias(text, database).orElse(&quot;&quot;);</span>
+
+                // If a post formatter has been set, call it:
+<span class="fc bfc" id="L194" title="All 2 branches covered.">                if (postFormatter != null) {</span>
+<span class="fc" id="L195">                    value = postFormatter.format(value);</span>
+                }
+<span class="fc" id="L197">                return value;</span>
+            case LayoutHelper.IS_FIELD_START:
+            case LayoutHelper.IS_GROUP_START:
+<span class="fc" id="L200">                return handleFieldOrGroupStart(bibtex, database);</span>
+            case LayoutHelper.IS_FIELD_END:
+            case LayoutHelper.IS_GROUP_END:
+<span class="fc" id="L203">                return &quot;&quot;;</span>
+            case LayoutHelper.IS_OPTION_FIELD:
+<span class="fc" id="L205">                return handleOptionField(bibtex, database);</span>
+            case LayoutHelper.IS_ENCODING_NAME:
+                // Printing the encoding name is not supported in entry layouts, only
+                // in begin/end layouts. This prevents breakage if some users depend
+                // on a field called &quot;encoding&quot;. We simply return this field instead:
+<span class="nc" id="L210">                return bibtex.getResolvedFieldOrAlias(&quot;encoding&quot;, database).orElse(null);</span>
+            default:
+<span class="nc" id="L212">                return &quot;&quot;;</span>
+        }
+    }
+
+    private String handleOptionField(BibEntry bibtex, BibDatabase database) {
+        String fieldEntry;
+
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">        if (BibEntry.TYPE_HEADER.equals(text)) {</span>
+<span class="nc" id="L220">            fieldEntry = bibtex.getType();</span>
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">        } else if (BibEntry.OBSOLETE_TYPE_HEADER.equals(text)) {</span>
+<span class="nc" id="L222">            LOGGER.warn(&quot;'&quot; + BibEntry.OBSOLETE_TYPE_HEADER</span>
+                    + &quot;' is an obsolete name for the entry type. Please update your layout to use '&quot;
+                    + BibEntry.TYPE_HEADER + &quot;' instead.&quot;);
+<span class="nc" id="L225">            fieldEntry = bibtex.getType();</span>
+        } else {
+            // changed section begin - arudert
+            // resolve field (recognized by leading backslash) or text
+<span class="fc bfc" id="L229" title="All 2 branches covered.">            fieldEntry = text.startsWith(&quot;\\&quot;) ? bibtex</span>
+<span class="fc" id="L230">                    .getResolvedFieldOrAlias(text.substring(1), database)</span>
+<span class="fc" id="L231">                    .orElse(&quot;&quot;) : BibDatabase.getText(text, database);</span>
+            // changed section end - arudert
+        }
+
+<span class="pc bpc" id="L235" title="1 of 2 branches missed.">        if (option != null) {</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">            for (LayoutFormatter anOption : option) {</span>
+<span class="fc" id="L237">                fieldEntry = anOption.format(fieldEntry);</span>
+<span class="fc" id="L238">            }</span>
+        }
+
+        // If a post formatter has been set, call it:
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (postFormatter != null) {</span>
+<span class="fc" id="L243">            fieldEntry = postFormatter.format(fieldEntry);</span>
+        }
+
+<span class="fc" id="L246">        return fieldEntry;</span>
+    }
+
+    private String handleFieldOrGroupStart(BibEntry bibtex, BibDatabase database) {
+        Optional&lt;String&gt; field;
+<span class="pc bpc" id="L251" title="1 of 2 branches missed.">        if (type == LayoutHelper.IS_GROUP_START) {</span>
+<span class="nc" id="L252">            field = bibtex.getResolvedFieldOrAlias(text, database);</span>
+<span class="pc bpc" id="L253" title="1 of 2 branches missed.">        } else if (text.matches(&quot;.*(;|(\\&amp;+)).*&quot;)) {</span>
+            // split the strings along &amp;, &amp;&amp; or ; for AND formatter
+<span class="nc" id="L255">            String[] parts = text.split(&quot;\\s*(;|(\\&amp;+))\\s*&quot;);</span>
+<span class="nc" id="L256">            field = Optional.empty();</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">            for (String part : parts) {</span>
+<span class="nc" id="L258">                field = bibtex.getResolvedFieldOrAlias(part, database);</span>
+<span class="nc bnc" id="L259" title="All 2 branches missed.">                if (!field.isPresent()) {</span>
+<span class="nc" id="L260">                    break;</span>
+                }
+            }
+<span class="nc" id="L263">        } else {</span>
+            // split the strings along |, ||  for OR formatter
+<span class="fc" id="L265">            String[] parts = text.split(&quot;\\s*(\\|+)\\s*&quot;);</span>
+<span class="fc" id="L266">            field = Optional.empty();</span>
+<span class="fc bfc" id="L267" title="All 2 branches covered.">            for (String part : parts) {</span>
+<span class="fc" id="L268">                field = bibtex.getResolvedFieldOrAlias(part, database);</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">                if (field.isPresent()) {</span>
+<span class="fc" id="L270">                    break;</span>
+                }
+            }
+        }
+
+<span class="pc bpc" id="L275" title="1 of 4 branches missed.">        if ((!field.isPresent()) || ((type == LayoutHelper.IS_GROUP_START)</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">                &amp;&amp; field.get().equalsIgnoreCase(LayoutHelper.getCurrentGroup()))) {</span>
+<span class="fc" id="L277">            return null;</span>
+        } else {
+<span class="pc bpc" id="L279" title="1 of 2 branches missed.">            if (type == LayoutHelper.IS_GROUP_START) {</span>
+<span class="nc" id="L280">                LayoutHelper.setCurrentGroup(field.get());</span>
+            }
+<span class="fc" id="L282">            StringBuilder sb = new StringBuilder(100);</span>
+            String fieldText;
+<span class="fc" id="L284">            boolean previousSkipped = false;</span>
+
+<span class="fc bfc" id="L286" title="All 2 branches covered.">            for (int i = 0; i &lt; layoutEntries.size(); i++) {</span>
+<span class="fc" id="L287">                fieldText = layoutEntries.get(i).doLayout(bibtex, database);</span>
+
+<span class="pc bpc" id="L289" title="1 of 2 branches missed.">                if (fieldText == null) {</span>
+<span class="nc bnc" id="L290" title="All 2 branches missed.">                    if ((i + 1) &lt; layoutEntries.size()) {</span>
+<span class="nc bnc" id="L291" title="All 2 branches missed.">                        if (layoutEntries.get(i + 1).doLayout(bibtex, database).trim().isEmpty()) {</span>
+<span class="nc" id="L292">                            i++;</span>
+<span class="nc" id="L293">                            previousSkipped = true;</span>
+<span class="nc" id="L294">                            continue;</span>
+                        }
+                    }
+                } else {
+
+                    // if previous was skipped --&gt; remove leading line
+                    // breaks
+<span class="pc bpc" id="L301" title="1 of 2 branches missed.">                    if (previousSkipped) {</span>
+<span class="nc" id="L302">                        int eol = 0;</span>
+
+<span class="nc bnc" id="L304" title="All 2 branches missed.">                        while ((eol &lt; fieldText.length())</span>
+<span class="nc bnc" id="L305" title="All 4 branches missed.">                                &amp;&amp; ((fieldText.charAt(eol) == '\n') || (fieldText.charAt(eol) == '\r'))) {</span>
+<span class="nc" id="L306">                            eol++;</span>
+                        }
+
+<span class="nc bnc" id="L309" title="All 2 branches missed.">                        if (eol &lt; fieldText.length()) {</span>
+<span class="nc" id="L310">                            sb.append(fieldText.substring(eol));</span>
+                        }
+<span class="nc" id="L312">                    } else {</span>
+<span class="fc" id="L313">                        sb.append(fieldText);</span>
+                    }
+                }
+
+<span class="fc" id="L317">                previousSkipped = false;</span>
+            }
+
+<span class="fc" id="L320">            return sb.toString();</span>
+        }
+    }
+
+    /**
+     * Do layout for general formatters (no bibtex-entry fields).
+     *
+     * @param databaseContext Bibtex Database
+     */
+    public String doLayout(BibDatabaseContext databaseContext, Charset encoding) {
+<span class="pc bpc" id="L330" title="7 of 9 branches missed.">        switch (type) {</span>
+            case LayoutHelper.IS_LAYOUT_TEXT:
+<span class="fc" id="L332">                return text;</span>
+
+            case LayoutHelper.IS_SIMPLE_COMMAND:
+<span class="nc" id="L335">                throw new UnsupportedOperationException(&quot;bibtex entry fields not allowed in begin or end layout&quot;);</span>
+
+            case LayoutHelper.IS_FIELD_START:
+            case LayoutHelper.IS_GROUP_START:
+<span class="nc" id="L339">                throw new UnsupportedOperationException(&quot;field and group starts not allowed in begin or end layout&quot;);</span>
+
+            case LayoutHelper.IS_FIELD_END:
+            case LayoutHelper.IS_GROUP_END:
+<span class="nc" id="L343">                throw new UnsupportedOperationException(&quot;field and group ends not allowed in begin or end layout&quot;);</span>
+
+            case LayoutHelper.IS_OPTION_FIELD:
+<span class="fc" id="L346">                String field = BibDatabase.getText(text, databaseContext.getDatabase());</span>
+<span class="pc bpc" id="L347" title="1 of 2 branches missed.">                if (option != null) {</span>
+<span class="fc bfc" id="L348" title="All 2 branches covered.">                    for (LayoutFormatter anOption : option) {</span>
+<span class="fc" id="L349">                        field = anOption.format(field);</span>
+<span class="fc" id="L350">                    }</span>
+                }
+                // If a post formatter has been set, call it:
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">                if (postFormatter != null) {</span>
+<span class="nc" id="L354">                    field = postFormatter.format(field);</span>
+                }
+
+<span class="fc" id="L357">                return field;</span>
+
+            case LayoutHelper.IS_ENCODING_NAME:
+<span class="nc" id="L360">                return encoding.displayName();</span>
+
+            case LayoutHelper.IS_FILENAME:
+<span class="nc" id="L363">                return databaseContext.getDatabaseFile().map(File::getName).orElse(&quot;&quot;);</span>
+
+            case LayoutHelper.IS_FILEPATH:
+<span class="nc" id="L366">                return databaseContext.getDatabaseFile().map(File::getPath).orElse(&quot;&quot;);</span>
+
+            default:
+                break;
+        }
+<span class="nc" id="L371">        return &quot;&quot;;</span>
+    }
+
+    private void doOptionField(String s) {
+<span class="fc" id="L375">        List&lt;String&gt; v = StringUtil.tokenizeToList(s, &quot;\n&quot;);</span>
+
+<span class="pc bpc" id="L377" title="1 of 2 branches missed.">        if (v.size() == 1) {</span>
+<span class="nc" id="L378">            text = v.get(0);</span>
+        } else {
+<span class="fc" id="L380">            text = v.get(0).trim();</span>
+
+<span class="fc" id="L382">            option = getOptionalLayout(v.get(1));</span>
+            // See if there was an undefined formatter:
+<span class="fc bfc" id="L384" title="All 2 branches covered.">            for (LayoutFormatter anOption : option) {</span>
+<span class="pc bpc" id="L385" title="1 of 2 branches missed.">                if (anOption instanceof NotFoundFormatter) {</span>
+<span class="nc" id="L386">                    String notFound = ((NotFoundFormatter) anOption).getNotFound();</span>
+
+<span class="nc" id="L388">                    invalidFormatter.add(notFound);</span>
+                }
+<span class="fc" id="L390">            }</span>
+        }
+<span class="fc" id="L392">    }</span>
+
+    private LayoutFormatter getLayoutFormatterByName(String name) throws Exception {
+
+<span class="pc bpc" id="L396" title="46 of 69 branches missed.">        switch (name) {</span>
+            case &quot;HTMLToLatexFormatter&quot;: // For backward compatibility
+            case &quot;HtmlToLatex&quot;:
+<span class="nc" id="L399">                return new HtmlToLatexFormatter();</span>
+            case &quot;UnicodeToLatexFormatter&quot;: // For backward compatibility
+            case &quot;UnicodeToLatex&quot;:
+<span class="nc" id="L402">                return new UnicodeToLatexFormatter();</span>
+            case &quot;OOPreFormatter&quot;:
+<span class="nc" id="L404">                return new OOPreFormatter();</span>
+            case &quot;AuthorAbbreviator&quot;:
+<span class="fc" id="L406">                return new AuthorAbbreviator();</span>
+            case &quot;AuthorAndToSemicolonReplacer&quot;:
+<span class="fc" id="L408">                return new AuthorAndToSemicolonReplacer();</span>
+            case &quot;AuthorAndsCommaReplacer&quot;:
+<span class="nc" id="L410">                return new AuthorAndsCommaReplacer();</span>
+            case &quot;AuthorAndsReplacer&quot;:
+<span class="fc" id="L412">                return new AuthorAndsReplacer();</span>
+            case &quot;AuthorFirstAbbrLastCommas&quot;:
+<span class="nc" id="L414">                return new AuthorFirstAbbrLastCommas();</span>
+            case &quot;AuthorFirstAbbrLastOxfordCommas&quot;:
+<span class="nc" id="L416">                return new AuthorFirstAbbrLastOxfordCommas();</span>
+            case &quot;AuthorFirstFirst&quot;:
+<span class="nc" id="L418">                return new AuthorFirstFirst();</span>
+            case &quot;AuthorFirstFirstCommas&quot;:
+<span class="nc" id="L420">                return new AuthorFirstFirstCommas();</span>
+            case &quot;AuthorFirstLastCommas&quot;:
+<span class="nc" id="L422">                return new AuthorFirstLastCommas();</span>
+            case &quot;AuthorFirstLastOxfordCommas&quot;:
+<span class="nc" id="L424">                return new AuthorFirstLastOxfordCommas();</span>
+            case &quot;AuthorLastFirst&quot;:
+<span class="fc" id="L426">                return new AuthorLastFirst();</span>
+            case &quot;AuthorLastFirstAbbrCommas&quot;:
+<span class="nc" id="L428">                return new AuthorLastFirstAbbrCommas();</span>
+            case &quot;AuthorLastFirstAbbreviator&quot;:
+<span class="nc" id="L430">                return new AuthorLastFirstAbbreviator();</span>
+            case &quot;AuthorLastFirstAbbrOxfordCommas&quot;:
+<span class="nc" id="L432">                return new AuthorLastFirstAbbrOxfordCommas();</span>
+            case &quot;AuthorLastFirstCommas&quot;:
+<span class="nc" id="L434">                return new AuthorLastFirstCommas();</span>
+            case &quot;AuthorLastFirstOxfordCommas&quot;:
+<span class="nc" id="L436">                return new AuthorLastFirstOxfordCommas();</span>
+            case &quot;AuthorLF_FF&quot;:
+<span class="nc" id="L438">                return new AuthorLF_FF();</span>
+            case &quot;AuthorLF_FFAbbr&quot;:
+<span class="nc" id="L440">                return new AuthorLF_FFAbbr();</span>
+            case &quot;AuthorNatBib&quot;:
+<span class="nc" id="L442">                return new AuthorNatBib();</span>
+            case &quot;AuthorOrgSci&quot;:
+<span class="nc" id="L444">                return new AuthorOrgSci();</span>
+            case &quot;CompositeFormat&quot;:
+<span class="nc" id="L446">                return new CompositeFormat();</span>
+            case &quot;CreateBibORDFAuthors&quot;:
+<span class="nc" id="L448">                return new CreateBibORDFAuthors();</span>
+            case &quot;CreateDocBook4Authors&quot;:
+<span class="nc" id="L450">                return new CreateDocBook4Authors();</span>
+            case &quot;CreateDocBook4Editors&quot;:
+<span class="nc" id="L452">                return new CreateDocBook4Editors();</span>
+            case &quot;CreateDocBook5Authors&quot;:
+<span class="fc" id="L454">                return new CreateDocBook5Authors();</span>
+            case &quot;CreateDocBook5Editors&quot;:
+<span class="fc" id="L456">                return new CreateDocBook5Editors();</span>
+            case &quot;CurrentDate&quot;:
+<span class="fc" id="L458">                return new CurrentDate();</span>
+            case &quot;DateFormatter&quot;:
+<span class="nc" id="L460">                return new DateFormatter();</span>
+            case &quot;DOICheck&quot;:
+<span class="fc" id="L462">                return new DOICheck();</span>
+            case &quot;DOIStrip&quot;:
+<span class="nc" id="L464">                return new DOIStrip();</span>
+            case &quot;EntryTypeFormatter&quot;:
+<span class="nc" id="L466">                return new EntryTypeFormatter();</span>
+            case &quot;FirstPage&quot;:
+<span class="nc" id="L468">                return new FirstPage();</span>
+            case &quot;FormatPagesForHTML&quot;:
+<span class="fc" id="L470">                return new FormatPagesForHTML();</span>
+            case &quot;FormatPagesForXML&quot;:
+<span class="fc" id="L472">                return new FormatPagesForXML();</span>
+            case &quot;GetOpenOfficeType&quot;:
+<span class="fc" id="L474">                return new GetOpenOfficeType();</span>
+            case &quot;HTMLChars&quot;:
+<span class="fc" id="L476">                return new HTMLChars();</span>
+            case &quot;HTMLParagraphs&quot;:
+<span class="nc" id="L478">                return new HTMLParagraphs();</span>
+            case &quot;Iso690FormatDate&quot;:
+<span class="nc" id="L480">                return new Iso690FormatDate();</span>
+            case &quot;Iso690NamesAuthors&quot;:
+<span class="nc" id="L482">                return new Iso690NamesAuthors();</span>
+            case &quot;JournalAbbreviator&quot;:
+<span class="nc" id="L484">                return new JournalAbbreviator(prefs.getJournalAbbreviationLoader(),</span>
+<span class="nc" id="L485">                        prefs.getJournalAbbreviationPreferences());</span>
+            case &quot;LastPage&quot;:
+<span class="nc" id="L487">                return new LastPage();</span>
+            case &quot;FormatChars&quot;: // For backward compatibility
+            case &quot;LatexToUnicode&quot;:
+<span class="nc" id="L490">                return new LatexToUnicodeFormatter();</span>
+            case &quot;NameFormatter&quot;:
+<span class="fc" id="L492">                return new NameFormatter();</span>
+            case &quot;NoSpaceBetweenAbbreviations&quot;:
+<span class="nc" id="L494">                return new NoSpaceBetweenAbbreviations();</span>
+            case &quot;Ordinal&quot;:
+<span class="nc" id="L496">                return new Ordinal();</span>
+            case &quot;RemoveBrackets&quot;:
+<span class="fc" id="L498">                return new RemoveBrackets();</span>
+            case &quot;RemoveBracketsAddComma&quot;:
+<span class="nc" id="L500">                return new RemoveBracketsAddComma();</span>
+            case &quot;RemoveLatexCommands&quot;:
+<span class="fc" id="L502">                return new RemoveLatexCommandsFormatter();</span>
+            case &quot;RemoveTilde&quot;:
+<span class="nc" id="L504">                return new RemoveTilde();</span>
+            case &quot;RemoveWhitespace&quot;:
+<span class="fc" id="L506">                return new RemoveWhitespace();</span>
+            case &quot;RisKeywords&quot;:
+<span class="nc" id="L508">                return new RisKeywords();</span>
+            case &quot;RisMonth&quot;:
+<span class="nc" id="L510">                return new RisMonth();</span>
+            case &quot;RTFChars&quot;:
+<span class="nc" id="L512">                return new RTFChars();</span>
+            case &quot;ToLowerCase&quot;:
+<span class="fc" id="L514">                return new ToLowerCase();</span>
+            case &quot;ToUpperCase&quot;:
+<span class="nc" id="L516">                return new ToUpperCase();</span>
+            case &quot;XMLChars&quot;:
+<span class="fc" id="L518">                return new XMLChars();</span>
+            case &quot;Default&quot;:
+<span class="nc" id="L520">                return new Default();</span>
+            case &quot;FileLink&quot;:
+<span class="fc" id="L522">                return new FileLink(prefs.getFileLinkPreferences());</span>
+            case &quot;Number&quot;:
+<span class="nc" id="L524">                return new Number();</span>
+            case &quot;RisAuthors&quot;:
+<span class="nc" id="L526">                return new RisAuthors();</span>
+            case &quot;Authors&quot;:
+<span class="fc" id="L528">                return new Authors();</span>
+            case &quot;IfPlural&quot;:
+<span class="nc" id="L530">                return new IfPlural();</span>
+            case &quot;Replace&quot;:
+<span class="fc" id="L532">                return new Replace();</span>
+            case &quot;WrapContent&quot;:
+<span class="fc" id="L534">                return new WrapContent();</span>
+            case &quot;WrapFileLinks&quot;:
+<span class="fc" id="L536">                return new WrapFileLinks(prefs.getFileLinkPreferences());</span>
+            default:
+<span class="nc" id="L538">                return new NotFoundFormatter(name);</span>
+        }
+    }
+
+    /**
+     * Return an array of LayoutFormatters found in the given formatterName
+     * string (in order of appearance).
+     */
+    private List&lt;LayoutFormatter&gt; getOptionalLayout(String formatterName) {
+
+<span class="fc" id="L548">        List&lt;List&lt;String&gt;&gt; formatterStrings = parseMethodsCalls(formatterName);</span>
+
+<span class="fc" id="L550">        List&lt;LayoutFormatter&gt; results = new ArrayList&lt;&gt;(formatterStrings.size());</span>
+
+<span class="fc" id="L552">        Map&lt;String, String&gt; userNameFormatter = NameFormatter.getNameFormatters(prefs.getNameFormatterPreferences());</span>
+
+<span class="fc bfc" id="L554" title="All 2 branches covered.">        for (List&lt;String&gt; strings : formatterStrings) {</span>
+
+<span class="fc" id="L556">            String nameFormatterName = strings.get(0).trim();</span>
+
+            // Check if this is a name formatter defined by this export filter:
+
+<span class="fc" id="L560">            Optional&lt;String&gt; contents = prefs.getCustomExportNameFormatter(nameFormatterName);</span>
+<span class="pc bpc" id="L561" title="1 of 2 branches missed.">            if (contents.isPresent()) {</span>
+<span class="nc" id="L562">                NameFormatter nf = new NameFormatter();</span>
+<span class="nc" id="L563">                nf.setParameter(contents.get());</span>
+<span class="nc" id="L564">                results.add(nf);</span>
+<span class="nc" id="L565">                continue;</span>
+            }
+
+            // Try to load from formatters in formatter folder
+            try {
+<span class="fc" id="L570">                LayoutFormatter f = getLayoutFormatterByName(nameFormatterName);</span>
+                // If this formatter accepts an argument, check if we have one, and
+                // set it if so:
+<span class="pc bpc" id="L573" title="1 of 4 branches missed.">                if ((f instanceof ParamLayoutFormatter) &amp;&amp; (strings.size() &gt;= 2)) {</span>
+<span class="fc" id="L574">                    ((ParamLayoutFormatter) f).setArgument(strings.get(1));</span>
+                }
+<span class="fc" id="L576">                results.add(f);</span>
+<span class="fc" id="L577">                continue;</span>
+<span class="nc" id="L578">            } catch (Exception ex) {</span>
+<span class="nc" id="L579">                LOGGER.info(&quot;Problem with formatter&quot;, ex);</span>
+            }
+
+            // Then check whether this is a user defined formatter
+<span class="nc" id="L583">            String formatterParameter = userNameFormatter.get(nameFormatterName);</span>
+
+<span class="nc bnc" id="L585" title="All 2 branches missed.">            if (formatterParameter != null) {</span>
+<span class="nc" id="L586">                NameFormatter nf = new NameFormatter();</span>
+<span class="nc" id="L587">                nf.setParameter(formatterParameter);</span>
+<span class="nc" id="L588">                results.add(nf);</span>
+<span class="nc" id="L589">                continue;</span>
+            }
+
+<span class="nc" id="L592">            results.add(new NotFoundFormatter(nameFormatterName));</span>
+<span class="nc" id="L593">        }</span>
+
+<span class="fc" id="L595">        return results;</span>
+    }
+
+    public List&lt;String&gt; getInvalidFormatters() {
+<span class="fc" id="L599">        return invalidFormatter;</span>
+    }
+
+    public static List&lt;List&lt;String&gt;&gt; parseMethodsCalls(String calls) {
+
+<span class="fc" id="L604">        List&lt;List&lt;String&gt;&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L606">        char[] c = calls.toCharArray();</span>
+
+<span class="fc" id="L608">        int i = 0;</span>
+<span class="fc bfc" id="L609" title="All 2 branches covered.">        while (i &lt; c.length) {</span>
+
+<span class="fc" id="L611">            int start = i;</span>
+<span class="fc bfc" id="L612" title="All 2 branches covered.">            if (Character.isJavaIdentifierStart(c[i])) {</span>
+<span class="fc" id="L613">                i++;</span>
+<span class="fc bfc" id="L614" title="All 6 branches covered.">                while ((i &lt; c.length) &amp;&amp; (Character.isJavaIdentifierPart(c[i]) || (c[i] == '.'))) {</span>
+<span class="fc" id="L615">                    i++;</span>
+                }
+<span class="fc bfc" id="L617" title="All 4 branches covered.">                if ((i &lt; c.length) &amp;&amp; (c[i] == '(')) {</span>
+
+<span class="fc" id="L619">                    String method = calls.substring(start, i);</span>
+
+                    // Skip the brace
+<span class="fc" id="L622">                    i++;</span>
+<span class="fc" id="L623">                    int bracelevel = 0;</span>
+
+<span class="pc bpc" id="L625" title="1 of 2 branches missed.">                    if (i &lt; c.length) {</span>
+<span class="fc bfc" id="L626" title="All 2 branches covered.">                        if (c[i] == '&quot;') {</span>
+                            // Parameter is in format &quot;xxx&quot;
+
+                            // Skip &quot;
+<span class="fc" id="L630">                            i++;</span>
+
+<span class="fc" id="L632">                            int startParam = i;</span>
+<span class="fc" id="L633">                            i++;</span>
+<span class="fc" id="L634">                            boolean escaped = false;</span>
+<span class="pc bpc" id="L635" title="4 of 10 branches missed.">                            while (((i + 1) &lt; c.length)</span>
+                                    &amp;&amp; !(!escaped &amp;&amp; (c[i] == '&quot;') &amp;&amp; (c[i + 1] == ')') &amp;&amp; (bracelevel == 0))) {
+<span class="pc bpc" id="L637" title="1 of 2 branches missed.">                                if (c[i] == '\\') {</span>
+<span class="nc bnc" id="L638" title="All 2 branches missed.">                                    escaped = !escaped;</span>
+<span class="pc bpc" id="L639" title="1 of 2 branches missed.">                                } else if (c[i] == '(') {</span>
+<span class="nc" id="L640">                                    bracelevel++;</span>
+<span class="pc bpc" id="L641" title="1 of 2 branches missed.">                                } else if (c[i] == ')') {</span>
+<span class="nc" id="L642">                                    bracelevel--;</span>
+                                } else {
+<span class="fc" id="L644">                                    escaped = false;</span>
+                                }
+<span class="fc" id="L646">                                i++;</span>
+                            }
+
+<span class="fc" id="L649">                            String param = calls.substring(startParam, i);</span>
+
+<span class="fc" id="L651">                            result.add(Arrays.asList(method, param));</span>
+<span class="fc" id="L652">                        } else {</span>
+                            // Parameter is in format xxx
+
+<span class="fc" id="L655">                            int startParam = i;</span>
+
+<span class="pc bpc" id="L657" title="1 of 6 branches missed.">                            while ((i &lt; c.length) &amp;&amp; (!((c[i] == ')') &amp;&amp; (bracelevel == 0)))) {</span>
+<span class="fc bfc" id="L658" title="All 2 branches covered.">                                if (c[i] == '(') {</span>
+<span class="fc" id="L659">                                    bracelevel++;</span>
+<span class="fc bfc" id="L660" title="All 2 branches covered.">                                } else if (c[i] == ')') {</span>
+<span class="fc" id="L661">                                    bracelevel--;</span>
+                                }
+<span class="fc" id="L663">                                i++;</span>
+                            }
+
+<span class="fc" id="L666">                            String param = calls.substring(startParam, i);</span>
+
+<span class="fc" id="L668">                            result.add(Arrays.asList(method, param));</span>
+<span class="fc" id="L669">                        }</span>
+                    } else {
+                        // Incorrectly terminated open brace
+<span class="nc" id="L672">                        result.add(Collections.singletonList(method));</span>
+                    }
+<span class="fc" id="L674">                } else {</span>
+<span class="fc" id="L675">                    String method = calls.substring(start, i);</span>
+<span class="fc" id="L676">                    result.add(Collections.singletonList(method));</span>
+                }
+            }
+<span class="fc" id="L679">            i++;</span>
+<span class="fc" id="L680">        }</span>
+
+<span class="fc" id="L682">        return result;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

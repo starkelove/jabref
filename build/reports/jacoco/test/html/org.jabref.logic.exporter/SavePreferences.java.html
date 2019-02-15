@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SavePreferences.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.exporter</a> &gt; <span class="el_source">SavePreferences.java</span></div><h1>SavePreferences.java</h1><pre class="source lang-java linenums">package org.jabref.logic.exporter;
+
+import java.nio.charset.Charset;
+
+import org.jabref.logic.bibtex.LatexFieldFormatterPreferences;
+import org.jabref.logic.bibtexkeypattern.BibtexKeyPatternPreferences;
+import org.jabref.model.bibtexkeypattern.GlobalBibtexKeyPattern;
+import org.jabref.model.metadata.SaveOrderConfig;
+
+public class SavePreferences {
+
+    // Encoding written at the top of the .bib file.
+    public static final String ENCODING_PREFIX = &quot;Encoding: &quot;;
+
+    private final boolean reformatFile;
+    private final boolean saveInOriginalOrder;
+    private final SaveOrderConfig saveOrder;
+    private final Charset encoding;
+    private final boolean makeBackup;
+    private final DatabaseSaveType saveType;
+    private final boolean takeMetadataSaveOrderInAccount;
+    private final LatexFieldFormatterPreferences latexFieldFormatterPreferences;
+    private final GlobalBibtexKeyPattern globalCiteKeyPattern;
+    private final Boolean generateBibtexKeysBeforeSaving;
+    private final BibtexKeyPatternPreferences bibtexKeyPatternPreferences;
+
+    public SavePreferences(Boolean saveInOriginalOrder, SaveOrderConfig saveOrder, Charset encoding, Boolean makeBackup,
+                           DatabaseSaveType saveType, Boolean takeMetadataSaveOrderInAccount, Boolean reformatFile,
+                           LatexFieldFormatterPreferences latexFieldFormatterPreferences, GlobalBibtexKeyPattern globalCiteKeyPattern,
+<span class="nc" id="L30">                           Boolean generateBibtexKeysBeforeSaving, BibtexKeyPatternPreferences bibtexKeyPatternPreferences) {</span>
+<span class="nc" id="L31">        this.saveInOriginalOrder = saveInOriginalOrder;</span>
+<span class="nc" id="L32">        this.saveOrder = saveOrder;</span>
+<span class="nc" id="L33">        this.encoding = encoding;</span>
+<span class="nc" id="L34">        this.makeBackup = makeBackup;</span>
+<span class="nc" id="L35">        this.saveType = saveType;</span>
+<span class="nc" id="L36">        this.takeMetadataSaveOrderInAccount = takeMetadataSaveOrderInAccount;</span>
+<span class="nc" id="L37">        this.reformatFile = reformatFile;</span>
+<span class="nc" id="L38">        this.latexFieldFormatterPreferences = latexFieldFormatterPreferences;</span>
+<span class="nc" id="L39">        this.globalCiteKeyPattern = globalCiteKeyPattern;</span>
+<span class="nc" id="L40">        this.generateBibtexKeysBeforeSaving = generateBibtexKeysBeforeSaving;</span>
+<span class="nc" id="L41">        this.bibtexKeyPatternPreferences = bibtexKeyPatternPreferences;</span>
+<span class="nc" id="L42">    }</span>
+
+    public Boolean takeMetadataSaveOrderInAccount() {
+<span class="nc" id="L45">        return takeMetadataSaveOrderInAccount;</span>
+    }
+
+    public SaveOrderConfig getSaveOrder() {
+<span class="nc" id="L49">        return saveOrder;</span>
+    }
+
+    public boolean isSaveInOriginalOrder() {
+<span class="nc" id="L53">        return saveInOriginalOrder;</span>
+    }
+
+    public SavePreferences withSaveInOriginalOrder(Boolean newSaveInOriginalOrder) {
+<span class="nc" id="L57">        return new SavePreferences(newSaveInOriginalOrder, this.saveOrder, this.encoding, this.makeBackup, this.saveType,</span>
+<span class="nc" id="L58">                this.takeMetadataSaveOrderInAccount, this.reformatFile, this.latexFieldFormatterPreferences,</span>
+                this.globalCiteKeyPattern, this.generateBibtexKeysBeforeSaving, this.bibtexKeyPatternPreferences);
+    }
+
+    public boolean makeBackup() {
+<span class="nc" id="L63">        return makeBackup;</span>
+    }
+
+    public SavePreferences withMakeBackup(Boolean newMakeBackup) {
+<span class="nc" id="L67">        return new SavePreferences(this.saveInOriginalOrder, this.saveOrder, this.encoding, newMakeBackup, this.saveType,</span>
+<span class="nc" id="L68">                this.takeMetadataSaveOrderInAccount, this.reformatFile, this.latexFieldFormatterPreferences,</span>
+                this.globalCiteKeyPattern, this.generateBibtexKeysBeforeSaving, this.bibtexKeyPatternPreferences);
+    }
+
+    public Charset getEncoding() {
+<span class="nc" id="L73">        return encoding;</span>
+    }
+
+    public SavePreferences withEncoding(Charset newEncoding) {
+<span class="nc" id="L77">        return new SavePreferences(this.saveInOriginalOrder, this.saveOrder, newEncoding, this.makeBackup, this.saveType,</span>
+<span class="nc" id="L78">                this.takeMetadataSaveOrderInAccount, this.reformatFile, this.latexFieldFormatterPreferences,</span>
+                this.globalCiteKeyPattern, this.generateBibtexKeysBeforeSaving, this.bibtexKeyPatternPreferences);
+    }
+
+    public DatabaseSaveType getSaveType() {
+<span class="nc" id="L83">        return saveType;</span>
+    }
+
+    public SavePreferences withSaveType(DatabaseSaveType newSaveType) {
+<span class="nc" id="L87">        return new SavePreferences(this.saveInOriginalOrder, this.saveOrder, this.encoding, this.makeBackup, newSaveType,</span>
+<span class="nc" id="L88">                this.takeMetadataSaveOrderInAccount, this.reformatFile, this.latexFieldFormatterPreferences,</span>
+                this.globalCiteKeyPattern, this.generateBibtexKeysBeforeSaving, this.bibtexKeyPatternPreferences);
+    }
+
+    public Boolean isReformatFile() {
+<span class="nc" id="L93">        return reformatFile;</span>
+    }
+
+    public SavePreferences withReformatFile(boolean newReformatFile) {
+<span class="nc" id="L97">        return new SavePreferences(this.saveInOriginalOrder, this.saveOrder, this.encoding, this.makeBackup,</span>
+<span class="nc" id="L98">                this.saveType, this.takeMetadataSaveOrderInAccount, newReformatFile, this.latexFieldFormatterPreferences,</span>
+                this.globalCiteKeyPattern, this.generateBibtexKeysBeforeSaving, this.bibtexKeyPatternPreferences);
+    }
+
+    public Charset getEncodingOrDefault() {
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        return encoding == null ? Charset.defaultCharset() : encoding;</span>
+    }
+
+    public LatexFieldFormatterPreferences getLatexFieldFormatterPreferences() {
+<span class="nc" id="L107">        return latexFieldFormatterPreferences;</span>
+    }
+
+    public GlobalBibtexKeyPattern getGlobalCiteKeyPattern() {
+<span class="nc" id="L111">        return globalCiteKeyPattern;</span>
+    }
+
+    public Boolean generateBibtexKeysBeforeSaving() {
+<span class="nc" id="L115">        return generateBibtexKeysBeforeSaving;</span>
+    }
+
+    public BibtexKeyPatternPreferences getBibtexKeyPatternPreferences() {
+<span class="nc" id="L119">        return bibtexKeyPatternPreferences;</span>
+    }
+
+<span class="fc" id="L122">    public enum DatabaseSaveType {</span>
+<span class="fc" id="L123">        ALL,</span>
+<span class="fc" id="L124">        PLAIN_BIBTEX</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

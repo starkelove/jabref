@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContentSelectorDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.contentselector</a> &gt; <span class="el_source">ContentSelectorDialog.java</span></div><h1>ContentSelectorDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.contentselector;
+
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
+import javax.swing.JButton;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.JabRefDialog;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.help.HelpAction;
+import org.jabref.gui.keyboard.KeyBinder;
+import org.jabref.logic.help.HelpFile;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.metadata.ContentSelector;
+import org.jabref.model.metadata.ContentSelectors;
+import org.jabref.model.metadata.MetaData;
+
+import com.jgoodies.forms.builder.ButtonBarBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class ContentSelectorDialog extends JabRefDialog {
+
+<span class="nc" id="L48">    private static final String WORD_FIRSTLINE_TEXT = Localization.lang(&quot;&lt;select word&gt;&quot;);</span>
+<span class="nc" id="L49">    private static final String FIELD_FIRST_LINE = Localization.lang(&quot;&lt;field name&gt;&quot;);</span>
+<span class="nc" id="L50">    private static final Logger LOGGER = LoggerFactory.getLogger(ContentSelectorDialog.class);</span>
+<span class="nc" id="L51">    private final GridBagLayout gbl = new GridBagLayout();</span>
+<span class="nc" id="L52">    private final GridBagConstraints con = new GridBagConstraints();</span>
+<span class="nc" id="L53">    private final JPanel fieldPan = new JPanel();</span>
+<span class="nc" id="L54">    private final JPanel wordPan = new JPanel();</span>
+<span class="nc" id="L55">    private final JPanel buttonPan = new JPanel();</span>
+
+<span class="nc" id="L57">    private final JPanel fieldNamePan = new JPanel();</span>
+<span class="nc" id="L58">    private final JPanel wordEditPan = new JPanel();</span>
+    private final MetaData metaData;
+    private final JabRefFrame frame;
+    private final BasePanel panel;
+<span class="nc" id="L62">    private final JButton newField = new JButton(Localization.lang(&quot;New&quot;));</span>
+<span class="nc" id="L63">    private final JButton removeField = new JButton(Localization.lang(&quot;Remove&quot;));</span>
+<span class="nc" id="L64">    private final JButton newWord = new JButton(Localization.lang(&quot;New&quot;));</span>
+<span class="nc" id="L65">    private final JButton removeWord = new JButton(Localization.lang(&quot;Remove&quot;));</span>
+<span class="nc" id="L66">    private final JButton ok = new JButton(Localization.lang(&quot;OK&quot;));</span>
+<span class="nc" id="L67">    private final JButton cancel = new JButton();</span>
+<span class="nc" id="L68">    private final JButton apply = new JButton(Localization.lang(&quot;Apply&quot;));</span>
+<span class="nc" id="L69">    private final DefaultListModel&lt;String&gt; fieldListModel = new DefaultListModel&lt;&gt;();</span>
+<span class="nc" id="L70">    private final JList&lt;String&gt; fieldList = new JList&lt;&gt;(fieldListModel);</span>
+<span class="nc" id="L71">    private final JTextField fieldNameField = new JTextField(&quot;&quot;, 20);</span>
+<span class="nc" id="L72">    private final JTextField wordEditField = new JTextField(&quot;&quot;, 20);</span>
+<span class="nc" id="L73">    private final JScrollPane fPane = new JScrollPane(fieldList);</span>
+<span class="nc" id="L74">    private final Map&lt;String, DefaultListModel&lt;String&gt;&gt; wordListModels = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L75">    private final List&lt;String&gt; removedFields = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L76">    private DefaultListModel&lt;String&gt; wordListModel = new DefaultListModel&lt;&gt;();</span>
+<span class="nc" id="L77">    private JList&lt;String&gt; wordList = new JList&lt;&gt;(wordListModel);</span>
+<span class="nc" id="L78">    private JScrollPane wPane = new JScrollPane(wordList);</span>
+    private String currentField;
+
+
+    /**
+     *
+     * @param frame the JabRef Frame
+     * @param panel the currently selected BasePanel
+     * @param modal should this dialog be modal?
+     * @param fieldName the field this selector is initialized for. May be null.
+     */
+    public ContentSelectorDialog(JabRefFrame frame, BasePanel panel, boolean modal, String fieldName) {
+<span class="nc" id="L90">        super(Localization.lang(&quot;Manage content selectors&quot;), ContentSelectorDialog.class);</span>
+<span class="nc" id="L91">        this.setModal(modal);</span>
+<span class="nc" id="L92">        this.metaData = panel.getBibDatabaseContext().getMetaData();</span>
+<span class="nc" id="L93">        this.frame = frame;</span>
+<span class="nc" id="L94">        this.panel = panel;</span>
+<span class="nc" id="L95">        this.currentField = fieldName;</span>
+
+<span class="nc" id="L97">        initLayout();</span>
+
+<span class="nc" id="L99">        setupFieldSelector();</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        if (currentField != null) {</span>
+<span class="nc" id="L101">            int fieldInd = fieldListModel.indexOf(currentField);</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            if (fieldInd &gt;= 0) {</span>
+<span class="nc" id="L103">                fieldList.setSelectedIndex(fieldInd);</span>
+            }
+<span class="nc" id="L105">        } else {</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">            if (!fieldListModel.isEmpty()) {</span>
+<span class="nc" id="L107">                fieldList.setSelectedIndex(0);</span>
+<span class="nc" id="L108">                currentField = fieldList.getSelectedValue();</span>
+            }
+        }
+
+<span class="nc" id="L112">        setupWordSelector();</span>
+<span class="nc" id="L113">        setupActions();</span>
+<span class="nc" id="L114">        KeyBinder.bindCloseDialogKeyToCancelAction(this.rootPane, cancel.getAction());</span>
+
+<span class="nc" id="L116">        pack();</span>
+<span class="nc" id="L117">    }</span>
+
+    private static int findPos(DefaultListModel&lt;String&gt; lm, String item) {
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        for (int i = 0; i &lt; lm.size(); i++) {</span>
+<span class="nc" id="L121">            String s = lm.get(i);</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            if (item.compareToIgnoreCase(s) &lt; 0) { // item precedes s</span>
+<span class="nc" id="L123">                return i;</span>
+            }
+        }
+<span class="nc" id="L126">        return lm.size();</span>
+    }
+
+    private void setupActions() {
+
+<span class="nc" id="L131">        wordList.addListSelectionListener(e -&gt; {</span>
+<span class="nc" id="L132">            wordEditField.setText(wordList.getSelectedValue());</span>
+<span class="nc" id="L133">            wordEditField.selectAll();</span>
+<span class="nc" id="L134">            wordEditField.requestFocus();</span>
+<span class="nc" id="L135">        });</span>
+
+<span class="nc" id="L137">        newWord.addActionListener(e -&gt; newWordAction());</span>
+
+<span class="nc" id="L139">        ActionListener wordEditFieldListener = e -&gt; actOnWordEdit();</span>
+<span class="nc" id="L140">        wordEditField.addActionListener(wordEditFieldListener);</span>
+
+<span class="nc" id="L142">        removeWord.addActionListener(e -&gt; {</span>
+<span class="nc" id="L143">            int index = wordList.getSelectedIndex();</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">            if (index == -1) {</span>
+<span class="nc" id="L145">                return;</span>
+            }
+<span class="nc" id="L147">            wordListModel.remove(index);</span>
+<span class="nc" id="L148">            wordEditField.setText(&quot;&quot;);</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">            if (!wordListModel.isEmpty()) {</span>
+<span class="nc" id="L150">                wordList.setSelectedIndex(Math.min(index, wordListModel.size() - 1));</span>
+            }
+<span class="nc" id="L152">        });</span>
+
+<span class="nc" id="L154">        fieldList.addListSelectionListener(e -&gt; {</span>
+<span class="nc" id="L155">            currentField = fieldList.getSelectedValue();</span>
+<span class="nc" id="L156">            fieldNameField.setText(&quot;&quot;);</span>
+<span class="nc" id="L157">            setupWordSelector();</span>
+<span class="nc" id="L158">        });</span>
+
+<span class="nc" id="L160">        newField.addActionListener(e -&gt; {</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">            if (!fieldListModel.get(0).equals(FIELD_FIRST_LINE)) {</span>
+                // only add &lt;field name&gt; once
+<span class="nc" id="L163">                fieldListModel.add(0, FIELD_FIRST_LINE);</span>
+            }
+<span class="nc" id="L165">            fieldList.setSelectedIndex(0);</span>
+<span class="nc" id="L166">            fPane.getVerticalScrollBar().setValue(0);</span>
+<span class="nc" id="L167">            fieldNameField.setEnabled(true);</span>
+<span class="nc" id="L168">            fieldNameField.setText(currentField);</span>
+<span class="nc" id="L169">            fieldNameField.selectAll();</span>
+<span class="nc" id="L170">            fieldNameField.requestFocus();</span>
+<span class="nc" id="L171">        });</span>
+
+<span class="nc" id="L173">        fieldNameField.addActionListener(e -&gt; fieldNameField.transferFocus());</span>
+
+<span class="nc" id="L175">        fieldNameField.addFocusListener(new FieldNameFocusAdapter());</span>
+
+<span class="nc" id="L177">        removeField.addActionListener(e -&gt; {</span>
+<span class="nc" id="L178">            int index = fieldList.getSelectedIndex();</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">            if (index == -1) {</span>
+<span class="nc" id="L180">                return;</span>
+            }
+<span class="nc" id="L182">            String fieldName = fieldListModel.get(index);</span>
+<span class="nc" id="L183">            removedFields.add(fieldName);</span>
+<span class="nc" id="L184">            fieldListModel.remove(index);</span>
+<span class="nc" id="L185">            wordListModels.remove(fieldName);</span>
+<span class="nc" id="L186">            fieldNameField.setText(&quot;&quot;);</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">            if (!fieldListModel.isEmpty()) {</span>
+<span class="nc" id="L188">                fieldList.setSelectedIndex(Math.min(index, wordListModel.size() - 1));</span>
+            }
+<span class="nc" id="L190">        });</span>
+
+<span class="nc" id="L192">        ok.addActionListener(e -&gt; {</span>
+            try {
+<span class="nc" id="L194">                applyChanges();</span>
+<span class="nc" id="L195">                dispose();</span>
+<span class="nc" id="L196">            } catch (Exception ex) {</span>
+<span class="nc" id="L197">                LOGGER.info(&quot;Could not apply changes in \&quot;Manage content selectors\&quot;&quot;, ex);</span>
+<span class="nc" id="L198">                JOptionPane.showMessageDialog(null, Localization.lang(&quot;Could not apply changes.&quot;));</span>
+<span class="nc" id="L199">            }</span>
+<span class="nc" id="L200">        });</span>
+
+<span class="nc" id="L202">        apply.addActionListener(e -&gt; {</span>
+            // Store if an entry is currently being edited:
+<span class="nc bnc" id="L204" title="All 2 branches missed.">            if (!&quot;&quot;.equals(wordEditField.getText())) {</span>
+<span class="nc" id="L205">                wordEditFieldListener.actionPerformed(null);</span>
+            }
+            try {
+<span class="nc" id="L208">                applyChanges();</span>
+<span class="nc" id="L209">            } catch (Exception ex) {</span>
+<span class="nc" id="L210">                LOGGER.info(&quot;Could not apply changes in \&quot;Manage content selectors\&quot;&quot;, ex);</span>
+<span class="nc" id="L211">                JOptionPane.showMessageDialog(null, Localization.lang(&quot;Could not apply changes.&quot;));</span>
+<span class="nc" id="L212">            }</span>
+<span class="nc" id="L213">        });</span>
+
+<span class="nc" id="L215">        Action cancelAction = new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L219">                dispose();</span>
+<span class="nc" id="L220">            }</span>
+        };
+<span class="nc" id="L222">        cancelAction.putValue(Action.NAME, Localization.lang(&quot;Cancel&quot;));</span>
+<span class="nc" id="L223">        cancel.setAction(cancelAction);</span>
+<span class="nc" id="L224">    }</span>
+
+    private void actOnWordEdit() {
+<span class="nc" id="L227">        String old = wordList.getSelectedValue();</span>
+<span class="nc" id="L228">        String newVal = wordEditField.getText();</span>
+<span class="nc bnc" id="L229" title="All 4 branches missed.">        if (&quot;&quot;.equals(newVal) || newVal.equals(old)) {</span>
+<span class="nc" id="L230">            return; // Empty string or no change.</span>
+        }
+<span class="nc" id="L232">        int index = wordList.getSelectedIndex();</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">        if (wordListModel.contains(newVal)) {</span>
+            // ensure that word already in list is visible
+<span class="nc" id="L235">            index = wordListModel.indexOf(newVal);</span>
+<span class="nc" id="L236">            wordList.ensureIndexIsVisible(index);</span>
+<span class="nc" id="L237">            return;</span>
+        }
+
+<span class="nc" id="L240">        int newIndex = findPos(wordListModel, newVal);</span>
+<span class="nc bnc" id="L241" title="All 2 branches missed.">        if (index &gt;= 0) {</span>
+            // initiate replacement of selected word
+<span class="nc" id="L243">            wordListModel.remove(index);</span>
+<span class="nc bnc" id="L244" title="All 2 branches missed.">            if (newIndex &gt; index) {</span>
+                // newIndex has to be adjusted after removal of previous entry
+<span class="nc" id="L246">                newIndex--;</span>
+            }
+        }
+<span class="nc" id="L249">        wordListModel.add(newIndex, newVal);</span>
+<span class="nc" id="L250">        wordList.ensureIndexIsVisible(newIndex);</span>
+<span class="nc" id="L251">        wordEditField.selectAll();</span>
+<span class="nc" id="L252">    }</span>
+
+    private void newWordAction() {
+<span class="nc bnc" id="L255" title="All 4 branches missed.">        if (wordListModel.isEmpty() || !wordListModel.get(0).equals(WORD_FIRSTLINE_TEXT)) {</span>
+<span class="nc" id="L256">            wordListModel.add(0, WORD_FIRSTLINE_TEXT);</span>
+        }
+<span class="nc" id="L258">        wordList.setSelectedIndex(0);</span>
+<span class="nc" id="L259">        wPane.getVerticalScrollBar().setValue(0);</span>
+<span class="nc" id="L260">    }</span>
+
+    private void applyChanges() {
+<span class="nc" id="L263">        boolean anythingChanged = false; // Watch if we should mark as there is data changed</span>
+
+        // First remove the mappings for fields that have been deleted.
+        // If these were re-added, they will be added below, so it doesn't
+        // cause any harm to remove them here.
+<span class="nc bnc" id="L268" title="All 2 branches missed.">        for (String fieldName : removedFields) {</span>
+<span class="nc" id="L269">            metaData.clearContentSelectors(fieldName);</span>
+<span class="nc" id="L270">            anythingChanged = true;</span>
+<span class="nc" id="L271">        }</span>
+
+        // Cycle through all fields that we have created listmodels for:
+<span class="nc bnc" id="L274" title="All 2 branches missed.">        for (Map.Entry&lt;String, DefaultListModel&lt;String&gt;&gt; entry : wordListModels.entrySet()) {</span>
+            // For each field name, store the values:
+<span class="nc bnc" id="L276" title="All 4 branches missed.">            if ((entry.getKey() == null) || FIELD_FIRST_LINE.equals(entry.getKey())) {</span>
+<span class="nc" id="L277">                continue;</span>
+            }
+<span class="nc" id="L279">            DefaultListModel&lt;String&gt; lm = entry.getValue();</span>
+<span class="nc" id="L280">            int start = 0;</span>
+            // Avoid storing the &lt;new word&gt; marker if it is there:
+<span class="nc bnc" id="L282" title="All 2 branches missed.">            if (!lm.isEmpty()) {</span>
+<span class="nc bnc" id="L283" title="All 4 branches missed.">                while ((start &lt; lm.size()) &amp;&amp; lm.get(start).equals(WORD_FIRSTLINE_TEXT)) {</span>
+<span class="nc" id="L284">                    start++;</span>
+                }
+            }
+
+<span class="nc" id="L288">            Set&lt;String&gt; data = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">            for (int wrd = start; wrd &lt; lm.size(); wrd++) {</span>
+<span class="nc" id="L290">                String word = lm.get(wrd);</span>
+<span class="nc" id="L291">                data.add(word);</span>
+            }
+
+            // Check if any words have been added
+<span class="nc bnc" id="L295" title="All 2 branches missed.">            if (!data.equals(new HashSet&lt;&gt;(metaData.getContentSelectorValuesForField(entry.getKey())))) {</span>
+<span class="nc" id="L296">                anythingChanged = true;</span>
+            }
+
+            // Check if there are words to be added and previously there were no content selector for the field
+<span class="nc bnc" id="L300" title="All 4 branches missed.">            if (!data.isEmpty() &amp;&amp; metaData.getContentSelectorValuesForField(entry.getKey()).isEmpty()) {</span>
+<span class="nc" id="L301">                anythingChanged = true;</span>
+            }
+
+<span class="nc" id="L304">            metaData.addContentSelector(new ContentSelector(entry.getKey(), new ArrayList&lt;&gt;(data)));</span>
+<span class="nc" id="L305">        }</span>
+
+<span class="nc bnc" id="L307" title="All 2 branches missed.">        if (anythingChanged) {</span>
+            // Update all selectors in the current BasePanel.
+<span class="nc" id="L309">            panel.setupMainPanel();</span>
+
+            // Mark the database updated so changes are not lost
+<span class="nc" id="L312">            panel.markNonUndoableBaseChanged();</span>
+        }
+<span class="nc" id="L314">    }</span>
+
+    /**
+     * Set the contents of the field selector list.
+     *
+     */
+    private void setupFieldSelector() {
+<span class="nc" id="L321">        fieldListModel.clear();</span>
+<span class="nc" id="L322">        SortedSet&lt;String&gt; contents = new TreeSet&lt;&gt;();</span>
+<span class="nc" id="L323">        ContentSelectors selectors = metaData.getContentSelectors();</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">        for (String s : selectors.getFieldNamesWithSelectors()) {</span>
+<span class="nc" id="L325">            contents.add(s);</span>
+<span class="nc" id="L326">        }</span>
+<span class="nc bnc" id="L327" title="All 2 branches missed.">        if (contents.isEmpty()) {</span>
+            // if nothing was added, put the default fields (as described in the help)
+<span class="nc" id="L329">            fieldListModel.addElement(FieldName.AUTHOR);</span>
+<span class="nc" id="L330">            fieldListModel.addElement(FieldName.JOURNAL);</span>
+<span class="nc" id="L331">            fieldListModel.addElement(FieldName.KEYWORDS);</span>
+<span class="nc" id="L332">            fieldListModel.addElement(FieldName.PUBLISHER);</span>
+        } else {
+<span class="nc bnc" id="L334" title="All 2 branches missed.">            for (String s : contents) {</span>
+<span class="nc" id="L335">                fieldListModel.addElement(s);</span>
+<span class="nc" id="L336">            }</span>
+        }
+
+<span class="nc bnc" id="L339" title="All 2 branches missed.">        if (currentField == null) {</span>
+            // if dialog is created for the whole database,
+            // select the first field to avoid confusions in GUI usage
+<span class="nc" id="L342">            fieldList.setSelectedIndex(0);</span>
+        } else {
+            // a specific field has been chosen at the constructor
+            // select this field
+<span class="nc" id="L346">            int i = fieldListModel.indexOf(currentField);</span>
+<span class="nc bnc" id="L347" title="All 2 branches missed.">            if (i != -1) {</span>
+                // field has been found in list, select it
+<span class="nc" id="L349">                fieldList.setSelectedIndex(i);</span>
+            }
+        }
+<span class="nc" id="L352">    }</span>
+
+    private void setupWordSelector() {
+
+        // Have we already created a listmodel for this field?
+<span class="nc" id="L357">        wordListModel = wordListModels.get(currentField);</span>
+<span class="nc bnc" id="L358" title="All 2 branches missed.">        if (wordListModel == null) {</span>
+<span class="nc" id="L359">            wordListModel = new DefaultListModel&lt;&gt;();</span>
+<span class="nc" id="L360">            wordList.setModel(wordListModel);</span>
+<span class="nc" id="L361">            wordListModels.put(currentField, wordListModel);</span>
+
+<span class="nc" id="L363">            int index = 0;</span>
+<span class="nc bnc" id="L364" title="All 2 branches missed.">            for (String s : metaData.getContentSelectorValuesForField(currentField)) {</span>
+<span class="nc" id="L365">                wordListModel.add(index, s);</span>
+<span class="nc" id="L366">                index++;</span>
+<span class="nc" id="L367">            }</span>
+<span class="nc" id="L368">        } else {</span>
+<span class="nc" id="L369">            wordList.setModel(wordListModel);</span>
+        }
+<span class="nc" id="L371">    }</span>
+
+    private void initLayout() {
+<span class="nc" id="L374">        fieldNameField.setEnabled(false);</span>
+<span class="nc" id="L375">        fieldList.setVisibleRowCount(4);</span>
+<span class="nc" id="L376">        wordList.setVisibleRowCount(10);</span>
+<span class="nc" id="L377">        final String VAL = &quot;Uren luren himmelturen, ja Besseggen.&quot;;</span>
+<span class="nc" id="L378">        fieldList.setPrototypeCellValue(VAL);</span>
+<span class="nc" id="L379">        wordList.setPrototypeCellValue(VAL);</span>
+
+<span class="nc" id="L381">        fieldPan.setBorder(</span>
+<span class="nc" id="L382">                BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), Localization.lang(&quot;Field name&quot;)));</span>
+<span class="nc" id="L383">        wordPan.setBorder(</span>
+<span class="nc" id="L384">                BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), Localization.lang(&quot;Keyword&quot;)));</span>
+<span class="nc" id="L385">        fieldPan.setLayout(gbl);</span>
+<span class="nc" id="L386">        wordPan.setLayout(gbl);</span>
+<span class="nc" id="L387">        con.insets = new Insets(2, 2, 2, 2);</span>
+<span class="nc" id="L388">        con.fill = GridBagConstraints.BOTH;</span>
+<span class="nc" id="L389">        con.gridwidth = 2;</span>
+<span class="nc" id="L390">        con.weightx = 1;</span>
+<span class="nc" id="L391">        con.weighty = 1;</span>
+<span class="nc" id="L392">        con.gridx = 0;</span>
+<span class="nc" id="L393">        con.gridy = 0;</span>
+<span class="nc" id="L394">        gbl.setConstraints(fPane, con);</span>
+<span class="nc" id="L395">        fieldPan.add(fPane);</span>
+<span class="nc" id="L396">        gbl.setConstraints(wPane, con);</span>
+<span class="nc" id="L397">        wordPan.add(wPane);</span>
+<span class="nc" id="L398">        con.gridwidth = 1;</span>
+<span class="nc" id="L399">        con.gridx = 2;</span>
+        //con.weightx = 0.7;
+<span class="nc" id="L401">        con.gridheight = 2;</span>
+<span class="nc" id="L402">        gbl.setConstraints(fieldNamePan, con);</span>
+<span class="nc" id="L403">        fieldPan.add(fieldNamePan);</span>
+<span class="nc" id="L404">        gbl.setConstraints(wordEditPan, con);</span>
+<span class="nc" id="L405">        wordPan.add(wordEditPan);</span>
+<span class="nc" id="L406">        con.gridx = 0;</span>
+<span class="nc" id="L407">        con.gridy = 1;</span>
+<span class="nc" id="L408">        con.weightx = 0;</span>
+<span class="nc" id="L409">        con.weighty = 0;</span>
+<span class="nc" id="L410">        con.gridwidth = 1;</span>
+<span class="nc" id="L411">        con.gridheight = 1;</span>
+<span class="nc" id="L412">        con.fill = GridBagConstraints.NONE;</span>
+<span class="nc" id="L413">        con.anchor = GridBagConstraints.WEST;</span>
+<span class="nc" id="L414">        gbl.setConstraints(newField, con);</span>
+<span class="nc" id="L415">        fieldPan.add(newField);</span>
+<span class="nc" id="L416">        gbl.setConstraints(newWord, con);</span>
+<span class="nc" id="L417">        wordPan.add(newWord);</span>
+<span class="nc" id="L418">        con.gridx = 1;</span>
+        //con.anchor = GridBagConstraints.EAST;
+<span class="nc" id="L420">        gbl.setConstraints(removeField, con);</span>
+<span class="nc" id="L421">        fieldPan.add(removeField);</span>
+<span class="nc" id="L422">        gbl.setConstraints(removeWord, con);</span>
+<span class="nc" id="L423">        wordPan.add(removeWord);</span>
+<span class="nc" id="L424">        con.anchor = GridBagConstraints.WEST;</span>
+<span class="nc" id="L425">        con.gridx = 0;</span>
+<span class="nc" id="L426">        con.gridy = 0;</span>
+<span class="nc" id="L427">        gbl.setConstraints(fieldNameField, con);</span>
+<span class="nc" id="L428">        fieldNamePan.add(fieldNameField);</span>
+<span class="nc" id="L429">        gbl.setConstraints(wordEditField, con);</span>
+<span class="nc" id="L430">        wordEditPan.add(wordEditField);</span>
+
+        // Add buttons:
+<span class="nc" id="L433">        ButtonBarBuilder bsb = new ButtonBarBuilder(buttonPan);</span>
+<span class="nc" id="L434">        bsb.addGlue();</span>
+<span class="nc" id="L435">        bsb.addButton(ok);</span>
+<span class="nc" id="L436">        bsb.addButton(apply);</span>
+<span class="nc" id="L437">        bsb.addButton(cancel);</span>
+<span class="nc" id="L438">        bsb.addRelatedGap();</span>
+<span class="nc" id="L439">        bsb.addButton(new HelpAction(HelpFile.CONTENT_SELECTOR).getHelpButton());</span>
+<span class="nc" id="L440">        bsb.addGlue();</span>
+
+        // Add panels to dialog:
+<span class="nc" id="L443">        con.fill = GridBagConstraints.BOTH;</span>
+<span class="nc" id="L444">        getContentPane().setLayout(gbl);</span>
+<span class="nc" id="L445">        con.weightx = 1;</span>
+<span class="nc" id="L446">        con.weighty = 0.5;</span>
+<span class="nc" id="L447">        con.gridwidth = 1;</span>
+<span class="nc" id="L448">        con.gridheight = 1;</span>
+<span class="nc" id="L449">        con.gridx = 0;</span>
+<span class="nc" id="L450">        con.gridy = 0;</span>
+<span class="nc" id="L451">        gbl.setConstraints(fieldPan, con);</span>
+<span class="nc" id="L452">        getContentPane().add(fieldPan);</span>
+<span class="nc" id="L453">        con.gridy = 1;</span>
+<span class="nc" id="L454">        gbl.setConstraints(wordPan, con);</span>
+<span class="nc" id="L455">        getContentPane().add(wordPan);</span>
+<span class="nc" id="L456">        con.weighty = 0;</span>
+<span class="nc" id="L457">        con.gridy = 2;</span>
+<span class="nc" id="L458">        con.insets = new Insets(12, 2, 2, 2);</span>
+<span class="nc" id="L459">        gbl.setConstraints(buttonPan, con);</span>
+<span class="nc" id="L460">        getContentPane().add(buttonPan);</span>
+
+<span class="nc" id="L462">    }</span>
+
+<span class="nc" id="L464">    private class FieldNameFocusAdapter extends FocusAdapter {</span>
+
+        /**
+         * Adds the text value to the list
+         */
+        @Override
+        public void focusLost(FocusEvent e) {
+<span class="nc" id="L471">            String s = fieldNameField.getText();</span>
+<span class="nc" id="L472">            fieldNameField.setText(&quot;&quot;);</span>
+<span class="nc" id="L473">            fieldNameField.setEnabled(false);</span>
+<span class="nc bnc" id="L474" title="All 4 branches missed.">            if (!FIELD_FIRST_LINE.equals(s) &amp;&amp; !&quot;&quot;.equals(s)) {</span>
+                // user has typed something
+
+                // remove &quot;&lt;first name&gt;&quot; from list
+<span class="nc" id="L478">                fieldListModel.remove(0);</span>
+
+                int pos;
+<span class="nc bnc" id="L481" title="All 2 branches missed.">                if (fieldListModel.contains(s)) {</span>
+                    // field already exists, scroll to that field (below)
+<span class="nc" id="L483">                    pos = fieldListModel.indexOf(s);</span>
+                } else {
+                    // Add new field.
+<span class="nc" id="L486">                    pos = findPos(fieldListModel, s);</span>
+<span class="nc" id="L487">                    fieldListModel.add(Math.max(0, pos), s);</span>
+                }
+<span class="nc" id="L489">                fieldList.setSelectedIndex(pos);</span>
+<span class="nc" id="L490">                fieldList.ensureIndexIsVisible(pos);</span>
+<span class="nc" id="L491">                currentField = s;</span>
+<span class="nc" id="L492">                setupWordSelector();</span>
+<span class="nc" id="L493">                newWordAction();</span>
+            }
+<span class="nc" id="L495">        }</span>
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

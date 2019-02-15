@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabasePropertiesDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.dbproperties</a> &gt; <span class="el_source">DatabasePropertiesDialog.java</span></div><h1>DatabasePropertiesDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.dbproperties;
+
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.nio.charset.Charset;
+import java.util.Optional;
+
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JRadioButton;
+import javax.swing.JTextField;
+
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.FXDialogService;
+import org.jabref.gui.JabRefDialog;
+import org.jabref.gui.SaveOrderConfigDisplay;
+import org.jabref.gui.cleanup.FieldFormatterCleanupsPanel;
+import org.jabref.gui.customjfx.CustomJFXPanel;
+import org.jabref.gui.help.HelpAction;
+import org.jabref.gui.keyboard.KeyBinding;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.gui.util.DirectoryDialogConfiguration;
+import org.jabref.logic.cleanup.Cleanups;
+import org.jabref.logic.help.HelpFile;
+import org.jabref.logic.l10n.Encodings;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.shared.DatabaseLocation;
+import org.jabref.model.metadata.MetaData;
+import org.jabref.model.metadata.SaveOrderConfig;
+import org.jabref.preferences.JabRefPreferences;
+
+import com.jgoodies.forms.builder.ButtonBarBuilder;
+import com.jgoodies.forms.builder.FormBuilder;
+import com.jgoodies.forms.layout.FormLayout;
+
+public class DatabasePropertiesDialog extends JabRefDialog {
+
+    private final MetaData metaData;
+    private final BasePanel panel;
+    private final JComboBox&lt;Charset&gt; encoding;
+    private final JButton ok;
+    private final JButton cancel;
+<span class="nc" id="L58">    private final JTextField fileDir = new JTextField(40);</span>
+<span class="nc" id="L59">    private final JTextField fileDirIndv = new JTextField(40);</span>
+<span class="nc" id="L60">    private String oldFileVal = &quot;&quot;;</span>
+<span class="nc" id="L61">    private String oldFileIndvVal = &quot;&quot;;</span>
+    private SaveOrderConfig oldSaveOrderConfig;
+
+    /* The code for &quot;Save sort order&quot; is copied from ExportSortingPrefsTab and slightly updated to fit storing at metadata */
+    private JRadioButton saveInOriginalOrder;
+
+    private JRadioButton saveInSpecifiedOrder;
+
+<span class="nc" id="L69">    private final JCheckBox protect = new JCheckBox(</span>
+<span class="nc" id="L70">            Localization.lang(&quot;Refuse to save the library before external changes have been reviewed.&quot;));</span>
+    private boolean oldProtectVal;
+    private SaveOrderConfigDisplay saveOrderPanel;
+
+    private FieldFormatterCleanupsPanel fieldFormatterCleanupsPanel;
+
+    public DatabasePropertiesDialog(BasePanel panel) {
+<span class="nc" id="L77">        super(Localization.lang(&quot;Library properties&quot;), true, DatabasePropertiesDialog.class);</span>
+<span class="nc" id="L78">        encoding = new JComboBox&lt;&gt;();</span>
+<span class="nc" id="L79">        encoding.setModel(new DefaultComboBoxModel&lt;&gt;(Encodings.ENCODINGS));</span>
+<span class="nc" id="L80">        ok = new JButton(Localization.lang(&quot;OK&quot;));</span>
+<span class="nc" id="L81">        cancel = new JButton(Localization.lang(&quot;Cancel&quot;));</span>
+<span class="nc" id="L82">        this.panel = panel;</span>
+<span class="nc" id="L83">        this.metaData = panel.getBibDatabaseContext().getMetaData();</span>
+<span class="nc" id="L84">        init();</span>
+<span class="nc" id="L85">    }</span>
+
+    public void updateEnableStatus() {
+<span class="nc" id="L88">        DatabaseLocation location = panel.getBibDatabaseContext().getLocation();</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        boolean isShared = (location == DatabaseLocation.SHARED);</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        encoding.setEnabled(!isShared); // the encoding of shared database is always UTF-8</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        saveInOriginalOrder.setEnabled(!isShared);</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        saveInSpecifiedOrder.setEnabled(!isShared);</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        saveOrderPanel.setEnabled(!isShared);</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        protect.setEnabled(!isShared);</span>
+<span class="nc" id="L95">    }</span>
+
+    private void init() {
+
+<span class="nc" id="L99">        DirectoryDialogConfiguration directoryDialogConfiguration = new DirectoryDialogConfiguration.Builder()</span>
+<span class="nc" id="L100">                .withInitialDirectory(Globals.prefs.get(JabRefPreferences.WORKING_DIRECTORY)).build();</span>
+<span class="nc" id="L101">        DialogService ds = new FXDialogService();</span>
+
+<span class="nc" id="L103">        JButton browseFile = new JButton(Localization.lang(&quot;Browse&quot;));</span>
+<span class="nc" id="L104">        JButton browseFileIndv = new JButton(Localization.lang(&quot;Browse&quot;));</span>
+
+<span class="nc" id="L106">        browseFile.addActionListener(e -&gt; DefaultTaskExecutor</span>
+<span class="nc" id="L107">                .runInJavaFXThread(() -&gt; ds.showDirectorySelectionDialog(directoryDialogConfiguration))</span>
+<span class="nc" id="L108">                .ifPresent(f -&gt; fileDir.setText(f.toAbsolutePath().toString())));</span>
+<span class="nc" id="L109">        browseFileIndv.addActionListener(e -&gt; DefaultTaskExecutor</span>
+<span class="nc" id="L110">                .runInJavaFXThread(() -&gt; ds.showDirectorySelectionDialog(directoryDialogConfiguration))</span>
+<span class="nc" id="L111">                .ifPresent(f -&gt; fileDirIndv.setText(f.toAbsolutePath().toString())));</span>
+
+<span class="nc" id="L113">        setupSortOrderConfiguration();</span>
+<span class="nc" id="L114">        FormLayout form = new FormLayout(&quot;left:pref, 4dlu, pref:grow, 4dlu, pref:grow, 4dlu, pref&quot;,</span>
+                &quot;pref, 2dlu, pref, 2dlu, pref, 2dlu, pref, 2dlu, pref, 2dlu, pref, 2dlu, pref, 2dlu, pref, 2dlu, pref, 2dlu, pref, 2dlu, pref, 2dlu, pref, 2dlu, pref, 2dlu, pref, 2dlu, fill:pref:grow, 180dlu, fill:pref:grow,&quot;);
+<span class="nc" id="L116">        FormBuilder builder = FormBuilder.create().layout(form);</span>
+<span class="nc" id="L117">        builder.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));</span>
+
+<span class="nc" id="L119">        builder.add(Localization.lang(&quot;Library encoding&quot;)).xy(1, 1);</span>
+<span class="nc" id="L120">        builder.add(encoding).xy(3, 1);</span>
+
+<span class="nc" id="L122">        builder.addSeparator(Localization.lang(&quot;Override default file directories&quot;)).xyw(1, 3, 5);</span>
+<span class="nc" id="L123">        builder.add(Localization.lang(&quot;General file directory&quot;)).xy(1, 5);</span>
+<span class="nc" id="L124">        builder.add(fileDir).xy(3, 5);</span>
+<span class="nc" id="L125">        builder.add(browseFile).xy(5, 5);</span>
+<span class="nc" id="L126">        builder.add(Localization.lang(&quot;User-specific file directory&quot;)).xy(1, 7);</span>
+<span class="nc" id="L127">        builder.add(fileDirIndv).xy(3, 7);</span>
+<span class="nc" id="L128">        builder.add(browseFileIndv).xy(5, 7);</span>
+
+<span class="nc" id="L130">        builder.addSeparator(Localization.lang(&quot;Save sort order&quot;)).xyw(1, 13, 5);</span>
+<span class="nc" id="L131">        builder.add(saveInOriginalOrder).xyw(1, 15, 5);</span>
+<span class="nc" id="L132">        builder.add(saveInSpecifiedOrder).xyw(1, 17, 5);</span>
+
+<span class="nc" id="L134">        saveOrderPanel = new SaveOrderConfigDisplay();</span>
+<span class="nc" id="L135">        JFXPanel panel = CustomJFXPanel.wrap(new Scene((Parent) saveOrderPanel.getJFXPanel()));</span>
+<span class="nc" id="L136">        builder.add(panel).xyw(1, 21, 5);</span>
+
+<span class="nc" id="L138">        builder.addSeparator(Localization.lang(&quot;Library protection&quot;)).xyw(1, 23, 5);</span>
+<span class="nc" id="L139">        builder.add(protect).xyw(1, 25, 5);</span>
+
+<span class="nc" id="L141">        fieldFormatterCleanupsPanel = new FieldFormatterCleanupsPanel(Localization.lang(&quot;Enable save actions&quot;),</span>
+                Cleanups.DEFAULT_SAVE_ACTIONS);
+<span class="nc" id="L143">        builder.addSeparator(Localization.lang(&quot;Save actions&quot;)).xyw(1, 27, 5);</span>
+<span class="nc" id="L144">        builder.add(CustomJFXPanel.wrap(new Scene(fieldFormatterCleanupsPanel))).xyw(1, 29, 5);</span>
+
+<span class="nc" id="L146">        ButtonBarBuilder bb = new ButtonBarBuilder();</span>
+<span class="nc" id="L147">        bb.addGlue();</span>
+<span class="nc" id="L148">        bb.addButton(ok);</span>
+<span class="nc" id="L149">        bb.addButton(cancel);</span>
+<span class="nc" id="L150">        bb.addRelatedGap();</span>
+<span class="nc" id="L151">        bb.addButton(new HelpAction(HelpFile.DATABASE_PROPERTIES).getHelpButton());</span>
+<span class="nc" id="L152">        bb.addGlue();</span>
+<span class="nc" id="L153">        bb.getPanel().setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));</span>
+
+<span class="nc" id="L155">        getContentPane().add(builder.getPanel(), BorderLayout.CENTER);</span>
+<span class="nc" id="L156">        getContentPane().add(bb.getPanel(), BorderLayout.SOUTH);</span>
+<span class="nc" id="L157">        pack();</span>
+
+<span class="nc" id="L159">        AbstractAction closeAction = new AbstractAction() {</span>
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+<span class="nc" id="L163">                dispose();</span>
+<span class="nc" id="L164">            }</span>
+        };
+<span class="nc" id="L166">        ActionMap am = builder.getPanel().getActionMap();</span>
+<span class="nc" id="L167">        InputMap im = builder.getPanel().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);</span>
+<span class="nc" id="L168">        im.put(Globals.getKeyPrefs().getKey(KeyBinding.CLOSE), &quot;close&quot;);</span>
+<span class="nc" id="L169">        am.put(&quot;close&quot;, closeAction);</span>
+
+<span class="nc" id="L171">        ok.addActionListener(e -&gt; {</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">            if (propertiesChanged()) {</span>
+<span class="nc" id="L173">                storeSettings();</span>
+            }
+<span class="nc" id="L175">            dispose();</span>
+<span class="nc" id="L176">        });</span>
+
+<span class="nc" id="L178">        cancel.addActionListener(e -&gt; dispose());</span>
+<span class="nc" id="L179">    }</span>
+
+    private boolean propertiesChanged() {
+<span class="nc" id="L182">        Charset oldEncoding = panel.getBibDatabaseContext().getMetaData().getEncoding()</span>
+<span class="nc" id="L183">                .orElse(Globals.prefs.getDefaultEncoding());</span>
+<span class="nc" id="L184">        Charset newEncoding = (Charset) encoding.getSelectedItem();</span>
+<span class="nc" id="L185">        boolean saveActionsChanged = fieldFormatterCleanupsPanel.hasChanged();</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        boolean saveOrderConfigChanged = !getNewSaveOrderConfig().equals(oldSaveOrderConfig);</span>
+<span class="nc bnc" id="L187" title="All 4 branches missed.">        boolean changed = saveOrderConfigChanged || !newEncoding.equals(oldEncoding)</span>
+<span class="nc bnc" id="L188" title="All 4 branches missed.">                || !oldFileVal.equals(fileDir.getText()) || !oldFileIndvVal.equals(fileDirIndv.getText())</span>
+<span class="nc bnc" id="L189" title="All 4 branches missed.">                || (oldProtectVal != protect.isSelected()) || saveActionsChanged;</span>
+<span class="nc" id="L190">        return changed;</span>
+    }
+
+    private SaveOrderConfig getNewSaveOrderConfig() {
+<span class="nc" id="L194">        SaveOrderConfig saveOrderConfig = null;</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        if (saveInOriginalOrder.isSelected()) {</span>
+<span class="nc" id="L196">            saveOrderConfig = SaveOrderConfig.getDefaultSaveOrder();</span>
+        } else {
+<span class="nc" id="L198">            saveOrderConfig = saveOrderPanel.getSaveOrderConfig();</span>
+<span class="nc" id="L199">            saveOrderConfig.setSaveInSpecifiedOrder();</span>
+        }
+<span class="nc" id="L201">        return saveOrderConfig;</span>
+    }
+
+    private void setupSortOrderConfiguration() {
+<span class="nc" id="L205">        saveInOriginalOrder = new JRadioButton(Localization.lang(&quot;Save entries in their original order&quot;));</span>
+<span class="nc" id="L206">        saveInSpecifiedOrder = new JRadioButton(Localization.lang(&quot;Save entries ordered as specified&quot;));</span>
+
+<span class="nc" id="L208">        ButtonGroup bg = new ButtonGroup();</span>
+<span class="nc" id="L209">        bg.add(saveInOriginalOrder);</span>
+<span class="nc" id="L210">        bg.add(saveInSpecifiedOrder);</span>
+<span class="nc" id="L211">        ActionListener listener = e -&gt; {</span>
+<span class="nc bnc" id="L212" title="All 2 branches missed.">            boolean selected = e.getSource() == saveInSpecifiedOrder;</span>
+<span class="nc" id="L213">            saveOrderPanel.setEnabled(selected);</span>
+<span class="nc" id="L214">        };</span>
+
+<span class="nc" id="L216">        saveInOriginalOrder.addActionListener(listener);</span>
+<span class="nc" id="L217">        saveInSpecifiedOrder.addActionListener(listener);</span>
+<span class="nc" id="L218">    }</span>
+
+    @Override
+    public void setVisible(boolean visible) {
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        if (visible) {</span>
+<span class="nc" id="L223">            setValues();</span>
+        }
+<span class="nc" id="L225">        super.setVisible(visible);</span>
+<span class="nc" id="L226">    }</span>
+
+    private void setValues() {
+<span class="nc" id="L229">        Optional&lt;Charset&gt; charset = panel.getBibDatabaseContext().getMetaData().getEncoding();</span>
+<span class="nc" id="L230">        encoding.setSelectedItem(charset.orElse(Globals.prefs.getDefaultEncoding()));</span>
+
+<span class="nc" id="L232">        Optional&lt;SaveOrderConfig&gt; storedSaveOrderConfig = metaData.getSaveOrderConfig();</span>
+        boolean selected;
+<span class="nc bnc" id="L234" title="All 2 branches missed.">        if (!storedSaveOrderConfig.isPresent()) {</span>
+<span class="nc" id="L235">            saveInOriginalOrder.setSelected(true);</span>
+<span class="nc" id="L236">            oldSaveOrderConfig = SaveOrderConfig.getDefaultSaveOrder();</span>
+<span class="nc" id="L237">            selected = false;</span>
+        } else {
+<span class="nc" id="L239">            SaveOrderConfig saveOrderConfig = storedSaveOrderConfig.get();</span>
+<span class="nc" id="L240">            oldSaveOrderConfig = saveOrderConfig;</span>
+<span class="nc bnc" id="L241" title="All 2 branches missed.">            if (saveOrderConfig.saveInOriginalOrder()) {</span>
+<span class="nc" id="L242">                saveInOriginalOrder.setSelected(true);</span>
+<span class="nc" id="L243">                selected = false;</span>
+            } else {
+<span class="nc" id="L245">                saveInSpecifiedOrder.setSelected(true);</span>
+<span class="nc" id="L246">                selected = true;</span>
+            }
+<span class="nc" id="L248">            saveOrderPanel.setSaveOrderConfig(saveOrderConfig);</span>
+        }
+<span class="nc" id="L250">        saveOrderPanel.setEnabled(selected);</span>
+
+<span class="nc" id="L252">        Optional&lt;String&gt; fileD = metaData.getDefaultFileDirectory();</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        if (fileD.isPresent()) {</span>
+<span class="nc" id="L254">            fileDir.setText(fileD.get().trim());</span>
+        } else {
+<span class="nc" id="L256">            fileDir.setText(&quot;&quot;);</span>
+        }
+
+<span class="nc" id="L259">        String fileDI = metaData.getUserFileDirectory(Globals.prefs.getUser()).orElse(&quot;&quot;); // File dir setting</span>
+<span class="nc" id="L260">        fileDirIndv.setText(fileDI);</span>
+<span class="nc" id="L261">        oldFileIndvVal = fileDirIndv.getText();</span>
+
+<span class="nc" id="L263">        protect.setSelected(metaData.isProtected());</span>
+
+        // Store original values to see if they get changed:
+<span class="nc" id="L266">        oldFileVal = fileDir.getText();</span>
+<span class="nc" id="L267">        oldProtectVal = protect.isSelected();</span>
+
+        //set save actions
+<span class="nc" id="L270">        fieldFormatterCleanupsPanel.setValues(metaData);</span>
+<span class="nc" id="L271">    }</span>
+
+    private void storeSettings() {
+<span class="nc" id="L274">        Charset oldEncoding = panel.getBibDatabaseContext().getMetaData().getEncoding()</span>
+<span class="nc" id="L275">                .orElse(Globals.prefs.getDefaultEncoding());</span>
+<span class="nc" id="L276">        Charset newEncoding = (Charset) encoding.getSelectedItem();</span>
+<span class="nc" id="L277">        panel.getBibDatabaseContext().getMetaData().setEncoding(newEncoding);</span>
+
+<span class="nc" id="L279">        String text = fileDir.getText().trim();</span>
+<span class="nc bnc" id="L280" title="All 2 branches missed.">        if (text.isEmpty()) {</span>
+<span class="nc" id="L281">            metaData.clearDefaultFileDirectory();</span>
+        } else {
+<span class="nc" id="L283">            metaData.setDefaultFileDirectory(text);</span>
+        }
+        // Repeat for individual file dir - reuse 'text' and 'dir' vars
+<span class="nc" id="L286">        text = fileDirIndv.getText();</span>
+<span class="nc bnc" id="L287" title="All 2 branches missed.">        if (text.isEmpty()) {</span>
+<span class="nc" id="L288">            metaData.clearUserFileDirectory(Globals.prefs.getUser());</span>
+        } else {
+<span class="nc" id="L290">            metaData.setUserFileDirectory(Globals.prefs.getUser(), text);</span>
+        }
+
+<span class="nc bnc" id="L293" title="All 2 branches missed.">        if (protect.isSelected()) {</span>
+<span class="nc" id="L294">            metaData.markAsProtected();</span>
+        } else {
+<span class="nc" id="L296">            metaData.markAsNotProtected();</span>
+        }
+
+<span class="nc" id="L299">        SaveOrderConfig newSaveOrderConfig = getNewSaveOrderConfig();</span>
+
+<span class="nc bnc" id="L301" title="All 2 branches missed.">        boolean saveOrderConfigChanged = !getNewSaveOrderConfig().equals(oldSaveOrderConfig);</span>
+
+        // See if any of the values have been modified:
+<span class="nc bnc" id="L304" title="All 2 branches missed.">        if (saveOrderConfigChanged) {</span>
+<span class="nc bnc" id="L305" title="All 2 branches missed.">            if (newSaveOrderConfig.equals(SaveOrderConfig.getDefaultSaveOrder())) {</span>
+<span class="nc" id="L306">                metaData.clearSaveOrderConfig();</span>
+            } else {
+<span class="nc" id="L308">                metaData.setSaveOrderConfig(newSaveOrderConfig);</span>
+            }
+        }
+
+<span class="nc" id="L312">        boolean saveActionsChanged = fieldFormatterCleanupsPanel.hasChanged();</span>
+<span class="nc bnc" id="L313" title="All 2 branches missed.">        if (saveActionsChanged) {</span>
+<span class="nc bnc" id="L314" title="All 2 branches missed.">            if (fieldFormatterCleanupsPanel.isDefaultSaveActions()) {</span>
+<span class="nc" id="L315">                metaData.clearSaveActions();</span>
+            } else {
+<span class="nc" id="L317">                fieldFormatterCleanupsPanel.storeSettings(metaData);</span>
+            }
+        }
+
+<span class="nc bnc" id="L321" title="All 4 branches missed.">        boolean changed = saveOrderConfigChanged || !newEncoding.equals(oldEncoding)</span>
+<span class="nc bnc" id="L322" title="All 4 branches missed.">                || !oldFileVal.equals(fileDir.getText()) || !oldFileIndvVal.equals(fileDirIndv.getText())</span>
+<span class="nc bnc" id="L323" title="All 4 branches missed.">                || (oldProtectVal != protect.isSelected()) || saveActionsChanged;</span>
+        // ... if so, mark base changed. Prevent the Undo button from removing
+        // change marking:
+<span class="nc bnc" id="L326" title="All 2 branches missed.">        if (changed) {</span>
+<span class="nc" id="L327">            panel.markNonUndoableBaseChanged();</span>
+        }
+<span class="nc" id="L329">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

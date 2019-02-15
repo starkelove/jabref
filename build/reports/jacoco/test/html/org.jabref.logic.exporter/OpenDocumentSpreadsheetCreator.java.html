@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenDocumentSpreadsheetCreator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.exporter</a> &gt; <span class="el_source">OpenDocumentSpreadsheetCreator.java</span></div><h1>OpenDocumentSpreadsheetCreator.java</h1><pre class="source lang-java linenums">package org.jabref.logic.exporter;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
+import java.util.zip.CRC32;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class OpenDocumentSpreadsheetCreator extends Exporter {
+
+<span class="fc" id="L41">    private static final Logger LOGGER = LoggerFactory.getLogger(OpenDocumentSpreadsheetCreator.class);</span>
+
+
+    /**
+     * Creates a new instance of OpenOfficeDocumentCreator
+     */
+    public OpenDocumentSpreadsheetCreator() {
+<span class="fc" id="L48">        super(&quot;ods&quot;, Localization.lang(&quot;OpenDocument spreadsheet&quot;), StandardFileType.ODS);</span>
+<span class="fc" id="L49">    }</span>
+
+    private static void storeOpenDocumentSpreadsheetFile(Path file, InputStream source) throws IOException {
+
+<span class="nc" id="L53">        try (ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(Files.newOutputStream(file)))) {</span>
+
+            //addResourceFile(&quot;mimetype&quot;, &quot;/resource/ods/mimetype&quot;, out);
+<span class="nc" id="L56">            ZipEntry ze = new ZipEntry(&quot;mimetype&quot;);</span>
+<span class="nc" id="L57">            String mime = &quot;application/vnd.oasis.opendocument.spreadsheet&quot;;</span>
+<span class="nc" id="L58">            ze.setMethod(ZipEntry.STORED);</span>
+<span class="nc" id="L59">            ze.setSize(mime.length());</span>
+<span class="nc" id="L60">            CRC32 crc = new CRC32();</span>
+<span class="nc" id="L61">            crc.update(mime.getBytes());</span>
+<span class="nc" id="L62">            ze.setCrc(crc.getValue());</span>
+<span class="nc" id="L63">            out.putNextEntry(ze);</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            for (int i = 0; i &lt; mime.length(); i++) {</span>
+<span class="nc" id="L65">                out.write(mime.charAt(i));</span>
+            }
+<span class="nc" id="L67">            out.closeEntry();</span>
+
+<span class="nc" id="L69">            ZipEntry zipEntry = new ZipEntry(&quot;content.xml&quot;);</span>
+            //zipEntry.setMethod(ZipEntry.DEFLATED);
+<span class="nc" id="L71">            out.putNextEntry(zipEntry);</span>
+            int c;
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            while ((c = source.read()) &gt;= 0) {</span>
+<span class="nc" id="L74">                out.write(c);</span>
+            }
+<span class="nc" id="L76">            out.closeEntry();</span>
+
+            // Add manifest (required for OOo 2.0) and &quot;meta.xml&quot;: These are in the
+            // resource/ods directory, and are copied verbatim into the zip file.
+<span class="nc" id="L80">            OpenDocumentSpreadsheetCreator.addResourceFile(&quot;meta.xml&quot;, &quot;/resource/ods/meta.xml&quot;, out);</span>
+
+<span class="nc" id="L82">            OpenDocumentSpreadsheetCreator.addResourceFile(&quot;META-INF/manifest.xml&quot;, &quot;/resource/ods/manifest.xml&quot;, out);</span>
+        }
+<span class="nc" id="L84">    }</span>
+
+    private static void exportOpenDocumentSpreadsheet(Path file, BibDatabase database, List&lt;BibEntry&gt; entries)
+            throws IOException {
+
+        // First store the xml formatted content to a temporary file.
+<span class="nc" id="L90">        File tmpFile = File.createTempFile(&quot;opendocument&quot;, null);</span>
+<span class="nc" id="L91">        OpenDocumentSpreadsheetCreator.exportOpenDocumentSpreadsheetXML(tmpFile, database, entries);</span>
+
+        // Then add the content to the zip file:
+<span class="nc" id="L94">        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(tmpFile))) {</span>
+<span class="nc" id="L95">            OpenDocumentSpreadsheetCreator.storeOpenDocumentSpreadsheetFile(file, in);</span>
+        }
+        // Delete the temporary file:
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (!tmpFile.delete()) {</span>
+<span class="nc" id="L99">            LOGGER.info(&quot;Cannot delete temporary export file&quot;);</span>
+        }
+<span class="nc" id="L101">    }</span>
+
+    @Override
+    public void export(final BibDatabaseContext databaseContext, final Path file,
+                       final Charset encoding, List&lt;BibEntry&gt; entries) throws IOException {
+<span class="fc" id="L106">        Objects.requireNonNull(databaseContext);</span>
+<span class="fc" id="L107">        Objects.requireNonNull(entries);</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (!entries.isEmpty()) { // Only export if entries exists</span>
+<span class="nc" id="L109">            OpenDocumentSpreadsheetCreator.exportOpenDocumentSpreadsheet(file, databaseContext.getDatabase(), entries);</span>
+        }
+<span class="fc" id="L111">    }</span>
+
+    private static void exportOpenDocumentSpreadsheetXML(File tmpFile, BibDatabase database, List&lt;BibEntry&gt; entries) {
+<span class="nc" id="L114">        OpenDocumentRepresentation od = new OpenDocumentRepresentation(database, entries);</span>
+
+<span class="nc" id="L116">        try (Writer ps = new OutputStreamWriter(new FileOutputStream(tmpFile), StandardCharsets.UTF_8)) {</span>
+
+<span class="nc" id="L118">            DOMSource source = new DOMSource(od.getDOMrepresentation());</span>
+<span class="nc" id="L119">            StreamResult result = new StreamResult(ps);</span>
+<span class="nc" id="L120">            Transformer trans = TransformerFactory.newInstance().newTransformer();</span>
+<span class="nc" id="L121">            trans.setOutputProperty(OutputKeys.INDENT, &quot;yes&quot;);</span>
+<span class="nc" id="L122">            trans.transform(source, result);</span>
+<span class="nc" id="L123">        } catch (Exception e) {</span>
+<span class="nc" id="L124">            throw new Error(e);</span>
+<span class="nc" id="L125">        }</span>
+<span class="nc" id="L126">    }</span>
+
+    private static void addResourceFile(String name, String resource, ZipOutputStream out) throws IOException {
+<span class="nc" id="L129">        ZipEntry zipEntry = new ZipEntry(name);</span>
+<span class="nc" id="L130">        out.putNextEntry(zipEntry);</span>
+<span class="nc" id="L131">        OpenDocumentSpreadsheetCreator.addFromResource(resource, out);</span>
+<span class="nc" id="L132">        out.closeEntry();</span>
+<span class="nc" id="L133">    }</span>
+
+    private static void addFromResource(String resource, OutputStream out) {
+<span class="nc" id="L136">        URL url = OpenDocumentSpreadsheetCreator.class.getResource(resource);</span>
+<span class="nc" id="L137">        try (InputStream in = url.openStream()) {</span>
+<span class="nc" id="L138">            byte[] buffer = new byte[256];</span>
+<span class="nc" id="L139">            synchronized (out) {</span>
+                while (true) {
+<span class="nc" id="L141">                    int bytesRead = in.read(buffer);</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                    if (bytesRead == -1) {</span>
+<span class="nc" id="L143">                        break;</span>
+                    }
+<span class="nc" id="L145">                    out.write(buffer, 0, bytesRead);</span>
+<span class="nc" id="L146">                }</span>
+<span class="nc" id="L147">            }</span>
+<span class="nc" id="L148">        } catch (IOException e) {</span>
+<span class="nc" id="L149">            LOGGER.warn(&quot;Cannot get resource&quot;, e);</span>
+<span class="nc" id="L150">        }</span>
+<span class="nc" id="L151">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

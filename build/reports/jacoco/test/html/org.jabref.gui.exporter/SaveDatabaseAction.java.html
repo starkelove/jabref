@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SaveDatabaseAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.exporter</a> &gt; <span class="el_source">SaveDatabaseAction.java</span></div><h1>SaveDatabaseAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.exporter;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.gui.dialogs.AutosaveUIManager;
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.gui.util.DefaultTaskExecutor;
+import org.jabref.gui.util.FileDialogConfiguration;
+import org.jabref.logic.autosaveandbackup.AutosaveManager;
+import org.jabref.logic.autosaveandbackup.BackupManager;
+import org.jabref.logic.exporter.AtomicFileWriter;
+import org.jabref.logic.exporter.BibtexDatabaseWriter;
+import org.jabref.logic.exporter.SaveException;
+import org.jabref.logic.exporter.SavePreferences;
+import org.jabref.logic.l10n.Encodings;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.shared.prefs.SharedDatabasePreferences;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.database.event.ChangePropagation;
+import org.jabref.model.database.shared.DatabaseLocation;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Action for the &quot;Save&quot; and &quot;Save as&quot; operations called from BasePanel. This class is also used for save operations
+ * when closing a database or quitting the applications.
+ *
+ * The save operation is loaded off of the GUI thread using {@link BackgroundTask}. Callers can query whether the
+ * operation was canceled, or whether it was successful.
+ */
+public class SaveDatabaseAction {
+<span class="nc" id="L50">    private static final Logger LOGGER = LoggerFactory.getLogger(SaveDatabaseAction.class);</span>
+
+    private final BasePanel panel;
+    private final JabRefFrame frame;
+    private final DialogService dialogService;
+    private final JabRefPreferences prefs;
+
+<span class="nc" id="L57">    public SaveDatabaseAction(BasePanel panel, JabRefPreferences prefs) {</span>
+<span class="nc" id="L58">        this.panel = panel;</span>
+<span class="nc" id="L59">        this.frame = panel.frame();</span>
+<span class="nc" id="L60">        this.dialogService = frame.getDialogService();</span>
+<span class="nc" id="L61">        this.prefs = prefs;</span>
+<span class="nc" id="L62">    }</span>
+
+    private boolean saveDatabase(Path file, boolean selectedOnly, Charset encoding, SavePreferences.DatabaseSaveType saveType) throws SaveException {
+        try {
+<span class="nc" id="L66">            SavePreferences preferences = prefs.loadForSaveFromPreferences()</span>
+<span class="nc" id="L67">                                               .withEncoding(encoding)</span>
+<span class="nc" id="L68">                                               .withSaveType(saveType);</span>
+
+<span class="nc" id="L70">            AtomicFileWriter fileWriter = new AtomicFileWriter(file, preferences.getEncoding(), preferences.makeBackup());</span>
+<span class="nc" id="L71">            BibtexDatabaseWriter databaseWriter = new BibtexDatabaseWriter(fileWriter, preferences);</span>
+
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            if (selectedOnly) {</span>
+<span class="nc" id="L74">                databaseWriter.savePartOfDatabase(panel.getBibDatabaseContext(), panel.getSelectedEntries());</span>
+            } else {
+<span class="nc" id="L76">                databaseWriter.saveDatabase(panel.getBibDatabaseContext());</span>
+            }
+
+<span class="nc" id="L79">            panel.registerUndoableChanges(databaseWriter.getSaveActionsFieldChanges());</span>
+
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (fileWriter.hasEncodingProblems()) {</span>
+<span class="nc" id="L82">                saveWithDifferentEncoding(file, selectedOnly, preferences.getEncoding(), fileWriter.getEncodingProblems(), saveType);</span>
+            }
+<span class="nc" id="L84">        } catch (UnsupportedCharsetException ex) {</span>
+<span class="nc" id="L85">            throw new SaveException(Localization.lang(&quot;Character encoding '%0' is not supported.&quot;, encoding.displayName()), ex);</span>
+<span class="nc" id="L86">        } catch (IOException ex) {</span>
+<span class="nc" id="L87">            throw new SaveException(ex);</span>
+<span class="nc" id="L88">        }</span>
+
+<span class="nc" id="L90">        return true;</span>
+    }
+
+    private void saveWithDifferentEncoding(Path file, boolean selectedOnly, Charset encoding, Set&lt;Character&gt; encodingProblems, SavePreferences.DatabaseSaveType saveType) throws SaveException {
+<span class="nc" id="L94">        DialogPane pane = new DialogPane();</span>
+<span class="nc" id="L95">        VBox vbox = new VBox();</span>
+<span class="nc" id="L96">        vbox.getChildren().addAll(</span>
+<span class="nc" id="L97">                new Text(Localization.lang(&quot;The chosen encoding '%0' could not encode the following characters:&quot;, encoding.displayName())),</span>
+<span class="nc" id="L98">                new Text(encodingProblems.stream().map(Object::toString).collect(Collectors.joining(&quot;.&quot;))),</span>
+<span class="nc" id="L99">                new Text(Localization.lang(&quot;What do you want to do?&quot;))</span>
+        );
+<span class="nc" id="L101">        pane.setContent(vbox);</span>
+
+<span class="nc" id="L103">        ButtonType tryDifferentEncoding = new ButtonType(Localization.lang(&quot;Try different encoding&quot;), ButtonBar.ButtonData.OTHER);</span>
+<span class="nc" id="L104">        ButtonType ignore = new ButtonType(Localization.lang(&quot;Ignore&quot;), ButtonBar.ButtonData.APPLY);</span>
+<span class="nc" id="L105">        boolean saveWithDifferentEncoding = frame.getDialogService()</span>
+<span class="nc" id="L106">                                                 .showCustomDialogAndWait(Localization.lang(&quot;Save library&quot;), pane, ignore, tryDifferentEncoding)</span>
+<span class="nc" id="L107">                                                 .filter(buttonType -&gt; buttonType.equals(tryDifferentEncoding))</span>
+<span class="nc" id="L108">                                                 .isPresent();</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (saveWithDifferentEncoding) {</span>
+<span class="nc" id="L110">            Optional&lt;Charset&gt; newEncoding = frame.getDialogService().showChoiceDialogAndWait(Localization.lang(&quot;Save library&quot;), Localization.lang(&quot;Select new encoding&quot;), Localization.lang(&quot;Save library&quot;), encoding, Encodings.getCharsets());</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">            if (newEncoding.isPresent()) {</span>
+<span class="nc" id="L112">                saveDatabase(file, selectedOnly, newEncoding.get(), saveType);</span>
+
+                // Make sure to remember which encoding we used.
+<span class="nc" id="L115">                panel.getBibDatabaseContext().getMetaData().setEncoding(newEncoding.get(), ChangePropagation.DO_NOT_POST_EVENT);</span>
+            }
+        }
+<span class="nc" id="L118">    }</span>
+
+    private boolean doSave() {
+<span class="nc" id="L121">        Path targetPath = panel.getBibDatabaseContext().getDatabasePath().get();</span>
+        try {
+            // Save the database
+<span class="nc" id="L124">            boolean success = saveDatabase(targetPath, false,</span>
+<span class="nc" id="L125">                    panel.getBibDatabaseContext()</span>
+<span class="nc" id="L126">                         .getMetaData()</span>
+<span class="nc" id="L127">                         .getEncoding()</span>
+<span class="nc" id="L128">                         .orElse(prefs.getDefaultEncoding()),</span>
+                    SavePreferences.DatabaseSaveType.ALL);
+
+<span class="nc bnc" id="L131" title="All 2 branches missed.">            if (success) {</span>
+<span class="nc" id="L132">                panel.updateTimeStamp();</span>
+<span class="nc" id="L133">                panel.getUndoManager().markUnchanged();</span>
+                // (Only) after a successful save the following
+                // statement marks that the base is unchanged
+                // since last save:
+<span class="nc" id="L137">                panel.setNonUndoableChange(false);</span>
+<span class="nc" id="L138">                panel.setBaseChanged(false);</span>
+<span class="nc" id="L139">                panel.markExternalChangesAsResolved();</span>
+
+<span class="nc" id="L141">                DefaultTaskExecutor.runInJavaFXThread(() -&gt; {</span>
+                    // Reset title of tab
+<span class="nc" id="L143">                    frame.setTabTitle(panel, panel.getTabTitle(),</span>
+<span class="nc" id="L144">                            panel.getBibDatabaseContext().getDatabaseFile().get().getAbsolutePath());</span>
+<span class="nc" id="L145">                    frame.output(Localization.lang(&quot;Saved library&quot;) + &quot; '&quot;</span>
+<span class="nc" id="L146">                            + panel.getBibDatabaseContext().getDatabaseFile().get().getPath() + &quot;'.&quot;);</span>
+<span class="nc" id="L147">                    frame.setWindowTitle();</span>
+<span class="nc" id="L148">                    frame.updateAllTabTitles();</span>
+<span class="nc" id="L149">                });</span>
+            }
+<span class="nc" id="L151">            return success;</span>
+<span class="nc" id="L152">        } catch (SaveException ex) {</span>
+<span class="nc" id="L153">            LOGGER.error(&quot;A problem occurred when trying to save the file &quot; + targetPath, ex);</span>
+<span class="nc" id="L154">            frame.getDialogService().showErrorDialogAndWait(Localization.lang(&quot;Save library&quot;), Localization.lang(&quot;Could not save file.&quot;), ex);</span>
+<span class="nc" id="L155">            return false;</span>
+        } finally {
+            // release panel from save status
+<span class="nc" id="L158">            panel.setSaving(false);</span>
+        }
+    }
+
+    public boolean save() {
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        if (panel.getBibDatabaseContext().getDatabasePath().isPresent()) {</span>
+<span class="nc" id="L164">            panel.frame().output(Localization.lang(&quot;Saving library&quot;) + &quot;...&quot;);</span>
+<span class="nc" id="L165">            panel.setSaving(true);</span>
+<span class="nc" id="L166">            return doSave();</span>
+        } else {
+<span class="nc" id="L168">            Optional&lt;Path&gt; savePath = getSavePath();</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">            if (savePath.isPresent()) {</span>
+<span class="nc" id="L170">                saveAs(savePath.get());</span>
+<span class="nc" id="L171">                return true;</span>
+            }
+        }
+
+<span class="nc" id="L175">        return false;</span>
+    }
+
+    public void saveAs() {
+<span class="nc" id="L179">        getSavePath().ifPresent(this::saveAs);</span>
+<span class="nc" id="L180">    }</span>
+
+    private Optional&lt;Path&gt; getSavePath() {
+<span class="nc" id="L183">        FileDialogConfiguration fileDialogConfiguration = new FileDialogConfiguration.Builder()</span>
+<span class="nc" id="L184">                .addExtensionFilter(StandardFileType.BIBTEX_DB)</span>
+<span class="nc" id="L185">                .withDefaultExtension(StandardFileType.BIBTEX_DB)</span>
+<span class="nc" id="L186">                .withInitialDirectory(prefs.get(JabRefPreferences.WORKING_DIRECTORY))</span>
+<span class="nc" id="L187">                .build();</span>
+<span class="nc" id="L188">        Optional&lt;Path&gt; selectedPath = dialogService.showFileSaveDialog(fileDialogConfiguration);</span>
+<span class="nc" id="L189">        selectedPath.ifPresent(path -&gt; prefs.setWorkingDir(path.getParent()));</span>
+<span class="nc" id="L190">        return selectedPath;</span>
+    }
+
+    public void saveAs(Path file) {
+<span class="nc" id="L194">        BibDatabaseContext context = panel.getBibDatabaseContext();</span>
+
+        // Close AutosaveManager and BackupManager for original library
+<span class="nc" id="L197">        Optional&lt;Path&gt; databasePath = context.getDatabasePath();</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        if (databasePath.isPresent()) {</span>
+<span class="nc" id="L199">            final Path oldFile = databasePath.get();</span>
+<span class="nc" id="L200">            context.setDatabaseFile(oldFile.toFile());</span>
+<span class="nc" id="L201">            AutosaveManager.shutdown(context);</span>
+<span class="nc" id="L202">            BackupManager.shutdown(context);</span>
+        }
+
+        // Set new location
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (context.getLocation() == DatabaseLocation.SHARED) {</span>
+            // Save all properties dependent on the ID. This makes it possible to restore them.
+<span class="nc" id="L208">            new SharedDatabasePreferences(context.getDatabase().generateSharedDatabaseID())</span>
+<span class="nc" id="L209">                    .putAllDBMSConnectionProperties(context.getDBMSSynchronizer().getConnectionProperties());</span>
+        }
+<span class="nc" id="L211">        context.setDatabaseFile(file);</span>
+
+        // Save
+<span class="nc" id="L214">        save();</span>
+
+        // Reinstall AutosaveManager and BackupManager
+<span class="nc" id="L217">        panel.resetChangeMonitor();</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        if (readyForAutosave(context)) {</span>
+<span class="nc" id="L219">            AutosaveManager autosaver = AutosaveManager.start(context);</span>
+<span class="nc" id="L220">            autosaver.registerListener(new AutosaveUIManager(panel));</span>
+        }
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        if (readyForBackup(context)) {</span>
+<span class="nc" id="L223">            BackupManager.start(context);</span>
+        }
+
+<span class="nc" id="L226">        context.getDatabasePath().ifPresent(presentFile -&gt; frame.getFileHistory().newFile(presentFile));</span>
+<span class="nc" id="L227">    }</span>
+
+    private boolean readyForAutosave(BibDatabaseContext context) {
+<span class="nc bnc" id="L230" title="All 2 branches missed.">        return ((context.getLocation() == DatabaseLocation.SHARED) ||</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">                ((context.getLocation() == DatabaseLocation.LOCAL)</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">                        &amp;&amp; prefs.getBoolean(JabRefPreferences.LOCAL_AUTO_SAVE)))</span>
+                &amp;&amp;
+<span class="nc bnc" id="L234" title="All 2 branches missed.">                context.getDatabasePath().isPresent();</span>
+    }
+
+    private boolean readyForBackup(BibDatabaseContext context) {
+<span class="nc bnc" id="L238" title="All 4 branches missed.">        return (context.getLocation() == DatabaseLocation.LOCAL) &amp;&amp; context.getDatabasePath().isPresent();</span>
+    }
+
+    public void saveSelectedAsPlain() {
+<span class="nc" id="L242">        getSavePath().ifPresent(path -&gt; {</span>
+            try {
+<span class="nc" id="L244">                saveDatabase(path, true, prefs.getDefaultEncoding(), SavePreferences.DatabaseSaveType.PLAIN_BIBTEX);</span>
+<span class="nc" id="L245">                frame.getFileHistory().newFile(path);</span>
+<span class="nc" id="L246">                frame.output(Localization.lang(&quot;Saved selected to '%0'.&quot;, path.toString()));</span>
+<span class="nc" id="L247">            } catch (SaveException ex) {</span>
+<span class="nc" id="L248">                LOGGER.error(&quot;A problem occurred when trying to save the file&quot;, ex);</span>
+<span class="nc" id="L249">                frame.getDialogService().showErrorDialogAndWait(Localization.lang(&quot;Save library&quot;), Localization.lang(&quot;Could not save file.&quot;), ex);</span>
+<span class="nc" id="L250">            }</span>
+<span class="nc" id="L251">        });</span>
+<span class="nc" id="L252">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

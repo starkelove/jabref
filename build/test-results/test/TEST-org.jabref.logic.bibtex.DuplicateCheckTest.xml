@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.bibtex.DuplicateCheckTest" tests="17" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:47" hostname="n184-p67.eduroam.kth.se" time="0.022">
+  <properties/>
+  <testcase name="twoIncollectionsWithDifferentChaptersAreNotDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.003"/>
+  <testcase name="testDuplicateDetection()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.002"/>
+  <testcase name="twoUnrelatedEntriesWithEqualPmidAreDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.001"/>
+  <testcase name="twoUnrelatedEntriesAreNoDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.0"/>
+  <testcase name="testWordCorrelation()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.0"/>
+  <testcase name="twoBooksWithDifferentEditionsAreNotDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.001"/>
+  <testcase name="twoInbooksWithDifferentPagesAreNotDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.001"/>
+  <testcase name="twoUnrelatedEntriesWithEqualDoisAreDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.001"/>
+  <testcase name="twoInbooksWithDifferentChaptersAreNotDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.002"/>
+  <testcase name="sameBooksWithDifferentEditionsAreNotDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.001"/>
+  <testcase name="twoUnrelatedEntriesWithEqualEprintAreDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.0"/>
+  <testcase name="twoUnrelatedEntriesWithDifferentDoisAreNoDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.001"/>
+  <testcase name="twoEntriesWithSameDoiButDifferentTypesAreDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.0"/>
+  <testcase name="twoIncollectionsWithDifferentPagesAreNotDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.0"/>
+  <testcase name="sameBooksWithPartiallyMissingEditionAreDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.001"/>
+  <testcase name="inbookWithoutChapterCouldBeDuplicateOfInbookWithChapter()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.002"/>
+  <testcase name="sameBooksWithMissingEditionAreDuplicates()" classname="org.jabref.logic.bibtex.DuplicateCheckTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

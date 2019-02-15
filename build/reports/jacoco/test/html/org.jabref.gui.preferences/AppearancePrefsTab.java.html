@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AppearancePrefsTab.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.preferences</a> &gt; <span class="el_source">AppearancePrefsTab.java</span></div><h1>AppearancePrefsTab.java</h1><pre class="source lang-java linenums">package org.jabref.gui.preferences;
+
+import javafx.geometry.Insets;
+import javafx.scene.Node;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+
+import org.jabref.gui.DialogService;
+import org.jabref.gui.util.ControlHelper;
+import org.jabref.gui.util.ThemeLoader;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.strings.StringUtil;
+import org.jabref.preferences.JabRefPreferences;
+
+class AppearancePrefsTab extends Pane implements PrefsTab {
+
+    private final JabRefPreferences prefs;
+    private final CheckBox fontTweaksLAF;
+    private final TextField fontSize;
+    private final CheckBox overrideFonts;
+<span class="nc" id="L27">    private final VBox container = new VBox();</span>
+    private final DialogService dialogService;
+    private final RadioButton lightTheme;
+    private final RadioButton darkTheme;
+
+    /**
+     * Customization of appearance parameters.
+     *
+     * @param prefs a &lt;code&gt;JabRefPreferences&lt;/code&gt; value
+     */
+<span class="nc" id="L37">    public AppearancePrefsTab(DialogService dialogService, JabRefPreferences prefs) {</span>
+<span class="nc" id="L38">        this.dialogService = dialogService;</span>
+<span class="nc" id="L39">        this.prefs = prefs;</span>
+
+<span class="nc" id="L41">        overrideFonts = new CheckBox(Localization.lang(&quot;Override default font settings&quot;));</span>
+<span class="nc" id="L42">        fontSize = new TextField();</span>
+<span class="nc" id="L43">        fontSize.setTextFormatter(ControlHelper.getIntegerTextFormatter());</span>
+<span class="nc" id="L44">        Label fontSizeLabel = new Label(Localization.lang(&quot;Font size:&quot;));</span>
+<span class="nc" id="L45">        HBox fontSizeContainer = new HBox(fontSizeLabel, fontSize);</span>
+<span class="nc" id="L46">        VBox.setMargin(fontSizeContainer, new Insets(0, 0, 0, 35));</span>
+<span class="nc" id="L47">        fontSizeContainer.disableProperty().bind(overrideFonts.selectedProperty().not());</span>
+<span class="nc" id="L48">        fontTweaksLAF = new CheckBox(Localization.lang(&quot;Tweak font rendering for entry editor on Linux&quot;));</span>
+
+<span class="nc" id="L50">        ToggleGroup themeGroup = new ToggleGroup();</span>
+<span class="nc" id="L51">        lightTheme = new RadioButton(&quot;Light theme&quot;);</span>
+<span class="nc" id="L52">        lightTheme.setToggleGroup(themeGroup);</span>
+<span class="nc" id="L53">        darkTheme = new RadioButton(&quot;Dark theme&quot;);</span>
+<span class="nc" id="L54">        darkTheme.setToggleGroup(themeGroup);</span>
+
+<span class="nc" id="L56">        String cssFileName = prefs.get(JabRefPreferences.FX_THEME);</span>
+<span class="nc bnc" id="L57" title="All 4 branches missed.">        if (StringUtil.isBlank(cssFileName) || ThemeLoader.MAIN_CSS.equalsIgnoreCase(cssFileName)) {</span>
+<span class="nc" id="L58">            lightTheme.setSelected(true);</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        } else if (ThemeLoader.DARK_CSS.equals(cssFileName)) {</span>
+<span class="nc" id="L60">            darkTheme.setSelected(true);</span>
+        }
+
+<span class="nc" id="L63">        container.getChildren().addAll(overrideFonts, fontSizeContainer, fontTweaksLAF, lightTheme, darkTheme);</span>
+<span class="nc" id="L64">    }</span>
+
+    public Node getBuilder() {
+<span class="nc" id="L67">        return container;</span>
+    }
+
+    @Override
+    public void setValues() {
+<span class="nc" id="L72">        fontTweaksLAF.setSelected(prefs.getBoolean(JabRefPreferences.FX_FONT_RENDERING_TWEAK));</span>
+<span class="nc" id="L73">        overrideFonts.setSelected(prefs.getBoolean(JabRefPreferences.OVERRIDE_DEFAULT_FONT_SIZE));</span>
+<span class="nc" id="L74">        fontSize.setText(String.valueOf(prefs.getInt(JabRefPreferences.MAIN_FONT_SIZE)));</span>
+<span class="nc" id="L75">    }</span>
+
+    @Override
+    public void storeSettings() {
+        // Java FX font rendering tweak
+<span class="nc" id="L80">        final boolean oldFxTweakValue = prefs.getBoolean(JabRefPreferences.FX_FONT_RENDERING_TWEAK);</span>
+<span class="nc" id="L81">        prefs.putBoolean(JabRefPreferences.FX_FONT_RENDERING_TWEAK, fontTweaksLAF.isSelected());</span>
+
+<span class="nc" id="L83">        final boolean oldOverrideDefaultFontSize = prefs.getBoolean(JabRefPreferences.OVERRIDE_DEFAULT_FONT_SIZE);</span>
+<span class="nc" id="L84">        final int oldFontSize = prefs.getInt(JabRefPreferences.MAIN_FONT_SIZE);</span>
+<span class="nc" id="L85">        prefs.putBoolean(JabRefPreferences.OVERRIDE_DEFAULT_FONT_SIZE, overrideFonts.isSelected());</span>
+<span class="nc" id="L86">        int newFontSize = Integer.parseInt(fontSize.getText());</span>
+<span class="nc" id="L87">        prefs.putInt(JabRefPreferences.MAIN_FONT_SIZE, newFontSize);</span>
+
+<span class="nc" id="L89">        boolean isThemeChanged = false;</span>
+
+<span class="nc bnc" id="L91" title="All 4 branches missed.">        if (lightTheme.isSelected() &amp;&amp; !prefs.get(JabRefPreferences.FX_THEME).equals(ThemeLoader.MAIN_CSS)) {</span>
+<span class="nc" id="L92">            prefs.put(JabRefPreferences.FX_THEME, ThemeLoader.MAIN_CSS);</span>
+<span class="nc" id="L93">            isThemeChanged = true;</span>
+<span class="nc bnc" id="L94" title="All 4 branches missed.">        } else if (darkTheme.isSelected() &amp;&amp; !prefs.get(JabRefPreferences.FX_THEME).equals(ThemeLoader.DARK_CSS)) {</span>
+<span class="nc" id="L95">            prefs.put(JabRefPreferences.FX_THEME, ThemeLoader.DARK_CSS);</span>
+<span class="nc" id="L96">            isThemeChanged = true;</span>
+        }
+
+<span class="nc" id="L99">        boolean isRestartRequired =</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                (oldFxTweakValue != fontTweaksLAF.isSelected())</span>
+<span class="nc bnc" id="L101" title="All 6 branches missed.">                        || (oldOverrideDefaultFontSize != overrideFonts.isSelected())</span>
+                        || (oldFontSize != newFontSize)
+                        || isThemeChanged;
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        if (isRestartRequired) {</span>
+<span class="nc" id="L105">            dialogService.showWarningDialogAndWait(Localization.lang(&quot;Settings&quot;),</span>
+<span class="nc" id="L106">                    Localization.lang(&quot;Some appearance settings you changed require to restart JabRef to come into effect.&quot;));</span>
+        }
+<span class="nc" id="L108">    }</span>
+
+    @Override
+    public boolean validateSettings() {
+<span class="nc" id="L112">        return true;</span>
+    }
+
+    @Override
+    public String getTabName() {
+<span class="nc" id="L117">        return Localization.lang(&quot;Appearance&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

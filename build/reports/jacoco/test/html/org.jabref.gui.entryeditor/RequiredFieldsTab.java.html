@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RequiredFieldsTab.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.entryeditor</a> &gt; <span class="el_source">RequiredFieldsTab.java</span></div><h1>RequiredFieldsTab.java</h1><pre class="source lang-java linenums">package org.jabref.gui.entryeditor;
+
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import javax.swing.undo.UndoManager;
+
+import javafx.scene.control.Tooltip;
+
+import org.jabref.gui.DialogService;
+import org.jabref.gui.autocompleter.SuggestionProviders;
+import org.jabref.gui.icon.IconTheme;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.EntryType;
+
+public class RequiredFieldsTab extends FieldsEditorTab {
+    public RequiredFieldsTab(BibDatabaseContext databaseContext, SuggestionProviders suggestionProviders, UndoManager undoManager, DialogService dialogService) {
+<span class="nc" id="L21">        super(false, databaseContext, suggestionProviders, undoManager, dialogService);</span>
+
+<span class="nc" id="L23">        setText(Localization.lang(&quot;Required fields&quot;));</span>
+<span class="nc" id="L24">        setTooltip(new Tooltip(Localization.lang(&quot;Show required fields&quot;)));</span>
+<span class="nc" id="L25">        setGraphic(IconTheme.JabRefIcons.REQUIRED.getGraphicNode());</span>
+<span class="nc" id="L26">    }</span>
+
+    @Override
+    protected Collection&lt;String&gt; determineFieldsToShow(BibEntry entry, EntryType entryType) {
+<span class="nc" id="L30">        Set&lt;String&gt; fields = new LinkedHashSet&lt;&gt;();</span>
+<span class="nc" id="L31">        fields.addAll(entryType.getRequiredFieldsFlat());</span>
+
+        // Add the edit field for Bibtex-key.
+<span class="nc" id="L34">        fields.add(BibEntry.KEY_FIELD);</span>
+
+<span class="nc" id="L36">        return fields;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

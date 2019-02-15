@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RemoteClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.remote.client</a> &gt; <span class="el_source">RemoteClient.java</span></div><h1>RemoteClient.java</h1><pre class="source lang-java linenums">package org.jabref.logic.remote.client;
+
+import java.io.IOException;
+import java.net.Socket;
+
+import javafx.util.Pair;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.remote.RemotePreferences;
+import org.jabref.logic.remote.shared.Protocol;
+import org.jabref.logic.remote.shared.RemoteMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class RemoteClient {
+
+<span class="fc" id="L18">    private static final Logger LOGGER = LoggerFactory.getLogger(RemoteClient.class);</span>
+
+    private static final int TIMEOUT = 2000;
+    private int port;
+
+<span class="fc" id="L23">    public RemoteClient(int port) {</span>
+<span class="fc" id="L24">        this.port = port;</span>
+<span class="fc" id="L25">    }</span>
+
+    public boolean ping() {
+<span class="fc" id="L28">        try (Protocol protocol = openNewConnection()) {</span>
+<span class="fc" id="L29">            protocol.sendMessage(RemoteMessage.PING);</span>
+<span class="fc" id="L30">            Pair&lt;RemoteMessage, Object&gt; response = protocol.receiveMessage();</span>
+
+<span class="pc bpc" id="L32" title="2 of 4 branches missed.">            if (response.getKey() == RemoteMessage.PONG &amp;&amp; Protocol.IDENTIFIER.equals(response.getValue())) {</span>
+<span class="fc" id="L33">                return true;</span>
+            } else {
+<span class="nc" id="L35">                String port = String.valueOf(this.port);</span>
+<span class="nc" id="L36">                String errorMessage = Localization.lang(&quot;Cannot use port %0 for remote operation; another application may be using it. Try specifying another port.&quot;, port);</span>
+<span class="nc" id="L37">                LOGGER.error(errorMessage);</span>
+<span class="nc" id="L38">                return false;</span>
+            }
+<span class="pc" id="L40">        } catch (IOException e) {</span>
+<span class="fc" id="L41">            LOGGER.debug(&quot;Could not ping server at port &quot; + port, e);</span>
+<span class="fc" id="L42">            return false;</span>
+        }
+    }
+
+    /**
+     * Attempt to send command line arguments to already running JabRef instance.
+     *
+     * @param args command line arguments.
+     * @return true if successful, false otherwise.
+     */
+    public boolean sendCommandLineArguments(String[] args) {
+<span class="fc" id="L53">        try (Protocol protocol = openNewConnection()) {</span>
+<span class="fc" id="L54">            protocol.sendMessage(RemoteMessage.SEND_COMMAND_LINE_ARGUMENTS, args);</span>
+<span class="fc" id="L55">            Pair&lt;RemoteMessage, Object&gt; response = protocol.receiveMessage();</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">            return response.getKey() == RemoteMessage.OK;</span>
+<span class="fc" id="L57">        } catch (IOException e) {</span>
+<span class="fc" id="L58">            LOGGER.debug(&quot;Could not send args &quot; + String.join(&quot;, &quot;, args) + &quot; to the server at port &quot; + port, e);</span>
+<span class="fc" id="L59">            return false;</span>
+        }
+    }
+
+    private Protocol openNewConnection() throws IOException {
+<span class="fc" id="L64">        Socket socket = new Socket(RemotePreferences.getIpAddress(), port);</span>
+<span class="fc" id="L65">        socket.setSoTimeout(TIMEOUT);</span>
+<span class="fc" id="L66">        return new Protocol(socket);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

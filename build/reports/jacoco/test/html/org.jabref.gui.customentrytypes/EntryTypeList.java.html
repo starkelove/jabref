@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EntryTypeList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.customentrytypes</a> &gt; <span class="el_source">EntryTypeList.java</span></div><h1>EntryTypeList.java</h1><pre class="source lang-java linenums">package org.jabref.gui.customentrytypes;
+
+import java.awt.GridBagConstraints;
+import java.awt.event.ActionListener;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
+import javax.swing.JButton;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+
+import org.jabref.Globals;
+import org.jabref.gui.DialogService;
+import org.jabref.logic.bibtexkeypattern.BibtexKeyGenerator;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.EntryTypes;
+import org.jabref.model.database.BibDatabaseMode;
+import org.jabref.model.entry.CustomEntryType;
+import org.jabref.model.entry.EntryType;
+import org.jabref.preferences.JabRefPreferences;
+
+/**
+ * This class extends FieldSetComponent to provide some required functionality for the
+ * list of entry types in EntryTypeCustomizationDialog.
+ */
+public class EntryTypeList extends FieldSetComponent implements ListSelectionListener {
+
+<span class="nc" id="L29">    private final JButton def = new JButton(Localization.lang(&quot;Default&quot;));</span>
+    private final BibDatabaseMode mode;
+    private final DialogService dialogService;
+
+    /**
+     * Creates a new instance of EntryTypeList
+     */
+    public EntryTypeList(DialogService dialogService, List&lt;String&gt; fields, BibDatabaseMode mode) {
+<span class="nc" id="L37">        super(Localization.lang(&quot;Entry types&quot;), fields, fields, false, true);</span>
+<span class="nc" id="L38">        this.mode = mode;</span>
+<span class="nc" id="L39">        this.dialogService = dialogService;</span>
+
+<span class="nc" id="L41">        con.gridx = 0;</span>
+<span class="nc" id="L42">        con.gridy = 2;</span>
+<span class="nc" id="L43">        con.fill = GridBagConstraints.VERTICAL;</span>
+<span class="nc" id="L44">        con.anchor = GridBagConstraints.EAST;</span>
+<span class="nc" id="L45">        gbl.setConstraints(def, con);</span>
+<span class="nc" id="L46">        add(def);</span>
+<span class="nc" id="L47">        list.addListSelectionListener(this);</span>
+<span class="nc" id="L48">        def.addActionListener(e -&gt; def.setEnabled(false));</span>
+<span class="nc" id="L49">        def.setEnabled(false);</span>
+<span class="nc" id="L50">        remove.setEnabled(false);</span>
+<span class="nc" id="L51">    }</span>
+
+    @Override
+    protected void addField(String str) {
+<span class="nc" id="L55">        String s = str.trim();</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (forceLowerCase) {</span>
+<span class="nc" id="L57">            s = s.toLowerCase(Locale.ROOT);</span>
+        }
+<span class="nc bnc" id="L59" title="All 4 branches missed.">        if (&quot;&quot;.equals(s) || listModel.contains(s)) {</span>
+<span class="nc" id="L60">            return;</span>
+        }
+
+<span class="nc" id="L63">        String testString = BibtexKeyGenerator.cleanKey(s,</span>
+<span class="nc" id="L64">                Globals.prefs.getBoolean(JabRefPreferences.ENFORCE_LEGAL_BIBTEX_KEY));</span>
+<span class="nc bnc" id="L65" title="All 4 branches missed.">        if (!testString.equals(s) || (s.indexOf('&amp;') &gt;= 0)) {</span>
+            // Report error and exit.
+
+<span class="nc" id="L68">            dialogService.showErrorDialogAndWait(Localization.lang(&quot;Error&quot;),</span>
+<span class="nc" id="L69">                    Localization.lang(&quot;Entry type names are not allowed to contain white space or the following &quot;</span>
+                            + &quot;characters&quot;) + &quot;: # { } ~ , ^ &amp;&quot;);
+
+<span class="nc" id="L72">            return;</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        } else if (&quot;comment&quot;.equalsIgnoreCase(s)) {</span>
+            // Report error and exit.
+<span class="nc" id="L75">            dialogService.showErrorDialogAndWait(Localization.lang(&quot;Error&quot;),</span>
+<span class="nc" id="L76">                    Localization.lang(&quot;The name 'comment' cannot be used as an entry type name.&quot;));</span>
+
+<span class="nc" id="L78">            return;</span>
+        }
+<span class="nc" id="L80">        addFieldUncritically(s);</span>
+<span class="nc" id="L81">    }</span>
+
+    @Override
+    protected void removeSelected() {
+        //super.removeSelected();
+<span class="nc" id="L86">        int[] selected = list.getSelectedIndices();</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (selected.length &gt; 0) {</span>
+<span class="nc" id="L88">            changesMade = true;</span>
+        }
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        for (int i = 0; i &lt; selected.length; i++) {</span>
+<span class="nc" id="L91">            String typeName = listModel.get(selected[selected.length - 1 - i]);</span>
+<span class="nc" id="L92">            Optional&lt;EntryType&gt; type = EntryTypes.getType(typeName, this.mode);</span>
+
+            // If it is a custom entry type, we can remove it. If type == null, it means
+            // the user must have added it and not yet applied it, so we can remove it
+            // in this case as well. If it is a standard type it cannot be removed.
+<span class="nc bnc" id="L97" title="All 4 branches missed.">            if (type.isPresent() &amp;&amp; (type.get() instanceof CustomEntryType)) {</span>
+<span class="nc" id="L98">                listModel.removeElementAt(selected[selected.length - 1 - i]);</span>
+            } else {
+                // This shouldn't happen, since the Remove button should be disabled.
+<span class="nc" id="L101">                dialogService.showErrorDialogAndWait(Localization.lang(&quot;Remove entry type&quot;),</span>
+<span class="nc" id="L102">                        Localization.lang(&quot;This entry type cannot be removed.&quot;));</span>
+            }
+        }
+<span class="nc" id="L105">    }</span>
+
+    @Override
+    public void valueChanged(ListSelectionEvent e) {
+        // Do nothing
+<span class="nc" id="L110">    }</span>
+
+    public void enable(String typeName, boolean isChanged) {
+        //String s = (String)list.getSelectedValue();
+
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        if (EntryTypes.getStandardType(typeName, mode).isPresent()) {</span>
+<span class="nc" id="L116">            Optional&lt;EntryType&gt; entryType = EntryTypes.getType(typeName, mode);</span>
+<span class="nc bnc" id="L117" title="All 6 branches missed.">            if (isChanged || (entryType.isPresent() &amp;&amp; (entryType.get() instanceof CustomEntryType))) {</span>
+<span class="nc" id="L118">                def.setEnabled(true);</span>
+            } else {
+<span class="nc" id="L120">                def.setEnabled(false);</span>
+            }
+
+<span class="nc" id="L123">            remove.setEnabled(false);</span>
+<span class="nc" id="L124">        } else {</span>
+<span class="nc" id="L125">            def.setEnabled(false);</span>
+<span class="nc" id="L126">            remove.setEnabled(true);</span>
+        }
+<span class="nc" id="L128">    }</span>
+
+    public void addDefaultActionListener(ActionListener l) {
+<span class="nc" id="L131">        def.addActionListener(l);</span>
+<span class="nc" id="L132">    }</span>
+
+    @Override
+    public void setEnabled(boolean en) {
+<span class="nc" id="L136">        super.setEnabled(en);</span>
+<span class="nc" id="L137">        def.setEnabled(en);</span>
+<span class="nc" id="L138">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

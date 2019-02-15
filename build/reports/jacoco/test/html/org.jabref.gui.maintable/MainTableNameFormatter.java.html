@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MainTableNameFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.maintable</a> &gt; <span class="el_source">MainTableNameFormatter.java</span></div><h1>MainTableNameFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.gui.maintable;
+
+import org.jabref.Globals;
+import org.jabref.model.entry.AuthorList;
+import org.jabref.preferences.JabRefPreferences;
+
+public class MainTableNameFormatter {
+
+    private MainTableNameFormatter() { }
+
+    /**
+     * Format a name field for the table, according to user preferences.
+     *
+     * @param nameToFormat The contents of the name field.
+     * @return The formatted name field.
+     */
+    public static String formatName(final String nameToFormat) {
+<span class="nc bnc" id="L18" title="All 2 branches missed.">        if (nameToFormat == null) {</span>
+<span class="nc" id="L19">            return null;</span>
+        }
+
+        // Read name format options:
+<span class="nc" id="L23">        final boolean namesNatbib = Globals.prefs.getBoolean(JabRefPreferences.NAMES_NATBIB); //MK:</span>
+<span class="nc" id="L24">        final boolean namesLastOnly = Globals.prefs.getBoolean(JabRefPreferences.NAMES_LAST_ONLY);</span>
+<span class="nc" id="L25">        final boolean namesAsIs = Globals.prefs.getBoolean(JabRefPreferences.NAMES_AS_IS);</span>
+<span class="nc" id="L26">        final boolean namesFf = Globals.prefs.getBoolean(JabRefPreferences.NAMES_FIRST_LAST);</span>
+
+<span class="nc" id="L28">        final boolean abbrAuthorNames = Globals.prefs.getBoolean(JabRefPreferences.ABBR_AUTHOR_NAMES); //MK:</span>
+
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (namesAsIs) {</span>
+<span class="nc" id="L31">            return nameToFormat;</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        } else if (namesNatbib) {</span>
+<span class="nc" id="L33">            return AuthorList.fixAuthorNatbib(nameToFormat);</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        } else if (namesLastOnly) {</span>
+<span class="nc" id="L35">            return AuthorList.fixAuthorLastNameOnlyCommas(nameToFormat, false);</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        } else if (namesFf) {</span>
+<span class="nc" id="L37">            return AuthorList.fixAuthorFirstNameFirstCommas(nameToFormat, abbrAuthorNames, false);</span>
+        }
+
+        // None of namesAsIs, namesNatbib, namesAsIs, namesFf
+<span class="nc" id="L41">        return AuthorList.fixAuthorLastNameFirstCommas(nameToFormat, abbrAuthorNames, false);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

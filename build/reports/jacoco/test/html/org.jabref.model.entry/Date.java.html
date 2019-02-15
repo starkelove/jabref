@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Date.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry</a> &gt; <span class="el_source">Date.java</span></div><h1>Date.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry;
+
+import java.time.LocalDate;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+public class Date {
+
+    private final TemporalAccessor date;
+
+    public Date(int year, int month, int dayOfMonth) {
+<span class="nc" id="L20">        this(LocalDate.of(year, month, dayOfMonth));</span>
+<span class="nc" id="L21">    }</span>
+
+    public Date(int year, int month) {
+<span class="fc" id="L24">        this(YearMonth.of(year, month));</span>
+<span class="fc" id="L25">    }</span>
+
+    public Date(int year) {
+<span class="fc" id="L28">        this(Year.of(year));</span>
+<span class="fc" id="L29">    }</span>
+
+<span class="fc" id="L31">    public Date(TemporalAccessor date) {</span>
+<span class="fc" id="L32">        this.date = date;</span>
+<span class="fc" id="L33">    }</span>
+
+    /**
+     * Try to parse the following formats
+     *  - &quot;M/y&quot; (covers 9/15, 9/2015, and 09/2015)
+     *  - &quot;MMMM (dd), yyyy&quot; (covers September 1, 2015 and September, 2015)
+     *  - &quot;yyyy-MM-dd&quot; (covers 2009-1-15)
+     *  - &quot;dd-MM-yyyy&quot; (covers 15-1-2009)
+     *  - &quot;d.M.uuuu&quot; (covers 15.1.2015)
+     *  - &quot;uuuu.M.d&quot; (covers 2015.1.15)
+     * The code is essentially taken from http://stackoverflow.com/questions/4024544/how-to-parse-dates-in-multiple-formats-using-simpledateformat.
+     */
+    public static Optional&lt;Date&gt; parse(String dateString) {
+<span class="fc" id="L46">        Objects.requireNonNull(dateString);</span>
+<span class="fc" id="L47">        List&lt;String&gt; formatStrings = Arrays.asList(</span>
+                &quot;uuuu-M-d&quot;,
+                &quot;uuuu-M&quot;,
+                &quot;d-M-uuuu&quot;,
+                &quot;M-uuuu&quot;,
+                &quot;M/uu&quot;,
+                &quot;M/uuuu&quot;,
+                &quot;MMMM d, uuuu&quot;,
+                &quot;MMMM, uuuu&quot;,
+                &quot;d.M.uuuu&quot;,
+                &quot;uuuu.M.d&quot;, &quot;uuuu&quot;);
+
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            for (String formatString : formatStrings) {</span>
+                try {
+<span class="fc" id="L61">                    TemporalAccessor parsedDate = DateTimeFormatter.ofPattern(formatString).parse(dateString);</span>
+<span class="fc" id="L62">                    return Optional.of(new Date(parsedDate));</span>
+<span class="fc" id="L63">                } catch (DateTimeParseException ignored) {</span>
+                    // Ignored
+                }
+<span class="fc" id="L66">            }</span>
+
+<span class="fc" id="L68">        return Optional.empty();</span>
+    }
+
+    public static Optional&lt;Date&gt; parse(Optional&lt;String&gt; yearValue, Optional&lt;String&gt; monthValue,
+            Optional&lt;String&gt; dayValue) {
+<span class="fc" id="L73">        Optional&lt;Year&gt; year = yearValue.flatMap(Date::convertToInt).map(Year::of);</span>
+<span class="fc" id="L74">        Optional&lt;Month&gt; month = monthValue.flatMap(Month::parse);</span>
+<span class="fc" id="L75">        Optional&lt;Integer&gt; day = dayValue.flatMap(Date::convertToInt);</span>
+
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (year.isPresent()) {</span>
+            TemporalAccessor date;
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            if (month.isPresent()) {</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">                if (day.isPresent()) {</span>
+<span class="fc" id="L81">                    date = LocalDate.of(year.get().getValue(), month.get().getNumber(), day.get());</span>
+                } else {
+<span class="fc" id="L83">                    date = YearMonth.of(year.get().getValue(), month.get().getNumber());</span>
+                }
+            } else {
+<span class="fc" id="L86">                date = year.get();</span>
+            }
+
+<span class="fc" id="L89">            return Optional.of(new Date(date));</span>
+        }
+
+<span class="fc" id="L92">        return Optional.empty();</span>
+    }
+
+    private static Optional&lt;Integer&gt; convertToInt(String value) {
+        try {
+<span class="fc" id="L97">            return Optional.of(Integer.valueOf(value));</span>
+<span class="nc" id="L98">        } catch (NumberFormatException ex) {</span>
+<span class="nc" id="L99">            return Optional.empty();</span>
+        }
+    }
+
+    public String getNormalized() {
+<span class="fc" id="L104">        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(&quot;uuuu[-MM][-dd]&quot;);</span>
+<span class="fc" id="L105">        return dateFormatter.format(date);</span>
+    }
+
+    public Optional&lt;Integer&gt; getYear() {
+<span class="fc" id="L109">        return get(ChronoField.YEAR);</span>
+    }
+
+    public Optional&lt;Integer&gt; get(ChronoField field) {
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        if (date.isSupported(field)) {</span>
+<span class="fc" id="L114">            return Optional.of(date.get(field));</span>
+        } else {
+<span class="fc" id="L116">            return Optional.empty();</span>
+        }
+    }
+
+    public Optional&lt;Month&gt; getMonth() {
+<span class="fc" id="L121">        return get(ChronoField.MONTH_OF_YEAR).flatMap(Month::getMonthByNumber);</span>
+    }
+
+    public Optional&lt;Integer&gt; getDay() {
+<span class="fc" id="L125">        return get(ChronoField.DAY_OF_MONTH);</span>
+    }
+
+    public TemporalAccessor toTemporalAccessor() {
+<span class="nc" id="L129">        return date;</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L135">            return true;</span>
+        }
+<span class="pc bpc" id="L137" title="2 of 4 branches missed.">        if ((o == null) || (getClass() != o.getClass())) {</span>
+<span class="nc" id="L138">            return false;</span>
+        }
+<span class="fc" id="L140">        Date date1 = (Date) o;</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">        return Objects.equals(getYear(), date1.getYear()) &amp;&amp;</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">                Objects.equals(getMonth(), date1.getMonth()) &amp;&amp;</span>
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">                Objects.equals(getDay(), date1.getDay());</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L148">        return &quot;Date{&quot; +</span>
+                &quot;date=&quot; + date +
+                '}';
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L155">        return Objects.hash(date);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

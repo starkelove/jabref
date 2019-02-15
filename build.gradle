@@ -36,7 +36,6 @@ apply plugin: 'project-report'
 apply plugin: 'jacoco'
 apply plugin: 'install4j'
 apply plugin: 'me.champeau.gradle.jmh'
-apply plugin: 'checkstyle'
 
 apply from: 'eclipse.gradle'
 apply from: 'localization.gradle'
@@ -178,7 +177,6 @@ dependencies {
     testCompile "org.testfx:testfx-core:4.0.+"
     testCompile "org.testfx:testfx-junit5:4.0.+"
 
-    checkstyle 'com.puppycrawl.tools:checkstyle:8.17'
 }
 
 jacoco {
@@ -400,9 +398,7 @@ jacocoTestReport {
 }
 
 // Code quality tasks
-checkstyle {
 
-}
 
 modernizer {
     // We have more than 20 issues, which are not fixed yet. Nevertheless, we produce the modernizer output.

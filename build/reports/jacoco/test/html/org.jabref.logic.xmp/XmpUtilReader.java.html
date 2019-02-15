@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XmpUtilReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.xmp</a> &gt; <span class="el_source">XmpUtilReader.java</span></div><h1>XmpUtilReader.java</h1><pre class="source lang-java linenums">package org.jabref.logic.xmp;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.LinkedFile;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
+import org.apache.pdfbox.pdmodel.PDDocumentInformation;
+import org.apache.pdfbox.pdmodel.common.PDMetadata;
+import org.apache.xmpbox.XMPMetadata;
+import org.apache.xmpbox.schema.DublinCoreSchema;
+
+public class XmpUtilReader {
+
+    private static final String START_TAG = &quot;&lt;rdf:Description&quot;;
+    private static final String END_TAG = &quot;&lt;/rdf:Description&gt;&quot;;
+
+<span class="nc" id="L28">    private XmpUtilReader() {</span>
+        //See: https://pdfbox.apache.org/2.0/getting-started.html
+<span class="nc" id="L30">        System.setProperty(&quot;sun.java2d.cmm&quot;, &quot;sun.java2d.cmm.kcms.KcmsServiceProvider&quot;); //To get higher rendering speed on java 8 oder 9 for images</span>
+<span class="nc" id="L31">    }</span>
+
+    /**
+     * Will read the XMPMetadata from the given pdf file, closing the file
+     * afterwards.
+     *
+     * @param path The path to read the XMPMetadata from.
+     * @return The XMPMetadata object found in the file
+     */
+    public static List&lt;XMPMetadata&gt; readRawXmp(Path path) throws IOException {
+<span class="fc" id="L41">        try (PDDocument document = XmpUtilReader.loadWithAutomaticDecryption(path)) {</span>
+<span class="fc" id="L42">            return XmpUtilReader.getXmpMetadata(document);</span>
+<span class="fc" id="L43">        }</span>
+    }
+
+    /**
+     * Convenience method for readXMP(File).
+     *
+     * @param filename The filename from which to open the file.
+     * @return BibtexEntryies found in the PDF or an empty list
+     */
+    public static List&lt;BibEntry&gt; readXmp(String filename, XmpPreferences xmpPreferences) throws IOException {
+<span class="fc" id="L53">        return XmpUtilReader.readXmp(Paths.get(filename), xmpPreferences);</span>
+    }
+
+    /**
+     * Try to read the given BibTexEntry from the XMP-stream of the given
+     * inputstream containing a PDF-file.
+     *
+     * Only supports Dublin Core as a metadata format.
+     *
+     * @param path The path to read from.
+     * @return list of BibEntries retrieved from the stream. May be empty, but never null
+     * @throws IOException Throws an IOException if the file cannot be read, so the user than remove a lock or cancel
+     *                     the operation.
+     */
+    public static List&lt;BibEntry&gt; readXmp(Path path, XmpPreferences xmpPreferences)
+            throws IOException {
+
+<span class="fc" id="L70">        List&lt;BibEntry&gt; result = new LinkedList&lt;&gt;();</span>
+
+<span class="fc" id="L72">        try (PDDocument document = loadWithAutomaticDecryption(path)) {</span>
+<span class="fc" id="L73">            List&lt;XMPMetadata&gt; xmpMetaList = XmpUtilReader.getXmpMetadata(document);</span>
+
+<span class="fc bfc" id="L75" title="All 2 branches covered.">            if (!xmpMetaList.isEmpty()) {</span>
+                // Only support Dublin Core since JabRef 4.2
+<span class="fc bfc" id="L77" title="All 2 branches covered.">                for (XMPMetadata xmpMeta : xmpMetaList) {</span>
+<span class="fc" id="L78">                    DublinCoreSchema dcSchema = xmpMeta.getDublinCoreSchema();</span>
+
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">                    if (dcSchema != null) {</span>
+<span class="fc" id="L81">                        DublinCoreExtractor dcExtractor = new DublinCoreExtractor(dcSchema, xmpPreferences, new BibEntry());</span>
+<span class="fc" id="L82">                        Optional&lt;BibEntry&gt; entry = dcExtractor.extractBibtexEntry();</span>
+
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">                        if (entry.isPresent()) {</span>
+<span class="fc" id="L85">                            result.add(entry.get());</span>
+                        }
+                    }
+<span class="fc" id="L88">                }</span>
+            }
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            if (result.isEmpty()) {</span>
+                // If we did not find any XMP metadata, search for non XMP metadata
+<span class="fc" id="L92">                PDDocumentInformation documentInformation = document.getDocumentInformation();</span>
+<span class="fc" id="L93">                DocumentInformationExtractor diExtractor = new DocumentInformationExtractor(documentInformation);</span>
+<span class="fc" id="L94">                Optional&lt;BibEntry&gt; entry = diExtractor.extractBibtexEntry();</span>
+<span class="fc" id="L95">                entry.ifPresent(result::add);</span>
+            }
+        }
+
+<span class="fc" id="L99">        result.forEach(entry -&gt; entry.addFile(new LinkedFile(&quot;&quot;, path.toAbsolutePath().toString(), &quot;PDF&quot;)));</span>
+<span class="fc" id="L100">        return result;</span>
+    }
+
+    /**
+     * This method is a hack to generate multiple XMPMetadata objects, because the
+     * implementation of the pdfbox does not support methods for reading multiple
+     * DublinCoreSchemas from a single metadata entry.
+     * &lt;p/&gt;
+     *
+     *
+     * @return empty Optional if no metadata has been found
+     */
+    private static List&lt;XMPMetadata&gt; getXmpMetadata(PDDocument document) throws IOException {
+<span class="fc" id="L113">        PDDocumentCatalog catalog = document.getDocumentCatalog();</span>
+<span class="fc" id="L114">        PDMetadata metaRaw = catalog.getMetadata();</span>
+<span class="fc" id="L115">        List&lt;XMPMetadata&gt; metaList = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if (metaRaw == null) {</span>
+<span class="fc" id="L118">            return metaList;</span>
+        }
+
+<span class="fc" id="L121">        String xmp = metaRaw.getCOSObject().toTextString();</span>
+
+<span class="fc" id="L123">        int startDescriptionSection = xmp.indexOf(START_TAG);</span>
+<span class="fc" id="L124">        int endDescriptionSection = xmp.lastIndexOf(END_TAG) + END_TAG.length();</span>
+
+        // XML header for the xmpDomParser
+<span class="fc" id="L127">        String start = xmp.substring(0, startDescriptionSection);</span>
+        // descriptionArray - mid part of the textual metadata
+<span class="fc" id="L129">        String[] descriptionsArray = xmp.substring(startDescriptionSection, endDescriptionSection).split(END_TAG);</span>
+        // XML footer for the xmpDomParser
+<span class="fc" id="L131">        String end = xmp.substring(endDescriptionSection);</span>
+
+<span class="fc bfc" id="L133" title="All 2 branches covered.">        for (String s : descriptionsArray) {</span>
+            // END_TAG is appended, because of the split operation above
+<span class="fc" id="L135">            String xmpMetaString = start + s + END_TAG + end;</span>
+<span class="fc" id="L136">            metaList.add(XmpUtilShared.parseXmpMetadata(new ByteArrayInputStream(xmpMetaString.getBytes())));</span>
+        }
+<span class="fc" id="L138">        return metaList;</span>
+    }
+
+    /**
+     * Loads the specified file with the basic pdfbox functionality and uses an empty string as default password.
+     *
+     * @param path The path to load.
+     * @return
+     * @throws IOException from the underlying {@link PDDocument#load(File)}
+     */
+    public static PDDocument loadWithAutomaticDecryption(Path path) throws IOException {
+        // try to load the document
+        // also uses an empty string as default password
+<span class="fc" id="L151">        PDDocument doc = PDDocument.load(path.toFile());</span>
+<span class="fc" id="L152">        return doc;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

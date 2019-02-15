@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util.io</a> &gt; <span class="el_source">FileUtil.java</span></div><h1>FileUtil.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util.io;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.CopyOption;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Stack;
+import java.util.Vector;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.jabref.logic.bibtexkeypattern.BracketedPattern;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.util.OptionalUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class FileUtil {
+
+<span class="fc" id="L35">    public static final boolean IS_POSIX_COMPILANT = FileSystems.getDefault().supportedFileAttributeViews().contains(&quot;posix&quot;);</span>
+    public static final int MAXIMUM_FILE_NAME_LENGTH = 255;
+<span class="fc" id="L37">    private static final Logger LOGGER = LoggerFactory.getLogger(FileUtil.class);</span>
+
+    private FileUtil() {
+    }
+
+    /**
+     * Returns the extension of a file name or Optional.empty() if the file does not have one (no &quot;.&quot; in name).
+     *
+     * @return the extension (without leading dot), trimmed and in lowercase.
+     */
+    public static Optional&lt;String&gt; getFileExtension(String fileName) {
+<span class="fc" id="L48">        int dotPosition = fileName.lastIndexOf('.');</span>
+<span class="pc bpc" id="L49" title="1 of 4 branches missed.">        if ((dotPosition &gt; 0) &amp;&amp; (dotPosition &lt; (fileName.length() - 1))) {</span>
+<span class="fc" id="L50">            return Optional.of(fileName.substring(dotPosition + 1).trim().toLowerCase(Locale.ROOT));</span>
+        } else {
+<span class="fc" id="L52">            return Optional.empty();</span>
+        }
+    }
+
+
+    /**
+     * Returns the extension of a file or Optional.empty() if the file does not have one (no . in name).
+     *
+     * @return the extension (without leading dot), trimmed and in lowercase.
+     */
+    public static Optional&lt;String&gt; getFileExtension(Path file) {
+<span class="fc" id="L63">        return getFileExtension(file.getFileName().toString());</span>
+    }
+
+    /**
+     * Returns the name part of a file name (i.e., everything in front of last &quot;.&quot;).
+     */
+    public static String getBaseName(String fileNameWithExtension) {
+<span class="fc" id="L70">        return com.google.common.io.Files.getNameWithoutExtension(fileNameWithExtension);</span>
+    }
+
+    /**
+     * Returns a valid filename for most operating systems.
+     *
+     * Currently, only the length is restricted to 255 chars, see MAXIMUM_FILE_NAME_LENGTH.
+     */
+    public static String getValidFileName(String fileName) {
+<span class="fc" id="L79">        String nameWithoutExtension = getBaseName(fileName);</span>
+
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (nameWithoutExtension.length() &gt; MAXIMUM_FILE_NAME_LENGTH) {</span>
+<span class="fc" id="L82">            Optional&lt;String&gt; extension = getFileExtension(fileName);</span>
+<span class="fc" id="L83">            String shortName = nameWithoutExtension.substring(0, MAXIMUM_FILE_NAME_LENGTH);</span>
+<span class="fc" id="L84">            LOGGER.info(String.format(&quot;Truncated the too long filename '%s' (%d characters) to '%s'.&quot;, fileName, fileName.length(), shortName));</span>
+<span class="fc" id="L85">            return extension.map(s -&gt; shortName + &quot;.&quot; + s).orElse(shortName);</span>
+        }
+
+<span class="fc" id="L88">        return fileName;</span>
+    }
+
+    /**
+     * Adds an extension to the given file name. The original extension is not replaced. That means, &quot;demo.bib&quot;, &quot;.sav&quot;
+     * gets &quot;demo.bib.sav&quot; and not &quot;demo.sav&quot;
+     *
+     * @param path      the path to add the extension to
+     * @param extension the extension to add
+     * @return the with the modified file name
+     */
+    public static Path addExtension(Path path, String extension) {
+<span class="fc" id="L100">        return path.resolveSibling(path.getFileName() + extension);</span>
+    }
+
+    /**
+     * Creates the minimal unique path substring for each file among multiple file paths.
+     *
+     * @param paths the file paths
+     * @return the minimal unique path substring for each file path
+     */
+    public static List&lt;String&gt; uniquePathSubstrings(List&lt;String&gt; paths) {
+<span class="fc" id="L110">        List&lt;Stack&lt;String&gt;&gt; stackList = new ArrayList&lt;&gt;(paths.size());</span>
+        // prepare data structures
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        for (String path : paths) {</span>
+<span class="fc" id="L113">            List&lt;String&gt; directories = Arrays.asList(path.split(Pattern.quote(File.separator)));</span>
+<span class="fc" id="L114">            Stack&lt;String&gt; stack = new Stack&lt;&gt;();</span>
+<span class="fc" id="L115">            stack.addAll(directories);</span>
+<span class="fc" id="L116">            stackList.add(stack);</span>
+<span class="fc" id="L117">        }</span>
+
+<span class="fc" id="L119">        List&lt;String&gt; pathSubstrings = new ArrayList&lt;&gt;(Collections.nCopies(paths.size(), &quot;&quot;));</span>
+
+        // compute shortest folder substrings
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        while (!stackList.stream().allMatch(Vector::isEmpty)) {</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">            for (int i = 0; i &lt; stackList.size(); i++) {</span>
+<span class="fc" id="L124">                String tempString = pathSubstrings.get(i);</span>
+
+<span class="fc bfc" id="L126" title="All 4 branches covered.">                if (tempString.isEmpty() &amp;&amp; !stackList.get(i).isEmpty()) {</span>
+<span class="fc" id="L127">                    pathSubstrings.set(i, stackList.get(i).pop());</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">                } else if (!stackList.get(i).isEmpty()) {</span>
+<span class="fc" id="L129">                    pathSubstrings.set(i, stackList.get(i).pop() + File.separator + tempString);</span>
+                }
+            }
+
+<span class="fc bfc" id="L133" title="All 2 branches covered.">            for (int i = 0; i &lt; stackList.size(); i++) {</span>
+<span class="fc" id="L134">                String tempString = pathSubstrings.get(i);</span>
+
+<span class="fc bfc" id="L136" title="All 2 branches covered.">                if (Collections.frequency(pathSubstrings, tempString) == 1) {</span>
+<span class="fc" id="L137">                    stackList.get(i).clear();</span>
+                }
+            }
+        }
+<span class="fc" id="L141">        return pathSubstrings;</span>
+    }
+
+    /**
+     * Copies a file.
+     *
+     * @param pathToSourceFile      Path Source file
+     * @param pathToDestinationFile Path Destination file
+     * @param replaceExisting       boolean Determines whether the copy goes on even if the file exists.
+     * @return boolean Whether the copy succeeded, or was stopped due to the file already existing.
+     */
+    public static boolean copyFile(Path pathToSourceFile, Path pathToDestinationFile, boolean replaceExisting) {
+        // Check if the file already exists.
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        if (!Files.exists(pathToSourceFile)) {</span>
+<span class="fc" id="L155">            LOGGER.error(&quot;Path to the source file doesn't exist.&quot;);</span>
+<span class="fc" id="L156">            return false;</span>
+        }
+<span class="pc bpc" id="L158" title="1 of 4 branches missed.">        if (Files.exists(pathToDestinationFile) &amp;&amp; !replaceExisting) {</span>
+<span class="fc" id="L159">            LOGGER.error(&quot;Path to the destination file exists but the file shouldn't be replaced.&quot;);</span>
+<span class="fc" id="L160">            return false;</span>
+        }
+        try {
+            // Preserve Hard Links with OpenOption defaults included for clarity
+<span class="fc" id="L164">            Files.write(pathToDestinationFile, Files.readAllBytes(pathToSourceFile),</span>
+                    StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+<span class="fc" id="L166">            return true;</span>
+<span class="nc" id="L167">        } catch (IOException e) {</span>
+<span class="nc" id="L168">            LOGGER.error(&quot;Copying Files failed.&quot;, e);</span>
+<span class="nc" id="L169">            return false;</span>
+        }
+    }
+
+    /**
+     * Renames a given file
+     *
+     * @param fromFile The source filename to rename
+     * @param toFile   The target fileName
+     * @return True if the rename was successful, false if an exception occurred
+     */
+    public static boolean renameFile(Path fromFile, Path toFile) {
+<span class="fc" id="L181">        return renameFile(fromFile, toFile, false);</span>
+    }
+
+    /**
+     * Renames a given file
+     *
+     * @param fromFile        The source filename to rename
+     * @param toFile          The target fileName
+     * @param replaceExisting Wether to replace existing files or not
+     * @return True if the rename was successful, false if an exception occurred
+     * @deprecated Use {@link Files#move(Path, Path, CopyOption...)} instead and handle exception properly
+     */
+    @Deprecated
+    public static boolean renameFile(Path fromFile, Path toFile, boolean replaceExisting) {
+        try {
+<span class="fc" id="L196">            return renameFileWithException(fromFile, toFile, replaceExisting);</span>
+<span class="fc" id="L197">        } catch (IOException e) {</span>
+<span class="fc" id="L198">            LOGGER.error(&quot;Renaming Files failed&quot;, e);</span>
+<span class="fc" id="L199">            return false;</span>
+        }
+    }
+
+    /**
+     * @deprecated Directly use {@link Files#move(Path, Path, CopyOption...)}
+     */
+    @Deprecated
+    public static boolean renameFileWithException(Path fromFile, Path toFile, boolean replaceExisting) throws IOException {
+<span class="pc bpc" id="L208" title="1 of 2 branches missed.">        if (replaceExisting) {</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">            return Files.move(fromFile, fromFile.resolveSibling(toFile),</span>
+                    StandardCopyOption.REPLACE_EXISTING) != null;
+        } else {
+<span class="pc bpc" id="L212" title="1 of 2 branches missed.">            return Files.move(fromFile, fromFile.resolveSibling(toFile)) != null;</span>
+        }
+    }
+
+    /**
+     * Converts an absolute file to a relative one, if possible. Returns the parameter file itself if no shortening is
+     * possible.
+     * &lt;p&gt;
+     * This method works correctly only if directories are sorted decent in their length i.e. /home/user/literature/important before /home/user/literature.
+     *
+     * @param file the file to be shortened
+     * @param directories directories to check
+     */
+    public static Path relativize(Path file, List&lt;Path&gt; directories) {
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">        if (!file.isAbsolute()) {</span>
+<span class="nc" id="L227">            return file;</span>
+        }
+
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">        for (Path directory : directories) {</span>
+<span class="pc bpc" id="L231" title="1 of 2 branches missed.">            if (file.startsWith(directory)) {</span>
+<span class="fc" id="L232">                return directory.relativize(file);</span>
+            }
+<span class="nc" id="L234">        }</span>
+<span class="nc" id="L235">        return file;</span>
+    }
+
+    /**
+     * Returns the list of linked files. The files have the absolute filename
+     *
+     * @param bes      list of BibTeX entries
+     * @param fileDirs list of directories to try for expansion
+     * @return list of files. May be empty
+     */
+    public static List&lt;Path&gt; getListOfLinkedFiles(List&lt;BibEntry&gt; bes, List&lt;Path&gt; fileDirs) {
+<span class="nc" id="L246">        Objects.requireNonNull(bes);</span>
+<span class="nc" id="L247">        Objects.requireNonNull(fileDirs);</span>
+
+<span class="nc" id="L249">        return bes.stream()</span>
+<span class="nc" id="L250">                .flatMap(entry -&gt; entry.getFiles().stream())</span>
+<span class="nc" id="L251">                .flatMap(file -&gt; OptionalUtil.toStream(file.findIn(fileDirs)))</span>
+<span class="nc" id="L252">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Determines filename provided by an entry in a database
+     *
+     * @param database        the database, where the entry is located
+     * @param entry           the entry to which the file should be linked to
+     * @param fileNamePattern the filename pattern
+     * @return a suggested fileName
+     */
+    public static String createFileNameFromPattern(BibDatabase database, BibEntry entry, String fileNamePattern) {
+<span class="fc" id="L264">        String targetName = BracketedPattern.expandBrackets(fileNamePattern, ';', entry, database);</span>
+
+<span class="fc bfc" id="L266" title="All 2 branches covered.">        if (targetName.isEmpty()) {</span>
+<span class="fc" id="L267">            targetName = entry.getCiteKeyOptional().orElse(&quot;default&quot;);</span>
+        }
+
+        //Removes illegal characters from filename
+<span class="fc" id="L271">        targetName = FileNameCleaner.cleanFileName(targetName);</span>
+<span class="fc" id="L272">        return targetName;</span>
+    }
+
+    /**
+     * Determines filename provided by an entry in a database
+     *
+     * @param database        the database, where the entry is located
+     * @param entry           the entry to which the file should be linked to
+     * @param fileNamePattern the filename pattern
+     * @return a suggested fileName
+     */
+    public static String createDirNameFromPattern(BibDatabase database, BibEntry entry, String fileNamePattern) {
+<span class="fc" id="L284">        String targetName = BracketedPattern.expandBrackets(fileNamePattern, ';', entry, database);</span>
+
+<span class="pc bpc" id="L286" title="1 of 2 branches missed.">        if (targetName.isEmpty()) {</span>
+<span class="nc" id="L287">            targetName = entry.getCiteKeyOptional().orElse(&quot;default&quot;);</span>
+        }
+
+        //Removes illegal characters from filename
+<span class="fc" id="L291">        targetName = FileNameCleaner.cleanDirectoryName(targetName);</span>
+<span class="fc" id="L292">        return targetName;</span>
+    }
+
+    /**
+     * Finds a file inside a directory structure. Will also look for the file inside nested directories.
+     *
+     * @param filename      the name of the file that should be found
+     * @param rootDirectory the rootDirectory that will be searched
+     * @return the path to the first file that matches the defined conditions
+     */
+    public static Optional&lt;Path&gt; find(String filename, Path rootDirectory) {
+<span class="nc" id="L303">        try (Stream&lt;Path&gt; pathStream = Files.walk(rootDirectory)) {</span>
+<span class="nc" id="L304">            return pathStream</span>
+<span class="nc" id="L305">                    .filter(Files::isRegularFile)</span>
+<span class="nc" id="L306">                    .filter(f -&gt; f.getFileName().toString().equals(filename))</span>
+<span class="nc" id="L307">                    .findFirst();</span>
+<span class="nc" id="L308">        } catch (UncheckedIOException | IOException ex) {</span>
+<span class="nc" id="L309">            LOGGER.error(&quot;Error trying to locate the file &quot; + filename + &quot; inside the directory &quot; + rootDirectory);</span>
+        }
+<span class="nc" id="L311">        return Optional.empty();</span>
+    }
+
+    /**
+     * Finds a file inside a list of directory structures. Will also look for the file inside nested directories.
+     *
+     * @param filename    the name of the file that should be found
+     * @param directories the directories that will be searched
+     * @return a list including all found paths to files that match the defined conditions
+     */
+    public static List&lt;Path&gt; find(String filename, List&lt;Path&gt; directories) {
+<span class="nc" id="L322">        List&lt;Path&gt; files = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L323" title="All 2 branches missed.">        for (Path dir : directories) {</span>
+<span class="nc" id="L324">            FileUtil.find(filename, dir).ifPresent(files::add);</span>
+<span class="nc" id="L325">        }</span>
+<span class="nc" id="L326">        return files;</span>
+    }
+
+    /**
+     * Creates a string representation of the given path that should work on all systems.
+     * This method should be used when a path needs to be stored in the bib file or preferences.
+     */
+    public static String toPortableString(Path path) {
+<span class="fc" id="L334">        return path.toString()</span>
+<span class="fc" id="L335">                   .replace('\\', '/');</span>
+    }
+
+    /**
+     * Test if the file is a bib file by simply checking the extension to be &quot;.bib&quot;
+     * @param file The file to check
+     * @return True if file extension is &quot;.bib&quot;, false otherwise
+     */
+    public static boolean isBibFile(Path file)
+    {
+<span class="fc" id="L345">        return getFileExtension(file).filter(type -&gt; &quot;bib&quot;.equals(type)).isPresent();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

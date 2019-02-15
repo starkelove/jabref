@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RemoveLatexCommandsFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.layout.format</a> &gt; <span class="el_source">RemoveLatexCommandsFormatter.java</span></div><h1>RemoveLatexCommandsFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.layout.format;
+
+import org.jabref.logic.layout.LayoutFormatter;
+import org.jabref.model.strings.StringUtil;
+
+<span class="fc" id="L6">public class RemoveLatexCommandsFormatter implements LayoutFormatter {</span>
+
+    @Override
+    public String format(String field) {
+<span class="fc" id="L10">        StringBuilder sb = new StringBuilder(&quot;&quot;);</span>
+<span class="fc" id="L11">        StringBuilder currentCommand = null;</span>
+        char c;
+<span class="fc" id="L13">        boolean escaped = false;</span>
+<span class="fc" id="L14">        boolean incommand = false;</span>
+        int i;
+<span class="fc bfc" id="L16" title="All 2 branches covered.">        for (i = 0; i &lt; field.length(); i++) {</span>
+<span class="fc" id="L17">            c = field.charAt(i);</span>
+<span class="pc bpc" id="L18" title="3 of 4 branches missed.">            if (escaped &amp;&amp; (c == '\\')) {</span>
+<span class="nc" id="L19">                sb.append('\\');</span>
+<span class="nc" id="L20">                escaped = false;</span>
+<span class="pc bpc" id="L21" title="1 of 2 branches missed.">            } else if (c == '\\') {</span>
+<span class="nc" id="L22">                escaped = true;</span>
+<span class="nc" id="L23">                incommand = true;</span>
+<span class="nc" id="L24">                currentCommand = new StringBuilder();</span>
+<span class="pc bpc" id="L25" title="1 of 6 branches missed.">            } else if (!incommand &amp;&amp; ((c == '{') || (c == '}'))) {</span>
+                // Swallow the brace.
+<span class="fc bfc" id="L27" title="All 4 branches covered.">            } else if (Character.isLetter(c) || StringUtil.SPECIAL_COMMAND_CHARS.contains(String.valueOf(c))) {</span>
+<span class="fc" id="L28">                escaped = false;</span>
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">                if (incommand) {</span>
+<span class="nc" id="L30">                    currentCommand.append(c);</span>
+<span class="nc bnc" id="L31" title="All 2 branches missed.">                    if ((currentCommand.length() == 1)</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">                            &amp;&amp; StringUtil.SPECIAL_COMMAND_CHARS.contains(currentCommand.toString())) {</span>
+                        // This indicates that we are in a command of the type \^o or \~{n}
+<span class="nc" id="L34">                        incommand = false;</span>
+<span class="nc" id="L35">                        escaped = false;</span>
+
+                    }
+                } else {
+<span class="fc" id="L39">                    sb.append(c);</span>
+                }
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">            } else if (Character.isLetter(c)) {</span>
+<span class="nc" id="L42">                escaped = false;</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">                if (incommand) {</span>
+                    // We are in a command, and should not keep the letter.
+<span class="nc" id="L45">                    currentCommand.append(c);</span>
+                } else {
+<span class="nc" id="L47">                    sb.append(c);</span>
+                }
+            } else {
+<span class="pc bpc" id="L50" title="5 of 6 branches missed.">                if (!incommand || (!Character.isWhitespace(c) &amp;&amp; (c != '{'))) {</span>
+<span class="fc" id="L51">                    sb.append(c);</span>
+                } else {
+<span class="nc bnc" id="L53" title="All 2 branches missed.">                    if (c != '{') {</span>
+<span class="nc" id="L54">                        sb.append(c);</span>
+                    }
+                }
+<span class="fc" id="L57">                incommand = false;</span>
+<span class="fc" id="L58">                escaped = false;</span>
+            }
+        }
+
+<span class="fc" id="L62">        return sb.toString();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

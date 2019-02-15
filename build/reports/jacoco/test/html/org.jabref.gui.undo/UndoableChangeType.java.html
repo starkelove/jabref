@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UndoableChangeType.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.undo</a> &gt; <span class="el_source">UndoableChangeType.java</span></div><h1>UndoableChangeType.java</h1><pre class="source lang-java linenums">package org.jabref.gui.undo;
+
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.FieldChange;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.strings.StringUtil;
+
+/**
+ * This class represents the change of type for an entry.
+ */
+public class UndoableChangeType extends AbstractUndoableJabRefEdit {
+    private final String oldType;
+    private final String newType;
+    private final BibEntry entry;
+
+    public UndoableChangeType(FieldChange change) {
+<span class="nc" id="L17">        this(change.getEntry(), change.getOldValue(), change.getNewValue());</span>
+<span class="nc" id="L18">    }</span>
+
+<span class="nc" id="L20">    public UndoableChangeType(BibEntry entry, String oldType, String newType) {</span>
+<span class="nc" id="L21">        this.oldType = oldType;</span>
+<span class="nc" id="L22">        this.newType = newType;</span>
+<span class="nc" id="L23">        this.entry = entry;</span>
+<span class="nc" id="L24">    }</span>
+
+    @Override
+    public String getPresentationName() {
+<span class="nc" id="L28">        return Localization.lang(&quot;change type of entry %0 from %1 to %2&quot;,</span>
+<span class="nc" id="L29">                StringUtil.boldHTML(entry.getCiteKeyOptional().orElse(Localization.lang(&quot;undefined&quot;))),</span>
+<span class="nc" id="L30">                StringUtil.boldHTML(oldType, Localization.lang(&quot;undefined&quot;)),</span>
+<span class="nc" id="L31">                StringUtil.boldHTML(newType));</span>
+    }
+
+    @Override
+    public void undo() {
+<span class="nc" id="L36">        super.undo();</span>
+<span class="nc" id="L37">        entry.setType(oldType);</span>
+<span class="nc" id="L38">    }</span>
+
+    @Override
+    public void redo() {
+<span class="nc" id="L42">        super.redo();</span>
+<span class="nc" id="L43">        entry.setType(newType);</span>
+<span class="nc" id="L44">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LocalizationKey.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.l10n</a> &gt; <span class="el_source">LocalizationKey.java</span></div><h1>LocalizationKey.java</h1><pre class="source lang-java linenums">package org.jabref.logic.l10n;
+
+import java.util.Objects;
+
+public class LocalizationKey {
+
+    private final String key;
+
+<span class="fc" id="L9">    public LocalizationKey(String key) {</span>
+<span class="fc" id="L10">        this.key = Objects.requireNonNull(key);</span>
+<span class="fc" id="L11">    }</span>
+
+    public String getPropertiesKeyUnescaped() {
+        // space, #, !, = and : are not allowed in properties file keys
+<span class="fc" id="L15">        return this.key;</span>
+    }
+
+    public String getPropertiesKey() {
+        // space, #, !, = and : are not allowed in properties file keys (# and ! only at the beginning of the key but easier to escape every instance
+<span class="fc" id="L20">        return this.key.replace(&quot; &quot;, &quot;\\ &quot;).replace(&quot;#&quot;, &quot;\\#&quot;).replace(&quot;!&quot;, &quot;\\!&quot;).replace(&quot;=&quot;, &quot;\\=&quot;)</span>
+<span class="fc" id="L21">                .replace(&quot;:&quot;, &quot;\\:&quot;).replace(&quot;\\\\&quot;, &quot;\\&quot;);</span>
+    }
+
+    public String getTranslationValue() {
+<span class="fc" id="L25">        return this.key.replace(&quot;\\ &quot;, &quot; &quot;).replace(&quot;\\#&quot;, &quot;#&quot;).replace(&quot;\\!&quot;, &quot;!&quot;).replace(&quot;\\=&quot;, &quot;=&quot;).replace(&quot;\\:&quot;,</span>
+                &quot;:&quot;);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

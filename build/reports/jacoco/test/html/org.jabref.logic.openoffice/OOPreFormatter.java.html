@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OOPreFormatter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.openoffice</a> &gt; <span class="el_source">OOPreFormatter.java</span></div><h1>OOPreFormatter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.openoffice;
+
+import java.util.Map;
+
+import org.jabref.logic.layout.LayoutFormatter;
+import org.jabref.logic.util.strings.HTMLUnicodeConversionMaps;
+import org.jabref.model.strings.StringUtil;
+
+/**
+ * This formatter preprocesses JabRef fields before they are run through the layout of the
+ * bibliography style. It handles translation of LaTeX italic/bold commands into HTML tags.
+ */
+<span class="fc" id="L13">public class OOPreFormatter implements LayoutFormatter {</span>
+
+<span class="fc" id="L15">    private static final Map&lt;String, String&gt; CHARS = HTMLUnicodeConversionMaps.LATEX_UNICODE_CONVERSION_MAP;</span>
+
+    @Override
+    public String format(String field) {
+        int i;
+<span class="fc" id="L20">        String finalResult = field.replaceAll(&quot;&amp;|\\\\&amp;&quot;, &quot;&amp;&quot;) // Replace &amp; and \&amp; with &amp;</span>
+<span class="fc" id="L21">                .replace(&quot;\\$&quot;, &quot;&amp;dollar;&quot;) // Replace \$ with &amp;dollar;</span>
+<span class="fc" id="L22">                .replaceAll(&quot;\\$([^\\$]*)\\$&quot;, &quot;\\{$1\\}&quot;); // Replace $...$ with {...} to simplify conversion</span>
+
+<span class="fc" id="L24">        StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L25">        StringBuilder currentCommand = null;</span>
+
+        char c;
+<span class="fc" id="L28">        boolean escaped = false;</span>
+<span class="fc" id="L29">        boolean incommand = false;</span>
+
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        for (i = 0; i &lt; finalResult.length(); i++) {</span>
+<span class="fc" id="L32">            c = finalResult.charAt(i);</span>
+<span class="fc bfc" id="L33" title="All 4 branches covered.">            if (escaped &amp;&amp; (c == '\\')) {</span>
+<span class="fc" id="L34">                sb.append('\\');</span>
+<span class="fc" id="L35">                escaped = false;</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">            } else if (c == '\\') {</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">                if (incommand) {</span>
+                    /* Close Command */
+<span class="fc" id="L39">                    String command = currentCommand.toString();</span>
+<span class="fc" id="L40">                    String result = OOPreFormatter.CHARS.get(command);</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">                    if (result == null) {</span>
+<span class="fc" id="L42">                        sb.append(command);</span>
+                    } else {
+<span class="fc" id="L44">                        sb.append(result);</span>
+                    }
+                }
+<span class="fc" id="L47">                escaped = true;</span>
+<span class="fc" id="L48">                incommand = true;</span>
+<span class="fc" id="L49">                currentCommand = new StringBuilder();</span>
+<span class="fc bfc" id="L50" title="All 6 branches covered.">            } else if (!incommand &amp;&amp; ((c == '{') || (c == '}'))) {</span>
+                //Swallow braces, necessary for replacing encoded characters
+
+<span class="fc bfc" id="L53" title="All 4 branches covered.">            } else if (Character.isLetter(c) || (c == '%')</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">                    || StringUtil.SPECIAL_COMMAND_CHARS.contains(String.valueOf(c))) {</span>
+<span class="fc" id="L55">                escaped = false;</span>
+
+<span class="fc bfc" id="L57" title="All 2 branches covered.">                if (!incommand) {</span>
+<span class="fc" id="L58">                    sb.append(c);</span>
+                } else {
+<span class="fc" id="L60">                    currentCommand.append(c);</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                    testCharCom: if ((currentCommand.length() == 1)</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">                            &amp;&amp; StringUtil.SPECIAL_COMMAND_CHARS.contains(currentCommand.toString())) {</span>
+                        // This indicates that we are in a command of the type
+                        // \^o or \~{n}
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">                        if (i &gt;= (finalResult.length() - 1)) {</span>
+<span class="nc" id="L66">                            break testCharCom;</span>
+                        }
+
+<span class="fc" id="L69">                        String command = currentCommand.toString();</span>
+<span class="fc" id="L70">                        i++;</span>
+<span class="fc" id="L71">                        c = finalResult.charAt(i);</span>
+                        String combody;
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">                        if (c == '{') {</span>
+<span class="fc" id="L74">                            String part = StringUtil.getPart(finalResult, i, false);</span>
+<span class="fc" id="L75">                            i += part.length();</span>
+<span class="fc" id="L76">                            combody = part;</span>
+<span class="fc" id="L77">                        } else {</span>
+<span class="nc" id="L78">                            combody = finalResult.substring(i, i + 1);</span>
+                        }
+<span class="fc" id="L80">                        String result = OOPreFormatter.CHARS.get(command + combody);</span>
+
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">                        if (result != null) {</span>
+<span class="fc" id="L83">                            sb.append(result);</span>
+                        }
+
+<span class="fc" id="L86">                        incommand = false;</span>
+<span class="fc" id="L87">                        escaped = false;</span>
+<span class="fc" id="L88">                    } else {</span>
+                        //	Are we already at the end of the string?
+<span class="fc bfc" id="L90" title="All 2 branches covered.">                        if ((i + 1) == finalResult.length()) {</span>
+<span class="fc" id="L91">                            String command = currentCommand.toString();</span>
+<span class="fc" id="L92">                            String result = OOPreFormatter.CHARS.get(command);</span>
+                            /* If found, then use translated version. If not,
+                             * then keep
+                             * the text of the parameter intact.
+                             */
+<span class="fc bfc" id="L97" title="All 2 branches covered.">                            if (result == null) {</span>
+<span class="fc" id="L98">                                sb.append(command);</span>
+                            } else {
+<span class="fc" id="L100">                                sb.append(result);</span>
+                            }
+
+<span class="fc" id="L103">                        }</span>
+                    }
+                }
+            } else {
+                String argument;
+
+<span class="fc bfc" id="L109" title="All 2 branches covered.">                if (!incommand) {</span>
+<span class="fc" id="L110">                    sb.append(c);</span>
+<span class="pc bpc" id="L111" title="1 of 6 branches missed.">                } else if (Character.isWhitespace(c) || (c == '{') || (c == '}')) {</span>
+<span class="fc" id="L112">                    String command = currentCommand.toString();</span>
+
+                    // Test if we are dealing with a formatting
+                    // command.
+                    // If so, handle.
+<span class="fc" id="L117">                    String tag = getHTMLTag(command);</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">                    if (!tag.isEmpty()) {</span>
+<span class="fc" id="L119">                        String part = StringUtil.getPart(finalResult, i, true);</span>
+<span class="fc" id="L120">                        i += part.length();</span>
+<span class="fc" id="L121">                        sb.append('&lt;').append(tag).append('&gt;').append(part).append(&quot;&lt;/&quot;).append(tag).append('&gt;');</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">                    } else if (c == '{') {</span>
+<span class="fc" id="L123">                        String part = StringUtil.getPart(finalResult, i, true);</span>
+<span class="fc" id="L124">                        i += part.length();</span>
+<span class="fc" id="L125">                        argument = part;</span>
+                        // handle common case of general latex command
+<span class="fc" id="L127">                        String result = OOPreFormatter.CHARS.get(command + argument);</span>
+                        // If found, then use translated version. If not, then keep
+                        // the
+                        // text of the parameter intact.
+<span class="fc bfc" id="L131" title="All 2 branches covered.">                        if (result == null) {</span>
+<span class="fc" id="L132">                            sb.append(argument);</span>
+                        } else {
+<span class="fc" id="L134">                            sb.append(result);</span>
+                        }
+<span class="fc bfc" id="L136" title="All 2 branches covered.">                    } else if (c == '}') {</span>
+                        // This end brace terminates a command. This can be the case in
+                        // constructs like {\aa}. The correct behaviour should be to
+                        // substitute the evaluated command and swallow the brace:
+<span class="fc" id="L140">                        String result = OOPreFormatter.CHARS.get(command);</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">                        if (result == null) {</span>
+                            // If the command is unknown, just print it:
+<span class="fc" id="L143">                            sb.append(command);</span>
+                        } else {
+<span class="fc" id="L145">                            sb.append(result);</span>
+                        }
+<span class="fc" id="L147">                    } else {</span>
+<span class="fc" id="L148">                        String result = OOPreFormatter.CHARS.get(command);</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">                        if (result == null) {</span>
+<span class="fc" id="L150">                            sb.append(command);</span>
+                        } else {
+<span class="fc" id="L152">                            sb.append(result);</span>
+                        }
+<span class="fc" id="L154">                        sb.append(' ');</span>
+                    }
+                } /* else if (c == '}') {
+                    System.out.printf(&quot;com term by }: '%s'\n&quot;, currentCommand.toString());
+
+                    argument = &quot;&quot;;
+                 }*/ else {
+                    /*
+                     * TODO: this point is reached, apparently, if a command is
+                     * terminated in a strange way, such as with &quot;$\omega$&quot;.
+                     * Also, the command &quot;\&amp;&quot; causes us to get here. The former
+                     * issue is maybe a little difficult to address, since it
+                     * involves the LaTeX math mode. We don't have a complete
+                     * LaTeX parser, so maybe it's better to ignore these
+                     * commands?
+                     */
+                }
+
+<span class="fc" id="L172">                incommand = false;</span>
+<span class="fc" id="L173">                escaped = false;</span>
+            }
+        }
+
+<span class="fc" id="L177">        return sb.toString().replace(&quot;&amp;dollar;&quot;, &quot;$&quot;); // Replace &amp;dollar; with $</span>
+    }
+
+    private String getHTMLTag(String latexCommand) {
+<span class="fc" id="L181">        String result = &quot;&quot;;</span>
+<span class="fc bfc" id="L182" title="All 9 branches covered.">        switch (latexCommand) {</span>
+        // Italic
+        case &quot;textit&quot;:
+        case &quot;it&quot;:
+        case &quot;emph&quot;: // Should really separate between emphasized and italic but since in later stages both are converted to italic...
+        case &quot;em&quot;:
+<span class="fc" id="L188">            result = &quot;i&quot;;</span>
+<span class="fc" id="L189">            break;</span>
+        // Bold font
+        case &quot;textbf&quot;:
+        case &quot;bf&quot;:
+<span class="fc" id="L193">            result = &quot;b&quot;;</span>
+<span class="fc" id="L194">            break;</span>
+        // Small capitals
+        case &quot;textsc&quot;:
+<span class="fc" id="L197">            result = &quot;smallcaps&quot;; // Not a proper HTML tag, but used here for convenience</span>
+<span class="fc" id="L198">            break;</span>
+        // Underline
+        case &quot;underline&quot;:
+<span class="fc" id="L201">            result = &quot;u&quot;;</span>
+<span class="fc" id="L202">            break;</span>
+        // Strikeout, sout is the &quot;standard&quot; command, although it is actually based on the package ulem
+        case &quot;sout&quot;:
+<span class="fc" id="L205">            result = &quot;s&quot;;</span>
+<span class="fc" id="L206">            break;</span>
+        // Monospace font
+        case &quot;texttt&quot;:
+<span class="fc" id="L209">            result = &quot;tt&quot;;</span>
+<span class="fc" id="L210">            break;</span>
+        // Superscript
+        case &quot;textsuperscript&quot;:
+<span class="fc" id="L213">            result = &quot;sup&quot;;</span>
+<span class="fc" id="L214">            break;</span>
+        // Subscript
+        case &quot;textsubscript&quot;:
+<span class="fc" id="L217">            result = &quot;sub&quot;;</span>
+<span class="fc" id="L218">            break;</span>
+        default:
+            break;
+        }
+<span class="fc" id="L222">        return result;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

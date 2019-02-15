@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CitationStyleOutputFormat.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.citationstyle</a> &gt; <span class="el_source">CitationStyleOutputFormat.java</span></div><h1>CitationStyleOutputFormat.java</h1><pre class="source lang-java linenums">package org.jabref.logic.citationstyle;
+
+import org.jabref.logic.util.OS;
+
+<span class="fc" id="L5">public enum CitationStyleOutputFormat {</span>
+
+<span class="fc" id="L7">    ASCII_DOC(&quot;asciidoc&quot;, &quot;&quot;),</span>
+<span class="fc" id="L8">    HTML(&quot;html&quot;, OS.NEWLINE + &quot;&lt;br&gt;&quot; + OS.NEWLINE),</span>
+<span class="fc" id="L9">    RTF(&quot;rtf&quot;, &quot;\\line&quot; + OS.NEWLINE),</span>
+<span class="fc" id="L10">    TEXT(&quot;text&quot;, &quot;&quot;),</span>
+<span class="fc" id="L11">    XSL_FO(&quot;fo&quot;, OS.NEWLINE);</span>
+
+    private final String format;
+    private final String lineSeparator;
+
+<span class="fc" id="L16">    CitationStyleOutputFormat(String format, String lineSeparator) {</span>
+<span class="fc" id="L17">        this.format = format;</span>
+<span class="fc" id="L18">        this.lineSeparator = lineSeparator;</span>
+<span class="fc" id="L19">    }</span>
+
+    public String getFormat() {
+<span class="nc" id="L22">        return format;</span>
+    }
+
+    public String getLineSeparator() {
+<span class="fc" id="L26">        return lineSeparator;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L31">        return format;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

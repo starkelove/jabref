@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegexKeywordGroup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.groups</a> &gt; <span class="el_source">RegexKeywordGroup.java</span></div><h1>RegexKeywordGroup.java</h1><pre class="source lang-java linenums">package org.jabref.model.groups;
+
+import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Pattern;
+
+import org.jabref.model.entry.BibEntry;
+
+/**
+ * Matches entries if the content of a given field is matched by a regular expression.
+ */
+public class RegexKeywordGroup extends KeywordGroup {
+    private Pattern pattern;
+
+    public RegexKeywordGroup(String name, GroupHierarchyType context, String searchField,
+                             String searchExpression, boolean caseSensitive) {
+<span class="fc" id="L17">        super(name, context, searchField, searchExpression, caseSensitive);</span>
+<span class="fc" id="L18">        this.pattern = compilePattern(searchExpression, caseSensitive);</span>
+<span class="fc" id="L19">    }</span>
+
+    private static Pattern compilePattern(String searchExpression, boolean caseSensitive) {
+
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        return caseSensitive ? Pattern.compile(&quot;\\b&quot; + searchExpression + &quot;\\b&quot;) : Pattern.compile(</span>
+                &quot;\\b&quot; + searchExpression + &quot;\\b&quot;, Pattern.CASE_INSENSITIVE);
+
+    }
+
+    @Override
+    public boolean contains(BibEntry entry) {
+
+<span class="nc" id="L31">        Optional&lt;String&gt; content = entry.getField(searchField);</span>
+<span class="nc" id="L32">        return content.map(value -&gt; pattern.matcher(value).find()).orElse(false);</span>
+    }
+
+    @Override
+    public boolean equals(Object o) {
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L38">            return true;</span>
+        }
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (!(o instanceof RegexKeywordGroup)) {</span>
+<span class="nc" id="L41">            return false;</span>
+        }
+<span class="fc" id="L43">        RegexKeywordGroup other = (RegexKeywordGroup) o;</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        return getName().equals(other.getName())</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">                &amp;&amp; (getHierarchicalContext() == other.getHierarchicalContext())</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">                &amp;&amp; searchField.equals(other.searchField)</span>
+<span class="pc bpc" id="L47" title="2 of 4 branches missed.">                &amp;&amp; searchExpression.equals(other.searchExpression)</span>
+                &amp;&amp; (caseSensitive == other.caseSensitive);
+    }
+
+    @Override
+    public AbstractGroup deepCopy() {
+<span class="nc" id="L53">        return new RegexKeywordGroup(getName(), getHierarchicalContext(), searchField, searchExpression,</span>
+                caseSensitive);
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L59">        return Objects.hash(getName(),</span>
+<span class="nc" id="L60">                getHierarchicalContext(),</span>
+                searchField,
+                searchExpression,
+<span class="nc" id="L63">                caseSensitive);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

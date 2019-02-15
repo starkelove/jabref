@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NoBibtexFieldChecker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.integrity</a> &gt; <span class="el_source">NoBibtexFieldChecker.java</span></div><h1>NoBibtexFieldChecker.java</h1><pre class="source lang-java linenums">package org.jabref.logic.integrity;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.jabref.logic.integrity.IntegrityCheck.Checker;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.BiblatexEntryTypes;
+import org.jabref.model.entry.BibtexEntryTypes;
+import org.jabref.model.entry.FieldName;
+
+/**
+ * This checker checks whether the entry does not contain any field appearing only in biblatex (and not in BibTeX)
+ */
+<span class="fc" id="L17">public class NoBibtexFieldChecker implements Checker {</span>
+
+    private List&lt;String&gt; getAllBiblatexOnlyFields() {
+<span class="fc" id="L20">        Set&lt;String&gt; allBibtexFields = BibtexEntryTypes.ALL.stream().flatMap(type -&gt; type.getAllFields().stream()).collect(Collectors.toSet());</span>
+<span class="fc" id="L21">        return BiblatexEntryTypes.ALL.stream()</span>
+<span class="fc" id="L22">                                     .flatMap(type -&gt; type.getAllFields().stream())</span>
+<span class="fc bfc" id="L23" title="All 2 branches covered.">                                     .filter(fieldName -&gt; !allBibtexFields.contains(fieldName))</span>
+                                     // these fields are displayed by JabRef as default
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">                                     .filter(fieldName -&gt; !fieldName.equals(FieldName.ABSTRACT))</span>
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">                                     .filter(fieldName -&gt; !fieldName.equals(FieldName.COMMENT))</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">                                     .filter(fieldName -&gt; !fieldName.equals(FieldName.DOI))</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">                                     .filter(fieldName -&gt; !fieldName.equals(FieldName.URL))</span>
+<span class="fc" id="L29">                                     .sorted()</span>
+<span class="fc" id="L30">                                     .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public List&lt;IntegrityMessage&gt; check(BibEntry entry) {
+        // non-static initalization of ALL_BIBLATEX_ONLY_FIELDS as the user can customize the entry types during runtime
+<span class="fc" id="L36">        final List&lt;String&gt; allBiblatexOnlyFields = getAllBiblatexOnlyFields();</span>
+<span class="fc" id="L37">        return entry.getFieldNames().stream()</span>
+<span class="fc" id="L38">                    .filter(allBiblatexOnlyFields::contains)</span>
+<span class="fc" id="L39">                    .map(name -&gt; new IntegrityMessage(Localization.lang(&quot;biblatex field only&quot;), entry, name)).collect(Collectors.toList());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

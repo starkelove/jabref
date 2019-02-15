@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthorListParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry</a> &gt; <span class="el_source">AuthorListParser.java</span></div><h1>AuthorListParser.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+
+<span class="fc" id="L11">public class AuthorListParser {</span>
+
+    private static final int TOKEN_GROUP_LENGTH = 4; // number of entries for a token
+
+    // the following are offsets of an entry in a group of entries for one token
+    private static final int OFFSET_TOKEN = 0; // String -- token itself;
+
+    private static final int OFFSET_TOKEN_ABBR = 1; // String -- token abbreviation;
+
+    private static final int OFFSET_TOKEN_TERM = 2; // Character -- token terminator (either &quot; &quot; or
+    // &quot;-&quot;) comma)
+
+    // Token types (returned by getToken procedure)
+    private static final int TOKEN_EOF = 0;
+
+    private static final int TOKEN_AND = 1;
+
+    private static final int TOKEN_COMMA = 2;
+
+    private static final int TOKEN_WORD = 3;
+
+    // Constant HashSet containing names of TeX special characters
+<span class="fc" id="L33">    private static final Set&lt;String&gt; TEX_NAMES = new HashSet&lt;&gt;();</span>
+
+    static {
+<span class="fc" id="L36">        TEX_NAMES.add(&quot;aa&quot;);</span>
+<span class="fc" id="L37">        TEX_NAMES.add(&quot;ae&quot;);</span>
+<span class="fc" id="L38">        TEX_NAMES.add(&quot;l&quot;);</span>
+<span class="fc" id="L39">        TEX_NAMES.add(&quot;o&quot;);</span>
+<span class="fc" id="L40">        TEX_NAMES.add(&quot;oe&quot;);</span>
+<span class="fc" id="L41">        TEX_NAMES.add(&quot;i&quot;);</span>
+<span class="fc" id="L42">        TEX_NAMES.add(&quot;AA&quot;);</span>
+<span class="fc" id="L43">        TEX_NAMES.add(&quot;AE&quot;);</span>
+<span class="fc" id="L44">        TEX_NAMES.add(&quot;L&quot;);</span>
+<span class="fc" id="L45">        TEX_NAMES.add(&quot;O&quot;);</span>
+<span class="fc" id="L46">        TEX_NAMES.add(&quot;OE&quot;);</span>
+<span class="fc" id="L47">        TEX_NAMES.add(&quot;j&quot;);</span>
+<span class="fc" id="L48">    }</span>
+
+    /**
+     * the raw bibtex author/editor field
+     */
+    private String original;
+    /**
+     * index of the start in original, for example to point to 'abc' in 'abc xyz', tokenStart=2
+     */
+    private int tokenStart;
+    /**
+     * index of the end in original, for example to point to 'abc' in 'abc xyz', tokenEnd=5
+     */
+    private int tokenEnd;
+    /**
+     * end of token abbreviation (always: tokenStart &lt; tokenAbbrEnd &lt;= tokenEnd), only valid if getToken returns
+     * TOKEN_WORD
+     */
+    private int tokenAbbrEnd;
+    /**
+     * either space of dash
+     */
+    private char tokenTerm;
+    /**
+     * true if upper-case token, false if lower-case
+     */
+    private boolean tokenCase;
+
+    /**
+     * Parses the String containing person names and returns a list of person information.
+     *
+     * @param listOfNames the String containing the person names to be parsed
+     * @return a parsed list of persons
+     */
+    public AuthorList parse(String listOfNames) {
+
+<span class="fc" id="L84">        Objects.requireNonNull(listOfNames);</span>
+
+        // initialization of parser
+<span class="fc" id="L87">        original = listOfNames;</span>
+<span class="fc" id="L88">        tokenStart = 0;</span>
+<span class="fc" id="L89">        tokenEnd = 0;</span>
+
+        // Parse author by author
+<span class="fc" id="L92">        List&lt;Author&gt; authors = new ArrayList&lt;&gt;(5); // 5 seems to be reasonable initial size</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        while (tokenStart &lt; original.length()) {</span>
+<span class="fc" id="L94">            getAuthor().ifPresent(authors::add);</span>
+        }
+<span class="fc" id="L96">        return new AuthorList(authors);</span>
+    }
+
+    /**
+     * Parses one author name and returns preformatted information.
+     *
+     * @return Preformatted author name; &lt;CODE&gt;Optional.empty()&lt;/CODE&gt; if author name is
+     * empty.
+     */
+    private Optional&lt;Author&gt; getAuthor() {
+
+<span class="fc" id="L107">        List&lt;Object&gt; tokens = new ArrayList&lt;&gt;(); // initialization</span>
+<span class="fc" id="L108">        int vonStart = -1;</span>
+<span class="fc" id="L109">        int lastStart = -1;</span>
+<span class="fc" id="L110">        int commaFirst = -1;</span>
+<span class="fc" id="L111">        int commaSecond = -1;</span>
+
+        // First step: collect tokens in 'tokens' Vector and calculate indices
+<span class="fc" id="L114">        boolean continueLoop = true;</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        while (continueLoop) {</span>
+<span class="fc" id="L116">            int token = getToken();</span>
+<span class="pc bpc" id="L117" title="1 of 4 branches missed.">            switch (token) {</span>
+            case TOKEN_EOF:
+            case TOKEN_AND:
+<span class="fc" id="L120">                continueLoop = false;</span>
+<span class="fc" id="L121">                break;</span>
+            case TOKEN_COMMA:
+<span class="fc bfc" id="L123" title="All 2 branches covered.">                if (commaFirst &lt; 0) {</span>
+<span class="fc" id="L124">                    commaFirst = tokens.size();</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">                } else if (commaSecond &lt; 0) {</span>
+<span class="fc" id="L126">                    commaSecond = tokens.size();</span>
+                }
+                break;
+            case TOKEN_WORD:
+<span class="fc" id="L130">                tokens.add(original.substring(tokenStart, tokenEnd));</span>
+<span class="fc" id="L131">                tokens.add(original.substring(tokenStart, tokenAbbrEnd));</span>
+<span class="fc" id="L132">                tokens.add(tokenTerm);</span>
+<span class="fc" id="L133">                tokens.add(tokenCase);</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">                if (commaFirst &gt;= 0) {</span>
+<span class="fc" id="L135">                    break;</span>
+                }
+<span class="fc bfc" id="L137" title="All 2 branches covered.">                if (lastStart &gt;= 0) {</span>
+<span class="fc" id="L138">                    break;</span>
+                }
+<span class="fc bfc" id="L140" title="All 2 branches covered.">                if (vonStart &lt; 0) {</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">                    if (!tokenCase) {</span>
+<span class="fc" id="L142">                        int previousTermToken = (tokens.size() - TOKEN_GROUP_LENGTH - TOKEN_GROUP_LENGTH) + OFFSET_TOKEN_TERM;</span>
+<span class="fc bfc" id="L143" title="All 4 branches covered.">                        if ((previousTermToken &gt;= 0) &amp;&amp; tokens.get(previousTermToken).equals('-')) {</span>
+                            // We are in a first name which contained a hyphen
+<span class="fc" id="L145">                            break;</span>
+                        }
+
+<span class="fc" id="L148">                        int thisTermToken = previousTermToken + TOKEN_GROUP_LENGTH;</span>
+<span class="pc bpc" id="L149" title="1 of 4 branches missed.">                        if ((thisTermToken &gt;= 0) &amp;&amp; tokens.get(thisTermToken).equals('-')) {</span>
+                            // We are in a name which contained a hyphen
+<span class="fc" id="L151">                            break;</span>
+                        }
+
+<span class="fc" id="L154">                        vonStart = tokens.size() - TOKEN_GROUP_LENGTH;</span>
+<span class="fc" id="L155">                        break;</span>
+                    }
+<span class="pc bpc" id="L157" title="1 of 4 branches missed.">                } else if ((lastStart &lt; 0) &amp;&amp; tokenCase) {</span>
+<span class="fc" id="L158">                    lastStart = tokens.size() - TOKEN_GROUP_LENGTH;</span>
+<span class="fc" id="L159">                    break;</span>
+                }
+                break;
+            default:
+                break;
+            }
+<span class="fc" id="L165">        }</span>
+
+        // Second step: split name into parts (here: calculate indices
+        // of parts in 'tokens' Vector)
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        if (tokens.isEmpty()) {</span>
+<span class="fc" id="L170">            return Optional.empty(); // no author information</span>
+        }
+
+        // the following negatives indicate absence of the corresponding part
+<span class="fc" id="L174">        int firstPartStart = -1;</span>
+<span class="fc" id="L175">        int vonPartStart = -1;</span>
+<span class="fc" id="L176">        int lastPartStart = -1;</span>
+<span class="fc" id="L177">        int jrPartStart = -1;</span>
+        int firstPartEnd;
+<span class="fc" id="L179">        int vonPartEnd = 0;</span>
+<span class="fc" id="L180">        int lastPartEnd = 0;</span>
+<span class="fc" id="L181">        int jrPartEnd = 0;</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        if (commaFirst &lt; 0) { // no commas</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">            if (vonStart &lt; 0) { // no 'von part'</span>
+<span class="fc" id="L184">                lastPartEnd = tokens.size();</span>
+<span class="fc" id="L185">                lastPartStart = tokens.size() - TOKEN_GROUP_LENGTH;</span>
+<span class="fc" id="L186">                int index = (tokens.size() - (2 * TOKEN_GROUP_LENGTH)) + OFFSET_TOKEN_TERM;</span>
+<span class="fc bfc" id="L187" title="All 2 branches covered.">                if (index &gt; 0) {</span>
+<span class="fc" id="L188">                    Character ch = (Character) tokens.get(index);</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">                    if (ch == '-') {</span>
+<span class="fc" id="L190">                        lastPartStart -= TOKEN_GROUP_LENGTH;</span>
+                    }
+                }
+<span class="fc" id="L193">                firstPartEnd = lastPartStart;</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">                if (firstPartEnd &gt; 0) {</span>
+<span class="fc" id="L195">                    firstPartStart = 0;</span>
+                }
+<span class="fc" id="L197">            } else { // 'von part' is present</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">                if (lastStart &gt;= 0) {</span>
+<span class="fc" id="L199">                    lastPartEnd = tokens.size();</span>
+<span class="fc" id="L200">                    lastPartStart = lastStart;</span>
+<span class="fc" id="L201">                    vonPartEnd = lastPartStart;</span>
+                } else {
+<span class="fc" id="L203">                    vonPartEnd = tokens.size();</span>
+                }
+<span class="fc" id="L205">                vonPartStart = vonStart;</span>
+<span class="fc" id="L206">                firstPartEnd = vonPartStart;</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">                if (firstPartEnd &gt; 0) {</span>
+<span class="fc" id="L208">                    firstPartStart = 0;</span>
+                }
+            }
+        } else {
+            // commas are present: it affects only 'first part' and 'junior part'
+<span class="fc" id="L213">            firstPartEnd = tokens.size();</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">            if (commaSecond &lt; 0) {</span>
+                // one comma
+<span class="fc bfc" id="L216" title="All 2 branches covered.">                if (commaFirst &lt; firstPartEnd) {</span>
+<span class="fc" id="L217">                    firstPartStart = commaFirst;</span>
+                }
+            } else {
+                // two or more commas
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">                if (commaSecond &lt; firstPartEnd) {</span>
+<span class="fc" id="L222">                    firstPartStart = commaSecond;</span>
+                }
+<span class="fc" id="L224">                jrPartEnd = commaSecond;</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">                if (commaFirst &lt; jrPartEnd) {</span>
+<span class="fc" id="L226">                    jrPartStart = commaFirst;</span>
+                }
+            }
+<span class="fc bfc" id="L229" title="All 2 branches covered.">            if (vonStart == 0) { // 'von part' is present</span>
+<span class="fc bfc" id="L230" title="All 2 branches covered.">                if (lastStart &lt; 0) {</span>
+<span class="fc" id="L231">                    vonPartEnd = commaFirst;</span>
+                } else {
+<span class="fc" id="L233">                    lastPartEnd = commaFirst;</span>
+<span class="fc" id="L234">                    lastPartStart = lastStart;</span>
+<span class="fc" id="L235">                    vonPartEnd = lastPartStart;</span>
+                }
+<span class="fc" id="L237">                vonPartStart = 0;</span>
+            } else { // no 'von part'
+<span class="fc" id="L239">                lastPartEnd = commaFirst;</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">                if (lastPartEnd &gt; 0) {</span>
+<span class="fc" id="L241">                    lastPartStart = 0;</span>
+                }
+            }
+        }
+
+<span class="pc bpc" id="L246" title="1 of 6 branches missed.">        if ((firstPartStart == -1) &amp;&amp; (lastPartStart == -1) &amp;&amp; (vonPartStart != -1)) {</span>
+            // There is no first or last name, but we have a von part. This is likely
+            // to indicate a single-entry name without an initial capital letter, such
+            // as &quot;unknown&quot;.
+            // We make the von part the last name, to facilitate handling by last-name formatters:
+<span class="fc" id="L251">            lastPartStart = vonPartStart;</span>
+<span class="fc" id="L252">            lastPartEnd = vonPartEnd;</span>
+<span class="fc" id="L253">            vonPartStart = -1;</span>
+<span class="fc" id="L254">            vonPartEnd = -1;</span>
+        }
+
+        // Third step: do actual splitting, construct Author object
+<span class="fc bfc" id="L258" title="All 2 branches covered.">        String firstPart = firstPartStart &lt; 0 ? null : concatTokens(tokens, firstPartStart, firstPartEnd, OFFSET_TOKEN,</span>
+                false);
+<span class="fc bfc" id="L260" title="All 2 branches covered.">        String firstAbbr = firstPartStart &lt; 0 ? null : concatTokens(tokens, firstPartStart, firstPartEnd,</span>
+                OFFSET_TOKEN_ABBR, true);
+<span class="fc bfc" id="L262" title="All 2 branches covered.">        String vonPart = vonPartStart &lt; 0 ? null : concatTokens(tokens, vonPartStart, vonPartEnd, OFFSET_TOKEN, false);</span>
+<span class="fc bfc" id="L263" title="All 2 branches covered.">        String lastPart = lastPartStart &lt; 0 ? null : concatTokens(tokens, lastPartStart, lastPartEnd, OFFSET_TOKEN,</span>
+                false);
+<span class="fc bfc" id="L265" title="All 2 branches covered.">        String jrPart = jrPartStart &lt; 0 ? null : concatTokens(tokens, jrPartStart, jrPartEnd, OFFSET_TOKEN, false);</span>
+
+<span class="pc bpc" id="L267" title="1 of 8 branches missed.">        if ((firstPart != null) &amp;&amp; (lastPart != null) &amp;&amp; lastPart.equals(lastPart.toUpperCase(Locale.ROOT)) &amp;&amp; (lastPart.length() &lt; 5)</span>
+<span class="fc bfc" id="L268" title="All 2 branches covered.">            &amp;&amp; (Character.UnicodeScript.of(lastPart.charAt(0)) != Character.UnicodeScript.HAN)) {</span>
+            // The last part is a small string in complete upper case, so interpret it as initial of the first name
+            // This is the case for example in &quot;Smith SH&quot; which we think of as lastname=Smith and firstname=SH
+            // The length &lt; 5 constraint should allow for &quot;Smith S.H.&quot; as input
+<span class="fc" id="L272">            return Optional.of(new Author(lastPart, lastPart, vonPart, firstPart, jrPart));</span>
+        } else {
+<span class="fc" id="L274">            return Optional.of(new Author(firstPart, firstAbbr, vonPart, lastPart, jrPart));</span>
+        }
+    }
+
+    /**
+     * Concatenates list of tokens from 'tokens' Vector. Tokens are separated by
+     * spaces or dashes, depending on stored in 'tokens'. Callers always ensure
+     * that start &lt; end; thus, there exists at least one token to be
+     * concatenated.
+     *
+     * @param start     index of the first token to be concatenated in 'tokens' Vector
+     *                  (always divisible by TOKEN_GROUP_LENGTH).
+     * @param end       index of the first token not to be concatenated in 'tokens'
+     *                  Vector (always divisible by TOKEN_GROUP_LENGTH).
+     * @param offset    offset within token group (used to request concatenation of
+     *                  either full tokens or abbreviation).
+     * @param dotAfter &lt;CODE&gt;true&lt;/CODE&gt; -- add period after each token, &lt;CODE&gt;false&lt;/CODE&gt; --
+     *                  do not add.
+     * @return the result of concatenation.
+     */
+    private String concatTokens(List&lt;Object&gt; tokens, int start, int end, int offset, boolean dotAfter) {
+<span class="fc" id="L295">        StringBuilder result = new StringBuilder();</span>
+        // Here we always have start &lt; end
+<span class="fc" id="L297">        result.append((String) tokens.get(start + offset));</span>
+<span class="fc bfc" id="L298" title="All 2 branches covered.">        if (dotAfter) {</span>
+<span class="fc" id="L299">            result.append('.');</span>
+        }
+<span class="fc" id="L301">        int updatedStart = start + TOKEN_GROUP_LENGTH;</span>
+<span class="fc bfc" id="L302" title="All 2 branches covered.">        while (updatedStart &lt; end) {</span>
+<span class="fc" id="L303">            result.append(tokens.get((updatedStart - TOKEN_GROUP_LENGTH) + OFFSET_TOKEN_TERM));</span>
+<span class="fc" id="L304">            result.append((String) tokens.get(updatedStart + offset));</span>
+<span class="fc bfc" id="L305" title="All 2 branches covered.">            if (dotAfter) {</span>
+<span class="fc" id="L306">                result.append('.');</span>
+            }
+<span class="fc" id="L308">            updatedStart += TOKEN_GROUP_LENGTH;</span>
+        }
+<span class="fc" id="L310">        return result.toString();</span>
+    }
+
+    /**
+     * Parses the next token.
+     * &lt;p&gt;
+     * The string being parsed is stored in global variable &lt;CODE&gt;orig&lt;/CODE&gt;,
+     * and position which parsing has to start from is stored in global variable
+     * &lt;CODE&gt;token_end&lt;/CODE&gt;; thus, &lt;CODE&gt;token_end&lt;/CODE&gt; has to be set
+     * to 0 before the first invocation. Procedure updates &lt;CODE&gt;token_end&lt;/CODE&gt;;
+     * thus, subsequent invocations do not require any additional variable
+     * settings.
+     * &lt;p&gt;
+     * The type of the token is returned; if it is &lt;CODE&gt;TOKEN_WORD&lt;/CODE&gt;,
+     * additional information is given in global variables &lt;CODE&gt;token_start&lt;/CODE&gt;,
+     * &lt;CODE&gt;token_end&lt;/CODE&gt;, &lt;CODE&gt;token_abbr&lt;/CODE&gt;, &lt;CODE&gt;token_term&lt;/CODE&gt;,
+     * and &lt;CODE&gt;token_case&lt;/CODE&gt;; namely: &lt;CODE&gt;orig.substring(token_start,token_end)&lt;/CODE&gt;
+     * is the text of the token, &lt;CODE&gt;orig.substring(token_start,token_abbr)&lt;/CODE&gt;
+     * is the token abbreviation, &lt;CODE&gt;token_term&lt;/CODE&gt; contains token
+     * terminator (space or dash), and &lt;CODE&gt;token_case&lt;/CODE&gt; is &lt;CODE&gt;true&lt;/CODE&gt;,
+     * if token is upper-case and &lt;CODE&gt;false&lt;/CODE&gt; if token is lower-case.
+     *
+     * @return &lt;CODE&gt;TOKEN_EOF&lt;/CODE&gt; -- no more tokens, &lt;CODE&gt;TOKEN_COMMA&lt;/CODE&gt; --
+     * token is comma, &lt;CODE&gt;TOKEN_AND&lt;/CODE&gt; -- token is the word
+     * &quot;and&quot; (or &quot;And&quot;, or &quot;aND&quot;, etc.) or a semicolon, &lt;CODE&gt;TOKEN_WORD&lt;/CODE&gt; --
+     * token is a word; additional information is given in global
+     * variables &lt;CODE&gt;token_start&lt;/CODE&gt;, &lt;CODE&gt;token_end&lt;/CODE&gt;,
+     * &lt;CODE&gt;token_abbr&lt;/CODE&gt;, &lt;CODE&gt;token_term&lt;/CODE&gt;, and
+     * &lt;CODE&gt;token_case&lt;/CODE&gt;.
+     */
+    private int getToken() {
+<span class="fc" id="L341">        tokenStart = tokenEnd;</span>
+<span class="fc bfc" id="L342" title="All 2 branches covered.">        while (tokenStart &lt; original.length()) {</span>
+<span class="fc" id="L343">            char c = original.charAt(tokenStart);</span>
+<span class="pc bpc" id="L344" title="1 of 6 branches missed.">            if (!((c == '~') || (c == '-') || Character.isWhitespace(c))) {</span>
+<span class="fc" id="L345">                break;</span>
+            }
+<span class="fc" id="L347">            tokenStart++;</span>
+<span class="fc" id="L348">        }</span>
+<span class="fc" id="L349">        tokenEnd = tokenStart;</span>
+<span class="fc bfc" id="L350" title="All 2 branches covered.">        if (tokenStart &gt;= original.length()) {</span>
+<span class="fc" id="L351">            return TOKEN_EOF;</span>
+        }
+<span class="fc bfc" id="L353" title="All 2 branches covered.">        if (original.charAt(tokenStart) == ',') {</span>
+<span class="fc" id="L354">            tokenEnd++;</span>
+<span class="fc" id="L355">            return TOKEN_COMMA;</span>
+        }
+        // Semicolon is considered to separate names like &quot;and&quot;
+<span class="fc bfc" id="L358" title="All 2 branches covered.">        if (original.charAt(tokenStart) == ';') {</span>
+<span class="fc" id="L359">            tokenEnd++;</span>
+<span class="fc" id="L360">            return TOKEN_AND;</span>
+        }
+<span class="fc" id="L362">        tokenAbbrEnd = -1;</span>
+<span class="fc" id="L363">        tokenTerm = ' ';</span>
+<span class="fc" id="L364">        tokenCase = true;</span>
+<span class="fc" id="L365">        int bracesLevel = 0;</span>
+<span class="fc" id="L366">        int currentBackslash = -1;</span>
+<span class="fc" id="L367">        boolean firstLetterIsFound = false;</span>
+<span class="fc bfc" id="L368" title="All 2 branches covered.">        while (tokenEnd &lt; original.length()) {</span>
+<span class="fc" id="L369">            char c = original.charAt(tokenEnd);</span>
+<span class="fc bfc" id="L370" title="All 2 branches covered.">            if (c == '{') {</span>
+<span class="fc" id="L371">                bracesLevel++;</span>
+            }
+
+<span class="fc bfc" id="L374" title="All 8 branches covered.">            if (firstLetterIsFound &amp;&amp; (tokenAbbrEnd &lt; 0) &amp;&amp; ((bracesLevel == 0) || (c == '{'))) {</span>
+<span class="fc" id="L375">                tokenAbbrEnd = tokenEnd;</span>
+            }
+<span class="pc bpc" id="L377" title="1 of 4 branches missed.">            if ((c == '}') &amp;&amp; (bracesLevel &gt; 0)) {</span>
+<span class="fc" id="L378">                bracesLevel--;</span>
+            }
+<span class="fc bfc" id="L380" title="All 6 branches covered.">            if (!firstLetterIsFound &amp;&amp; (currentBackslash &lt; 0) &amp;&amp; Character.isLetter(c)) {</span>
+<span class="fc bfc" id="L381" title="All 2 branches covered.">                if (bracesLevel == 0) {</span>
+<span class="fc bfc" id="L382" title="All 4 branches covered.">                    tokenCase = Character.isUpperCase(c) || (Character.UnicodeScript.of(c) == Character.UnicodeScript.HAN);</span>
+                } else {
+                    // If this is a particle in braces, always treat it as if it starts with
+                    // an upper case letter. Otherwise a name such as &quot;{van den Bergen}, Hans&quot;
+                    // will not yield a proper last name:
+<span class="fc" id="L387">                    tokenCase = true;</span>
+                }
+<span class="fc" id="L389">                firstLetterIsFound = true;</span>
+            }
+<span class="fc bfc" id="L391" title="All 4 branches covered.">            if ((currentBackslash &gt;= 0) &amp;&amp; !Character.isLetter(c)) {</span>
+<span class="fc bfc" id="L392" title="All 2 branches covered.">                if (!firstLetterIsFound) {</span>
+<span class="fc" id="L393">                    String texCmdName = original.substring(currentBackslash + 1, tokenEnd);</span>
+<span class="pc bpc" id="L394" title="1 of 2 branches missed.">                    if (TEX_NAMES.contains(texCmdName)) {</span>
+<span class="nc" id="L395">                        tokenCase = Character.isUpperCase(texCmdName.charAt(0));</span>
+<span class="nc" id="L396">                        firstLetterIsFound = true;</span>
+                    }
+                }
+<span class="fc" id="L399">                currentBackslash = -1;</span>
+            }
+<span class="fc bfc" id="L401" title="All 2 branches covered.">            if (c == '\\') {</span>
+<span class="fc" id="L402">                currentBackslash = tokenEnd;</span>
+            }
+<span class="fc bfc" id="L404" title="All 6 branches covered.">            if ((bracesLevel == 0) &amp;&amp; ((&quot;,;~-&quot;.indexOf(c) != -1) || Character.isWhitespace(c))) {</span>
+<span class="fc" id="L405">                break;</span>
+            }
+<span class="fc" id="L407">            tokenEnd++;</span>
+<span class="fc" id="L408">        }</span>
+<span class="fc bfc" id="L409" title="All 2 branches covered.">        if (tokenAbbrEnd &lt; 0) {</span>
+<span class="fc" id="L410">            tokenAbbrEnd = tokenEnd;</span>
+        }
+<span class="fc bfc" id="L412" title="All 4 branches covered.">        if ((tokenEnd &lt; original.length()) &amp;&amp; (original.charAt(tokenEnd) == '-')) {</span>
+<span class="fc" id="L413">            tokenTerm = '-';</span>
+        }
+<span class="fc bfc" id="L415" title="All 2 branches covered.">        if (&quot;and&quot;.equalsIgnoreCase(original.substring(tokenStart, tokenEnd))) {</span>
+<span class="fc" id="L416">            return TOKEN_AND;</span>
+        } else {
+<span class="fc" id="L418">            return TOKEN_WORD;</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

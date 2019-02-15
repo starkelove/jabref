@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.logic.journals.AbbreviationsTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:26" hostname="n184-p67.eduroam.kth.se" time="0.256">
+  <properties/>
+  <testcase name="getNextAbbreviationRemovesPoint()" classname="org.jabref.logic.journals.AbbreviationsTest" time="0.081"/>
+  <testcase name="getNextAbbreviationAbbreviatesIEEEJournalTitle()" classname="org.jabref.logic.journals.AbbreviationsTest" time="0.05"/>
+  <testcase name="getNextAbbreviationExpandsIEEEAbbreviation()" classname="org.jabref.logic.journals.AbbreviationsTest" time="0.051"/>
+  <testcase name="getNextAbbreviationExpandsAbbreviation()" classname="org.jabref.logic.journals.AbbreviationsTest" time="0.036"/>
+  <testcase name="getNextAbbreviationAbbreviatesJournalTitle()" classname="org.jabref.logic.journals.AbbreviationsTest" time="0.037"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

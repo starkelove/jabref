@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XMLUtil.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util.io</a> &gt; <span class="el_source">XMLUtil.java</span></div><h1>XMLUtil.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util.io;
+
+import java.io.StringWriter;
+import java.util.AbstractList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.RandomAccess;
+
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+/**
+ * Currently used for debugging only
+ */
+public class XMLUtil {
+<span class="fc" id="L29">    private static final Logger LOGGER = LoggerFactory.getLogger(XMLUtil.class);</span>
+
+    private XMLUtil() {
+    }
+
+    /**
+     * Prints out the document to standard out. Used to generate files for test cases.
+     */
+    public static void printDocument(Document doc) {
+        try {
+<span class="nc" id="L39">            DOMSource domSource = new DOMSource(doc);</span>
+<span class="nc" id="L40">            StringWriter writer = new StringWriter();</span>
+<span class="nc" id="L41">            StreamResult result = new StreamResult(writer);</span>
+<span class="nc" id="L42">            TransformerFactory tf = TransformerFactory.newInstance();</span>
+<span class="nc" id="L43">            Transformer transformer = tf.newTransformer();</span>
+<span class="nc" id="L44">            transformer.setOutputProperty(OutputKeys.INDENT, &quot;yes&quot;);</span>
+<span class="nc" id="L45">            transformer.transform(domSource, result);</span>
+<span class="nc" id="L46">            System.out.println(writer);</span>
+<span class="nc" id="L47">        } catch (TransformerException ex) {</span>
+<span class="nc" id="L48">            LOGGER.error(&quot;&quot;, ex);</span>
+<span class="nc" id="L49">        }</span>
+<span class="nc" id="L50">    }</span>
+
+    public static List&lt;Node&gt; asList(NodeList n) {
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        return n.getLength() == 0 ? Collections.emptyList() : new NodeListWrapper(n);</span>
+    }
+
+    /**
+     * Gets the content of a subnode.
+     * For example,
+     * &lt;item&gt;
+     *     &lt;nodeName&gt;content&lt;/nodeName&gt;
+     * &lt;/item&gt;
+     */
+    public static Optional&lt;String&gt; getNodeContent(Node item, String nodeName) {
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (item.getNodeType() != Node.ELEMENT_NODE) {</span>
+<span class="nc" id="L65">            return Optional.empty();</span>
+        }
+
+<span class="nc" id="L68">        NodeList metadata = ((Element) item).getElementsByTagName(nodeName);</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (metadata.getLength() == 1) {</span>
+<span class="nc" id="L70">            return Optional.ofNullable(metadata.item(0).getTextContent());</span>
+        } else {
+<span class="nc" id="L72">            return Optional.empty();</span>
+        }
+    }
+
+    /**
+     * Gets the content of an attribute.
+     * For example,
+     * &lt;item attributeName=&quot;content&quot; /&gt;
+     */
+    public static Optional&lt;String&gt; getAttributeContent(Node item, String attributeName) {
+<span class="nc" id="L82">        NamedNodeMap attributes = item.getAttributes();</span>
+<span class="nc" id="L83">        return Optional.ofNullable(attributes.getNamedItem(attributeName)).map(Node::getTextContent);</span>
+    }
+
+    /**
+     * Gets a list of subnodes with the specified tag name.
+     * For example,
+     * &lt;item&gt;
+     *     &lt;node&gt;first hit&lt;/node&gt;
+     *     &lt;node&gt;second hit&lt;/node&gt;
+     * &lt;/item&gt;
+     */
+    public static List&lt;Node&gt; getNodesByName(Node item, String nodeName) {
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (item.getNodeType() != Node.ELEMENT_NODE) {</span>
+<span class="nc" id="L96">            return Collections.emptyList();</span>
+        }
+<span class="nc" id="L98">        NodeList nodes = ((Element) item).getElementsByTagName(nodeName);</span>
+<span class="nc" id="L99">        return asList(nodes);</span>
+    }
+
+    /**
+     * Gets a the first subnode with the specified tag name.
+     * For example,
+     * &lt;item&gt;
+     *     &lt;node&gt;hit&lt;/node&gt;
+     *     &lt;node&gt;second hit, but not returned&lt;/node&gt;
+     * &lt;/item&gt;
+     */
+    public static Optional&lt;Node&gt; getNode(Node item, String nodeName) {
+<span class="nc" id="L111">        return getNodesByName(item, nodeName).stream().findFirst();</span>
+    }
+
+    // Wrapper to make NodeList iterable,
+    // taken from &lt;a href=&quot;http://stackoverflow.com/questions/19589231/can-i-iterate-through-a-nodelist-using-for-each-in-java&quot;&gt;StackOverflow Answer&lt;/a&gt;.
+    private static final class NodeListWrapper extends AbstractList&lt;Node&gt; implements RandomAccess {
+
+        private final NodeList list;
+
+<span class="nc" id="L120">        NodeListWrapper(NodeList list) {</span>
+<span class="nc" id="L121">            this.list = list;</span>
+<span class="nc" id="L122">        }</span>
+
+        @Override
+        public Node get(int index) {
+<span class="nc" id="L126">            return list.item(index);</span>
+        }
+
+        @Override
+        public int size() {
+<span class="nc" id="L131">            return list.getLength();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

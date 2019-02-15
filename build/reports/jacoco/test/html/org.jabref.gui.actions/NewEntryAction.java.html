@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NewEntryAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.actions</a> &gt; <span class="el_source">NewEntryAction.java</span></div><h1>NewEntryAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.actions;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import org.jabref.Globals;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.EntryTypeView;
+import org.jabref.gui.JabRefFrame;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.EntryType;
+import org.jabref.preferences.JabRefPreferences;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class NewEntryAction extends SimpleCommand {
+
+<span class="nc" id="L20">    private static final Logger LOGGER = LoggerFactory.getLogger(NewEntryAction.class);</span>
+
+    private final JabRefFrame jabRefFrame;
+    /**
+     * The type of the entry to create.
+     */
+    private final Optional&lt;EntryType&gt; type;
+    private final DialogService dialogService;
+    private final JabRefPreferences preferences;
+
+<span class="nc" id="L30">    public NewEntryAction(JabRefFrame jabRefFrame, DialogService dialogService, JabRefPreferences preferences) {</span>
+<span class="nc" id="L31">        this.jabRefFrame = jabRefFrame;</span>
+<span class="nc" id="L32">        this.type = Optional.empty();</span>
+<span class="nc" id="L33">        this.dialogService = dialogService;</span>
+<span class="nc" id="L34">        this.preferences = preferences;</span>
+<span class="nc" id="L35">    }</span>
+
+<span class="nc" id="L37">    public NewEntryAction(JabRefFrame jabRefFrame, EntryType type, DialogService dialogService, JabRefPreferences preferences) {</span>
+<span class="nc" id="L38">        this.jabRefFrame = jabRefFrame;</span>
+<span class="nc" id="L39">        this.type = Optional.of(type);</span>
+<span class="nc" id="L40">        this.dialogService = dialogService;</span>
+<span class="nc" id="L41">        this.preferences = preferences;</span>
+<span class="nc" id="L42">    }</span>
+
+    @Override
+    public void execute() {
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (jabRefFrame.getBasePanelCount() &lt;= 0) {</span>
+<span class="nc" id="L47">            LOGGER.error(&quot;Action 'New entry' must be disabled when no database is open.&quot;);</span>
+<span class="nc" id="L48">            return;</span>
+        }
+
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (type.isPresent()) {</span>
+<span class="nc" id="L52">            jabRefFrame.getCurrentBasePanel().insertEntry(new BibEntry(type.get()));</span>
+        } else {
+<span class="nc" id="L54">            EntryTypeView typeChoiceDialog = new EntryTypeView(jabRefFrame.getCurrentBasePanel(), dialogService, preferences);</span>
+<span class="nc" id="L55">            EntryType selectedType = typeChoiceDialog.showAndWait().orElse(null);</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">            if (selectedType == null) {</span>
+<span class="nc" id="L57">                return;</span>
+            }
+
+<span class="nc" id="L60">            trackNewEntry(selectedType);</span>
+<span class="nc" id="L61">            jabRefFrame.getCurrentBasePanel().insertEntry(new BibEntry(selectedType));</span>
+        }
+<span class="nc" id="L63">    }</span>
+
+    private void trackNewEntry(EntryType type) {
+<span class="nc" id="L66">        Map&lt;String, String&gt; properties = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L67">        properties.put(&quot;EntryType&quot;, type.getName());</span>
+
+<span class="nc" id="L69">        Globals.getTelemetryClient().ifPresent(client -&gt; client.trackEvent(&quot;NewEntry&quot;, properties, new HashMap&lt;&gt;()));</span>
+<span class="nc" id="L70">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

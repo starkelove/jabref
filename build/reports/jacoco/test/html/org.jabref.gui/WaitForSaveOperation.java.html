@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WaitForSaveOperation.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui</a> &gt; <span class="el_source">WaitForSaveOperation.java</span></div><h1>WaitForSaveOperation.java</h1><pre class="source lang-java linenums">package org.jabref.gui;
+
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JProgressBar;
+import javax.swing.Timer;
+
+import org.jabref.logic.l10n.Localization;
+
+import com.jgoodies.forms.builder.ButtonBarBuilder;
+
+/**
+ * Dialog shown when closing of application needs to wait for a save operation to finish.
+ */
+public class WaitForSaveOperation implements ActionListener {
+
+    private final JabRefFrame frame;
+    private final JDialog diag;
+<span class="nc" id="L26">    private final Timer t = new Timer(500, this);</span>
+    private boolean canceled;
+
+
+<span class="nc" id="L30">    public WaitForSaveOperation(JabRefFrame frame) {</span>
+<span class="nc" id="L31">        this.frame = frame;</span>
+
+<span class="nc" id="L33">        JButton cancel = new JButton(Localization.lang(&quot;Cancel&quot;));</span>
+<span class="nc" id="L34">        JProgressBar prog = new JProgressBar(0);</span>
+<span class="nc" id="L35">        prog.setIndeterminate(true);</span>
+<span class="nc" id="L36">        prog.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));</span>
+<span class="nc" id="L37">        diag = new JDialog((JFrame) null, Localization.lang(&quot;Please wait...&quot;), true);</span>
+
+<span class="nc" id="L39">        ButtonBarBuilder bb = new ButtonBarBuilder();</span>
+<span class="nc" id="L40">        bb.addGlue();</span>
+<span class="nc" id="L41">        bb.addButton(cancel);</span>
+<span class="nc" id="L42">        bb.addGlue();</span>
+<span class="nc" id="L43">        cancel.addActionListener(e -&gt; {</span>
+<span class="nc" id="L44">            canceled = true;</span>
+<span class="nc" id="L45">            t.stop();</span>
+<span class="nc" id="L46">            diag.dispose();</span>
+<span class="nc" id="L47">        });</span>
+
+<span class="nc" id="L49">        JLabel message = new JLabel(Localization.lang(&quot;Waiting for save operation to finish&quot;) + &quot;...&quot;);</span>
+<span class="nc" id="L50">        message.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));</span>
+
+<span class="nc" id="L52">        diag.getContentPane().add(message, BorderLayout.NORTH);</span>
+<span class="nc" id="L53">        diag.getContentPane().add(bb.getPanel(), BorderLayout.SOUTH);</span>
+<span class="nc" id="L54">        diag.getContentPane().add(prog, BorderLayout.CENTER);</span>
+<span class="nc" id="L55">        diag.pack();</span>
+<span class="nc" id="L56">    }</span>
+
+    public void show() {
+<span class="nc" id="L59">        t.start();</span>
+<span class="nc" id="L60">        diag.setVisible(true);</span>
+
+<span class="nc" id="L62">    }</span>
+
+    public boolean canceled() {
+<span class="nc" id="L65">        return canceled;</span>
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent actionEvent) {
+<span class="nc" id="L70">        boolean anySaving = false;</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        for (BasePanel basePanel : frame.getBasePanelList()) {</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">            if (basePanel.isSaving()) {</span>
+<span class="nc" id="L73">                anySaving = true;</span>
+<span class="nc" id="L74">                break;</span>
+            }
+<span class="nc" id="L76">        }</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (!anySaving) {</span>
+<span class="nc" id="L78">            t.stop();</span>
+<span class="nc" id="L79">            diag.dispose();</span>
+        }
+<span class="nc" id="L81">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

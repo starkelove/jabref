@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>KeyBinding.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.keyboard</a> &gt; <span class="el_source">KeyBinding.java</span></div><h1>KeyBinding.java</h1><pre class="source lang-java linenums">package org.jabref.gui.keyboard;
+
+import org.jabref.logic.l10n.Localization;
+
+<span class="fc" id="L5">public enum KeyBinding {</span>
+
+<span class="fc" id="L7">    ABBREVIATE(&quot;Abbreviate&quot;, Localization.lang(&quot;Abbreviate journal names&quot;), &quot;ctrl+alt+A&quot;, KeyBindingCategory.TOOLS),</span>
+<span class="fc" id="L8">    AUTOGENERATE_BIBTEX_KEYS(&quot;Autogenerate BibTeX keys&quot;, Localization.lang(&quot;Autogenerate BibTeX keys&quot;), &quot;ctrl+G&quot;, KeyBindingCategory.QUALITY),</span>
+<span class="fc" id="L9">    ACCEPT(&quot;Accept&quot;, Localization.lang(&quot;Accept&quot;), &quot;ctrl+ENTER&quot;, KeyBindingCategory.EDIT),</span>
+<span class="fc" id="L10">    AUTOMATICALLY_LINK_FILES(&quot;Automatically link files&quot;, Localization.lang(&quot;Automatically set file links&quot;), &quot;F7&quot;, KeyBindingCategory.QUALITY),</span>
+<span class="fc" id="L11">    CHECK_INTEGRITY(&quot;Check integrity&quot;, Localization.lang(&quot;Check integrity&quot;), &quot;ctrl+F8&quot;, KeyBindingCategory.QUALITY),</span>
+<span class="fc" id="L12">    CLEANUP(&quot;Cleanup&quot;, Localization.lang(&quot;Cleanup entries&quot;), &quot;alt+F8&quot;, KeyBindingCategory.QUALITY),</span>
+<span class="fc" id="L13">    CLOSE_DATABASE(&quot;Close library&quot;, Localization.lang(&quot;Close library&quot;), &quot;ctrl+W&quot;, KeyBindingCategory.FILE),</span>
+<span class="fc" id="L14">    CLOSE_ENTRY(&quot;Close entry&quot;, Localization.lang(&quot;Close entry&quot;), &quot;ctrl+E&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L15">    CLOSE(&quot;Close dialog&quot;, Localization.lang(&quot;Close dialog&quot;), &quot;Esc&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L16">    COPY(&quot;Copy&quot;, Localization.lang(&quot;Copy&quot;), &quot;ctrl+C&quot;, KeyBindingCategory.EDIT),</span>
+<span class="fc" id="L17">    COPY_TITLE(&quot;Copy title&quot;, Localization.lang(&quot;Copy title&quot;), &quot;ctrl+shift+alt+T&quot;, KeyBindingCategory.EDIT),</span>
+<span class="fc" id="L18">    COPY_CITE_BIBTEX_KEY(&quot;Copy \\cite{BibTeX key}&quot;, Localization.lang(&quot;Copy \\cite{BibTeX key}&quot;), &quot;ctrl+K&quot;, KeyBindingCategory.EDIT),</span>
+<span class="fc" id="L19">    COPY_BIBTEX_KEY(&quot;Copy BibTeX key&quot;, Localization.lang(&quot;Copy BibTeX key&quot;), &quot;ctrl+shift+K&quot;, KeyBindingCategory.EDIT),</span>
+<span class="fc" id="L20">    COPY_BIBTEX_KEY_AND_TITLE(&quot;Copy BibTeX key and title&quot;, Localization.lang(&quot;Copy BibTeX key and title&quot;), &quot;ctrl+shift+alt+K&quot;, KeyBindingCategory.EDIT),</span>
+<span class="fc" id="L21">    COPY_BIBTEX_KEY_AND_LINK(&quot;Copy BibTeX key and link&quot;, Localization.lang(&quot;Copy BibTeX key and link&quot;), &quot;ctrl+alt+K&quot;, KeyBindingCategory.EDIT),</span>
+<span class="fc" id="L22">    COPY_PREVIEW(&quot;Copy preview&quot;, Localization.lang(&quot;Copy preview&quot;), &quot;ctrl+shift+C&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L23">    CUT(&quot;Cut&quot;, Localization.lang(&quot;Cut&quot;), &quot;ctrl+X&quot;, KeyBindingCategory.EDIT),</span>
+    //We have to put Entry Editor Previous before, because otherwise the decrease font size is found first
+<span class="fc" id="L25">    ENTRY_EDITOR_PREVIOUS_PANEL_2(&quot;Entry editor, previous panel 2&quot;, Localization.lang(&quot;Entry editor, previous panel 2&quot;), &quot;ctrl+MINUS&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L26">    DECREASE_TABLE_FONT_SIZE(&quot;Decrease table font size&quot;, Localization.lang(&quot;Decrease table font size&quot;), &quot;ctrl+MINUS&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L27">    DELETE_ENTRY(&quot;Delete entry&quot;, Localization.lang(&quot;Delete entry&quot;), &quot;DELETE&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L28">    DEFAULT_DIALOG_ACTION(&quot;Execute default action in dialog&quot;, Localization.lang(&quot;Execute default action in dialog&quot;), &quot;ctrl+ENTER&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L29">    DOWNLOAD_FULL_TEXT(&quot;Look up full text documents&quot;, Localization.lang(&quot;Look up full text documents&quot;), &quot;alt+F7&quot;, KeyBindingCategory.QUALITY),</span>
+<span class="fc" id="L30">    EDIT_ENTRY(&quot;Edit entry&quot;, Localization.lang(&quot;Edit entry&quot;), &quot;ctrl+E&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L31">    EDIT_STRINGS(&quot;Edit strings&quot;, Localization.lang(&quot;Edit strings&quot;), &quot;ctrl+T&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L32">    ENTRY_EDITOR_NEXT_ENTRY(&quot;Entry editor, next entry&quot;, Localization.lang(&quot;Entry editor, next entry&quot;), &quot;alt+DOWN&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L33">    ENTRY_EDITOR_NEXT_PANEL(&quot;Entry editor, next panel&quot;, Localization.lang(&quot;Entry editor, next panel&quot;), &quot;ctrl+TAB&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L34">    ENTRY_EDITOR_NEXT_PANEL_2(&quot;Entry editor, next panel 2&quot;, Localization.lang(&quot;Entry editor, next panel 2&quot;), &quot;ctrl+PLUS&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L35">    ENTRY_EDITOR_PREVIOUS_ENTRY(&quot;Entry editor, previous entry&quot;, Localization.lang(&quot;Entry editor, previous entry&quot;), &quot;alt+UP&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L36">    ENTRY_EDITOR_PREVIOUS_PANEL(&quot;Entry editor, previous panel&quot;, Localization.lang(&quot;Entry editor, previous panel&quot;), &quot;ctrl+shift+TAB&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L37">    FILE_LIST_EDITOR_MOVE_ENTRY_DOWN(&quot;File list editor, move entry down&quot;, Localization.lang(&quot;File list editor, move entry down&quot;), &quot;ctrl+DOWN&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L38">    FILE_LIST_EDITOR_MOVE_ENTRY_UP(&quot;File list editor, move entry up&quot;, Localization.lang(&quot;File list editor, move entry up&quot;), &quot;ctrl+UP&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L39">    FIND_UNLINKED_FILES(&quot;Find unlinked files&quot;, Localization.lang(&quot;Find unlinked files&quot;), &quot;shift+F7&quot;, KeyBindingCategory.QUALITY),</span>
+<span class="fc" id="L40">    FOCUS_ENTRY_TABLE(&quot;Focus entry table&quot;, Localization.lang(&quot;Focus entry table&quot;), &quot;alt+1&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L41">    GLOBAL_SEARCH(&quot;Search globally&quot;, Localization.lang(&quot;Search globally&quot;), &quot;ctrl+shift+F&quot;, KeyBindingCategory.SEARCH),</span>
+<span class="fc" id="L42">    HELP(&quot;Help&quot;, Localization.lang(&quot;Help&quot;), &quot;F1&quot;, KeyBindingCategory.FILE),</span>
+<span class="fc" id="L43">    IMPORT_INTO_CURRENT_DATABASE(&quot;Import into current library&quot;, Localization.lang(&quot;Import into current library&quot;), &quot;ctrl+I&quot;, KeyBindingCategory.FILE),</span>
+<span class="fc" id="L44">    IMPORT_INTO_NEW_DATABASE(&quot;Import into new library&quot;, Localization.lang(&quot;Import into new library&quot;), &quot;ctrl+alt+I&quot;, KeyBindingCategory.FILE),</span>
+<span class="fc" id="L45">    INCREASE_TABLE_FONT_SIZE(&quot;Increase table font size&quot;, Localization.lang(&quot;Increase table font size&quot;), &quot;ctrl+PLUS&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L46">    DEFAULT_TABLE_FONT_SIZE(&quot;Default table font size&quot;, Localization.lang(&quot;Default table font size&quot;), &quot;ctrl+0&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L47">    NEW_ARTICLE(&quot;New article&quot;, Localization.lang(&quot;New article&quot;), &quot;ctrl+shift+A&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L48">    NEW_BOOK(&quot;New book&quot;, Localization.lang(&quot;New book&quot;), &quot;ctrl+shift+B&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L49">    NEW_ENTRY(&quot;New entry&quot;, Localization.lang(&quot;New entry&quot;), &quot;ctrl+N&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L50">    NEW_FROM_PLAIN_TEXT(&quot;New from plain text&quot;, Localization.lang(&quot;New from plain text&quot;), &quot;ctrl+shift+N&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L51">    NEW_INBOOK(&quot;New inbook&quot;, Localization.lang(&quot;New inbook&quot;), &quot;ctrl+shift+I&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L52">    NEW_MASTERSTHESIS(&quot;New mastersthesis&quot;, Localization.lang(&quot;New mastersthesis&quot;), &quot;ctrl+shift+M&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L53">    NEW_PHDTHESIS(&quot;New phdthesis&quot;, Localization.lang(&quot;New phdthesis&quot;), &quot;ctrl+shift+T&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L54">    NEW_PROCEEDINGS(&quot;New proceedings&quot;, Localization.lang(&quot;New proceedings&quot;), &quot;ctrl+shift+P&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L55">    NEW_UNPUBLISHED(&quot;New unpublished&quot;, Localization.lang(&quot;New unpublished&quot;), &quot;ctrl+shift+U&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L56">    NEW_TECHREPORT(&quot;New technical report&quot;, Localization.lang(&quot;New technical report&quot;), &quot;ctrl+shift+R&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L57">    NEXT_PREVIEW_LAYOUT(&quot;Next preview layout&quot;, Localization.lang(&quot;Next preview layout&quot;), &quot;F9&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L58">    NEXT_LIBRARY(&quot;Next library&quot;, Localization.lang(&quot;Next library&quot;), &quot;ctrl+PAGE_DOWN&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L59">    OPEN_CONSOLE(&quot;Open terminal here&quot;, Localization.lang(&quot;Open terminal here&quot;), &quot;ctrl+shift+L&quot;, KeyBindingCategory.TOOLS),</span>
+<span class="fc" id="L60">    OPEN_DATABASE(&quot;Open library&quot;, Localization.lang(&quot;Open library&quot;), &quot;ctrl+O&quot;, KeyBindingCategory.FILE),</span>
+<span class="fc" id="L61">    OPEN_FILE(&quot;Open file&quot;, Localization.lang(&quot;Open file&quot;), &quot;F4&quot;, KeyBindingCategory.TOOLS),</span>
+<span class="fc" id="L62">    OPEN_FOLDER(&quot;Open folder&quot;, Localization.lang(&quot;Open folder&quot;), &quot;ctrl+shift+O&quot;, KeyBindingCategory.TOOLS),</span>
+<span class="fc" id="L63">    OPEN_OPEN_OFFICE_LIBRE_OFFICE_CONNECTION(&quot;Open OpenOffice/LibreOffice connection&quot;, Localization.lang(&quot;Open OpenOffice/LibreOffice connection&quot;), &quot;alt+0&quot;, KeyBindingCategory.TOOLS),</span>
+<span class="fc" id="L64">    OPEN_URL_OR_DOI(&quot;Open URL or DOI&quot;, Localization.lang(&quot;Open URL or DOI&quot;), &quot;F3&quot;, KeyBindingCategory.TOOLS),</span>
+<span class="fc" id="L65">    PASTE(&quot;Paste&quot;, Localization.lang(&quot;Paste&quot;), &quot;ctrl+V&quot;, KeyBindingCategory.EDIT),</span>
+<span class="fc" id="L66">    PULL_CHANGES_FROM_SHARED_DATABASE(&quot;Pull changes from shared database&quot;, Localization.lang(&quot;Pull changes from shared database&quot;), &quot;ctrl+shift+R&quot;, KeyBindingCategory.FILE),</span>
+<span class="fc" id="L67">    PREAMBLE_EDITOR_STORE_CHANGES(&quot;Preamble editor, store changes&quot;, Localization.lang(&quot;Preamble editor, store changes&quot;), &quot;alt+S&quot;, KeyBindingCategory.FILE),</span>
+<span class="fc" id="L68">    PREVIOUS_PREVIEW_LAYOUT(&quot;Previous preview layout&quot;, Localization.lang(&quot;Previous preview layout&quot;), &quot;shift+F9&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L69">    PREVIOUS_LIBRARY(&quot;Previous library&quot;, Localization.lang(&quot;Previous library&quot;), &quot;ctrl+PAGE_UP&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L70">    PUSH_TO_APPLICATION(&quot;Push to application&quot;, Localization.lang(&quot;Push to application&quot;), &quot;ctrl+L&quot;, KeyBindingCategory.TOOLS),</span>
+<span class="fc" id="L71">    QUIT_JABREF(&quot;Quit JabRef&quot;, Localization.lang(&quot;Quit JabRef&quot;), &quot;ctrl+Q&quot;, KeyBindingCategory.FILE),</span>
+<span class="fc" id="L72">    REDO(&quot;Redo&quot;, Localization.lang(&quot;Redo&quot;), &quot;ctrl+Y&quot;, KeyBindingCategory.EDIT),</span>
+<span class="fc" id="L73">    REFRESH_OO(&quot;Refresh OO&quot;, Localization.lang(&quot;Refresh OpenOffice/LibreOffice&quot;), &quot;ctrl+alt+O&quot;, KeyBindingCategory.TOOLS),</span>
+<span class="fc" id="L74">    REPLACE_STRING(&quot;Replace string&quot;, Localization.lang(&quot;Replace string&quot;), &quot;ctrl+R&quot;, KeyBindingCategory.SEARCH),</span>
+<span class="fc" id="L75">    RESOLVE_DUPLICATE_BIBTEX_KEYS(&quot;Resolve duplicate BibTeX keys&quot;, Localization.lang(&quot;Resolve duplicate BibTeX keys&quot;), &quot;ctrl+shift+D&quot;, KeyBindingCategory.BIBTEX),</span>
+<span class="fc" id="L76">    SAVE_ALL(&quot;Save all&quot;, Localization.lang(&quot;Save all&quot;), &quot;ctrl+alt+S&quot;, KeyBindingCategory.FILE),</span>
+<span class="fc" id="L77">    SAVE_DATABASE(&quot;Save library&quot;, Localization.lang(&quot;Save library&quot;), &quot;ctrl+S&quot;, KeyBindingCategory.FILE),</span>
+<span class="fc" id="L78">    SAVE_DATABASE_AS(&quot;Save library as ...&quot;, Localization.lang(&quot;Save library as...&quot;), &quot;ctrl+shift+S&quot;, KeyBindingCategory.FILE),</span>
+<span class="fc" id="L79">    SEARCH(&quot;Search&quot;, Localization.lang(&quot;Search&quot;), &quot;ctrl+F&quot;, KeyBindingCategory.SEARCH),</span>
+<span class="fc" id="L80">    SELECT_ALL(&quot;Select all&quot;, Localization.lang(&quot;Select all&quot;), &quot;ctrl+A&quot;, KeyBindingCategory.EDIT),</span>
+<span class="fc" id="L81">    SELECT_FIRST_ENTRY(&quot;Select first entry&quot;, Localization.lang(&quot;Select first entry&quot;), &quot;HOME&quot;, KeyBindingCategory.EDIT),</span>
+<span class="fc" id="L82">    SELECT_LAST_ENTRY(&quot;Select last entry&quot;, Localization.lang(&quot;Select last entry&quot;), &quot;END&quot;, KeyBindingCategory.EDIT),</span>
+<span class="fc" id="L83">    STRING_DIALOG_ADD_STRING(&quot;String dialog, add string&quot;, Localization.lang(&quot;String dialog, add string&quot;), &quot;ctrl+N&quot;, KeyBindingCategory.FILE),</span>
+<span class="fc" id="L84">    STRING_DIALOG_REMOVE_STRING(&quot;String dialog, remove string&quot;, Localization.lang(&quot;String dialog, remove string&quot;), &quot;shift+DELETE&quot;, KeyBindingCategory.FILE),</span>
+<span class="fc" id="L85">    SYNCHRONIZE_FILES(&quot;Synchronize files&quot;, Localization.lang(&quot;Synchronize files&quot;), &quot;ctrl+shift+F7&quot;, KeyBindingCategory.QUALITY),</span>
+<span class="fc" id="L86">    TOGGLE_ENTRY_PREVIEW(&quot;Toggle entry preview&quot;, Localization.lang(&quot;Toggle entry preview&quot;), &quot;alt+2&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L87">    TOGGLE_GROUPS_INTERFACE(&quot;Toggle groups interface&quot;, Localization.lang(&quot;Toggle groups interface&quot;), &quot;alt+3&quot;, KeyBindingCategory.VIEW),</span>
+<span class="fc" id="L88">    UNABBREVIATE(&quot;Unabbreviate&quot;, Localization.lang(&quot;Unabbreviate&quot;), &quot;ctrl+alt+shift+A&quot;, KeyBindingCategory.TOOLS),</span>
+<span class="fc" id="L89">    UNDO(&quot;Undo&quot;, Localization.lang(&quot;Undo&quot;), &quot;ctrl+Z&quot;, KeyBindingCategory.EDIT),</span>
+<span class="fc" id="L90">    WEB_SEARCH(&quot;Web search&quot;, Localization.lang(&quot;Web search&quot;), &quot;alt+4&quot;, KeyBindingCategory.SEARCH),</span>
+<span class="fc" id="L91">    WRITE_XMP(&quot;Write XMP&quot;, Localization.lang(&quot;Write XMP&quot;), &quot;F6&quot;, KeyBindingCategory.TOOLS),</span>
+<span class="fc" id="L92">    CLEAR_SEARCH(&quot;Clear search&quot;, Localization.lang(&quot;Clear search&quot;), &quot;ESCAPE&quot;, KeyBindingCategory.SEARCH);</span>
+
+    private final String constant;
+    private final String localization;
+    private final String defaultBinding;
+    private final KeyBindingCategory category;
+
+<span class="fc" id="L99">    KeyBinding(String constantName, String localization, String defaultKeyBinding, KeyBindingCategory category) {</span>
+<span class="fc" id="L100">        this.constant = constantName;</span>
+<span class="fc" id="L101">        this.localization = localization;</span>
+<span class="fc" id="L102">        this.defaultBinding = defaultKeyBinding;</span>
+<span class="fc" id="L103">        this.category = category;</span>
+<span class="fc" id="L104">    }</span>
+
+    /**
+     * This method returns the enum constant value
+     */
+    public String getConstant() {
+<span class="fc" id="L110">        return constant;</span>
+    }
+
+    public String getLocalization() {
+<span class="fc" id="L114">        return localization;</span>
+    }
+
+    /**
+     * This method returns the default key binding, the key(s) which are assigned
+     * @return The default key binding
+     */
+    public String getDefaultKeyBinding() {
+<span class="fc" id="L122">        return defaultBinding;</span>
+    }
+
+    public KeyBindingCategory getCategory() {
+<span class="fc" id="L126">        return category;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

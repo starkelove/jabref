@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MassSetFieldsDialog.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.edit</a> &gt; <span class="el_source">MassSetFieldsDialog.java</span></div><h1>MassSetFieldsDialog.java</h1><pre class="source lang-java linenums">package org.jabref.gui.edit;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+import javax.swing.undo.UndoableEdit;
+
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.GridPane;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableFieldChange;
+import org.jabref.gui.util.BaseDialog;
+import org.jabref.gui.util.IconValidationDecorator;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.strings.StringUtil;
+
+import de.saxsys.mvvmfx.utils.validation.FunctionBasedValidator;
+import de.saxsys.mvvmfx.utils.validation.Severity;
+import de.saxsys.mvvmfx.utils.validation.ValidationMessage;
+import de.saxsys.mvvmfx.utils.validation.Validator;
+import de.saxsys.mvvmfx.utils.validation.visualization.ControlsFxVisualizer;
+
+public class MassSetFieldsDialog extends BaseDialog&lt;Void&gt; {
+
+    private final List&lt;BibEntry&gt; entries;
+    private final BasePanel bp;
+    private final DialogService dialogService;
+
+    private RadioButton clearRadioButton;
+    private RadioButton setRadioButton;
+    private RadioButton appendRadioButton;
+    private RadioButton renameRadioButton;
+    private ComboBox&lt;String&gt; fieldComboBox;
+    private TextField setTextField;
+    private TextField appendTextField;
+    private TextField renameTextField;
+    private CheckBox overwriteCheckBox;
+
+<span class="nc" id="L53">    MassSetFieldsDialog(List&lt;BibEntry&gt; entries, BasePanel bp) {</span>
+<span class="nc" id="L54">        this.entries = entries;</span>
+<span class="nc" id="L55">        this.bp = bp;</span>
+<span class="nc" id="L56">        this.dialogService = bp.frame().getDialogService();</span>
+
+<span class="nc" id="L58">        init();</span>
+<span class="nc" id="L59">        this.setTitle(&quot;Set/clear/append/rename fields&quot;);</span>
+<span class="nc" id="L60">        this.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);</span>
+<span class="nc" id="L61">        this.setResultConverter(button -&gt; {</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            if (button == ButtonType.OK) {</span>
+<span class="nc" id="L63">                performEdits();</span>
+            }
+<span class="nc" id="L65">            return null;</span>
+        });
+<span class="nc" id="L67">    }</span>
+
+    /**
+     * Append a given value to a given field for all entries in a Collection. This method DOES NOT update any UndoManager,
+     * but returns a relevant CompoundEdit that should be registered by the caller.
+     *
+     * @param entries      The entries to process the operation for.
+     * @param field        The name of the field to append to.
+     * @param textToAppend The value to set. A null in this case will simply preserve the current field state.
+     * @return A CompoundEdit for the entire operation.
+     */
+    private static UndoableEdit massAppendField(Collection&lt;BibEntry&gt; entries, String field, String textToAppend) {
+
+<span class="nc" id="L80">        String newValue = &quot;&quot;;</span>
+
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (textToAppend != null) {</span>
+<span class="nc" id="L83">            newValue = textToAppend;</span>
+        }
+
+<span class="nc" id="L86">        NamedCompound compoundEdit = new NamedCompound(Localization.lang(&quot;Append field&quot;));</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        for (BibEntry entry : entries) {</span>
+<span class="nc" id="L88">            Optional&lt;String&gt; oldValue = entry.getField(field);</span>
+<span class="nc" id="L89">            entry.setField(field, oldValue.orElse(&quot;&quot;) + newValue);</span>
+<span class="nc" id="L90">            compoundEdit.addEdit(new UndoableFieldChange(entry, field, oldValue.orElse(null), newValue));</span>
+<span class="nc" id="L91">        }</span>
+<span class="nc" id="L92">        compoundEdit.end();</span>
+<span class="nc" id="L93">        return compoundEdit;</span>
+    }
+
+    /**
+     * Move contents from one field to another for a Collection of entries.
+     *
+     * @param entries         The entries to do this operation for.
+     * @param field           The field to move contents from.
+     * @param newField        The field to move contents into.
+     * @param overwriteValues If true, overwrites any existing values in the new field. If false, makes no change for
+     *                        entries with existing value in the new field.
+     * @return A CompoundEdit for the entire operation.
+     */
+    private static UndoableEdit massRenameField(Collection&lt;BibEntry&gt; entries, String field, String newField,
+                                                boolean overwriteValues) {
+<span class="nc" id="L108">        NamedCompound compoundEdit = new NamedCompound(Localization.lang(&quot;Rename field&quot;));</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        for (BibEntry entry : entries) {</span>
+<span class="nc" id="L110">            Optional&lt;String&gt; valToMove = entry.getField(field);</span>
+            // If there is no value, do nothing:
+<span class="nc bnc" id="L112" title="All 4 branches missed.">            if ((!valToMove.isPresent()) || valToMove.get().isEmpty()) {</span>
+<span class="nc" id="L113">                continue;</span>
+            }
+            // If we are not allowed to overwrite values, check if there is a
+            // non-empty value already for this entry for the new field:
+<span class="nc" id="L117">            Optional&lt;String&gt; valInNewField = entry.getField(newField);</span>
+<span class="nc bnc" id="L118" title="All 6 branches missed.">            if (!overwriteValues &amp;&amp; (valInNewField.isPresent()) &amp;&amp; !valInNewField.get().isEmpty()) {</span>
+<span class="nc" id="L119">                continue;</span>
+            }
+
+<span class="nc" id="L122">            entry.setField(newField, valToMove.get());</span>
+<span class="nc" id="L123">            compoundEdit.addEdit(new UndoableFieldChange(entry, newField, valInNewField.orElse(null), valToMove.get()));</span>
+<span class="nc" id="L124">            entry.clearField(field);</span>
+<span class="nc" id="L125">            compoundEdit.addEdit(new UndoableFieldChange(entry, field, valToMove.get(), null));</span>
+<span class="nc" id="L126">        }</span>
+<span class="nc" id="L127">        compoundEdit.end();</span>
+<span class="nc" id="L128">        return compoundEdit;</span>
+    }
+
+    /**
+     * Set a given field to a given value for all entries in a Collection. This method DOES NOT update any UndoManager,
+     * but returns a relevant CompoundEdit that should be registered by the caller.
+     *
+     * @param entries         The entries to set the field for.
+     * @param field           The name of the field to set.
+     * @param textToSet       The value to set. This value can be null, indicating that the field should be cleared.
+     * @param overwriteValues Indicate whether the value should be set even if an entry already has the field set.
+     * @return A CompoundEdit for the entire operation.
+     */
+    private static UndoableEdit massSetField(Collection&lt;BibEntry&gt; entries, String field, String textToSet,
+                                             boolean overwriteValues) {
+
+<span class="nc" id="L144">        NamedCompound compoundEdit = new NamedCompound(Localization.lang(&quot;Set field&quot;));</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        for (BibEntry entry : entries) {</span>
+<span class="nc" id="L146">            Optional&lt;String&gt; oldValue = entry.getField(field);</span>
+            // If we are not allowed to overwrite values, check if there is a
+            // nonempty
+            // value already for this entry:
+<span class="nc bnc" id="L150" title="All 6 branches missed.">            if (!overwriteValues &amp;&amp; (oldValue.isPresent()) &amp;&amp; !oldValue.get().isEmpty()) {</span>
+<span class="nc" id="L151">                continue;</span>
+            }
+<span class="nc bnc" id="L153" title="All 2 branches missed.">            if (textToSet == null) {</span>
+<span class="nc" id="L154">                entry.clearField(field);</span>
+            } else {
+<span class="nc" id="L156">                entry.setField(field, textToSet);</span>
+            }
+<span class="nc" id="L158">            compoundEdit.addEdit(new UndoableFieldChange(entry, field, oldValue.orElse(null), textToSet));</span>
+<span class="nc" id="L159">        }</span>
+<span class="nc" id="L160">        compoundEdit.end();</span>
+<span class="nc" id="L161">        return compoundEdit;</span>
+    }
+
+    private void init() {
+<span class="nc" id="L165">        fieldComboBox = new ComboBox&lt;&gt;();</span>
+<span class="nc" id="L166">        fieldComboBox.setEditable(true);</span>
+<span class="nc" id="L167">        fieldComboBox.getItems().addAll(bp.getDatabase().getAllVisibleFields());</span>
+
+<span class="nc" id="L169">        ToggleGroup toggleGroup = new ToggleGroup();</span>
+<span class="nc" id="L170">        clearRadioButton = new RadioButton(Localization.lang(&quot;Clear fields&quot;));</span>
+<span class="nc" id="L171">        clearRadioButton.setToggleGroup(toggleGroup);</span>
+<span class="nc" id="L172">        renameRadioButton = new RadioButton(Localization.lang(&quot;Rename field to&quot;) + &quot;:&quot;);</span>
+<span class="nc" id="L173">        renameRadioButton.setTooltip(new Tooltip(Localization.lang(&quot;Move contents of a field into a field with a different name&quot;)));</span>
+<span class="nc" id="L174">        renameRadioButton.setToggleGroup(toggleGroup);</span>
+<span class="nc" id="L175">        setRadioButton = new RadioButton(Localization.lang(&quot;Set fields&quot;) + &quot;:&quot;);</span>
+<span class="nc" id="L176">        setRadioButton.setToggleGroup(toggleGroup);</span>
+<span class="nc" id="L177">        appendRadioButton = new RadioButton(Localization.lang(&quot;Append to fields&quot;) + &quot;:&quot;);</span>
+<span class="nc" id="L178">        appendRadioButton.setToggleGroup(toggleGroup);</span>
+
+<span class="nc" id="L180">        setTextField = new TextField();</span>
+<span class="nc" id="L181">        setTextField.disableProperty().bind(setRadioButton.selectedProperty().not());</span>
+<span class="nc" id="L182">        appendTextField = new TextField();</span>
+<span class="nc" id="L183">        appendTextField.disableProperty().bind(appendRadioButton.selectedProperty().not());</span>
+<span class="nc" id="L184">        renameTextField = new TextField();</span>
+<span class="nc" id="L185">        renameTextField.disableProperty().bind(renameRadioButton.selectedProperty().not());</span>
+
+<span class="nc" id="L187">        overwriteCheckBox = new CheckBox(&quot;Overwrite existing field values&quot;);</span>
+
+<span class="nc" id="L189">        GridPane main = new GridPane();</span>
+<span class="nc" id="L190">        main.add(new Label(Localization.lang(&quot;Field name&quot;)), 0, 0);</span>
+<span class="nc" id="L191">        main.add(fieldComboBox, 1, 0);</span>
+<span class="nc" id="L192">        main.add(setRadioButton, 0, 2);</span>
+<span class="nc" id="L193">        main.add(setTextField, 1, 2);</span>
+<span class="nc" id="L194">        main.add(appendRadioButton, 0, 3);</span>
+<span class="nc" id="L195">        main.add(appendTextField, 1, 3);</span>
+<span class="nc" id="L196">        main.add(renameRadioButton, 0, 4);</span>
+<span class="nc" id="L197">        main.add(renameTextField, 1, 4);</span>
+<span class="nc" id="L198">        main.add(clearRadioButton, 0, 5);</span>
+<span class="nc" id="L199">        main.add(overwriteCheckBox, 0, 7);</span>
+
+<span class="nc" id="L201">        main.setPadding(new Insets(15, 15, 0, 15));</span>
+<span class="nc" id="L202">        main.setGridLinesVisible(false);</span>
+<span class="nc" id="L203">        main.setVgap(4);</span>
+<span class="nc" id="L204">        main.setHgap(10);</span>
+<span class="nc" id="L205">        getDialogPane().setContent(main);</span>
+
+<span class="nc" id="L207">        Validator fieldNameValidator = new FunctionBasedValidator&lt;&gt;(</span>
+<span class="nc" id="L208">                fieldComboBox.valueProperty(),</span>
+                StringUtil::isNotBlank,
+<span class="nc" id="L210">                new ValidationMessage(Severity.ERROR, Localization.lang(&quot;You must enter at least one field name&quot;))</span>
+        );
+<span class="nc" id="L212">        Platform.runLater(() -&gt; {</span>
+            // Need to run this async, otherwise the dialog does not work
+<span class="nc" id="L214">            ControlsFxVisualizer visualizer = new ControlsFxVisualizer();</span>
+<span class="nc" id="L215">            visualizer.setDecoration(new IconValidationDecorator());</span>
+<span class="nc" id="L216">            visualizer.initVisualization(fieldNameValidator.getValidationStatus(), fieldComboBox, true);</span>
+<span class="nc" id="L217">        });</span>
+<span class="nc" id="L218">    }</span>
+
+    private void performEdits() {
+<span class="nc" id="L221">        String toSet = setTextField.getText();</span>
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        if (toSet.isEmpty()) {</span>
+<span class="nc" id="L223">            toSet = null;</span>
+        }
+
+<span class="nc" id="L226">        String fieldName = fieldComboBox.getValue();</span>
+
+<span class="nc" id="L228">        NamedCompound compoundEdit = new NamedCompound(Localization.lang(&quot;Set field&quot;));</span>
+<span class="nc bnc" id="L229" title="All 2 branches missed.">        if (renameRadioButton.isSelected()) {</span>
+<span class="nc" id="L230">            compoundEdit.addEdit(massRenameField(entries, fieldName, renameTextField.getText(), overwriteCheckBox.isSelected()));</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        } else if (appendRadioButton.isSelected()) {</span>
+<span class="nc" id="L232">            compoundEdit.addEdit(massAppendField(entries, fieldName, appendTextField.getText()));</span>
+        } else {
+<span class="nc" id="L234">            compoundEdit.addEdit(massSetField(entries, fieldName,</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">                    setRadioButton.isSelected() ? toSet : null,</span>
+<span class="nc" id="L236">                    overwriteCheckBox.isSelected()));</span>
+        }
+<span class="nc" id="L238">        compoundEdit.end();</span>
+<span class="nc" id="L239">        bp.getUndoManager().addEdit(compoundEdit);</span>
+<span class="nc" id="L240">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

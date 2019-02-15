@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StandardFileType.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.util</a> &gt; <span class="el_source">StandardFileType.java</span></div><h1>StandardFileType.java</h1><pre class="source lang-java linenums">package org.jabref.logic.util;
+
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ *
+ * @implNote Enter the extensions without a dot! The dot is added implicitly.
+ */
+<span class="fc" id="L10">public enum StandardFileType implements FileType {</span>
+<span class="fc" id="L11">    BIBTEXML(&quot;bibx&quot;, &quot;xml&quot;),</span>
+<span class="fc" id="L12">    ENDNOTE(&quot;ref&quot;, &quot;enw&quot;),</span>
+<span class="fc" id="L13">    FREECITE(&quot;txt&quot;, &quot;xml&quot;),</span>
+<span class="fc" id="L14">    ISI(&quot;isi&quot;, &quot;txt&quot;),</span>
+<span class="fc" id="L15">    MEDLINE(&quot;nbib&quot;, &quot;xml&quot;),</span>
+<span class="fc" id="L16">    MEDLINE_PLAIN(&quot;nbib&quot;, &quot;txt&quot;),</span>
+<span class="fc" id="L17">    PUBMED(&quot;fcgi&quot;),</span>
+<span class="fc" id="L18">    SILVER_PLATTER(&quot;dat&quot;, &quot;txt&quot;),</span>
+
+<span class="fc" id="L20">    AUX(&quot;aux&quot;),</span>
+<span class="fc" id="L21">    BIBTEX_DB(&quot;bib&quot;),</span>
+<span class="fc" id="L22">    CITATION_STYLE(&quot;csl&quot;),</span>
+<span class="fc" id="L23">    CLASS(&quot;class&quot;),</span>
+<span class="fc" id="L24">    CSV(&quot;csv&quot;),</span>
+<span class="fc" id="L25">    HTML(&quot;html&quot;),</span>
+<span class="fc" id="L26">    JAR(&quot;jar&quot;),</span>
+<span class="fc" id="L27">    JAVA_KEYSTORE(&quot;jks&quot;),</span>
+<span class="fc" id="L28">    JSTYLE(&quot;jstyle&quot;),</span>
+<span class="fc" id="L29">    LAYOUT(&quot;layout&quot;),</span>
+<span class="fc" id="L30">    ODS(&quot;ods&quot;),</span>
+<span class="fc" id="L31">    PDF(&quot;pdf&quot;),</span>
+<span class="fc" id="L32">    RIS(&quot;ris&quot;),</span>
+<span class="fc" id="L33">    TERMS(&quot;terms&quot;),</span>
+<span class="fc" id="L34">    TXT(&quot;txt&quot;),</span>
+<span class="fc" id="L35">    RDF(&quot;rdf&quot;),</span>
+<span class="fc" id="L36">    RTF(&quot;rtf&quot;),</span>
+<span class="fc" id="L37">    SXC(&quot;sxc&quot;),</span>
+<span class="fc" id="L38">    XML(&quot;xml&quot;),</span>
+<span class="fc" id="L39">    JSON(&quot;json&quot;),</span>
+<span class="fc" id="L40">    XMP(&quot;xmp&quot;),</span>
+<span class="fc" id="L41">    ZIP(&quot;zip&quot;);</span>
+
+    private final List&lt;String&gt; extensions;
+
+<span class="fc" id="L45">    StandardFileType(String... extensions) {</span>
+<span class="fc" id="L46">        this.extensions = Arrays.asList(extensions);</span>
+<span class="fc" id="L47">    }</span>
+
+    @Override
+    public List&lt;String&gt; getExtensions() {
+<span class="fc" id="L51">        return extensions;</span>
+    }
+
+    public static FileType newFileType(String... extensions) {
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        for (int i = 0; i &lt; extensions.length; i++) {</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">            if (extensions[i].contains(&quot;.&quot;)) {</span>
+<span class="nc" id="L57">                extensions[i] = extensions[i].substring(extensions[i].indexOf('.') + 1);</span>
+            }
+        }
+<span class="nc" id="L60">        return () -&gt; Arrays.asList(extensions);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

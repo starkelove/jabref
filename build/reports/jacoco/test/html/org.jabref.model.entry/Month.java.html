@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Month.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model.entry</a> &gt; <span class="el_source">Month.java</span></div><h1>Month.java</h1><pre class="source lang-java linenums">package org.jabref.model.entry;
+
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Locale;
+import java.util.Optional;
+
+import org.jabref.model.strings.StringUtil;
+
+/**
+ * Represents a Month of the Year.
+ */
+<span class="fc" id="L14">public enum Month {</span>
+
+<span class="fc" id="L16">    JANUARY(&quot;January&quot;, &quot;jan&quot;, 1),</span>
+<span class="fc" id="L17">    FEBRUARY(&quot;February&quot;, &quot;feb&quot;, 2),</span>
+<span class="fc" id="L18">    MARCH(&quot;March&quot;, &quot;mar&quot;, 3),</span>
+<span class="fc" id="L19">    APRIL(&quot;April&quot;, &quot;apr&quot;, 4),</span>
+<span class="fc" id="L20">    MAY(&quot;May&quot;, &quot;may&quot;, 5),</span>
+<span class="fc" id="L21">    JUNE(&quot;June&quot;, &quot;jun&quot;, 6),</span>
+<span class="fc" id="L22">    JULY(&quot;July&quot;, &quot;jul&quot;, 7),</span>
+<span class="fc" id="L23">    AUGUST(&quot;August&quot;, &quot;aug&quot;, 8),</span>
+<span class="fc" id="L24">    SEPTEMBER(&quot;September&quot;, &quot;sep&quot;, 9),</span>
+<span class="fc" id="L25">    OCTOBER(&quot;October&quot;, &quot;oct&quot;, 10),</span>
+<span class="fc" id="L26">    NOVEMBER(&quot;November&quot;, &quot;nov&quot;, 11),</span>
+<span class="fc" id="L27">    DECEMBER(&quot;December&quot;, &quot;dec&quot;, 12);</span>
+
+    private final String fullName;
+    private final String shortName;
+    private final String twoDigitNumber;
+    private final int number;
+
+<span class="fc" id="L34">    Month(String fullName, String shortName, int number) {</span>
+<span class="fc" id="L35">        this.fullName = fullName;</span>
+<span class="fc" id="L36">        this.shortName = shortName;</span>
+<span class="fc" id="L37">        this.twoDigitNumber = String.format(&quot;%02d&quot;, number);</span>
+<span class="fc" id="L38">        this.number = number;</span>
+<span class="fc" id="L39">    }</span>
+
+
+    /**
+     * Find month by one-based number.
+     * If the number is not in the valid range, then an empty Optional is returned.
+     *
+     * @param number 1-12 is valid
+     */
+    public static Optional&lt;Month&gt; getMonthByNumber(int number) {
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        for (Month month : Month.values()) {</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">            if (month.number == number) {</span>
+<span class="fc" id="L51">                return Optional.of(month);</span>
+            }
+        }
+<span class="fc" id="L54">        return Optional.empty();</span>
+    }
+
+    /**
+     * Find month by shortName (3 letters) case insensitive.
+     * If no matching month is found, then an empty Optional is returned.
+     *
+     * @param shortName &quot;jan&quot;, &quot;feb&quot;, ...
+     */
+    public static Optional&lt;Month&gt; getMonthByShortName(String shortName) {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        for (Month month : Month.values()) {</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">            if (month.shortName.equalsIgnoreCase(shortName)) {</span>
+<span class="fc" id="L66">                return Optional.of(month);</span>
+            }
+        }
+<span class="fc" id="L69">        return Optional.empty();</span>
+    }
+
+    /**
+     * This method accepts three types of months:
+     * - Single and Double Digit months from 1 to 12 (01 to 12)
+     * - 3 Digit BibTeX strings (jan, feb, mar...) possibly with # prepended
+     * - Full English Month identifiers.
+     *
+     * @param value the given value
+     * @return the corresponding Month instance
+     */
+    public static Optional&lt;Month&gt; parse(String value) {
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        if (StringUtil.isBlank(value)) {</span>
+<span class="fc" id="L83">            return Optional.empty();</span>
+        }
+
+        // Much more liberal matching covering most known abbreviations etc.
+<span class="fc" id="L87">        String testString = value.replace(&quot;#&quot;, &quot;&quot;).trim();</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (testString.length() &gt; 3) {</span>
+<span class="fc" id="L89">            testString = testString.substring(0, 3);</span>
+        }
+
+<span class="fc" id="L92">        Optional&lt;Month&gt; month = Month.getMonthByShortName(testString);</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (month.isPresent()) {</span>
+<span class="fc" id="L94">            return month;</span>
+        }
+
+<span class="fc" id="L97">        month = Month.parseGermanShortMonth(testString);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (month.isPresent()) {</span>
+<span class="fc" id="L99">            return month;</span>
+        }
+
+        try {
+<span class="fc" id="L103">            int number = Integer.parseInt(value);</span>
+<span class="fc" id="L104">            return Month.getMonthByNumber(number);</span>
+<span class="fc" id="L105">        } catch (NumberFormatException e) {</span>
+<span class="fc" id="L106">            return Optional.empty();</span>
+        }
+    }
+
+    /**
+     * Parses a month having the string in German standard form such as
+     * &quot;Oktober&quot; or in German short form such as &quot;Okt&quot;
+     *
+     * @param value,
+     *            a String that represents a month in German form
+     * @return the corresponding month instance, empty if input is not in German
+     *         form
+     */
+    private static Optional&lt;Month&gt; parseGermanShortMonth(String value) {
+<span class="pc bpc" id="L120" title="1 of 6 branches missed.">        if (&quot;Mae&quot;.equalsIgnoreCase(value) || &quot;Maerz&quot;.equalsIgnoreCase(value) || &quot;Mär&quot;.equalsIgnoreCase(value)) {</span>
+<span class="fc" id="L121">            return Month.getMonthByNumber(3);</span>
+        }
+
+        try {
+<span class="fc" id="L125">            YearMonth yearMonth = YearMonth.parse(&quot;1969-&quot; + StringUtil.capitalizeFirst(value),</span>
+<span class="fc" id="L126">                    DateTimeFormatter.ofPattern(&quot;yyyy-MMM&quot;, Locale.GERMAN));</span>
+<span class="fc" id="L127">            return Month.getMonthByNumber(yearMonth.getMonthValue());</span>
+<span class="fc" id="L128">        } catch (DateTimeParseException e) {</span>
+<span class="fc" id="L129">            return Optional.empty();</span>
+        }
+    }
+
+    /**
+     * Returns the name of a Month in a short (3-letter) format. (jan, feb, mar, ...)
+     *
+     * @return 3-letter identifier for a Month
+     */
+    public String getShortName() {
+<span class="fc" id="L139">        return shortName;</span>
+    }
+
+    /**
+     * Returns the month in JabRef format. The format is the short 3-digit name surrounded by a '#'.
+     * Example: #jan#, #feb#, etc.
+     *
+     * See https://github.com/JabRef/jabref/issues/263#issuecomment-151246595 for a discussion on that thing.
+     * This seems to be an &lt;em&gt;invalid&lt;/em&gt; format in terms of plain BiBTeX, but a &lt;em&gt;valid&lt;/em&gt; format in the case of JabRef
+     *
+     * @return Month in JabRef format
+     */
+    public String getJabRefFormat() {
+<span class="fc" id="L152">        return String.format(&quot;#%s#&quot;, shortName);</span>
+    }
+
+    /**
+     * Returns the number of the Month in a 1-indexed fashion: 1 -&gt; January, 2 -&gt; February etc.
+     * @return number of the month in the Year
+     */
+    public int getNumber() {
+<span class="fc" id="L160">        return number;</span>
+    }
+
+    /**
+     * Returns the name of the long in unabbreviated english.
+     * @return Month
+     */
+    public String getFullName() {
+<span class="fc" id="L168">        return fullName;</span>
+    }
+
+    /**
+     * Returns the number of the Month in a 1-indexed fashion using exactly two digits: 01 -&gt; January, 02 -&gt; February...
+     * @return number of the month in the Year with two digits
+     */
+    public String getTwoDigitNumber() {
+<span class="fc" id="L176">        return twoDigitNumber;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

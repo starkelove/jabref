@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChainNode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.model</a> &gt; <span class="el_source">ChainNode.java</span></div><h1>ChainNode.java</h1><pre class="source lang-java linenums">package org.jabref.model;
+
+import java.util.Objects;
+import java.util.Optional;
+
+/**
+ * Represents a node in a chain.
+ * We view a chain as a vertical hierarchy and thus refer to the previous node as parent and the next node is a child.
+ * &lt;p&gt;
+ * In usual implementations, nodes function as wrappers around a data object. Thus normally they have a value property
+ * which allows access to the value stored in the node.
+ * In contrast to this approach, the ChainNode&lt;T&gt; class is designed to be used as a base class which provides the
+ * tree traversing functionality via inheritance.
+ * &lt;p&gt;
+ * Example usage:
+ * private class BasicChainNode extends ChainNode&lt;BasicChainNode&gt; {
+ * public BasicChainNode() {
+ * super(BasicChainNode.class);
+ * }
+ * }
+ *
+ * @param &lt;T&gt; the type of the class
+ */
+@SuppressWarnings(&quot;unchecked&quot;) // We use some explicit casts of the form &quot;(T) this&quot;. The constructor ensures that this cast is valid.
+public abstract class ChainNode&lt;T extends ChainNode&lt;T&gt;&gt; {
+
+    /**
+     * This node's parent, or null if this node has no parent
+     */
+    private T parent;
+    /**
+     * This node's child, or null if this node has no child
+     */
+    private T child;
+
+    /**
+     * Constructs a chain node without parent and no child.
+     *
+     * @param derivingClass class deriving from TreeNode&lt;T&gt;. It should always be &quot;T.class&quot;.
+     *                      We need this parameter since it is hard to get this information by other means.
+     */
+<span class="fc" id="L42">    public ChainNode(Class&lt;T&gt; derivingClass) {</span>
+<span class="fc" id="L43">        parent = null;</span>
+<span class="fc" id="L44">        child = null;</span>
+
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        if (!derivingClass.isInstance(this)) {</span>
+<span class="nc" id="L47">            throw new UnsupportedOperationException(&quot;The class extending ChainNode&lt;T&gt; has to derive from T&quot;);</span>
+        }
+<span class="fc" id="L49">    }</span>
+
+    /**
+     * Returns this node's parent or an empty Optional if this node has no parent.
+     *
+     * @return this node's parent T, or an empty Optional if this node has no parent
+     */
+    public Optional&lt;T&gt; getParent() {
+<span class="fc" id="L57">        return Optional.ofNullable(parent);</span>
+    }
+
+    /**
+     * Sets the parent node of this node.
+     * &lt;p&gt;
+     * This method does not set this node as the child of the new parent nor does it remove this node
+     * from the old parent. You should probably call {@link #moveTo(ChainNode)} to change the chain.
+     *
+     * @param parent the new parent
+     */
+    protected void setParent(T parent) {
+<span class="fc" id="L69">        this.parent = Objects.requireNonNull(parent);</span>
+<span class="fc" id="L70">    }</span>
+
+    /**
+     * Returns this node's child or an empty Optional if this node has no child.
+     *
+     * @return this node's child T, or an empty Optional if this node has no child
+     */
+    public Optional&lt;T&gt; getChild() {
+<span class="fc" id="L78">        return Optional.ofNullable(child);</span>
+    }
+
+    /**
+     * Adds the node as the child. Also sets the parent of the given node to this node.
+     * The given node is not allowed to already be in a tree (i.e. it has to have no parent).
+     *
+     * @param child the node to add as child
+     * @return the child node
+     * @throws UnsupportedOperationException if the given node has already a parent
+     */
+    public T setChild(T child) {
+<span class="fc" id="L90">        Objects.requireNonNull(child);</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (child.getParent().isPresent()) {</span>
+<span class="nc" id="L92">            throw new UnsupportedOperationException(&quot;Cannot add a node which already has a parent, use moveTo instead&quot;);</span>
+        }
+
+<span class="fc" id="L95">        child.setParent((T) this);</span>
+<span class="fc" id="L96">        this.child = child;</span>
+
+<span class="fc" id="L98">        return child;</span>
+    }
+
+    /**
+     * Removes this node from its parent and makes it a child of the specified node.
+     * In this way the whole subchain based at this node is moved to the given node.
+     *
+     * @param target      the new parent
+     * @throws NullPointerException           if target is null
+     * @throws UnsupportedOperationException  if target is an descendant of this node
+     */
+    public void moveTo(T target) {
+<span class="nc" id="L110">        Objects.requireNonNull(target);</span>
+
+        // Check that the target node is not an ancestor of this node, because this would create loops in the tree
+<span class="nc bnc" id="L113" title="All 2 branches missed.">        if (this.isAncestorOf(target)) {</span>
+<span class="nc" id="L114">            throw new UnsupportedOperationException(&quot;the target cannot be a descendant of this node&quot;);</span>
+        }
+
+        // Remove from previous parent
+<span class="nc" id="L118">        getParent().ifPresent(oldParent -&gt; oldParent.removeChild());</span>
+
+        // Add as child
+<span class="nc" id="L121">        target.setChild((T) this);</span>
+<span class="nc" id="L122">    }</span>
+
+    /**
+     * Removes the child from this node's child list, giving it an empty parent.
+     *
+     */
+    public void removeChild() {
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        if (child != null) {</span>
+            // NPE if this is ever called
+<span class="nc" id="L131">            child.setParent(null);</span>
+        }
+<span class="nc" id="L133">        child = null;</span>
+<span class="nc" id="L134">    }</span>
+
+    /**
+     * Returns true if this node is an ancestor of the given node.
+     * &lt;p&gt;
+     * A node is considered an ancestor of itself.
+     *
+     * @param anotherNode node to test
+     * @return true if anotherNode is a descendant of this node
+     * @throws NullPointerException if anotherNode is null
+     */
+    public boolean isAncestorOf(T anotherNode) {
+<span class="nc" id="L146">        Objects.requireNonNull(anotherNode);</span>
+
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        if (anotherNode == this) {</span>
+<span class="nc" id="L149">            return true;</span>
+        } else {
+<span class="nc" id="L151">            return child.isAncestorOf(anotherNode);</span>
+        }
+    }
+
+    /**
+     * Adds the given node at the end of the chain.
+     * E.g., &quot;A &gt; B &gt; C&quot; + &quot;D&quot; -&gt; &quot;A &gt; B &gt; C &gt; D&quot;.
+     */
+    public void addAtEnd(T node) {
+<span class="fc bfc" id="L160" title="All 2 branches covered.">        if (child == null) {</span>
+<span class="fc" id="L161">            setChild(node);</span>
+        } else {
+<span class="fc" id="L163">            child.addAtEnd(node);</span>
+        }
+<span class="fc" id="L165">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

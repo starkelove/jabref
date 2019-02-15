@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ACS.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.importer.fetcher</a> &gt; <span class="el_source">ACS.java</span></div><h1>ACS.java</h1><pre class="source lang-java linenums">package org.jabref.logic.importer.fetcher;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jabref.logic.importer.FulltextFetcher;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+import org.jabref.model.entry.identifier.DOI;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * FulltextFetcher implementation that attempts to find a PDF URL at ACS.
+ */
+<span class="fc" id="L22">public class ACS implements FulltextFetcher {</span>
+<span class="fc" id="L23">    private static final Logger LOGGER = LoggerFactory.getLogger(ACS.class);</span>
+
+    private static final String SOURCE = &quot;https://pubs.acs.org/doi/abs/%s&quot;;
+
+    /**
+     * Tries to find a fulltext URL for a given BibTex entry.
+     *
+     * Currently only uses the DOI if found.
+     *
+     * @param entry The Bibtex entry
+     * @return The fulltext PDF URL Optional, if found, or an empty Optional if not found.
+     * @throws NullPointerException if no BibTex entry is given
+     * @throws java.io.IOException
+     */
+    @Override
+    public Optional&lt;URL&gt; findFullText(BibEntry entry) throws IOException {
+<span class="fc" id="L39">        Objects.requireNonNull(entry);</span>
+<span class="fc" id="L40">        Optional&lt;URL&gt; pdfLink = Optional.empty();</span>
+
+        // DOI search
+<span class="fc" id="L43">        Optional&lt;DOI&gt; doi = entry.getField(FieldName.DOI).flatMap(DOI::parse);</span>
+
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        if (doi.isPresent()) {</span>
+<span class="nc" id="L46">            String source = String.format(SOURCE, doi.get().getDOI());</span>
+            // Retrieve PDF link
+<span class="nc" id="L48">            Document html = Jsoup.connect(source).ignoreHttpErrors(true).get();</span>
+<span class="nc" id="L49">            Element link = html.select(&quot;.pdf-high-res a&quot;).first();</span>
+
+<span class="nc bnc" id="L51" title="All 2 branches missed.">            if (link != null) {</span>
+<span class="nc" id="L52">                LOGGER.info(&quot;Fulltext PDF found @ ACS.&quot;);</span>
+<span class="nc" id="L53">                pdfLink = Optional.of(new URL(source.replaceFirst(&quot;/abs/&quot;, &quot;/pdf/&quot;)));</span>
+            }
+        }
+<span class="fc" id="L56">        return pdfLink;</span>
+    }
+
+    @Override
+    public TrustLevel getTrustLevel() {
+<span class="nc" id="L61">        return TrustLevel.PUBLISHER;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

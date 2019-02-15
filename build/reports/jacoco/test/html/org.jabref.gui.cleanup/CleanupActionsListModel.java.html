@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CleanupActionsListModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.cleanup</a> &gt; <span class="el_source">CleanupActionsListModel.java</span></div><h1>CleanupActionsListModel.java</h1><pre class="source lang-java linenums">package org.jabref.gui.cleanup;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import javax.swing.ListModel;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
+
+import org.jabref.model.cleanup.FieldFormatterCleanup;
+import org.jabref.model.cleanup.FieldFormatterCleanups;
+
+public class CleanupActionsListModel implements ListModel&lt;FieldFormatterCleanup&gt; {
+
+    private List&lt;FieldFormatterCleanup&gt; cleanupActions;
+<span class="fc" id="L17">    private final List&lt;ListDataListener&gt; listeners = new ArrayList&lt;&gt;();</span>
+
+
+<span class="fc" id="L20">    public CleanupActionsListModel(List&lt;FieldFormatterCleanup&gt; cleanupAction) {</span>
+<span class="fc" id="L21">        Objects.requireNonNull(cleanupAction);</span>
+<span class="fc" id="L22">        this.cleanupActions = cleanupAction;</span>
+
+<span class="fc" id="L24">    }</span>
+
+    public void addCleanupAction(FieldFormatterCleanup action) {
+<span class="nc bnc" id="L27" title="All 2 branches missed.">        if (!cleanupActions.contains(action)) {</span>
+<span class="nc" id="L28">            cleanupActions.add(action);</span>
+<span class="nc bnc" id="L29" title="All 2 branches missed.">            for (ListDataListener listener : listeners) {</span>
+<span class="nc" id="L30">                listener.intervalAdded(new ListDataEvent(action, ListDataEvent.INTERVAL_ADDED, cleanupActions.size(),</span>
+<span class="nc" id="L31">                        cleanupActions.size()));</span>
+<span class="nc" id="L32">            }</span>
+        }
+<span class="nc" id="L34">    }</span>
+
+    /**
+     * Removes the action at the specified index from the list.
+     * Removal is only done when index {@code &gt;=0} and index {@code&lt;=} list size
+     * @param index The index to remove
+     */
+    public void removeAtIndex(int index) {
+
+<span class="fc bfc" id="L43" title="All 4 branches covered.">        if ((index &gt;= 0) &amp;&amp; (index &lt; cleanupActions.size())) {</span>
+<span class="fc" id="L44">            FieldFormatterCleanup action = cleanupActions.remove(index);</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">            for (ListDataListener listener : listeners) {</span>
+<span class="fc" id="L46">                listener.intervalRemoved(new ListDataEvent(action, ListDataEvent.INTERVAL_REMOVED, index, index));</span>
+<span class="fc" id="L47">            }</span>
+        }
+<span class="fc" id="L49">    }</span>
+
+    public List&lt;FieldFormatterCleanup&gt; getAllActions() {
+<span class="fc" id="L52">        return cleanupActions;</span>
+    }
+
+    @Override
+    public int getSize() {
+<span class="nc" id="L57">        return cleanupActions.size();</span>
+    }
+
+    @Override
+    public FieldFormatterCleanup getElementAt(int index) {
+<span class="nc" id="L62">        return cleanupActions.get(index);</span>
+    }
+
+    @Override
+    public void addListDataListener(ListDataListener l) {
+<span class="fc" id="L67">        listeners.add(l);</span>
+<span class="fc" id="L68">    }</span>
+
+    @Override
+    public void removeListDataListener(ListDataListener l) {
+<span class="nc" id="L72">        listeners.remove(l);</span>
+<span class="nc" id="L73">    }</span>
+
+    public void reset(FieldFormatterCleanups defaultFormatters) {
+<span class="fc" id="L76">        cleanupActions = new ArrayList&lt;&gt;(defaultFormatters.getConfiguredActions());</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        for (ListDataListener listener : listeners) {</span>
+<span class="fc" id="L78">            listener.contentsChanged(new ListDataEvent(this, ListDataEvent.CONTENTS_CHANGED, 0, cleanupActions.size()));</span>
+<span class="fc" id="L79">        }</span>
+<span class="fc" id="L80">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

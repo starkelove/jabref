@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.jabref.cli.JabRefCLITest" tests="5" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:25:13" hostname="n184-p67.eduroam.kth.se" time="0.03">
+  <properties/>
+  <testcase name="parsingShortOptions()" classname="org.jabref.cli.JabRefCLITest" time="0.026"/>
+  <testcase name="recognizesImportBibtexLong()" classname="org.jabref.cli.JabRefCLITest" time="0.001"/>
+  <testcase name="preferencesExport()" classname="org.jabref.cli.JabRefCLITest" time="0.0"/>
+  <testcase name="parsingLongOptions()" classname="org.jabref.cli.JabRefCLITest" time="0.001"/>
+  <testcase name="recognizesImportBibtex()" classname="org.jabref.cli.JabRefCLITest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

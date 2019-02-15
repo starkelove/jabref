@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SharedDatabasePreferences.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.shared.prefs</a> &gt; <span class="el_source">SharedDatabasePreferences.java</span></div><h1>SharedDatabasePreferences.java</h1><pre class="source lang-java linenums">package org.jabref.logic.shared.prefs;
+
+import java.io.UnsupportedEncodingException;
+import java.security.GeneralSecurityException;
+import java.util.Optional;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
+
+import org.jabref.JabRefMain;
+import org.jabref.logic.shared.security.Password;
+import org.jabref.model.database.shared.DatabaseConnectionProperties;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Stores and reads persistent data for {@link org.jabref.gui.shared.ConnectToSharedDatabaseDialog}.
+ */
+<span class="nc bnc" id="L19" title="All 2 branches missed.">public class SharedDatabasePreferences {</span>
+
+<span class="nc" id="L21">    private static final Logger LOGGER = LoggerFactory.getLogger(SharedDatabasePreferences.class);</span>
+
+    private static final String DEFAULT_NODE = &quot;default&quot;;
+    private static final String PARENT_NODE = &quot;jabref-shared&quot;;
+
+    private static final String SHARED_DATABASE_TYPE = &quot;sharedDatabaseType&quot;;
+    private static final String SHARED_DATABASE_HOST = &quot;sharedDatabaseHost&quot;;
+    private static final String SHARED_DATABASE_PORT = &quot;sharedDatabasePort&quot;;
+    private static final String SHARED_DATABASE_NAME = &quot;sharedDatabaseName&quot;;
+    private static final String SHARED_DATABASE_USER = &quot;sharedDatabaseUser&quot;;
+    private static final String SHARED_DATABASE_PASSWORD = &quot;sharedDatabasePassword&quot;;
+    private static final String SHARED_DATABASE_REMEMBER_PASSWORD = &quot;sharedDatabaseRememberPassword&quot;;
+    private static final String SHARED_DATABASE_USE_SSL = &quot;sharedDatabaseUseSSL&quot;;
+    private static final String SHARED_DATABASE_KEYSTORE_FILE = &quot;sharedDatabaseKeyStoreFile&quot;;
+    private static final String SHARED_DATABASE_SERVER_TIMEZONE = &quot;sharedDatabaseServerTimezone&quot;;
+
+    // This {@link Preferences} is used only for things which should not appear in real JabRefPreferences due to security reasons.
+    private final Preferences internalPrefs;
+
+    public SharedDatabasePreferences() {
+<span class="nc" id="L41">        this(DEFAULT_NODE);</span>
+<span class="nc" id="L42">    }</span>
+
+<span class="nc" id="L44">    public SharedDatabasePreferences(String sharedDatabaseID) {</span>
+<span class="nc" id="L45">        internalPrefs = Preferences.userNodeForPackage(JabRefMain.class).parent().node(PARENT_NODE).node(sharedDatabaseID);</span>
+<span class="nc" id="L46">    }</span>
+
+    public Optional&lt;String&gt; getType() {
+<span class="nc" id="L49">        return getOptionalValue(SHARED_DATABASE_TYPE);</span>
+    }
+
+    public Optional&lt;String&gt; getHost() {
+<span class="nc" id="L53">        return getOptionalValue(SHARED_DATABASE_HOST);</span>
+    }
+
+    public Optional&lt;String&gt; getPort() {
+<span class="nc" id="L57">        return getOptionalValue(SHARED_DATABASE_PORT);</span>
+    }
+
+    public Optional&lt;String&gt; getName() {
+<span class="nc" id="L61">        return getOptionalValue(SHARED_DATABASE_NAME);</span>
+    }
+
+    public Optional&lt;String&gt; getUser() {
+<span class="nc" id="L65">        return getOptionalValue(SHARED_DATABASE_USER);</span>
+    }
+
+    public Optional&lt;String&gt; getPassword() {
+<span class="nc" id="L69">        return getOptionalValue(SHARED_DATABASE_PASSWORD);</span>
+    }
+
+    public Optional&lt;String&gt; getKeyStoreFile() {
+<span class="nc" id="L73">        return getOptionalValue(SHARED_DATABASE_KEYSTORE_FILE);</span>
+    }
+
+    public Optional&lt;String&gt; getServerTimezone() {
+<span class="nc" id="L77">        return getOptionalValue(SHARED_DATABASE_SERVER_TIMEZONE);</span>
+    }
+
+    public boolean getRememberPassword() {
+<span class="nc" id="L81">        return internalPrefs.getBoolean(SHARED_DATABASE_REMEMBER_PASSWORD, false);</span>
+    }
+
+    public boolean isUseSSL() {
+<span class="nc" id="L85">        return internalPrefs.getBoolean(SHARED_DATABASE_USE_SSL, false);</span>
+    }
+
+    public void setType(String type) {
+<span class="nc" id="L89">        internalPrefs.put(SHARED_DATABASE_TYPE, type);</span>
+<span class="nc" id="L90">    }</span>
+
+    public void setHost(String host) {
+<span class="nc" id="L93">        internalPrefs.put(SHARED_DATABASE_HOST, host);</span>
+<span class="nc" id="L94">    }</span>
+
+    public void setPort(String port) {
+<span class="nc" id="L97">        internalPrefs.put(SHARED_DATABASE_PORT, port);</span>
+<span class="nc" id="L98">    }</span>
+
+    public void setName(String name) {
+<span class="nc" id="L101">        internalPrefs.put(SHARED_DATABASE_NAME, name);</span>
+<span class="nc" id="L102">    }</span>
+
+    public void setUser(String user) {
+<span class="nc" id="L105">        internalPrefs.put(SHARED_DATABASE_USER, user);</span>
+<span class="nc" id="L106">    }</span>
+
+    public void setPassword(String password) {
+<span class="nc" id="L109">        internalPrefs.put(SHARED_DATABASE_PASSWORD, password);</span>
+<span class="nc" id="L110">    }</span>
+
+    public void setRememberPassword(boolean rememberPassword) {
+<span class="nc" id="L113">        internalPrefs.putBoolean(SHARED_DATABASE_REMEMBER_PASSWORD, rememberPassword);</span>
+<span class="nc" id="L114">    }</span>
+
+    public void setUseSSL(boolean useSSL) {
+<span class="nc" id="L117">        internalPrefs.putBoolean(SHARED_DATABASE_USE_SSL, useSSL);</span>
+<span class="nc" id="L118">    }</span>
+
+    public void setKeystoreFile(String keystoreFile) {
+<span class="nc" id="L121">        internalPrefs.put(SHARED_DATABASE_KEYSTORE_FILE, keystoreFile);</span>
+<span class="nc" id="L122">    }</span>
+
+    public void setServerTimezone(String serverTimezone) {
+<span class="nc" id="L125">        internalPrefs.put(SHARED_DATABASE_SERVER_TIMEZONE, serverTimezone);</span>
+<span class="nc" id="L126">    }</span>
+
+    public void clearPassword() {
+<span class="nc" id="L129">        internalPrefs.remove(SHARED_DATABASE_PASSWORD);</span>
+<span class="nc" id="L130">    }</span>
+
+    public void clear() throws BackingStoreException {
+<span class="nc" id="L133">        internalPrefs.clear();</span>
+<span class="nc" id="L134">    }</span>
+
+    private Optional&lt;String&gt; getOptionalValue(String key) {
+<span class="nc" id="L137">        return Optional.ofNullable(internalPrefs.get(key, null));</span>
+    }
+
+    public static void clearAll() throws BackingStoreException {
+<span class="nc" id="L141">        Preferences.userNodeForPackage(JabRefMain.class).parent().node(PARENT_NODE).clear();</span>
+<span class="nc" id="L142">    }</span>
+
+    public void putAllDBMSConnectionProperties(DatabaseConnectionProperties properties) {
+<span class="nc bnc" id="L145" title="All 4 branches missed.">        assert (properties.isValid());</span>
+
+<span class="nc" id="L147">        setType(properties.getType().toString());</span>
+<span class="nc" id="L148">        setHost(properties.getHost());</span>
+<span class="nc" id="L149">        setPort(String.valueOf(properties.getPort()));</span>
+<span class="nc" id="L150">        setName(properties.getDatabase());</span>
+<span class="nc" id="L151">        setUser(properties.getUser());</span>
+<span class="nc" id="L152">        setUseSSL(properties.isUseSSL());</span>
+<span class="nc" id="L153">        setKeystoreFile(properties.getKeyStore());</span>
+<span class="nc" id="L154">        setServerTimezone(properties.getServerTimezone());</span>
+
+        try {
+<span class="nc" id="L157">            setPassword(new Password(properties.getPassword().toCharArray(), properties.getUser()).encrypt());</span>
+<span class="nc" id="L158">        } catch (GeneralSecurityException | UnsupportedEncodingException e) {</span>
+<span class="nc" id="L159">            LOGGER.error(&quot;Could not store the password due to encryption problems.&quot;, e);</span>
+<span class="nc" id="L160">        }</span>
+<span class="nc" id="L161">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

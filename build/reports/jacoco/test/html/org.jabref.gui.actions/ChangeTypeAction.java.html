@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChangeTypeAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.actions</a> &gt; <span class="el_source">ChangeTypeAction.java</span></div><h1>ChangeTypeAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.actions;
+
+import java.awt.event.ActionEvent;
+import java.util.Collections;
+import java.util.List;
+
+import javax.swing.AbstractAction;
+import javax.swing.undo.UndoManager;
+
+import javafx.scene.control.MenuItem;
+
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.undo.NamedCompound;
+import org.jabref.gui.undo.UndoableChangeType;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.EntryType;
+
+public class ChangeTypeAction extends AbstractAction {
+
+    private final String type;
+    private final BasePanel panel;
+
+    public ChangeTypeAction(EntryType type, BasePanel bp) {
+<span class="nc" id="L25">        super(type.getName());</span>
+<span class="nc" id="L26">        this.type = type.getName();</span>
+<span class="nc" id="L27">        panel = bp;</span>
+<span class="nc" id="L28">    }</span>
+
+    @Override
+    public void actionPerformed(ActionEvent evt) {
+<span class="nc" id="L32">        panel.changeTypeOfSelectedEntries(type);</span>
+<span class="nc" id="L33">    }</span>
+
+    public static MenuItem as(EntryType type, BibEntry entry, UndoManager undoManager) {
+<span class="nc" id="L36">        return as(type, Collections.singletonList(entry), undoManager);</span>
+    }
+
+    public static MenuItem as(EntryType type, List&lt;BibEntry&gt; entries, UndoManager undoManager) {
+<span class="nc" id="L40">        MenuItem menuItem = new MenuItem(type.getName());</span>
+<span class="nc" id="L41">        menuItem.setOnAction(event -&gt; {</span>
+<span class="nc" id="L42">            NamedCompound compound = new NamedCompound(Localization.lang(&quot;Change entry type&quot;));</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">            for (BibEntry entry : entries) {</span>
+<span class="nc" id="L44">                entry.setType(type)</span>
+<span class="nc" id="L45">                        .ifPresent(change -&gt; compound.addEdit(new UndoableChangeType(change)));</span>
+<span class="nc" id="L46">            }</span>
+
+<span class="nc" id="L48">            undoManager.addEdit(compound);</span>
+<span class="nc" id="L49">        });</span>
+<span class="nc" id="L50">        return menuItem;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

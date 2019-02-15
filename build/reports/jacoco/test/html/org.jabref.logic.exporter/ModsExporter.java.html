@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ModsExporter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.logic.exporter</a> &gt; <span class="el_source">ModsExporter.java</span></div><h1>ModsExporter.java</h1><pre class="source lang-java linenums">package org.jabref.logic.exporter;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.namespace.QName;
+
+import org.jabref.logic.importer.fileformat.mods.AbstractDefinition;
+import org.jabref.logic.importer.fileformat.mods.CodeOrText;
+import org.jabref.logic.importer.fileformat.mods.DateDefinition;
+import org.jabref.logic.importer.fileformat.mods.DetailDefinition;
+import org.jabref.logic.importer.fileformat.mods.ExtentDefinition;
+import org.jabref.logic.importer.fileformat.mods.GenreDefinition;
+import org.jabref.logic.importer.fileformat.mods.IdentifierDefinition;
+import org.jabref.logic.importer.fileformat.mods.IssuanceDefinition;
+import org.jabref.logic.importer.fileformat.mods.LanguageDefinition;
+import org.jabref.logic.importer.fileformat.mods.LanguageTermDefinition;
+import org.jabref.logic.importer.fileformat.mods.LocationDefinition;
+import org.jabref.logic.importer.fileformat.mods.ModsCollectionDefinition;
+import org.jabref.logic.importer.fileformat.mods.ModsDefinition;
+import org.jabref.logic.importer.fileformat.mods.NameDefinition;
+import org.jabref.logic.importer.fileformat.mods.NamePartDefinition;
+import org.jabref.logic.importer.fileformat.mods.NoteDefinition;
+import org.jabref.logic.importer.fileformat.mods.OriginInfoDefinition;
+import org.jabref.logic.importer.fileformat.mods.PartDefinition;
+import org.jabref.logic.importer.fileformat.mods.PhysicalLocationDefinition;
+import org.jabref.logic.importer.fileformat.mods.PlaceDefinition;
+import org.jabref.logic.importer.fileformat.mods.PlaceTermDefinition;
+import org.jabref.logic.importer.fileformat.mods.RelatedItemDefinition;
+import org.jabref.logic.importer.fileformat.mods.StringPlusLanguage;
+import org.jabref.logic.importer.fileformat.mods.StringPlusLanguagePlusAuthority;
+import org.jabref.logic.importer.fileformat.mods.StringPlusLanguagePlusSupplied;
+import org.jabref.logic.importer.fileformat.mods.SubjectDefinition;
+import org.jabref.logic.importer.fileformat.mods.TitleInfoDefinition;
+import org.jabref.logic.importer.fileformat.mods.TypeOfResourceDefinition;
+import org.jabref.logic.importer.fileformat.mods.UrlDefinition;
+import org.jabref.logic.util.StandardFileType;
+import org.jabref.model.database.BibDatabaseContext;
+import org.jabref.model.entry.BibEntry;
+import org.jabref.model.entry.FieldName;
+
+
+/**
+ * TemplateExporter for exporting in MODS XML format.
+ */
+class ModsExporter extends Exporter {
+
+    protected static final String MODS_NAMESPACE_URI = &quot;http://www.loc.gov/mods/v3&quot;;
+    private static final String MINUS = &quot;-&quot;;
+    private static final String DOUBLE_MINUS = &quot;--&quot;;
+    private static final String MODS_SCHEMA_LOCATION = &quot;http://www.loc.gov/standards/mods/v3/mods-3-6.xsd&quot;;
+    private JAXBContext context;
+
+    public ModsExporter() {
+<span class="fc" id="L64">        super(&quot;mods&quot;, &quot;MODS&quot;, StandardFileType.XML);</span>
+<span class="fc" id="L65">    }</span>
+
+    @Override
+    public void export(final BibDatabaseContext databaseContext, final Path file, final Charset encoding,
+                       List&lt;BibEntry&gt; entries) throws SaveException, IOException {
+<span class="fc" id="L70">        Objects.requireNonNull(databaseContext);</span>
+<span class="fc" id="L71">        Objects.requireNonNull(entries);</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (entries.isEmpty()) { // Only export if entries exist</span>
+<span class="fc" id="L73">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L77">            ModsCollectionDefinition modsCollection = new ModsCollectionDefinition();</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">            for (BibEntry bibEntry : entries) {</span>
+<span class="fc" id="L79">                ModsDefinition mods = new ModsDefinition();</span>
+<span class="fc" id="L80">                bibEntry.getCiteKeyOptional().ifPresent(citeKey -&gt; addIdentifier(&quot;citekey&quot;, citeKey, mods));</span>
+
+<span class="fc" id="L82">                Map&lt;String, String&gt; fieldMap = bibEntry.getFieldMap();</span>
+<span class="fc" id="L83">                addGenre(bibEntry, mods);</span>
+
+<span class="fc" id="L85">                OriginInfoDefinition originInfo = new OriginInfoDefinition();</span>
+<span class="fc" id="L86">                PartDefinition partDefinition = new PartDefinition();</span>
+<span class="fc" id="L87">                RelatedItemDefinition relatedItem = new RelatedItemDefinition();</span>
+
+<span class="fc bfc" id="L89" title="All 2 branches covered.">                for (Map.Entry&lt;String, String&gt; entry : fieldMap.entrySet()) {</span>
+<span class="fc" id="L90">                    String key = entry.getKey();</span>
+<span class="fc" id="L91">                    String value = entry.getValue();</span>
+
+<span class="fc bfc" id="L93" title="All 19 branches covered.">                    switch (key) {</span>
+
+                        case FieldName.AUTHOR:
+<span class="fc" id="L96">                            handleAuthors(mods, value);</span>
+<span class="fc" id="L97">                            break;</span>
+                        case &quot;affiliation&quot;:
+<span class="fc" id="L99">                            addAffiliation(mods, value);</span>
+<span class="fc" id="L100">                            break;</span>
+                        case FieldName.ABSTRACT:
+<span class="fc" id="L102">                            addAbstract(mods, value);</span>
+<span class="fc" id="L103">                            break;</span>
+                        case FieldName.TITLE:
+<span class="fc" id="L105">                            addTitle(mods, value);</span>
+<span class="fc" id="L106">                            break;</span>
+                        case FieldName.LANGUAGE:
+<span class="fc" id="L108">                            addLanguage(mods, value);</span>
+<span class="fc" id="L109">                            break;</span>
+                        case FieldName.LOCATION:
+<span class="fc" id="L111">                            addLocation(mods, value);</span>
+<span class="fc" id="L112">                            break;</span>
+                        case FieldName.URL:
+<span class="fc" id="L114">                            addUrl(mods, value);</span>
+<span class="fc" id="L115">                            break;</span>
+                        case FieldName.NOTE:
+<span class="fc" id="L117">                            addNote(mods, value);</span>
+<span class="fc" id="L118">                            break;</span>
+                        case FieldName.KEYWORDS:
+<span class="fc" id="L120">                            addKeyWords(mods, value);</span>
+<span class="fc" id="L121">                            break;</span>
+                        case FieldName.VOLUME:
+<span class="fc" id="L123">                            addDetail(FieldName.VOLUME, value, partDefinition);</span>
+<span class="fc" id="L124">                            break;</span>
+                        case FieldName.ISSUE:
+<span class="fc" id="L126">                            addDetail(FieldName.ISSUE, value, partDefinition);</span>
+<span class="fc" id="L127">                            break;</span>
+                        case FieldName.PAGES:
+<span class="fc" id="L129">                            addPages(partDefinition, value);</span>
+<span class="fc" id="L130">                            break;</span>
+                        case FieldName.URI:
+<span class="fc" id="L132">                            addIdentifier(FieldName.URI, value, mods);</span>
+<span class="fc" id="L133">                            break;</span>
+                        case FieldName.ISBN:
+<span class="fc" id="L135">                            addIdentifier(FieldName.ISBN, value, mods);</span>
+<span class="fc" id="L136">                            break;</span>
+                        case FieldName.ISSN:
+<span class="fc" id="L138">                            addIdentifier(FieldName.ISSN, value, mods);</span>
+<span class="fc" id="L139">                            break;</span>
+                        case FieldName.DOI:
+<span class="fc" id="L141">                            addIdentifier(FieldName.DOI, value, mods);</span>
+<span class="fc" id="L142">                            break;</span>
+                        case FieldName.PMID:
+<span class="fc" id="L144">                            addIdentifier(FieldName.PMID, value, mods);</span>
+<span class="fc" id="L145">                            break;</span>
+                        case FieldName.JOURNAL:
+<span class="fc" id="L147">                            addJournal(value, relatedItem);</span>
+<span class="fc" id="L148">                            break;</span>
+                        default:
+                            break;
+                    }
+
+<span class="fc" id="L153">                    addOriginInformation(key, value, originInfo);</span>
+<span class="fc" id="L154">                }</span>
+<span class="fc" id="L155">                mods.getModsGroup().add(originInfo);</span>
+
+<span class="fc" id="L157">                addRelatedAndOriginInfoToModsGroup(relatedItem, partDefinition, mods);</span>
+<span class="fc" id="L158">                modsCollection.getMods().add(mods);</span>
+<span class="fc" id="L159">            }</span>
+
+<span class="fc" id="L161">            JAXBElement&lt;ModsCollectionDefinition&gt; jaxbElement = new JAXBElement&lt;&gt;(</span>
+                    new QName(MODS_NAMESPACE_URI, &quot;modsCollection&quot;), ModsCollectionDefinition.class, modsCollection);
+
+<span class="fc" id="L164">            createMarshallerAndWriteToFile(file, jaxbElement);</span>
+<span class="nc" id="L165">        } catch (JAXBException ex) {</span>
+<span class="nc" id="L166">            throw new SaveException(ex);</span>
+<span class="fc" id="L167">        }</span>
+<span class="fc" id="L168">    }</span>
+
+    private void createMarshallerAndWriteToFile(Path file, JAXBElement&lt;ModsCollectionDefinition&gt; jaxbElement)
+            throws JAXBException {
+
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">        if (context == null) {</span>
+<span class="fc" id="L174">            context = JAXBContext.newInstance(ModsCollectionDefinition.class);</span>
+        }
+<span class="fc" id="L176">        Marshaller marshaller = context.createMarshaller();</span>
+        //format the output
+<span class="fc" id="L178">        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);</span>
+<span class="fc" id="L179">        marshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, MODS_SCHEMA_LOCATION);</span>
+
+        // Write to File
+<span class="fc" id="L182">        marshaller.marshal(jaxbElement, file.toFile());</span>
+<span class="fc" id="L183">    }</span>
+
+    private void addRelatedAndOriginInfoToModsGroup(RelatedItemDefinition relatedItem, PartDefinition partDefinition,
+            ModsDefinition mods) {
+
+<span class="fc" id="L188">        relatedItem.getModsGroup().add(partDefinition);</span>
+<span class="fc" id="L189">        relatedItem.setAtType(&quot;host&quot;);</span>
+<span class="fc" id="L190">        mods.getModsGroup().add(relatedItem);</span>
+<span class="fc" id="L191">        TypeOfResourceDefinition typeOfResource = new TypeOfResourceDefinition();</span>
+<span class="fc" id="L192">        typeOfResource.setValue(&quot;text&quot;);</span>
+<span class="fc" id="L193">        mods.getModsGroup().add(typeOfResource);</span>
+<span class="fc" id="L194">    }</span>
+
+    private void addGenre(BibEntry bibEntry, ModsDefinition mods) {
+<span class="fc" id="L197">        GenreDefinition genre = new GenreDefinition();</span>
+<span class="fc" id="L198">        genre.setValue(bibEntry.getType());</span>
+<span class="fc" id="L199">        mods.getModsGroup().add(genre);</span>
+<span class="fc" id="L200">    }</span>
+
+    private void addAbstract(ModsDefinition mods, String value) {
+<span class="fc" id="L203">        AbstractDefinition abstractDefinition = new AbstractDefinition();</span>
+<span class="fc" id="L204">        abstractDefinition.setValue(value);</span>
+<span class="fc" id="L205">        mods.getModsGroup().add(abstractDefinition);</span>
+<span class="fc" id="L206">    }</span>
+
+    private void addTitle(ModsDefinition mods, String value) {
+<span class="fc" id="L209">        TitleInfoDefinition titleInfo = new TitleInfoDefinition();</span>
+<span class="fc" id="L210">        StringPlusLanguage title = new StringPlusLanguage();</span>
+<span class="fc" id="L211">        title.setValue(value);</span>
+<span class="fc" id="L212">        JAXBElement&lt;StringPlusLanguage&gt; element = new JAXBElement&lt;&gt;(new QName(MODS_NAMESPACE_URI, &quot;title&quot;),</span>
+                StringPlusLanguage.class, title);
+<span class="fc" id="L214">        titleInfo.getTitleOrSubTitleOrPartNumber().add(element);</span>
+<span class="fc" id="L215">        mods.getModsGroup().add(titleInfo);</span>
+<span class="fc" id="L216">    }</span>
+
+    private void addAffiliation(ModsDefinition mods, String value) {
+<span class="fc" id="L219">        NameDefinition nameDefinition = new NameDefinition();</span>
+<span class="fc" id="L220">        StringPlusLanguage affiliation = new StringPlusLanguage();</span>
+<span class="fc" id="L221">        affiliation.setValue(value);</span>
+<span class="fc" id="L222">        JAXBElement&lt;StringPlusLanguage&gt; element = new JAXBElement&lt;&gt;(new QName(MODS_NAMESPACE_URI, &quot;affiliation&quot;),</span>
+                StringPlusLanguage.class, affiliation);
+<span class="fc" id="L224">        nameDefinition.getAffiliationOrRoleOrDescription().add(element);</span>
+<span class="fc" id="L225">        mods.getModsGroup().add(nameDefinition);</span>
+<span class="fc" id="L226">    }</span>
+
+    private void addLocation(ModsDefinition mods, String value) {
+<span class="fc" id="L229">        LocationDefinition locationDefinition = new LocationDefinition();</span>
+        //There can be more than one location
+<span class="fc" id="L231">        String[] locations = value.split(&quot;, &quot;);</span>
+<span class="fc bfc" id="L232" title="All 2 branches covered.">        for (String location : locations) {</span>
+<span class="fc" id="L233">            PhysicalLocationDefinition physicalLocation = new PhysicalLocationDefinition();</span>
+<span class="fc" id="L234">            physicalLocation.setValue(location);</span>
+<span class="fc" id="L235">            locationDefinition.getPhysicalLocation().add(physicalLocation);</span>
+        }
+<span class="fc" id="L237">        mods.getModsGroup().add(locationDefinition);</span>
+<span class="fc" id="L238">    }</span>
+
+    private void addNote(ModsDefinition mods, String value) {
+<span class="fc" id="L241">        String[] notes = value.split(&quot;, &quot;);</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        for (String note : notes) {</span>
+<span class="fc" id="L243">            NoteDefinition noteDefinition = new NoteDefinition();</span>
+<span class="fc" id="L244">            noteDefinition.setValue(note);</span>
+<span class="fc" id="L245">            mods.getModsGroup().add(noteDefinition);</span>
+        }
+<span class="fc" id="L247">    }</span>
+
+    private void addUrl(ModsDefinition mods, String value) {
+<span class="fc" id="L250">        String[] urls = value.split(&quot;, &quot;);</span>
+<span class="fc" id="L251">        LocationDefinition location = new LocationDefinition();</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">        for (String url : urls) {</span>
+<span class="fc" id="L253">            UrlDefinition urlDefinition = new UrlDefinition();</span>
+<span class="fc" id="L254">            urlDefinition.setValue(url);</span>
+<span class="fc" id="L255">            location.getUrl().add(urlDefinition);</span>
+<span class="fc" id="L256">            mods.getModsGroup().add(location);</span>
+        }
+<span class="fc" id="L258">    }</span>
+
+    private void addJournal(String value, RelatedItemDefinition relatedItem) {
+<span class="fc" id="L261">        TitleInfoDefinition titleInfo = new TitleInfoDefinition();</span>
+<span class="fc" id="L262">        StringPlusLanguage title = new StringPlusLanguage();</span>
+<span class="fc" id="L263">        title.setValue(value);</span>
+<span class="fc" id="L264">        JAXBElement&lt;StringPlusLanguage&gt; element = new JAXBElement&lt;&gt;(new QName(MODS_NAMESPACE_URI, &quot;title&quot;),</span>
+                StringPlusLanguage.class, title);
+<span class="fc" id="L266">        titleInfo.getTitleOrSubTitleOrPartNumber().add(element);</span>
+<span class="fc" id="L267">        relatedItem.getModsGroup().add(titleInfo);</span>
+<span class="fc" id="L268">    }</span>
+
+    private void addLanguage(ModsDefinition mods, String value) {
+<span class="fc" id="L271">        LanguageDefinition language = new LanguageDefinition();</span>
+<span class="fc" id="L272">        LanguageTermDefinition languageTerm = new LanguageTermDefinition();</span>
+<span class="fc" id="L273">        languageTerm.setValue(value);</span>
+<span class="fc" id="L274">        language.getLanguageTerm().add(languageTerm);</span>
+<span class="fc" id="L275">        mods.getModsGroup().add(language);</span>
+<span class="fc" id="L276">    }</span>
+
+    private void addPages(PartDefinition partDefinition, String value) {
+<span class="pc bpc" id="L279" title="1 of 2 branches missed.">        if (value.contains(DOUBLE_MINUS)) {</span>
+<span class="nc" id="L280">            addStartAndEndPage(value, partDefinition, DOUBLE_MINUS);</span>
+<span class="fc bfc" id="L281" title="All 2 branches covered.">        } else if (value.contains(MINUS)) {</span>
+<span class="fc" id="L282">            addStartAndEndPage(value, partDefinition, MINUS);</span>
+        } else {
+<span class="fc" id="L284">            BigInteger total = new BigInteger(value);</span>
+<span class="fc" id="L285">            ExtentDefinition extent = new ExtentDefinition();</span>
+<span class="fc" id="L286">            extent.setTotal(total);</span>
+<span class="fc" id="L287">            partDefinition.getDetailOrExtentOrDate().add(extent);</span>
+        }
+<span class="fc" id="L289">    }</span>
+
+    private void addKeyWords(ModsDefinition mods, String value) {
+<span class="fc" id="L292">        String[] keywords = value.split(&quot;, &quot;);</span>
+
+<span class="fc bfc" id="L294" title="All 2 branches covered.">        for (String keyword : keywords) {</span>
+<span class="fc" id="L295">            SubjectDefinition subject = new SubjectDefinition();</span>
+<span class="fc" id="L296">            StringPlusLanguagePlusAuthority topic = new StringPlusLanguagePlusAuthority();</span>
+<span class="fc" id="L297">            topic.setValue(keyword);</span>
+<span class="fc" id="L298">            JAXBElement&lt;?&gt; element = new JAXBElement&lt;&gt;(new QName(MODS_NAMESPACE_URI, &quot;topic&quot;),</span>
+                    StringPlusLanguagePlusAuthority.class, topic);
+<span class="fc" id="L300">            subject.getTopicOrGeographicOrTemporal().add(element);</span>
+<span class="fc" id="L301">            mods.getModsGroup().add(subject);</span>
+        }
+<span class="fc" id="L303">    }</span>
+
+    private void handleAuthors(ModsDefinition mods, String value) {
+<span class="fc" id="L306">        String[] authors = value.split(&quot;and&quot;);</span>
+<span class="fc bfc" id="L307" title="All 2 branches covered.">        for (String author : authors) {</span>
+<span class="fc" id="L308">            NameDefinition name = new NameDefinition();</span>
+<span class="fc" id="L309">            name.setAtType(&quot;personal&quot;);</span>
+<span class="fc" id="L310">            NamePartDefinition namePart = new NamePartDefinition();</span>
+<span class="fc bfc" id="L311" title="All 2 branches covered.">            if (author.contains(&quot;,&quot;)) {</span>
+                //if author contains &quot;,&quot;  then this indicates that the author has a forename and family name
+<span class="fc" id="L313">                int commaIndex = author.indexOf(',');</span>
+<span class="fc" id="L314">                String familyName = author.substring(0, commaIndex);</span>
+<span class="fc" id="L315">                namePart.setAtType(&quot;family&quot;);</span>
+<span class="fc" id="L316">                namePart.setValue(familyName);</span>
+
+<span class="fc" id="L318">                JAXBElement&lt;NamePartDefinition&gt; element = new JAXBElement&lt;&gt;(new QName(MODS_NAMESPACE_URI, &quot;namePart&quot;),</span>
+                        NamePartDefinition.class, namePart);
+<span class="fc" id="L320">                name.getNamePartOrDisplayFormOrAffiliation().add(element);</span>
+
+                //now take care of the forenames
+<span class="fc" id="L323">                String forename = author.substring(commaIndex + 1, author.length());</span>
+<span class="fc" id="L324">                String[] forenames = forename.split(&quot; &quot;);</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">                for (String given : forenames) {</span>
+<span class="fc bfc" id="L326" title="All 2 branches covered.">                    if (!given.isEmpty()) {</span>
+<span class="fc" id="L327">                        NamePartDefinition namePartDefinition = new NamePartDefinition();</span>
+<span class="fc" id="L328">                        namePartDefinition.setAtType(&quot;given&quot;);</span>
+<span class="fc" id="L329">                        namePartDefinition.setValue(given);</span>
+<span class="fc" id="L330">                        element = new JAXBElement&lt;&gt;(new QName(MODS_NAMESPACE_URI, &quot;namePart&quot;), NamePartDefinition.class,</span>
+                                namePartDefinition);
+<span class="fc" id="L332">                        name.getNamePartOrDisplayFormOrAffiliation().add(element);</span>
+                    }
+                }
+<span class="fc" id="L335">                mods.getModsGroup().add(name);</span>
+<span class="fc" id="L336">            } else {</span>
+                //no &quot;,&quot; indicates that there should only be a family name
+<span class="fc" id="L338">                namePart.setAtType(&quot;family&quot;);</span>
+<span class="fc" id="L339">                namePart.setValue(author);</span>
+<span class="fc" id="L340">                JAXBElement&lt;NamePartDefinition&gt; element = new JAXBElement&lt;&gt;(new QName(MODS_NAMESPACE_URI, &quot;namePart&quot;),</span>
+                        NamePartDefinition.class, namePart);
+<span class="fc" id="L342">                name.getNamePartOrDisplayFormOrAffiliation().add(element);</span>
+<span class="fc" id="L343">                mods.getModsGroup().add(name);</span>
+            }
+        }
+<span class="fc" id="L346">    }</span>
+
+    private void addIdentifier(String key, String value, ModsDefinition mods) {
+<span class="fc bfc" id="L349" title="All 2 branches covered.">        if (&quot;citekey&quot;.equals(key)) {</span>
+<span class="fc" id="L350">            mods.setID(value);</span>
+        }
+<span class="fc" id="L352">        IdentifierDefinition identifier = new IdentifierDefinition();</span>
+<span class="fc" id="L353">        identifier.setType(key);</span>
+<span class="fc" id="L354">        identifier.setValue(value);</span>
+<span class="fc" id="L355">        mods.getModsGroup().add(identifier);</span>
+<span class="fc" id="L356">    }</span>
+
+    private void addStartAndEndPage(String value, PartDefinition partDefinition, String minus) {
+<span class="fc" id="L359">        int minusIndex = value.indexOf(minus);</span>
+<span class="fc" id="L360">        String startPage = value.substring(0, minusIndex);</span>
+<span class="fc" id="L361">        String endPage = &quot;&quot;;</span>
+<span class="pc bpc" id="L362" title="1 of 2 branches missed.">        if (MINUS.equals(minus)) {</span>
+<span class="fc" id="L363">            endPage = value.substring(minusIndex + 1);</span>
+<span class="nc bnc" id="L364" title="All 2 branches missed.">        } else if (DOUBLE_MINUS.equals(minus)) {</span>
+<span class="nc" id="L365">            endPage = value.substring(minusIndex + 2);</span>
+        }
+
+<span class="fc" id="L368">        StringPlusLanguage start = new StringPlusLanguage();</span>
+<span class="fc" id="L369">        start.setValue(startPage);</span>
+<span class="fc" id="L370">        StringPlusLanguage end = new StringPlusLanguage();</span>
+<span class="fc" id="L371">        end.setValue(endPage);</span>
+<span class="fc" id="L372">        ExtentDefinition extent = new ExtentDefinition();</span>
+<span class="fc" id="L373">        extent.setStart(start);</span>
+<span class="fc" id="L374">        extent.setEnd(end);</span>
+
+<span class="fc" id="L376">        partDefinition.getDetailOrExtentOrDate().add(extent);</span>
+<span class="fc" id="L377">    }</span>
+
+    private void addDetail(String detailName, String value, PartDefinition partDefinition) {
+<span class="fc" id="L380">        DetailDefinition detail = new DetailDefinition();</span>
+<span class="fc" id="L381">        StringPlusLanguage detailType = new StringPlusLanguage();</span>
+<span class="fc" id="L382">        detailType.setValue(value);</span>
+<span class="fc" id="L383">        detail.setType(detailName);</span>
+<span class="fc" id="L384">        JAXBElement&lt;StringPlusLanguage&gt; element = new JAXBElement&lt;&gt;(new QName(MODS_NAMESPACE_URI, &quot;number&quot;),</span>
+                StringPlusLanguage.class, detailType);
+<span class="fc" id="L386">        detail.getNumberOrCaptionOrTitle().add(element);</span>
+<span class="fc" id="L387">        partDefinition.getDetailOrExtentOrDate().add(detail);</span>
+<span class="fc" id="L388">    }</span>
+
+    private void addOriginInformation(String key, String value, OriginInfoDefinition originInfo) {
+<span class="fc bfc" id="L391" title="All 2 branches covered.">        if (FieldName.YEAR.equals(key)) {</span>
+<span class="fc" id="L392">            addDate(&quot;dateIssued&quot;, value, originInfo);</span>
+<span class="fc bfc" id="L393" title="All 2 branches covered.">        } else if (&quot;created&quot;.equals(key)) {</span>
+<span class="fc" id="L394">            addDate(&quot;dateCreated&quot;, value, originInfo);</span>
+<span class="fc bfc" id="L395" title="All 2 branches covered.">        } else if (&quot;modified&quot;.equals(key)) {</span>
+<span class="fc" id="L396">            addDate(&quot;dateModified&quot;, value, originInfo);</span>
+<span class="fc bfc" id="L397" title="All 2 branches covered.">        } else if (&quot;captured&quot;.equals(key)) {</span>
+<span class="fc" id="L398">            addDate(&quot;dateCaptured&quot;, value, originInfo);</span>
+<span class="fc bfc" id="L399" title="All 2 branches covered.">        } else if (FieldName.PUBLISHER.equals(key)) {</span>
+<span class="fc" id="L400">            StringPlusLanguagePlusSupplied publisher = new StringPlusLanguagePlusSupplied();</span>
+<span class="fc" id="L401">            publisher.setValue(value);</span>
+<span class="fc" id="L402">            JAXBElement&lt;StringPlusLanguagePlusSupplied&gt; element = new JAXBElement&lt;&gt;(</span>
+                    new QName(MODS_NAMESPACE_URI, &quot;publisher&quot;), StringPlusLanguagePlusSupplied.class, publisher);
+<span class="fc" id="L404">            originInfo.getPlaceOrPublisherOrDateIssued().add(element);</span>
+<span class="fc bfc" id="L405" title="All 2 branches covered.">        } else if (&quot;issuance&quot;.equals(key)) {</span>
+<span class="fc" id="L406">            IssuanceDefinition issuance = IssuanceDefinition.fromValue(value);</span>
+<span class="fc" id="L407">            JAXBElement&lt;IssuanceDefinition&gt; element = new JAXBElement&lt;&gt;(new QName(MODS_NAMESPACE_URI, &quot;issuance&quot;),</span>
+                    IssuanceDefinition.class, issuance);
+<span class="fc" id="L409">            originInfo.getPlaceOrPublisherOrDateIssued().add(element);</span>
+<span class="fc bfc" id="L410" title="All 2 branches covered.">        } else if (&quot;address&quot;.equals(key)) {</span>
+<span class="fc" id="L411">            PlaceDefinition placeDefinition = new PlaceDefinition();</span>
+            //There can be more than one place, so we split to get all places and add them
+<span class="fc" id="L413">            String[] places = value.split(&quot;, &quot;);</span>
+<span class="fc bfc" id="L414" title="All 2 branches covered.">            for (String place : places) {</span>
+<span class="fc" id="L415">                PlaceTermDefinition placeTerm = new PlaceTermDefinition();</span>
+                //There's no possibility to see from a bib entry whether it is code or text, but since it is in the bib entry
+                //we assume that it is text
+<span class="fc" id="L418">                placeTerm.setType(CodeOrText.TEXT);</span>
+<span class="fc" id="L419">                placeTerm.setValue(place);</span>
+<span class="fc" id="L420">                placeDefinition.getPlaceTerm().add(placeTerm);</span>
+            }
+<span class="fc" id="L422">            JAXBElement&lt;PlaceDefinition&gt; element = new JAXBElement&lt;&gt;(new QName(MODS_NAMESPACE_URI, &quot;place&quot;),</span>
+                    PlaceDefinition.class, placeDefinition);
+<span class="fc" id="L424">            originInfo.getPlaceOrPublisherOrDateIssued().add(element);</span>
+<span class="fc bfc" id="L425" title="All 2 branches covered.">        } else if (&quot;edition&quot;.equals(key)) {</span>
+<span class="fc" id="L426">            StringPlusLanguagePlusSupplied edition = new StringPlusLanguagePlusSupplied();</span>
+<span class="fc" id="L427">            edition.setValue(value);</span>
+<span class="fc" id="L428">            JAXBElement&lt;StringPlusLanguagePlusSupplied&gt; element = new JAXBElement&lt;&gt;(</span>
+                    new QName(MODS_NAMESPACE_URI, &quot;edition&quot;), StringPlusLanguagePlusSupplied.class, edition);
+<span class="fc" id="L430">            originInfo.getPlaceOrPublisherOrDateIssued().add(element);</span>
+        }
+<span class="fc" id="L432">    }</span>
+
+    private void addDate(String dateName, String value, OriginInfoDefinition originInfo) {
+<span class="fc" id="L435">        DateDefinition dateIssued = new DateDefinition();</span>
+<span class="fc" id="L436">        dateIssued.setKeyDate(&quot;yes&quot;);</span>
+<span class="fc" id="L437">        dateIssued.setValue(value);</span>
+<span class="fc" id="L438">        JAXBElement&lt;DateDefinition&gt; element = new JAXBElement&lt;&gt;(new QName(MODS_NAMESPACE_URI, dateName),</span>
+                DateDefinition.class, dateIssued);
+<span class="fc" id="L440">        originInfo.getPlaceOrPublisherOrDateIssued().add(element);</span>
+<span class="fc" id="L441">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>

@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="sv"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WriteXMPAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">JabRef</a> &gt; <a href="index.source.html" class="el_package">org.jabref.gui.actions</a> &gt; <span class="el_source">WriteXMPAction.java</span></div><h1>WriteXMPAction.java</h1><pre class="source lang-java linenums">package org.jabref.gui.actions;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.scene.control.Button;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.GridPane;
+import javafx.scene.paint.Color;
+import javafx.stage.Stage;
+
+import org.jabref.Globals;
+import org.jabref.gui.BasePanel;
+import org.jabref.gui.DialogService;
+import org.jabref.gui.FXDialog;
+import org.jabref.gui.util.BackgroundTask;
+import org.jabref.logic.l10n.Localization;
+import org.jabref.logic.xmp.XmpUtilWriter;
+import org.jabref.model.database.BibDatabase;
+import org.jabref.model.entry.BibEntry;
+
+public class WriteXMPAction extends SimpleCommand {
+
+    private final BasePanel basePanel;
+    private OptionsDialog optionsDialog;
+
+    private Collection&lt;BibEntry&gt; entries;
+
+    private BibDatabase database;
+
+<span class="nc" id="L42">    private boolean shouldContinue = true;</span>
+
+    private int skipped;
+    private int entriesChanged;
+    private int errors;
+    private final DialogService dialogService;
+
+<span class="nc" id="L49">    public WriteXMPAction(BasePanel basePanel) {</span>
+<span class="nc" id="L50">        this.basePanel = basePanel;</span>
+<span class="nc" id="L51">        dialogService = basePanel.frame().getDialogService();</span>
+<span class="nc" id="L52">    }</span>
+
+    @Override
+    public void execute() {
+<span class="nc" id="L56">        init();</span>
+<span class="nc" id="L57">        BackgroundTask.wrap(this::writeXMP)</span>
+<span class="nc" id="L58">                      .executeWith(Globals.TASK_EXECUTOR);</span>
+<span class="nc" id="L59">    }</span>
+
+    public void init() {
+<span class="nc" id="L62">        database = basePanel.getDatabase();</span>
+        // Get entries and check if it makes sense to perform this operation
+<span class="nc" id="L64">        entries = basePanel.getSelectedEntries();</span>
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (entries.isEmpty()) {</span>
+
+<span class="nc" id="L68">            entries = database.getEntries();</span>
+
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (entries.isEmpty()) {</span>
+<span class="nc" id="L71">                dialogService.showErrorDialogAndWait(</span>
+<span class="nc" id="L72">                        Localization.lang(&quot;Write XMP-metadata&quot;),</span>
+<span class="nc" id="L73">                        Localization.lang(&quot;This operation requires one or more entries to be selected.&quot;));</span>
+<span class="nc" id="L74">                shouldContinue = false;</span>
+<span class="nc" id="L75">                return;</span>
+
+            } else {
+<span class="nc" id="L78">                boolean confirm = dialogService.showConfirmationDialogAndWait(</span>
+<span class="nc" id="L79">                        Localization.lang(&quot;Write XMP-metadata&quot;),</span>
+<span class="nc" id="L80">                        Localization.lang(&quot;Write XMP-metadata for all PDFs in current library?&quot;));</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">                if (confirm) {</span>
+<span class="nc" id="L82">                    shouldContinue = false;</span>
+<span class="nc" id="L83">                    return;</span>
+                }
+            }
+        }
+
+<span class="nc" id="L88">        errors = entriesChanged = skipped = 0;</span>
+
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (optionsDialog == null) {</span>
+<span class="nc" id="L91">            optionsDialog = new OptionsDialog();</span>
+        }
+<span class="nc" id="L93">        optionsDialog.open();</span>
+
+<span class="nc" id="L95">        basePanel.output(Localization.lang(&quot;Writing XMP-metadata...&quot;));</span>
+<span class="nc" id="L96">    }</span>
+
+    private void writeXMP() {
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if (!shouldContinue) {</span>
+<span class="nc" id="L100">            return;</span>
+        }
+
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        for (BibEntry entry : entries) {</span>
+
+            // Make a list of all PDFs linked from this entry:
+<span class="nc" id="L106">            List&lt;Path&gt; files = entry.getFiles().stream()</span>
+<span class="nc" id="L107">                                    .filter(file -&gt; file.getFileType().equalsIgnoreCase(&quot;pdf&quot;))</span>
+<span class="nc" id="L108">                                    .map(file -&gt; file.findIn(basePanel.getBibDatabaseContext(), Globals.prefs.getFilePreferences()))</span>
+<span class="nc" id="L109">                                    .filter(Optional::isPresent)</span>
+<span class="nc" id="L110">                                    .map(Optional::get)</span>
+<span class="nc" id="L111">                                    .collect(Collectors.toList());</span>
+
+<span class="nc" id="L113">            Platform.runLater(() -&gt; optionsDialog.getProgressArea()</span>
+<span class="nc" id="L114">                                                 .appendText(entry.getCiteKeyOptional().orElse(Localization.lang(&quot;undefined&quot;)) + &quot;\n&quot;));</span>
+
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            if (files.isEmpty()) {</span>
+<span class="nc" id="L117">                skipped++;</span>
+<span class="nc" id="L118">                Platform.runLater(() -&gt; optionsDialog.getProgressArea()</span>
+<span class="nc" id="L119">                                                     .appendText(&quot;  &quot; + Localization.lang(&quot;Skipped - No PDF linked&quot;) + &quot;.\n&quot;));</span>
+            } else {
+<span class="nc bnc" id="L121" title="All 2 branches missed.">                for (Path file : files) {</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                    if (Files.exists(file)) {</span>
+                        try {
+<span class="nc" id="L124">                            XmpUtilWriter.writeXmp(file, entry, database, Globals.prefs.getXMPPreferences());</span>
+<span class="nc" id="L125">                            Platform.runLater(</span>
+<span class="nc" id="L126">                                              () -&gt; optionsDialog.getProgressArea().appendText(&quot;  &quot; + Localization.lang(&quot;OK&quot;) + &quot;.\n&quot;));</span>
+<span class="nc" id="L127">                            entriesChanged++;</span>
+<span class="nc" id="L128">                        } catch (Exception e) {</span>
+<span class="nc" id="L129">                            Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L130">                                optionsDialog.getProgressArea().appendText(&quot;  &quot; + Localization.lang(&quot;Error while writing&quot;) + &quot; '&quot;</span>
+<span class="nc" id="L131">                                        + file.toString() + &quot;':\n&quot;);</span>
+<span class="nc" id="L132">                                optionsDialog.getProgressArea().appendText(&quot;    &quot; + e.getLocalizedMessage() + &quot;\n&quot;);</span>
+<span class="nc" id="L133">                            });</span>
+<span class="nc" id="L134">                            errors++;</span>
+<span class="nc" id="L135">                        }</span>
+                    } else {
+<span class="nc" id="L137">                        skipped++;</span>
+<span class="nc" id="L138">                        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L139">                            optionsDialog.getProgressArea()</span>
+<span class="nc" id="L140">                                         .appendText(&quot;  &quot; + Localization.lang(&quot;Skipped - PDF does not exist&quot;) + &quot;:\n&quot;);</span>
+<span class="nc" id="L141">                            optionsDialog.getProgressArea().appendText(&quot;    &quot; + file.toString() + &quot;\n&quot;);</span>
+<span class="nc" id="L142">                        });</span>
+                    }
+<span class="nc" id="L144">                }</span>
+            }
+
+<span class="nc bnc" id="L147" title="All 2 branches missed.">            if (optionsDialog.isCanceled()) {</span>
+<span class="nc" id="L148">                Platform.runLater(</span>
+<span class="nc" id="L149">                                  () -&gt; optionsDialog.getProgressArea().appendText(&quot;\n&quot; + Localization.lang(&quot;Operation canceled.&quot;) + &quot;\n&quot;));</span>
+<span class="nc" id="L150">                break;</span>
+            }
+<span class="nc" id="L152">        }</span>
+<span class="nc" id="L153">        Platform.runLater(() -&gt; {</span>
+<span class="nc" id="L154">            optionsDialog.getProgressArea()</span>
+<span class="nc" id="L155">                         .appendText(&quot;\n&quot;</span>
+<span class="nc" id="L156">                           + Localization.lang(&quot;Finished writing XMP for %0 file (%1 skipped, %2 errors).&quot;, String</span>
+<span class="nc" id="L157">                           .valueOf(entriesChanged), String.valueOf(skipped), String.valueOf(errors)));</span>
+<span class="nc" id="L158">            optionsDialog.done();</span>
+<span class="nc" id="L159">        });</span>
+
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        if (!shouldContinue) {</span>
+<span class="nc" id="L162">            return;</span>
+        }
+
+<span class="nc" id="L165">        basePanel.output(Localization.lang(&quot;Finished writing XMP for %0 file (%1 skipped, %2 errors).&quot;,</span>
+<span class="nc" id="L166">                String.valueOf(entriesChanged), String.valueOf(skipped), String.valueOf(errors)));</span>
+<span class="nc" id="L167">    }</span>
+
+    class OptionsDialog extends FXDialog {
+
+<span class="nc" id="L171">        private final Button okButton = new Button(Localization.lang(&quot;OK&quot;));</span>
+<span class="nc" id="L172">        private final Button cancelButton = new Button(Localization.lang(&quot;Cancel&quot;));</span>
+
+        private boolean isCancelled;
+
+        private final TextArea progressArea;
+
+<span class="nc" id="L178">        public OptionsDialog() {</span>
+<span class="nc" id="L179">            super(AlertType.NONE, Localization.lang(&quot;Writing XMP-metadata for selected entries...&quot;), false);</span>
+<span class="nc" id="L180">            okButton.setDisable(true);</span>
+<span class="nc" id="L181">            okButton.setOnAction(e -&gt; dispose());</span>
+<span class="nc" id="L182">            okButton.setPrefSize(100, 30);</span>
+<span class="nc" id="L183">            cancelButton.setOnAction(e -&gt; isCancelled = true);</span>
+<span class="nc" id="L184">            cancelButton.setOnKeyPressed(e -&gt; {</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">                if (e.getCode() == KeyCode.ESCAPE) {</span>
+<span class="nc" id="L186">                    isCancelled = true;</span>
+                }
+<span class="nc" id="L188">            });</span>
+<span class="nc" id="L189">            cancelButton.setPrefSize(100, 30);</span>
+<span class="nc" id="L190">            progressArea = new TextArea();</span>
+<span class="nc" id="L191">            ScrollPane scrollPane = new ScrollPane(progressArea);</span>
+<span class="nc" id="L192">            progressArea.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));</span>
+<span class="nc" id="L193">            progressArea.setEditable(false);</span>
+<span class="nc" id="L194">            progressArea.setText(&quot;&quot;);</span>
+
+<span class="nc" id="L196">            GridPane tmpPanel = new GridPane();</span>
+<span class="nc" id="L197">            getDialogPane().setContent(tmpPanel);</span>
+<span class="nc" id="L198">            tmpPanel.setHgap(450);</span>
+<span class="nc" id="L199">            tmpPanel.setVgap(10);</span>
+<span class="nc" id="L200">            tmpPanel.add(scrollPane, 0, 0, 2, 1);</span>
+<span class="nc" id="L201">            tmpPanel.add(okButton, 0, 1);</span>
+<span class="nc" id="L202">            tmpPanel.add(cancelButton, 1, 1);</span>
+<span class="nc" id="L203">            tmpPanel.setGridLinesVisible(false);</span>
+<span class="nc" id="L204">            this.setResizable(false);</span>
+
+<span class="nc" id="L206">        }</span>
+
+        private void dispose() {
+<span class="nc" id="L209">            ((Stage) (getDialogPane().getScene().getWindow())).close();</span>
+<span class="nc" id="L210">        }</span>
+
+        public void done() {
+<span class="nc" id="L213">            okButton.setDisable(false);</span>
+<span class="nc" id="L214">            cancelButton.setDisable(true);</span>
+<span class="nc" id="L215">        }</span>
+
+        public void open() {
+<span class="nc" id="L218">            progressArea.setText(&quot;&quot;);</span>
+<span class="nc" id="L219">            isCancelled = false;</span>
+
+<span class="nc" id="L221">            okButton.setDisable(true);</span>
+<span class="nc" id="L222">            cancelButton.setDisable(false);</span>
+
+<span class="nc" id="L224">            okButton.requestFocus();</span>
+
+<span class="nc" id="L226">            optionsDialog.show();</span>
+<span class="nc" id="L227">        }</span>
+
+        public boolean isCanceled() {
+<span class="nc" id="L230">            return isCancelled;</span>
+        }
+
+        public TextArea getProgressArea() {
+<span class="nc" id="L234">            return progressArea;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.1.201803210924</span></div></body></html>
