@@ -592,6 +592,16 @@ public class PdfContentImporter extends Importer {
         }
     }
 
+    /**
+     * Allows access to the private streamLineNames() function for testing
+     * @param  names - a string of names separated by a comma
+     * @return ret from streamLineNames function
+     * @author Morgan Wessel
+     */
+    public String testStreamLineNames(String names) {
+        return streamlineNames(names);
+    }
+
     @Override
     public String getName() {
         return "PDFcontent";
@@ -606,5 +616,4 @@ public class PdfContentImporter extends Importer {
     public String getDescription() {
         return "PdfContentImporter parses data of the first page of the PDF and creates a BibTeX entry. Currently, Springer and IEEE formats are supported.";
     }
-
 }
