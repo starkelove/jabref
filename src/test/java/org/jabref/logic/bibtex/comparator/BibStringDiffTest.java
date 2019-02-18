@@ -19,7 +19,7 @@ public class BibStringDiffTest {
     public void setUp() {
         database1 = new BibDatabase();
         database2 = new BibDatabase();
-        stringA = new BibtexString("TEST", "SOME STRING");
+        stringA = new BibtexString("TEST", "some string");
     }
 
     /**
@@ -46,6 +46,24 @@ public class BibStringDiffTest {
     @Test
     public void testDifferingContent(){
         BibtexString stringB = new BibtexString("TEST", "another string");
+        database1.addString(stringA);
+        database2.addString(stringB);
+        List<BibStringDiff> list = BibStringDiff.compare(database1, database2);
+        assertNotNull(list);
+        assertTrue(!list.isEmpty());
+        assertEquals(stringA, list.get(0).getOriginalString());
+    }
+
+    /**
+     * Tests that two databases with completely different content will be identified
+     * The two databases will have a string each that will not share either name or content.
+     * The function should identify this and return what it is that is differing
+     * Returns a List<BibStringDiff> that should contain stringA
+     * author: Love Stark
+     */
+    @Test
+    public void testNonIdentical(){
+        BibtexString stringB = new BibtexString("ANOTHER", "another string");
         database1.addString(stringA);
         database2.addString(stringB);
         List<BibStringDiff> list = BibStringDiff.compare(database1, database2);
