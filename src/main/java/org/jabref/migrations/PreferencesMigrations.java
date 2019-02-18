@@ -122,7 +122,7 @@ public class PreferencesMigrations {
      * these preferences, but it is only used when the new preference does not
      * exist
      */
-    private static void upgradeSortOrder(JabRefPreferences prefs) {
+    public static void upgradeSortOrder(JabRefPreferences prefs) {
 
         if (prefs.get(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, null) == null) {
             if (prefs.getBoolean("exportInStandardOrder", false)) {
@@ -287,4 +287,8 @@ public class PreferencesMigrations {
         String migratedStyle = currentPreviewStyle.replace("\\begin{review}<BR><BR><b>Review: </b> \\format[HTMLChars]{\\review} \\end{review}", "\\begin{comment}<BR><BR><b>Comment: </b> \\format[HTMLChars]{\\comment} \\end{comment}");
         prefs.setPreviewStyle(migratedStyle);
     }
+
+    /**public static void testUpgradeSortOrder(JabRefPreferences prefs) {
+        upgradeSortOrder(prefs);
+    }*/
 }

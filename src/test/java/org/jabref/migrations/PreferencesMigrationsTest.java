@@ -2,11 +2,14 @@ package org.jabref.migrations;
 
 import java.util.prefs.Preferences;
 
+import org.jabref.model.entry.FieldName;
 import org.jabref.preferences.JabRefPreferences;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 
+import static org.jabref.preferences.JabRefPreferences.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -42,7 +45,6 @@ class PreferencesMigrationsTest {
 
     @Test
     void testOldStyleBibtexkeyPattern1() {
-
         when(prefs.get(JabRefPreferences.IMPORT_FILENAMEPATTERN)).thenReturn(oldStylePatterns[1]);
         when(mainPrefsNode.get(JabRefPreferences.IMPORT_FILENAMEPATTERN, null)).thenReturn(oldStylePatterns[1]);
         when(prefs.hasKey(JabRefPreferences.IMPORT_FILENAMEPATTERN)).thenReturn(true);
@@ -64,6 +66,47 @@ class PreferencesMigrationsTest {
 
         verify(prefs, never()).put(JabRefPreferences.IMPORT_FILENAMEPATTERN, arbitraryPattern);
         verify(mainPrefsNode, never()).put(JabRefPreferences.IMPORT_FILENAMEPATTERN, arbitraryPattern);
+    }
+
+    @Test
+    void testupgradeSortOrder0(){
+        when(prefs.get(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, null)).thenReturn(null);
+        when(prefs.getBoolean("exportInStandardOrder", false)).thenReturn(true);
+
+        PreferencesMigrations.upgradeSortOrder(prefs);
+        //PreferencesMigrations.testUpgradeSortOrder(prefs);
+
+        verify(prefs).putBoolean(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, true);
+
+        verify(prefs).put(EXPORT_PRIMARY_SORT_FIELD, FieldName.AUTHOR);
+        verify(prefs).put(EXPORT_SECONDARY_SORT_FIELD, FieldName.EDITOR);
+        verify(prefs).put(EXPORT_TERTIARY_SORT_FIELD, FieldName.YEAR);
+
+        verify(prefs).putBoolean(EXPORT_PRIMARY_SORT_DESCENDING, false);
+        verify(prefs).putBoolean(EXPORT_SECONDARY_SORT_DESCENDING, false);
+        verify(prefs).putBoolean(EXPORT_SECONDARY_SORT_DESCENDING, false);
+
+    }
+
+    @Test
+    void testupgradeSortOrder1(){
+        when(prefs.get(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, null)).thenReturn(null);
+        when(prefs.getBoolean("exportInStandardOrder", false)).thenReturn(false);
+        when(prefs.getBoolean("exportInTitleOrder", false)).thenReturn(true);
+
+        PreferencesMigrations.upgradeSortOrder(prefs);
+        //PreferencesMigrations.testUpgradeSortOrder(prefs);
+
+        verify(prefs).putBoolean(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, true);
+
+        verify(prefs).put(EXPORT_PRIMARY_SORT_FIELD, FieldName.TITLE);
+        verify(prefs).put(EXPORT_SECONDARY_SORT_FIELD, FieldName.AUTHOR);
+        verify(prefs).put(EXPORT_TERTIARY_SORT_FIELD, FieldName.EDITOR);
+
+        verify(prefs).putBoolean(EXPORT_PRIMARY_SORT_DESCENDING, false);
+        verify(prefs).putBoolean(EXPORT_SECONDARY_SORT_DESCENDING, false);
+        verify(prefs).putBoolean(EXPORT_SECONDARY_SORT_DESCENDING, false);
+
     }
 
     @Test
