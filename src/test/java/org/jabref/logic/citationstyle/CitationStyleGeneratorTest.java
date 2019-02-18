@@ -1,9 +1,7 @@
 package org.jabref.logic.citationstyle;
 
 import org.jabref.logic.l10n.Localization;
-import org.jabref.logic.util.TestEntry;
 import org.jabref.model.entry.BibEntry;
-import org.jabref.model.entry.FieldName;
 
 import org.junit.jupiter.api.Test;
 
