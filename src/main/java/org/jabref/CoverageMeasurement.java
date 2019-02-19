@@ -4,7 +4,7 @@ import java.security.Key;
 import java.util.HashMap;
 import java.util.Iterator;
 /**
-*To initialize the hashmap for each function we're testing use: 
+*To initialize the hashmap for each function we're testing use:
 *CoverageMeasurement.coverageMap.put("Name of function", new Boolean[size of array]);
 *To set a "flag" to check if the branch was visited use: CoverageMeasurement.coverageMap.get("Name of function")[place in the array, int] = true;
 **/
@@ -19,7 +19,7 @@ public class CoverageMeasurement {
       coverageMap.put(key, new Boolean[7]);
   }
 
-  public static void PrintMap(HashMap map) {
+  public static void PrintMap(HashMap<String, Boolean[]> map) {
     Iterator iterator = map.keySet().iterator();
   //  boolean[] bib = coverageMap.get("BIB").get(key);
     while(iterator.hasNext()) {
