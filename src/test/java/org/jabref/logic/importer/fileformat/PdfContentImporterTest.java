@@ -70,18 +70,15 @@ class PdfContentImporterTest {
     void streamlineNamesTest() {
         String res = importer.testStreamLineNames("Morgan, Caroline, Anton, Love, Victor");
         assertEquals("Morgan and Caroline and Anton and Love and Victor", res);
-/*
+
         String res2 = importer.testStreamLineNames("Morgan, Caroline, Anton, Love, and Victor");
         assertEquals("Morgan and Caroline and Anton and Love and Victor", res2);
 
         String res3 = importer.testStreamLineNames("Morgan, et al.");
-        assertEquals("Morgan and others", res3);
+        assertEquals("Morgan and et al", res3);
 
         String res4 = importer.testStreamLineNames("");
-        assertEquals("", res4);
-*/
-        // test middle name
-
+        assertEquals(" ", res4);
     }
 
 }
