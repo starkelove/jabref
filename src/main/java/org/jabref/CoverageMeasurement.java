@@ -17,7 +17,6 @@ public class CoverageMeasurement {
       for(int i = 0; i < map.length; i++) {
           if(map[i]) {
               newInt++;
-              System.out.println(i);
           }
         }
       System.out.println("ID: " + id + " " +  newInt +  " out of " + map.length + " branches covered.");
