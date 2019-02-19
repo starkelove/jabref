@@ -1,8 +1,5 @@
 package org.jabref.logic.citationstyle;
 
-//import org.jabref.logic.util.TestEntry;
-
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
