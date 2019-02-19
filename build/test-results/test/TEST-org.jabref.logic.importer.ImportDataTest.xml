@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="org.jabref.logic.importer.ImportDataTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:05" hostname="n184-p67.eduroam.kth.se" time="0.002">
-  <properties/>
-  <testcase name="testTestingEnvironment()" classname="org.jabref.logic.importer.ImportDataTest" time="0.002"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

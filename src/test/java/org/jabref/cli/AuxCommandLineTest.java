@@ -22,7 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 
-public class AuxCommandLineTest {
+import org.junit.runner.Description;
+import org.junit.runner.Result;
+import org.junit.runner.notification.Failure;
+import org.junit.runner.notification.RunListener;
+
+public class AuxCommandLineTest extends RunListener {
 
     private ImportFormatPreferences importFormatPreferences;
 

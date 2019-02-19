@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="org.jabref.logic.util.JavaVersionTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:25" hostname="n184-p67.eduroam.kth.se" time="0.104">
-  <properties/>
-  <testcase name="isAtLeast()" classname="org.jabref.logic.util.JavaVersionTest" time="0.096"/>
-  <testcase name="isJava9()" classname="org.jabref.logic.util.JavaVersionTest" time="0.007"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

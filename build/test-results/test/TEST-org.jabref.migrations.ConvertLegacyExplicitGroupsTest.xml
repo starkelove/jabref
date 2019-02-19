@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="org.jabref.migrations.ConvertLegacyExplicitGroupsTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:23:39" hostname="n184-p67.eduroam.kth.se" time="0.012">
-  <properties/>
-  <testcase name="performActionWritesGroupMembershipInEntry()" classname="org.jabref.migrations.ConvertLegacyExplicitGroupsTest" time="0.004"/>
-  <testcase name="performActionClearsLegacyKeys()" classname="org.jabref.migrations.ConvertLegacyExplicitGroupsTest" time="0.003"/>
-  <testcase name="performActionWritesGroupMembershipInEntryForComplexGroupTree()" classname="org.jabref.migrations.ConvertLegacyExplicitGroupsTest" time="0.003"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

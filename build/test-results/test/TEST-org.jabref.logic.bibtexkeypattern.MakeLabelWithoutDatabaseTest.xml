@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="org.jabref.logic.bibtexkeypattern.MakeLabelWithoutDatabaseTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:23:40" hostname="n184-p67.eduroam.kth.se" time="0.005">
-  <properties/>
-  <testcase name="makeEditorLabelForFileSearch()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithoutDatabaseTest" time="0.002"/>
-  <testcase name="makeLabelForFileSearch()" classname="org.jabref.logic.bibtexkeypattern.MakeLabelWithoutDatabaseTest" time="0.002"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="org.jabref.logic.importer.fileformat.PdfContentImporterTestFiles" tests="2" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:22" hostname="n184-p67.eduroam.kth.se" time="0.003">
-  <properties/>
-  <testcase name="testIsRecognizedFormat(String)[1]" classname="org.jabref.logic.importer.fileformat.PdfContentImporterTestFiles" time="0.001"/>
-  <testcase name="testIsRecognizedFormat(String)[2]" classname="org.jabref.logic.importer.fileformat.PdfContentImporterTestFiles" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

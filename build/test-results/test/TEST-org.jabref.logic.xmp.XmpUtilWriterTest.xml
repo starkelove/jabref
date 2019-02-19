@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="org.jabref.logic.xmp.XmpUtilWriterTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2019-02-15T14:24:26" hostname="n184-p67.eduroam.kth.se" time="0.099">
-  <properties/>
-  <testcase name="testWriteXmp(Path)" classname="org.jabref.logic.xmp.XmpUtilWriterTest" time="0.07"/>
-  <testcase name="testWriteMultipleBibEntries(Path)" classname="org.jabref.logic.xmp.XmpUtilWriterTest" time="0.028"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

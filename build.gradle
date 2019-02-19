@@ -65,12 +65,17 @@ sourceSets {
     }
     test {
         java {
-            srcDirs = ["src/test/java"]
+            srcDirs = ["src/test/java/org/jabref/coverage"]
         }
         resources {
             srcDirs = ["src/test/resources"]
         }
     }
+}
+
+test {
+   systemProperty 'cucumber.options', '--plugin junit:target/surefire-reports/cucumber-junit.xml'
+   include 'build/classes/java/test/org/jabref/coverage/Runner.class'
 }
 
 repositories {
@@ -246,6 +251,7 @@ task checkOutdatedDependencies(dependsOn: dependencyUpdates) {
     }
 }
 
+
 clean {
     delete "src/main/gen"
 }
@@ -291,6 +297,7 @@ task generateBstGrammarSource(type: JavaExec) {
     classpath = configurations.antlr3
     args = ["-o", file('src/main/gen/org/jabref/logic/bst/'), antlrSource]
 }
+
 
 task generateSearchGrammarSource(type: JavaExec) {
     String grammarFile = "Search"
@@ -346,6 +353,7 @@ test {
         // set options for log level LIFECYCLE
         events "failed"
         exceptionFormat "full"
+        showStandardStreams = true;
     }
 }
 
@@ -354,6 +362,7 @@ task databaseTest(type: Test) {
         includeCategories 'org.jabref.testutils.category.DatabaseTest'
     }
 }
+
 
 task fetcherTest(type: Test) {
     useJUnit {

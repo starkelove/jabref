@@ -88,7 +88,7 @@ public class PreferencesMigrations {
 
         String defaultEncoding = prefs.get(JabRefPreferences.DEFAULT_ENCODING);
         if (defaultEncoding == null) {
-            CoverageMeasurement.coverageMap.get("ID1")[1] = true;
+            CoverageMeasurement.coverageMap.get("ID1")[0] = true;
             return;
         }
 
@@ -117,7 +117,7 @@ public class PreferencesMigrations {
 
         if (encodingMap.containsKey(defaultEncoding)) {
             prefs.put(JabRefPreferences.DEFAULT_ENCODING, encodingMap.get(defaultEncoding));
-            CoverageMeasurement.coverageMap.get("ID1")[2] = true;
+            CoverageMeasurement.coverageMap.get("ID1")[1] = true;
         }
     }
 
