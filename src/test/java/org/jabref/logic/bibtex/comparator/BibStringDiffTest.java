@@ -29,7 +29,7 @@ public class BibStringDiffTest {
     /**
      * Tests that two databases with identical content will be identified
      * Returns a List<BibStringDiff> that should be empty since there are no differences
-     * author: Love Stark
+     * author: Love Stark & Anton Hedkrans
      */
     @Test
     public void testIdenticalDatabases(){
@@ -45,7 +45,7 @@ public class BibStringDiffTest {
      * The two databases will have a string each that share the same name but with different content.
      * The function should identify this and return what it is that is differing
      * Returns a List<BibStringDiff> that should contain stringA
-     * author: Love Stark
+     * author: Love Stark & Anton Hedkrans
      */
     @Test
     public void testDifferingContent(){
@@ -63,7 +63,7 @@ public class BibStringDiffTest {
      * The two databases will have a string each that will not share either name or content.
      * The function should identify this and return what it is that is differing
      * Returns a List<BibStringDiff> that should contain stringA
-     * author: Love Stark
+     * author: Love Stark & Anton Hedkrans
      */
     @Test
     public void testNonIdentical(){
