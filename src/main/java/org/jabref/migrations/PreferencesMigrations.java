@@ -82,7 +82,7 @@ public class PreferencesMigrations {
     /**
      * Added from Jabref 2.11 beta 4 onwards to fix wrong encoding names
      */
-    private static void upgradeFaultyEncodingStrings(JabRefPreferences prefs) {
+    public static void upgradeFaultyEncodingStrings(JabRefPreferences prefs) {
         String defaultEncoding = prefs.get(JabRefPreferences.DEFAULT_ENCODING);
         if (defaultEncoding == null) {
             return;

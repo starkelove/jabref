@@ -88,6 +88,18 @@ class PreferencesMigrationsTest {
 
     }
 
+    /**
+     * @author Morgan Wessel
+     */
+    @Test
+    void testUpgradeFacultyEncodingStrings() {
+        when(prefs.get(JabRefPreferences.DEFAULT_ENCODING)).thenReturn("UTF8");
+
+        PreferencesMigrations.upgradeFaultyEncodingStrings(prefs);
+
+        verify(prefs).put(JabRefPreferences.DEFAULT_ENCODING, "UTF-8");
+    }
+
     @Test
     void testupgradeSortOrder1(){
         when(prefs.get(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, null)).thenReturn(null);
