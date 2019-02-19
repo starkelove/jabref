@@ -1,5 +1,6 @@
 package org.jabref.logic.layout.format;
 
+import org.checkerframework.checker.units.qual.A;
 import org.jabref.logic.layout.LayoutFormatter;
 import org.jabref.logic.layout.StringInt;
 import org.jabref.logic.util.strings.RtfCharMap;
@@ -7,6 +8,8 @@ import org.jabref.model.strings.StringUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
 
 /**
  * Transform a LaTeX-String to RTF.
@@ -207,141 +210,91 @@ public class RTFChars implements LayoutFormatter {
      * @return returns the basic character of the given unicode
      */
     private String transformSpecialCharacter(long c) {
-        if (((192 <= c) && (c <= 197)) || (c == 256) || (c == 258) || (c == 260)) {
-            return "A";
+        HashMap<Integer, String> map = new HashMap<>();
+        map.put(256, "A");map.put(258, "A");map.put(260, "A");
+        map.put(257, "a");map.put(259, "a");map.put(261, "a");
+        map.put(199, "C");map.put(262, "C");map.put(264, "C");map.put(266, "C");map.put(268, "C");
+        map.put(231, "c");map.put(263, "c");map.put(265, "c");map.put(267, "c");map.put(269, "c");
+        map.put(208, "D");map.put(272, "D");
+        map.put(240, "d");map.put(273, "d");
+        map.put(274, "E");map.put(276, "E");map.put(278, "E");map.put(280, "E");map.put(282, "E");
+        map.put(275, "e");map.put(277, "e");map.put(279, "e");map.put(281, "e");map.put(283, "e");
+        map.put(284, "G");map.put(286, "G");map.put(288, "G");map.put(290, "G");map.put(330, "G");
+        map.put(285, "g");map.put(287, "g");map.put(289, "g");map.put(291, "g");map.put(331, "g");
+        map.put(292, "H");map.put(294, "H");
+        map.put(293, "h");map.put(295, "h");
+        map.put(296, "I");map.put(298, "I");map.put(300, "I");map.put(302, "I");map.put(304, "I");
+        map.put(297, "i");map.put(299, "i");map.put(301, "i");map.put(303, "i");
+        map.put(308, "J");
+        map.put(309, "j");
+        map.put(310, "K");
+        map.put(311, "k");
+        map.put(313, "L");map.put(315, "L");map.put(319, "L");
+        map.put(314, "l");map.put(316, "l");map.put(320, "l");map.put(322, "l");
+        map.put(209, "N");map.put(323, "N");map.put(325, "N");map.put(327, "N");
+        map.put(241, "n");map.put(324, "n");map.put(326, "n");map.put(328, "n");
+        map.put(216, "O");map.put(332, "O");map.put(334, "O");
+        map.put(333, "o");map.put(335, "o");
+        map.put(340, "R");map.put(342, "R");map.put(344, "R");
+        map.put(341, "r");map.put(343, "r");map.put(345, "r");
+        map.put(346, "S");map.put(348, "S");map.put(350, "S");map.put(352, "S");
+        map.put(347, "s");map.put(349, "s");map.put(351, "s");map.put(353, "s");
+        map.put(354, "T");map.put(356, "T");map.put(358, "T");
+        map.put(355, "t");map.put(359, "t");
+        map.put(360, "U");map.put(362, "U");map.put(364, "U");map.put(366, "U");map.put(370, "U");
+        map.put(361, "u");map.put(363, "u");map.put(365, "u");map.put(367, "u");map.put(371, "u");
+        map.put(372, "W");
+        map.put(373, "w");
+        map.put(374, "Y");map.put(376, "Y");map.put(221, "Y");
+        map.put(375, "y");map.put(255, "y");
+        map.put(377, "Z");map.put(379, "Z");map.put(381, "Z");
+        map.put(378, "z");map.put(380, "z");map.put(382, "z");
+        map.put(198, "AE");
+        map.put(230, "ae");
+        map.put(338, "OE");
+        map.put(339, "oe");
+        map.put(222, "TH");
+        map.put(223, "ss");
+        map.put(161, "!");
+
+        //set range values in map
+        for (int i = 192; i <=197; i++) {
+            map.put(i, "A");
         }
-        if (((224 <= c) && (c <= 229)) || (c == 257) || (c == 259) || (c == 261)) {
-            return "a";
+        for (int i = 200; i <=203; i++) {
+            map.put(i, "E");
         }
-        if ((199 == c) || (262 == c) || (264 == c) || (266 == c) || (268 == c)) {
-            return "C";
+        for (int i = 204; i <=207; i++) {
+            map.put(i, "I");
         }
-        if ((231 == c) || (263 == c) || (265 == c) || (267 == c) || (269 == c)) {
-            return "c";
+        for (int i = 210; i <=214; i++) {
+            map.put(i, "O");
         }
-        if ((208 == c) || (272 == c)) {
-            return "D";
+        for (int i = 217; i <=220; i++) {
+            map.put(i, "U");
         }
-        if ((240 == c) || (273 == c)) {
-            return "d";
+        for (int i = 224; i <=229; i++) {
+            map.put(i, "a");
         }
-        if (((200 <= c) && (c <= 203)) || (274 == c) || (276 == c) || (278 == c) || (280 == c) || (282 == c)) {
-            return "E";
+        for (int i = 232; i <=235; i++) {
+            map.put(i, "e");
         }
-        if (((232 <= c) && (c <= 235)) || (275 == c) || (277 == c) || (279 == c) || (281 == c) || (283 == c)) {
-            return "e";
+        for (int i = 236; i <=239; i++) {
+            map.put(i, "i");
         }
-        if (((284 == c) || (286 == c)) || (288 == c) || (290 == c) || (330 == c)) {
-            return "G";
+        for (int i = 242; i <=248; i++) {
+            map.put(i, "o");
         }
-        if ((285 == c) || (287 == c) || (289 == c) || (291 == c) || (331 == c)) {
-            return "g";
+        for (int i = 249; i <=251; i++) {
+            map.put(i, "u");
         }
-        if ((292 == c) || (294 == c)) {
-            return "H";
+
+        // check to see if c exists in the hash map
+        String character = map.get(c);
+        if (character != null) {
+            return character;
         }
-        if ((293 == c) || (295 == c)) {
-            return "h";
-        }
-        if (((204 <= c) && (c <= 207)) || (296 == c) || (298 == c) || (300 == c) || (302 == c) || (304 == c)) {
-            return "I";
-        }
-        if (((236 <= c) && (c <= 239)) || (297 == c) || (299 == c) || (301 == c) || (303 == c)) {
-            return "i";
-        }
-        if (308 == c) {
-            return "J";
-        }
-        if (309 == c) {
-            return "j";
-        }
-        if (310 == c) {
-            return "K";
-        }
-        if (311 == c) {
-            return "k";
-        }
-        if ((313 == c) || (315 == c) || (319 == c)) {
-            return "L";
-        }
-        if ((314 == c) || (316 == c) || (320 == c) || (322 == c)) {
-            return "l";
-        }
-        if ((209 == c) || (323 == c) || (325 == c) || (327 == c)) {
-            return "N";
-        }
-        if ((241 == c) || (324 == c) || (326 == c) || (328 == c)) {
-            return "n";
-        }
-        if (((210 <= c) && (c <= 214)) || (c == 216) || (332 == c) || (334 == c)) {
-            return "O";
-        }
-        if (((242 <= c) && (c <= 248) && (247 != c)) || (333 == c) || (335 == c)) {
-            return "o";
-        }
-        if ((340 == c) || (342 == c) || (344 == c)) {
-            return "R";
-        }
-        if ((341 == c) || (343 == c) || (345 == c)) {
-            return "r";
-        }
-        if ((346 == c) || (348 == c) || (350 == c) || (352 == c)) {
-            return "S";
-        }
-        if ((347 == c) || (349 == c) || (351 == c) || (353 == c)) {
-            return "s";
-        }
-        if ((354 == c) || (356 == c) || (358 == c)) {
-            return "T";
-        }
-        if ((355 == c) || (359 == c)) {
-            return "t";
-        }
-        if (((217 <= c) && (c <= 220)) || (360 == c) || (362 == c) || (364 == c) || (366 == c) || (370 == c)) {
-            return "U";
-        }
-        if (((249 <= c) && (c <= 251)) || (361 == c) || (363 == c) || (365 == c) || (367 == c) || (371 == c)) {
-            return "u";
-        }
-        if (372 == c) {
-            return "W";
-        }
-        if (373 == c) {
-            return "w";
-        }
-        if ((374 == c) || (376 == c) || (221 == c)) {
-            return "Y";
-        }
-        if ((375 == c) || (255 == c)) {
-            return "y";
-        }
-        if ((377 == c) || (379 == c) || (381 == c)) {
-            return "Z";
-        }
-        if ((378 == c) || (380 == c) || (382 == c)) {
-            return "z";
-        }
-        if (198 == c) {
-            return "AE";
-        }
-        if (230 == c) {
-            return "ae";
-        }
-        if (338 == c) {
-            return "OE";
-        }
-        if (339 == c) {
-            return "oe";
-        }
-        if (222 == c) {
-            return "TH";
-        }
-        if (223 == c) {
-            return "ss";
-        }
-        if (161 == c) {
-            return "!";
-        }
+
         return "?";
     }
 }
