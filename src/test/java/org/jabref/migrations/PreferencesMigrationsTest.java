@@ -68,58 +68,6 @@ class PreferencesMigrationsTest {
         verify(mainPrefsNode, never()).put(JabRefPreferences.IMPORT_FILENAMEPATTERN, arbitraryPattern);
     }
 
-    @Test
-    void testupgradeSortOrder0(){
-        when(prefs.get(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, null)).thenReturn(null);
-        when(prefs.getBoolean("exportInStandardOrder", false)).thenReturn(true);
-
-        PreferencesMigrations.upgradeSortOrder(prefs);
-        //PreferencesMigrations.testUpgradeSortOrder(prefs);
-
-        verify(prefs).putBoolean(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, true);
-
-        verify(prefs).put(EXPORT_PRIMARY_SORT_FIELD, FieldName.AUTHOR);
-        verify(prefs).put(EXPORT_SECONDARY_SORT_FIELD, FieldName.EDITOR);
-        verify(prefs).put(EXPORT_TERTIARY_SORT_FIELD, FieldName.YEAR);
-
-        verify(prefs).putBoolean(EXPORT_PRIMARY_SORT_DESCENDING, false);
-        verify(prefs).putBoolean(EXPORT_SECONDARY_SORT_DESCENDING, false);
-        verify(prefs).putBoolean(EXPORT_SECONDARY_SORT_DESCENDING, false);
-
-    }
-
-    /**
-     * @author Morgan Wessel
-     */
-    @Test
-    void testUpgradeFacultyEncodingStrings() {
-        when(prefs.get(JabRefPreferences.DEFAULT_ENCODING)).thenReturn("UTF8");
-
-        PreferencesMigrations.upgradeFaultyEncodingStrings(prefs);
-
-        verify(prefs).put(JabRefPreferences.DEFAULT_ENCODING, "UTF-8");
-    }
-
-    @Test
-    void testupgradeSortOrder1(){
-        when(prefs.get(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, null)).thenReturn(null);
-        when(prefs.getBoolean("exportInStandardOrder", false)).thenReturn(false);
-        when(prefs.getBoolean("exportInTitleOrder", false)).thenReturn(true);
-
-        PreferencesMigrations.upgradeSortOrder(prefs);
-        //PreferencesMigrations.testUpgradeSortOrder(prefs);
-
-        verify(prefs).putBoolean(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, true);
-
-        verify(prefs).put(EXPORT_PRIMARY_SORT_FIELD, FieldName.TITLE);
-        verify(prefs).put(EXPORT_SECONDARY_SORT_FIELD, FieldName.AUTHOR);
-        verify(prefs).put(EXPORT_TERTIARY_SORT_FIELD, FieldName.EDITOR);
-
-        verify(prefs).putBoolean(EXPORT_PRIMARY_SORT_DESCENDING, false);
-        verify(prefs).putBoolean(EXPORT_SECONDARY_SORT_DESCENDING, false);
-        verify(prefs).putBoolean(EXPORT_SECONDARY_SORT_DESCENDING, false);
-
-    }
 
     @Test
     void testPreviewStyle() {

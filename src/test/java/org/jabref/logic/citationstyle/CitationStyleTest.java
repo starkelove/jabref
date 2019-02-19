@@ -44,19 +44,7 @@ public class CitationStyleTest {
     }
     */
 
-    /**
-     * Tests to see if an empty list is returned. Assert that we have actually received a list
-     * but also that this list is empty
-     * @author Love Stark & Anton Hedkrans
-     * @throws Exception
-     */
-    @Test
-    public void testDiscoverCitationStyles() throws Exception {
-        List<CitationStyle> list =  CitationStyle.discoverCitationStyles();
-        assertNotNull(list);
-        assertTrue(list.isEmpty());
 
-    }
 
 
 }
