@@ -28,7 +28,7 @@ public class BibStringDiff {
 
         if (originalDatabase.hasNoStrings() && newDatabase.hasNoStrings()) {
             BIB[0] = true;
-            System.out.println("print i impossible");
+          //  System.out.println("print i impossible");
             return Collections.emptyList();
         }
 

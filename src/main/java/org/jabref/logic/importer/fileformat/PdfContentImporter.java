@@ -136,7 +136,7 @@ public class PdfContentImporter extends Importer {
             if (splitNames.length == 0) {
                 SLN[9] = true;
                 // empty names... something was really wrong...
-                CoverageMeasurement.PrintMap("SLN", SLN);
+               CoverageMeasurement.PrintMap("SLN", SLN);
                 return "";
             }
 
