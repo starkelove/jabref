@@ -12,6 +12,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MedlineTest {
 
+    /**
+     * Tests both getValidYN and setValidYN through setting a value
+     * and testing that the correct value is returned for
+     * both possible returns from get.
+     * Author: Victor
+     */
     @Test
     public void testGetAndSetValidYN(){
         Investigator temp = new Investigator();
@@ -21,6 +27,13 @@ public class MedlineTest {
         assertEquals("hej", temp.getValidYN());
     }
 
+    /**
+     * tests getOwner and setOwner by
+     * setting and getting the same value
+     * then setting and not getting the
+     * same value
+     * Author: Victor
+     */
     @Test
     public void testGetAndSetOwner(){
         KeywordList temp = new KeywordList();
