@@ -40,6 +40,8 @@ public class MedlineTest {
         temp.setOwner("apa");
         assertEquals("apa", temp.getOwner());
         assertNotEquals("banan", temp.getOwner());
+        temp.setOwner(null);
+        assertEquals("NLM", temp.getOwner());
     }
 
 }
