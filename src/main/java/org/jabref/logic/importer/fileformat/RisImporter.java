@@ -51,12 +51,22 @@ public class RisImporter extends Importer {
 
         //use optional here, so that no exception will be thrown if the file is empty
         String linesAsString = reader.lines().reduce((line, nextline) -> line + "\n" + nextline).orElse("");
-
         String[] entries = linesAsString.replace("\u2013", "-").replace("\u2014", "--").replace("\u2015", "--")
                 .split("ER  -.*\\n");
 
-        for (String entry1 : entries) {
+        //1
+        Map<String, String> values = new HashMap<>();
+        values.put("BOOK", "book");
+        values.put("JOUR", "article");
+        values.put("MGZN", "article");
+        values.put("THES", "phdthesis");
+        values.put("UNPB", "unpublished");
+        values.put("RPRT", "techreport");
+        values.put("CONF", "inproceedings");
+        values.put("CHAP", "incollection");
+        values.put("PAT", "patent");
 
+        for (String entry1 : entries) {
             String type = "";
             String author = "";
             String editor = "";
@@ -90,22 +100,10 @@ public class RisImporter extends Importer {
                     String tag = entry.substring(0, 2);
                     String value = entry.substring(6).trim();
                     if ("TY".equals(tag)) {
-                        if ("BOOK".equals(value)) {
-                            type = "book";
-                        } else if ("JOUR".equals(value) || "MGZN".equals(value)) {
-                            type = "article";
-                        } else if ("THES".equals(value)) {
-                            type = "phdthesis";
-                        } else if ("UNPB".equals(value)) {
-                            type = "unpublished";
-                        } else if ("RPRT".equals(value)) {
-                            type = "techreport";
-                        } else if ("CONF".equals(value)) {
-                            type = "inproceedings";
-                        } else if ("CHAP".equals(value)) {
-                            type = "incollection";//"inbook";
-                        } else if ("PAT".equals(value)) {
-                            type = "patent";
+                        //1
+                        String temp = values.get(value);
+                        if (temp != null) {
+                            type = temp;
                         } else {
                             type = "other";
                         }
@@ -121,12 +119,10 @@ public class RisImporter extends Importer {
                             }
                         }
                         fields.put(FieldName.TITLE, fields.get(FieldName.TITLE).replaceAll("\\s+", " ")); // Normalize whitespaces
-                    } else if ("BT".equals(tag)) {
-                        fields.put(FieldName.BOOKTITLE, value);
                     } else if (("T2".equals(tag) || "J2".equals(tag) || "JA".equals(tag)) && (fields.get(FieldName.JOURNAL) == null || "".equals(fields.get(FieldName.JOURNAL)))) {
                         //if there is no journal title, then put second title as journal title
                         fields.put(FieldName.JOURNAL, value);
-                    } else if ("JO".equals(tag) || "J1".equals(tag) || "JF".equals(tag)) {
+                    } else if ("JF".equals(tag)) {
                         //if this field appears then this should be the journal title
                         fields.put(FieldName.JOURNAL, value);
                     } else if ("T3".equals(tag)) {
@@ -155,8 +151,6 @@ public class RisImporter extends Importer {
                         fields.put("caption", value);
                     } else if ("DB".equals(tag)) {
                         fields.put("database", value);
-                    } else if ("IS".equals(tag) || "AN".equals(tag) || "C7".equals(tag) || "M1".equals(tag)) {
-                        fields.put(FieldName.NUMBER, value);
                     } else if ("SP".equals(tag)) {
                         startPage = value;
                     } else if ("PB".equals(tag)) {
@@ -165,19 +159,11 @@ public class RisImporter extends Importer {
                         } else {
                             fields.put(FieldName.PUBLISHER, value);
                         }
-                    } else if ("AD".equals(tag) || "CY".equals(tag) || "PP".equals(tag)) {
-                        fields.put(FieldName.ADDRESS, value);
                     } else if ("EP".equals(tag)) {
                         endPage = value;
                         if (!endPage.isEmpty()) {
                             endPage = "--" + endPage;
                         }
-                    } else if ("ET".equals(tag)) {
-                        fields.put(FieldName.EDITION, value);
-                    } else if ("SN".equals(tag)) {
-                        fields.put(FieldName.ISSN, value);
-                    } else if ("VL".equals(tag)) {
-                        fields.put(FieldName.VOLUME, value);
                     } else if ("N2".equals(tag) || "AB".equals(tag)) {
                         String oldAb = fields.get(FieldName.ABSTRACT);
                         if (oldAb == null) {
@@ -185,8 +171,6 @@ public class RisImporter extends Importer {
                         } else {
                             fields.put(FieldName.ABSTRACT, oldAb + OS.NEWLINE + value);
                         }
-                    } else if ("UR".equals(tag) || "L2".equals(tag) || "LK".equals(tag)) {
-                        fields.put(FieldName.URL, value);
                     } else if (("Y1".equals(tag) || "Y2".equals(tag) || "PY".equals(tag) || "DA".equals(tag)) && (value.length() >= 4)) {
                         fields.put(FieldName.YEAR, value.substring(0, 4));
                         String[] parts = value.split("/");
@@ -210,39 +194,48 @@ public class RisImporter extends Importer {
                             comment = comment + OS.NEWLINE;
                         }
                         comment = comment + value;
-                    }  else if ("M3".equals(tag) || "DO".equals(tag)) {
+                    } else if ("M3".equals(tag) || "DO".equals(tag)) {
                         addDoi(fields, value);
-                    } else if ("C3".equals(tag)) {
-                        fields.put(FieldName.EVENTTITLE, value);
-                    } else if ("N1".equals(tag) || "RN".equals(tag)) {
-                        fields.put(FieldName.NOTE, value);
-                    } else if ("ST".equals(tag)) {
-                        fields.put(FieldName.SHORTTITLE, value);
                     } else if ("C2".equals(tag)) {
                         fields.put(FieldName.EPRINT, value);
                         fields.put(FieldName.EPRINTTYPE, "pubmed");
-                    } else if ("TA".equals(tag)) {
-                        fields.put(FieldName.TRANSLATOR, value);
-                    }
-                    // fields for which there is no direct mapping in the bibtext standard
-                    else if ("AV".equals(tag)) {
-                        fields.put("archive_location", value);
-                    } else if ("CN".equals(tag) || "VO".equals(tag)) {
-                        fields.put("call-number", value);
-                    } else if ("DB".equals(tag)) {
-                        fields.put("archive", value);
-                    } else if ("NV".equals(tag)) {
-                        fields.put("number-of-volumes", value);
-                    } else if ("OP".equals(tag)) {
-                        fields.put("original-title", value);
-                    } else if ("RI".equals(tag)) {
-                        fields.put("reviewed-title", value);
-                    } else if ("RP".equals(tag)) {
-                        fields.put("status", value);
-                    } else if ("SE".equals(tag)) {
-                        fields.put("section", value);
-                    } else if ("ID".equals(tag)) {
-                        fields.put("refid", value);
+                    } else {
+                        values.put("JO", FieldName.JOURNAL);
+                        values.put("J1", FieldName.JOURNAL);
+                        values.put("BT", FieldName.BOOKTITLE);
+                        values.put("AD", FieldName.ADDRESS);
+                        values.put("CY", FieldName.ADDRESS);
+                        values.put("PP", FieldName.ADDRESS);
+                        values.put("IS", FieldName.NUMBER);
+                        values.put("AN", FieldName.NUMBER);
+                        values.put("C7", FieldName.NUMBER);
+                        values.put("M1", FieldName.NUMBER);
+                        values.put("ET", FieldName.EDITION);
+                        values.put("SN", FieldName.ISSN);
+                        values.put("VL", FieldName.VOLUME);
+                        values.put("UR", FieldName.URL);
+                        values.put("L2", FieldName.URL);
+                        values.put("LK", FieldName.URL);
+                        values.put("C3", FieldName.EVENTTITLE);
+                        values.put("N1", FieldName.NOTE);
+                        values.put("RN", FieldName.NOTE);
+                        values.put("ST", FieldName.SHORTTITLE);
+                        values.put("TA", FieldName.TRANSLATOR);
+                        // fields for which there is no direct mapping in the bibtext standard
+                        values.put("AV", "archive_location");
+                        values.put("CN", "call-number");
+                        values.put("VO", "call-number");
+                        values.put("DB", "archive");
+                        values.put("NV", "number-of-volumes");
+                        values.put("OP", "original-title");
+                        values.put("RI", "reviewed-title");
+                        values.put("RP", "status");
+                        values.put("SE", "section");
+                        values.put("ID", "refid");
+
+                        if (values.get(tag) != null) {
+                            fields.put(values.get(tag), value);
+                        }
                     }
                 }
                 // fix authors
