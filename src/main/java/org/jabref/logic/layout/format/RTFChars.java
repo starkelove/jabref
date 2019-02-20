@@ -206,87 +206,88 @@ public class RTFChars implements LayoutFormatter {
 
     /**
      * This method transforms the unicode of a special character into its base character: 233 (é) - > e
+     * Normal ascii conversion cannot be used because special characters will be returned.
      * @param c long
      * @return returns the basic character of the given unicode
      */
     private String transformSpecialCharacter(long c) {
-        HashMap<Integer, String> map = new HashMap<>();
-        map.put(256, "A");map.put(258, "A");map.put(260, "A");
-        map.put(257, "a");map.put(259, "a");map.put(261, "a");
-        map.put(199, "C");map.put(262, "C");map.put(264, "C");map.put(266, "C");map.put(268, "C");
-        map.put(231, "c");map.put(263, "c");map.put(265, "c");map.put(267, "c");map.put(269, "c");
-        map.put(208, "D");map.put(272, "D");
-        map.put(240, "d");map.put(273, "d");
-        map.put(274, "E");map.put(276, "E");map.put(278, "E");map.put(280, "E");map.put(282, "E");
-        map.put(275, "e");map.put(277, "e");map.put(279, "e");map.put(281, "e");map.put(283, "e");
-        map.put(284, "G");map.put(286, "G");map.put(288, "G");map.put(290, "G");map.put(330, "G");
-        map.put(285, "g");map.put(287, "g");map.put(289, "g");map.put(291, "g");map.put(331, "g");
-        map.put(292, "H");map.put(294, "H");
-        map.put(293, "h");map.put(295, "h");
-        map.put(296, "I");map.put(298, "I");map.put(300, "I");map.put(302, "I");map.put(304, "I");
-        map.put(297, "i");map.put(299, "i");map.put(301, "i");map.put(303, "i");
-        map.put(308, "J");
-        map.put(309, "j");
-        map.put(310, "K");
-        map.put(311, "k");
-        map.put(313, "L");map.put(315, "L");map.put(319, "L");
-        map.put(314, "l");map.put(316, "l");map.put(320, "l");map.put(322, "l");
-        map.put(209, "N");map.put(323, "N");map.put(325, "N");map.put(327, "N");
-        map.put(241, "n");map.put(324, "n");map.put(326, "n");map.put(328, "n");
-        map.put(216, "O");map.put(332, "O");map.put(334, "O");
-        map.put(333, "o");map.put(335, "o");
-        map.put(340, "R");map.put(342, "R");map.put(344, "R");
-        map.put(341, "r");map.put(343, "r");map.put(345, "r");
-        map.put(346, "S");map.put(348, "S");map.put(350, "S");map.put(352, "S");
-        map.put(347, "s");map.put(349, "s");map.put(351, "s");map.put(353, "s");
-        map.put(354, "T");map.put(356, "T");map.put(358, "T");
-        map.put(355, "t");map.put(359, "t");
-        map.put(360, "U");map.put(362, "U");map.put(364, "U");map.put(366, "U");map.put(370, "U");
-        map.put(361, "u");map.put(363, "u");map.put(365, "u");map.put(367, "u");map.put(371, "u");
-        map.put(372, "W");
-        map.put(373, "w");
-        map.put(374, "Y");map.put(376, "Y");map.put(221, "Y");
-        map.put(375, "y");map.put(255, "y");
-        map.put(377, "Z");map.put(379, "Z");map.put(381, "Z");
-        map.put(378, "z");map.put(380, "z");map.put(382, "z");
-        map.put(198, "AE");
-        map.put(230, "ae");
-        map.put(338, "OE");
-        map.put(339, "oe");
-        map.put(222, "TH");
-        map.put(223, "ss");
-        map.put(161, "!");
+        HashMap<Long, String> map = new HashMap<>();
+        map.put((long)256, "A");map.put((long) 258, "A");map.put((long) 260, "A");
+        map.put((long) 257, "a");map.put((long) 259, "a");map.put((long) 261, "a");
+        map.put((long) 199, "C");map.put((long) 262, "C");map.put((long) 264, "C");map.put((long) 266, "C");map.put((long) 268, "C");
+        map.put((long) 231, "c");map.put((long) 263, "c");map.put((long) 265, "c");map.put((long) 267, "c");map.put((long) 269, "c");
+        map.put((long) 208, "D");map.put((long) 272, "D");
+        map.put((long) 240, "d");map.put((long) 273, "d");
+        map.put((long) 274, "E");map.put((long) 276, "E");map.put((long) 278, "E");map.put((long) 280, "E");map.put((long) 282, "E");
+        map.put((long) 275, "e");map.put((long) 277, "e");map.put((long) 279, "e");map.put((long) 281, "e");map.put((long) 283, "e");
+        map.put((long) 284, "G");map.put((long) 286, "G");map.put((long) 288, "G");map.put((long) 290, "G");map.put((long) 330, "G");
+        map.put((long) 285, "g");map.put((long) 287, "g");map.put((long) 289, "g");map.put((long) 291, "g");map.put((long) 331, "g");
+        map.put((long) 292, "H");map.put((long) 294, "H");
+        map.put((long) 293, "h");map.put((long) 295, "h");
+        map.put((long) 296, "I");map.put((long) 298, "I");map.put((long) 300, "I");map.put((long) 302, "I");map.put((long) 304, "I");
+        map.put((long) 297, "i");map.put((long) 299, "i");map.put((long) 301, "i");map.put((long) 303, "i");
+        map.put((long) 308, "J");
+        map.put((long) 309, "j");
+        map.put((long) 310, "K");
+        map.put((long) 311, "k");
+        map.put((long) 313, "L");map.put((long) 315, "L");map.put((long) 319, "L");
+        map.put((long) 314, "l");map.put((long) 316, "l");map.put((long) 320, "l");map.put((long) 322, "l");
+        map.put((long) 209, "N");map.put((long) 323, "N");map.put((long) 325, "N");map.put((long) 327, "N");
+        map.put((long) 241, "n");map.put((long) 324, "n");map.put((long) 326, "n");map.put((long) 328, "n");
+        map.put((long) 216, "O");map.put((long) 332, "O");map.put((long) 334, "O");
+        map.put((long) 333, "o");map.put((long) 335, "o");
+        map.put((long) 340, "R");map.put((long) 342, "R");map.put((long) 344, "R");
+        map.put((long) 341, "r");map.put((long) 343, "r");map.put((long) 345, "r");
+        map.put((long) 346, "S");map.put((long) 348, "S");map.put((long) 350, "S");map.put((long) 352, "S");
+        map.put((long) 347, "s");map.put((long) 349, "s");map.put((long) 351, "s");map.put((long) 353, "s");
+        map.put((long) 354, "T");map.put((long) 356, "T");map.put((long) 358, "T");
+        map.put((long) 355, "t");map.put((long) 359, "t");
+        map.put((long) 360, "U");map.put((long) 362, "U");map.put((long) 364, "U");map.put((long) 366, "U");map.put((long) 370, "U");
+        map.put((long) 361, "u");map.put((long) 363, "u");map.put((long) 365, "u");map.put((long) 367, "u");map.put((long) 371, "u");
+        map.put((long) 372, "W");
+        map.put((long) 373, "w");
+        map.put((long) 374, "Y");map.put((long) 376, "Y");map.put((long) 221, "Y");
+        map.put((long) 375, "y");map.put((long) 255, "y");
+        map.put((long) 377, "Z");map.put((long) 379, "Z");map.put((long) 381, "Z");
+        map.put((long) 378, "z");map.put((long) 380, "z");map.put((long) 382, "z");
+        map.put((long) 198, "AE");
+        map.put((long) 230, "ae");
+        map.put((long) 338, "OE");
+        map.put((long) 339, "oe");
+        map.put((long) 222, "TH");
+        map.put((long) 223, "ss");
+        map.put((long) 161, "!");
 
         //set range values in map
         for (int i = 192; i <=197; i++) {
-            map.put(i, "A");
+            map.put((long) i, "A");
         }
         for (int i = 200; i <=203; i++) {
-            map.put(i, "E");
+            map.put((long) i, "E");
         }
         for (int i = 204; i <=207; i++) {
-            map.put(i, "I");
+            map.put((long) i, "I");
         }
         for (int i = 210; i <=214; i++) {
-            map.put(i, "O");
+            map.put((long) i, "O");
         }
         for (int i = 217; i <=220; i++) {
-            map.put(i, "U");
+            map.put((long) i, "U");
         }
         for (int i = 224; i <=229; i++) {
-            map.put(i, "a");
+            map.put((long) i, "a");
         }
         for (int i = 232; i <=235; i++) {
-            map.put(i, "e");
+            map.put((long) i, "e");
         }
         for (int i = 236; i <=239; i++) {
-            map.put(i, "i");
+            map.put((long) i, "i");
         }
         for (int i = 242; i <=248; i++) {
-            map.put(i, "o");
+            map.put((long) i, "o");
         }
         for (int i = 249; i <=251; i++) {
-            map.put(i, "u");
+            map.put((long) i, "u");
         }
 
         // check to see if c exists in the hash map
@@ -294,7 +295,6 @@ public class RTFChars implements LayoutFormatter {
         if (character != null) {
             return character;
         }
-
         return "?";
     }
 }
