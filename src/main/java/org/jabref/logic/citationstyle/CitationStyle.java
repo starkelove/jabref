@@ -24,6 +24,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.jabref.CoverageMeasurement;
 import org.jabref.logic.util.StandardFileType;
 
 import de.undercouch.citeproc.helper.CSLUtils;
@@ -50,6 +51,8 @@ public class CitationStyle {
     private final String filePath;
     private final String title;
     private final String source;
+
+    public static boolean[] CIT = new boolean[7];
 
     private CitationStyle(final String filename, final String title, final String source) {
         this.filePath = Objects.requireNonNull(filename);
@@ -134,25 +137,36 @@ public class CitationStyle {
      */
     public static List<CitationStyle> discoverCitationStyles() {
         if (!STYLES.isEmpty()) {
+            CIT[0] = true;
+            CoverageMeasurement.PrintMap("CIT", CIT);
             return STYLES;
         }
 
         URL url = CitationStyle.class.getResource(STYLES_ROOT);
         if (url == null) {
+            CIT[1] = true;
+            CoverageMeasurement.PrintMap("CIT", CIT);
             return Collections.emptyList();
         }
         try {
+            CIT[2] = true;
             URI uri = url.toURI();
             if ("jar".equals(uri.getScheme())) {
+                CIT[3] = true;
                 try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+                    CIT[4] = true;
                     Path path = fs.getPath(STYLES_ROOT);
                     STYLES.addAll(discoverCitationStylesInPath(path));
                 }
             } else {
+                CIT[5] = true;
                 STYLES.addAll(discoverCitationStylesInPath(Paths.get(uri)));
             }
+            CoverageMeasurement.PrintMap("CIT", CIT);
             return STYLES;
         } catch (URISyntaxException | IOException e) {
+            CIT[6] = true;
+            CoverageMeasurement.PrintMap("CIT", CIT);
             LOGGER.error("something went wrong while searching available CitationStyles. Are you running directly from source code?", e);
             return Collections.emptyList();
         }

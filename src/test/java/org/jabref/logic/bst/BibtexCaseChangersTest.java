@@ -4,7 +4,10 @@ import org.jabref.logic.bst.BibtexCaseChanger.FORMAT_MODE;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BibtexCaseChangersTest {
 
@@ -130,5 +133,65 @@ public class BibtexCaseChangersTest {
 
     private void assertCaseChangerAllUppers(final String string, final String string2) {
         assertEquals(string, BibtexCaseChanger.changeCase(string2, FORMAT_MODE.ALL_UPPERS));
+    }
+
+    /**
+     * Tests the findSpecialChar function. It will take a character array and an integer as input and returns an Optional<String>.
+     * This test will test all available combinations of characters in the function. Every expected value is checked. Both
+     * that it is returned as a Optional<String>
+     * author: Love Stark
+     */
+    @Test
+    public void testFindSpecialChar(){
+        char[] c = new char[12];
+        c[0] = 'A';
+        c[1] = 'A';
+        c[2] = 'a';
+        c[3] = 'e';
+        c[4] = 'A';
+        c[5] = 'E';
+        c[6] = 's';
+        c[7] = 's';
+        c[8] = 'O';
+        c[9] = 'E';
+        c[10] = 'a';
+        c[11] = 'a';
+        Optional<String> A = BibtexCaseChanger.findSpecialChar(c, 0);
+        assertTrue(A.isPresent());
+        assertEquals("Optional[AA]", A.toString());
+        A = BibtexCaseChanger.findSpecialChar(c, 2);
+        assertTrue(A.isPresent());
+        assertEquals("Optional[ae]", A.toString());
+        A = BibtexCaseChanger.findSpecialChar(c, 4);
+        assertTrue(A.isPresent());
+        assertEquals("Optional[AE]", A.toString());
+        A = BibtexCaseChanger.findSpecialChar(c, 6);
+        assertTrue(A.isPresent());
+        assertEquals("Optional[ss]", A.toString());
+        A = BibtexCaseChanger.findSpecialChar(c, 8);
+        assertTrue(A.isPresent());
+        assertEquals("Optional[OE]", A.toString());
+        A = BibtexCaseChanger.findSpecialChar(c, 10);
+        assertTrue(A.isPresent());
+        assertEquals("Optional[aa]", A.toString());
+    }
+
+    /**
+     * Tests the findSpecialChar function. It will take a character array and an integer as input and returns an Optional<String>.
+     * This test will not yield true in any of the first cases but will reach the if("ijoOlL".indexOf(c[pos]) >= 0) case
+     * It will return a Optional<String> set to i
+     * author: Love Stark
+     */
+    @Test
+    public void testFindSpecialCharIJOL(){
+        char[] c = new char[3];
+        int pos = 0;
+        //ijoOlL
+        c[0] = 'i';
+        c[1] = 'j';
+        c[2] = 'o';
+        Optional<String> A = BibtexCaseChanger.findSpecialChar(c, pos);
+        assertTrue(A.isPresent());
+        assertEquals("Optional[i]", A.toString());
     }
 }

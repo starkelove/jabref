@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jabref.CoverageMeasurement;
 import org.jabref.logic.importer.FetcherException;
 import org.jabref.logic.importer.ImportFormatPreferences;
 import org.jabref.logic.importer.Importer;
@@ -41,6 +42,7 @@ import org.apache.pdfbox.text.PDFTextStripper;
  */
 public class PdfContentImporter extends Importer {
 
+    public static boolean[] SLN = new boolean[23];
     private static final Pattern YEAR_EXTRACT_PATTERN = Pattern.compile("\\d{4}");
     private final ImportFormatPreferences importFormatPreferences;
     // input lines into several lines
@@ -88,17 +90,21 @@ public class PdfContentImporter extends Importer {
         // supported formats:
         //   Matthias Schrepfer1, Johannes Wolf1, Jan Mendling1, and Hajo A. Reijers2
         if (names.contains(",")) {
+            SLN[0] = true;
             String[] splitNames = names.split(",");
             res = "";
             boolean isFirst = true;
             for (String splitName : splitNames) {
                 String curName = removeNonLettersAtEnd(splitName);
                 if (curName.indexOf("and") == 0) {
+                    SLN[1] = true;
                     // skip possible ands between names
                     curName = curName.substring(3).trim();
                 } else {
+                    SLN[2] = true;
                     int posAnd = curName.indexOf(" and ");
                     if (posAnd >= 0) {
+                        SLN[3] = true;
                         String nameBefore = curName.substring(0, posAnd);
                         // cannot be first name as "," is contained in the string
                         res = res.concat(" and ").concat(removeNonLettersAtEnd(nameBefore));
@@ -107,23 +113,30 @@ public class PdfContentImporter extends Importer {
                 }
 
                 if (!"".equals(curName)) {
+                    SLN[4] = true;
                     if ("et al.".equalsIgnoreCase(curName)) {
+                        SLN[5] = true;
                         curName = "others";
                     }
                     if (isFirst) {
+                        SLN[6] = true;
                         isFirst = false;
                     } else {
+                        SLN[7] = true;
                         res = res.concat(" and ");
                     }
                     res = res.concat(curName);
                 }
             }
         } else {
+            SLN[8] = true;
             // assumption: names separated by space
 
             String[] splitNames = names.split(" ");
             if (splitNames.length == 0) {
+                SLN[9] = true;
                 // empty names... something was really wrong...
+               CoverageMeasurement.PrintMap("SLN", SLN);
                 return "";
             }
 
@@ -132,41 +145,54 @@ public class PdfContentImporter extends Importer {
             int i = 0;
             res = "";
             do {
+                SLN[22] = true;
                 if (workedOnFirstOrMiddle) {
+                    SLN[10] = true;
                     // last item was a first or a middle name
                     // we have to check whether we are on a middle name
                     // if not, just add the item as last name and add an "and"
                     if (splitNames[i].contains(".")) {
+                        SLN[11] = true;
                         // we found a middle name
                         res = res.concat(splitNames[i]).concat(" ");
                     } else {
+                        SLN[12] = true;
                         // last name found
                         res = res.concat(removeNonLettersAtEnd(splitNames[i]));
 
                         if (!splitNames[i].isEmpty() && Character.isLowerCase(splitNames[i].charAt(0))) {
+                            SLN[13] = true;
                             // it is probably be "van", "vom", ...
                             // we just rely on the fact that these things are written in lower case letters
                             // do NOT finish name
                             res = res.concat(" ");
                         } else {
+                            SLN[14] = true;
                             // finish this name
                             workedOnFirstOrMiddle = false;
                         }
                     }
                 } else {
+                    SLN[15] = true;
                     if ("and".equalsIgnoreCase(splitNames[i])) {
+                        SLN[16] = true;
                         // do nothing, just increment i at the end of this iteration
                     } else {
+                        SLN[17] = true;
                         if (isFirst) {
+                            SLN[18] = true;
                             isFirst = false;
                         } else {
+                            SLN[19] = true;
                             res = res.concat(" and ");
                         }
                         if ("et".equalsIgnoreCase(splitNames[i]) && (splitNames.length > (i + 1))
                                 && "al.".equalsIgnoreCase(splitNames[i + 1])) {
+                            SLN[20] = true;
                             res = res.concat("others");
                             break;
                         } else {
+                            SLN[21] = true;
                             res = res.concat(splitNames[i]).concat(" ");
                             workedOnFirstOrMiddle = true;
                         }
@@ -175,6 +201,7 @@ public class PdfContentImporter extends Importer {
                 i++;
             } while (i < splitNames.length);
         }
+        CoverageMeasurement.PrintMap("SLN", SLN);
         return res;
     }
 

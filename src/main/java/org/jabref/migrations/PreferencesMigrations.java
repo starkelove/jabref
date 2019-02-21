@@ -10,6 +10,7 @@ import java.util.function.UnaryOperator;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
+import org.jabref.CoverageMeasurement;
 import org.jabref.Globals;
 import org.jabref.JabRefMain;
 import org.jabref.model.bibtexkeypattern.GlobalBibtexKeyPattern;
@@ -21,6 +22,8 @@ import org.slf4j.LoggerFactory;
 
 public class PreferencesMigrations {
 
+    public static boolean[] FacultyEncodingStrings = new boolean[2];
+    public static boolean[] UpgradeSortOrder = new boolean[3];
     private static final Logger LOGGER = LoggerFactory.getLogger(PreferencesMigrations.class);
 
     private PreferencesMigrations() {
@@ -85,6 +88,8 @@ public class PreferencesMigrations {
     public static void upgradeFaultyEncodingStrings(JabRefPreferences prefs) {
         String defaultEncoding = prefs.get(JabRefPreferences.DEFAULT_ENCODING);
         if (defaultEncoding == null) {
+            FacultyEncodingStrings[0] = true;
+            CoverageMeasurement.PrintMap("FacultyEncodingStrings", FacultyEncodingStrings);
             return;
         }
 
@@ -112,8 +117,10 @@ public class PreferencesMigrations {
         encodingMap.put("EUC_JP", "EUC-JP");
 
         if (encodingMap.containsKey(defaultEncoding)) {
+            FacultyEncodingStrings[1] = true;
             prefs.put(JabRefPreferences.DEFAULT_ENCODING, encodingMap.get(defaultEncoding));
         }
+        CoverageMeasurement.PrintMap("FacultyEncodingStrings", FacultyEncodingStrings);
     }
 
     /**
@@ -125,7 +132,9 @@ public class PreferencesMigrations {
     public static void upgradeSortOrder(JabRefPreferences prefs) {
 
         if (prefs.get(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, null) == null) {
+            UpgradeSortOrder[0] = true;
             if (prefs.getBoolean("exportInStandardOrder", false)) {
+                UpgradeSortOrder[1] = true;
                 prefs.putBoolean(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, true);
                 prefs.put(JabRefPreferences.EXPORT_PRIMARY_SORT_FIELD, FieldName.AUTHOR);
                 prefs.put(JabRefPreferences.EXPORT_SECONDARY_SORT_FIELD, FieldName.EDITOR);
@@ -134,6 +143,7 @@ public class PreferencesMigrations {
                 prefs.putBoolean(JabRefPreferences.EXPORT_SECONDARY_SORT_DESCENDING, false);
                 prefs.putBoolean(JabRefPreferences.EXPORT_TERTIARY_SORT_DESCENDING, false);
             } else if (prefs.getBoolean("exportInTitleOrder", false)) {
+                UpgradeSortOrder[2] = true;
                 // exportInTitleOrder => title, author, editor
                 prefs.putBoolean(JabRefPreferences.EXPORT_IN_SPECIFIED_ORDER, true);
                 prefs.put(JabRefPreferences.EXPORT_PRIMARY_SORT_FIELD, FieldName.TITLE);
@@ -144,6 +154,7 @@ public class PreferencesMigrations {
                 prefs.putBoolean(JabRefPreferences.EXPORT_TERTIARY_SORT_DESCENDING, false);
             }
         }
+        CoverageMeasurement.PrintMap("UpgradeSortOrder", UpgradeSortOrder);
     }
 
     /**
