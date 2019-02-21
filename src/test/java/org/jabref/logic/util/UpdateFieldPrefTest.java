@@ -16,6 +16,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UpdateFieldPrefTest {
 
+
+    /**
+     * Tests all variables which can be set in UPF
+     * Authour Victor
+     */
     @Test
     public void testUPF(){
         UpdateFieldPreferences temp = new UpdateFieldPreferences(true, true, "apa", true, true, "banan", "träd");
@@ -29,6 +34,10 @@ public class UpdateFieldPrefTest {
 
     }
 
+    /**
+     * Tests that it doesnt always return the same values.
+     * Authour Victor
+     */
     @Test
     public void testUPF2(){
         UpdateFieldPreferences temp = new UpdateFieldPreferences(true, true, "apa", true, true, "banan", "träd");
