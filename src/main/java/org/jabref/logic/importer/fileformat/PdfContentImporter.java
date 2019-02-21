@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.controlsfx.control.tableview2.filter.filtereditor.SouthFilter;
 import org.jabref.logic.importer.FetcherException;
 import org.jabref.logic.importer.ImportFormatPreferences;
 import org.jabref.logic.importer.Importer;
@@ -120,7 +121,6 @@ public class PdfContentImporter extends Importer {
             }
         } else {
             // assumption: names separated by space
-
             String[] splitNames = names.split(" ");
             if (splitNames.length == 0) {
                 // empty names... something was really wrong...
