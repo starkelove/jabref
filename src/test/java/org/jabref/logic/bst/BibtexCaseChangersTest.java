@@ -137,37 +137,61 @@ public class BibtexCaseChangersTest {
 
     /**
      * Tests the findSpecialChar function. It will take a character array and an integer as input and returns an Optional<String>.
-     * This input will put a O at pos 1 and a E at pos 2. When the integer pos is set at 1 this will then return a concatenated Optional string
-     * of O & E as Optional[OE]
+     * This test will test all available combinations of characters in the function. Every expected value is checked. Both
+     * that it is returned as a Optional<String>
      * author: Love Stark
      */
     @Test
-    public void testFindSpecialCharOE(){
-        char[] c = new char[3];
-        int pos = 1;
+    public void testFindSpecialChar(){
+        char[] c = new char[12];
         c[0] = 'A';
-        c[1] = 'O';
-        c[2] = 'E';
-        Optional<String> A = BibtexCaseChanger.findSpecialChar(c, pos);
+        c[1] = 'A';
+        c[2] = 'a';
+        c[3] = 'e';
+        c[4] = 'A';
+        c[5] = 'E';
+        c[6] = 's';
+        c[7] = 's';
+        c[8] = 'O';
+        c[9] = 'E';
+        c[10] = 'a';
+        c[11] = 'a';
+        Optional<String> A = BibtexCaseChanger.findSpecialChar(c, 0);
+        assertTrue(A.isPresent());
+        assertEquals("Optional[AA]", A.toString());
+        A = BibtexCaseChanger.findSpecialChar(c, 2);
+        assertTrue(A.isPresent());
+        assertEquals("Optional[ae]", A.toString());
+        A = BibtexCaseChanger.findSpecialChar(c, 4);
+        assertTrue(A.isPresent());
+        assertEquals("Optional[AE]", A.toString());
+        A = BibtexCaseChanger.findSpecialChar(c, 6);
+        assertTrue(A.isPresent());
+        assertEquals("Optional[ss]", A.toString());
+        A = BibtexCaseChanger.findSpecialChar(c, 8);
         assertTrue(A.isPresent());
         assertEquals("Optional[OE]", A.toString());
+        A = BibtexCaseChanger.findSpecialChar(c, 10);
+        assertTrue(A.isPresent());
+        assertEquals("Optional[aa]", A.toString());
     }
 
     /**
      * Tests the findSpecialChar function. It will take a character array and an integer as input and returns an Optional<String>.
-     * This input will put a A at pos 0 and a A at pos 1. When the integer pos is set at 0 this will then return a concatenated Optional string
-     * of A & A as Optional[AA]
+     * This test will not yield true in any of the first cases but will reach the if("ijoOlL".indexOf(c[pos]) >= 0) case
+     * It will return a Optional<String> set to i
      * author: Love Stark
      */
     @Test
-    public void testFindSpecialCharAA(){
+    public void testFindSpecialCharIJOL(){
         char[] c = new char[3];
         int pos = 0;
-        c[0] = 'A';
-        c[1] = 'A';
-        c[2] = 'E';
+        //ijoOlL
+        c[0] = 'i';
+        c[1] = 'j';
+        c[2] = 'o';
         Optional<String> A = BibtexCaseChanger.findSpecialChar(c, pos);
         assertTrue(A.isPresent());
-        assertEquals("Optional[AA]", A.toString());
+        assertEquals("Optional[i]", A.toString());
     }
 }
