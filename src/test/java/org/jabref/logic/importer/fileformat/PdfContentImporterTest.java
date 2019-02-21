@@ -81,4 +81,17 @@ class PdfContentImporterTest {
         assertEquals(" ", res4);
     }
 
+    /**
+     * Tests the streamlineNames function when names are separated by space
+     * - Enters the 'workedOnFirstOrMiddle' conditional
+     * @author Morgan Wessel
+     */
+    @Test
+    void streamlineNamesTest1() {
+        String res = importer.testStreamLineNames("Morgan Mrs.Wessel Nikhil Natalie mae");
+        assertEquals("Morgan Mrs.Wessel Nikhil and Natalie mae ", res);
+
+        String res1 = importer.testStreamLineNames("et al.");
+        assertEquals("others", res1);
+    }
 }

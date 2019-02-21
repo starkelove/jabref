@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.jabref.logic.importer.fileformat.bibtexml.Entry;
 import org.jabref.model.database.BibDatabaseMode;
 import org.jabref.model.entry.BiblatexEntryTypes;
 import org.jabref.model.entry.BibtexEntryTypes;
@@ -22,8 +23,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.Mockito.mock;
 
 class EntryTypesTest {
 
@@ -87,6 +90,22 @@ class EntryTypesTest {
         Collections.sort(sortedEntryTypes);
 
         assertEquals(sortedDefaultType, sortedEntryTypes);
+    }
+
+    /**
+     * @author Morgan Wessel
+     */
+    @Test
+    void testIsEqualNameAndFieldBased() {
+        boolean isEqual = EntryTypes.isEqualNameAndFieldBased(null, null);
+        assertTrue(isEqual);
+
+        CustomEntryType customEntryType = new CustomEntryType("Morgan", "a; b; c;", "d; e");
+        boolean isEqual1 = EntryTypes.isEqualNameAndFieldBased(customEntryType, null);
+        assertFalse(isEqual1);
+
+        boolean isEqual2 = EntryTypes.isEqualNameAndFieldBased(customEntryType, customEntryType);
+        assertTrue(isEqual2);
     }
 
     @ParameterizedTest
