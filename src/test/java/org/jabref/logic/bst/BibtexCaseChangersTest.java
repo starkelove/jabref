@@ -4,7 +4,10 @@ import org.jabref.logic.bst.BibtexCaseChanger.FORMAT_MODE;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BibtexCaseChangersTest {
 
@@ -130,5 +133,23 @@ public class BibtexCaseChangersTest {
 
     private void assertCaseChangerAllUppers(final String string, final String string2) {
         assertEquals(string, BibtexCaseChanger.changeCase(string2, FORMAT_MODE.ALL_UPPERS));
+    }
+
+    /**
+     * Tests the findSpecialChar function. It will take a character array and an integer as input and returns an Optional<String>.
+     * This input will put a O at pos 1 and a E at pos 2. When the integer pos is set at 1 this will then return a concatenated Optional string
+     * of O & E as Optional[OE]
+     * author: Love Stark
+     */
+    @Test
+    public void testFindSpecialChar(){
+        char[] c = new char[3];
+        int pos = 1;
+        c[0] = 'A';
+        c[1] = 'O';
+        c[2] = 'E';
+        Optional<String> A = BibtexCaseChanger.findSpecialChar(c, pos);
+        assertTrue(A.isPresent());
+        assertEquals("Optional[OE]", A.toString());
     }
 }
