@@ -1,7 +1,10 @@
 package org.jabref.logic.bibtex.comparator;
 
+import org.jabref.CoverageMeasurement;
 import org.jabref.model.database.BibDatabase;
 import org.jabref.model.entry.BibtexString;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +18,7 @@ public class BibStringDiffTest {
     private BibDatabase database2;
     private BibtexString stringA;
 
+
     @BeforeEach
     public void setUp() {
         database1 = new BibDatabase();
@@ -25,7 +29,7 @@ public class BibStringDiffTest {
     /**
      * Tests that two databases with identical content will be identified
      * Returns a List<BibStringDiff> that should be empty since there are no differences
-     * author: Love Stark
+     * author: Love Stark & Anton Hedkrans
      */
     @Test
     public void testIdenticalDatabases(){
@@ -41,7 +45,7 @@ public class BibStringDiffTest {
      * The two databases will have a string each that share the same name but with different content.
      * The function should identify this and return what it is that is differing
      * Returns a List<BibStringDiff> that should contain stringA
-     * author: Love Stark
+     * author: Love Stark & Anton Hedkrans
      */
     @Test
     public void testDifferingContent(){
@@ -59,7 +63,7 @@ public class BibStringDiffTest {
      * The two databases will have a string each that will not share either name or content.
      * The function should identify this and return what it is that is differing
      * Returns a List<BibStringDiff> that should contain stringA
-     * author: Love Stark
+     * author: Love Stark & Anton Hedkrans
      */
     @Test
     public void testNonIdentical(){
